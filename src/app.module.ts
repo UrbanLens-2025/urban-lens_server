@@ -8,6 +8,8 @@ import { envConfig } from '@/config/env.config';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { MailerConfig } from '@/config/mailer.config';
 import { NotificationModule } from '@/modules/notification/Notification.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ResponseInterceptorConfig } from '@/common/interceptor/response.interceptor';
 
 @Module({
   imports: [
@@ -29,6 +31,12 @@ import { NotificationModule } from '@/modules/notification/Notification.module';
     NotificationModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptorConfig,
+    },
+  ],
 })
 export class AppModule {}
