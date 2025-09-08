@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
-import { SendEmailDto } from '@/common/dto/SendEmail.dto';
+import { SendEmailDto } from '@/common/dto/notification/SendEmail.dto';
 import { EmailSubjects } from '@/common/constants/EmailTemplates.constant';
 import { EmailNotificationRepository } from '@/modules/notification/domain/repository/EmailNotification.repository';
 import { EmailNotificationEntity } from '@/modules/notification/domain/EmailNotification.entity';
