@@ -1,0 +1,24 @@
+services:
+  ubl-db:
+    image: postgres:17.5
+    container_name: ubl-db
+    environment:
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ubl_db_data:/var/lib/postgresql/data
+    networks:
+      - ubl-network
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+networks:
+  ubl-network:
+volumes:
+  ubl_db_data:

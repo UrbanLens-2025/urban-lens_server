@@ -5,6 +5,9 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PersistenceConfig } from '@/config/persistence.config';
 import { envConfig } from '@/config/env.config';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { MailerConfig } from '@/config/mailer.config';
+import { NotificationModule } from '@/modules/notification/Notification.module';
 
 @Module({
   imports: [
@@ -19,6 +22,11 @@ import { envConfig } from '@/config/env.config';
       useClass: PersistenceConfig,
       imports: [ConfigModule],
     }),
+    MailerModule.forRootAsync({
+      useClass: MailerConfig,
+      imports: [ConfigModule],
+    }),
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
