@@ -6,7 +6,18 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerDocumentConfig } from '@/config/swagger.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logLevelString = process.env.LOG_LEVELS || 'log';
+  const logLevels = logLevelString
+    .split(',')
+    .map((level) => level.trim()) as Array<
+    'log' | 'error' | 'warn' | 'debug' | 'verbose'
+  >;
+
+  console.log(`Log levels set to: ${logLevels.join(', ')}`);
+
+  const app = await NestFactory.create(AppModule, {
+    logger: logLevels,
+  });
   app.useGlobalPipes(new ValidationPipe(globalValidationConfig));
 
   SwaggerModule.setup(

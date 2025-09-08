@@ -10,6 +10,8 @@ import { MailerConfig } from '@/config/mailer.config';
 import { NotificationModule } from '@/modules/notification/Notification.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptorConfig } from '@/common/interceptor/response.interceptor';
+import { BullModule } from '@nestjs/bullmq';
+import { BullConfig } from '@/config/bull.config';
 
 @Module({
   imports: [
@@ -28,15 +30,19 @@ import { ResponseInterceptorConfig } from '@/common/interceptor/response.interce
       useClass: MailerConfig,
       imports: [ConfigModule],
     }),
+    BullModule.forRootAsync({
+      useClass: BullConfig,
+      imports: [ConfigModule],
+    }),
     NotificationModule,
   ],
   controllers: [AppController],
   providers: [
-    AppService,
     {
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptorConfig,
     },
+    AppService,
   ],
 })
 export class AppModule {}

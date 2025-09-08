@@ -5,10 +5,20 @@ import { TestController } from '@/modules/notification/interfaces/test.controlle
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EmailNotificationEntity } from '@/modules/notification/domain/EmailNotification.entity';
 import { EmailNotificationRepository } from '@/modules/notification/domain/repository/EmailNotification.repository';
+import { BullModule } from '@nestjs/bullmq';
+import { EmailNotificationConsumerService } from '@/modules/notification/service/EmailNotificationConsumer.service';
 
 @Module({
-  imports: [MailerModule, TypeOrmModule.forFeature([EmailNotificationEntity])],
-  providers: [EmailNotificationRepository, EmailNotificationService],
+  imports: [
+    MailerModule,
+    TypeOrmModule.forFeature([EmailNotificationEntity]),
+    BullModule.registerQueue({ name: 'email-notifications' }),
+  ],
+  providers: [
+    EmailNotificationRepository,
+    EmailNotificationService,
+    EmailNotificationConsumerService,
+  ],
   controllers: [TestController],
   exports: [EmailNotificationService],
 })

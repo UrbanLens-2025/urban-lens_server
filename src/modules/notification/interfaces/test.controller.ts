@@ -6,8 +6,8 @@ import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
 export class TestController {
   constructor(private readonly emailService: EmailNotificationService) {}
 
-  @Get('test')
-  async test() {
+  @Get('add-queue')
+  async testQueue() {
     await this.emailService.sendEmail({
       to: 'wizardap.dev@gmail.com',
       template: EmailTemplates.CONFIRM_OTP,

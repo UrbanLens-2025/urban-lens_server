@@ -16,6 +16,10 @@ export interface Environment {
   MAILER_SECURE: boolean;
   MAILER_USERNAME: string;
   MAILER_PASSWORD: string;
+
+  REDIS_HOST: string;
+  REDIS_PORT: number;
+  REDIS_PASSWORD: string;
 }
 
 export const envConfig = joi.object<Environment>({
@@ -37,4 +41,8 @@ export const envConfig = joi.object<Environment>({
   MAILER_SECURE: joi.boolean().default(false),
   MAILER_USERNAME: joi.string().required(),
   MAILER_PASSWORD: joi.string().required(),
+
+  REDIS_HOST: joi.string().required(),
+  REDIS_PORT: joi.number().required(),
+  REDIS_PASSWORD: joi.string(),
 });
