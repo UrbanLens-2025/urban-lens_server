@@ -1,10 +1,4 @@
-import {
-  IsBoolean,
-  IsEmail,
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-} from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsOptional } from 'class-validator';
 import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
 
 export class SendEmailDto {
