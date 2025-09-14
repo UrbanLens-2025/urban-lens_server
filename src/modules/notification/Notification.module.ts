@@ -4,7 +4,7 @@ import { EmailNotificationService } from '@/modules/notification/service/EmailNo
 import { TestController } from '@/modules/notification/interfaces/test.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EmailNotificationEntity } from '@/modules/notification/domain/EmailNotification.entity';
-import { EmailNotificationRepository } from '@/modules/notification/domain/repository/EmailNotification.repository';
+import { EmailNotificationRepository } from '@/modules/notification/infra/repository/EmailNotification.repository';
 import { BullModule } from '@nestjs/bullmq';
 import { EmailNotificationConsumerService } from '@/modules/notification/service/EmailNotificationConsumer.service';
 import { MailerConfig } from '@/config/mailer.config';

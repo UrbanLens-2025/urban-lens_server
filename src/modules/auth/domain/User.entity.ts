@@ -1,4 +1,4 @@
-import { Role } from '../enums/role.enum';
+import { Role } from '@/common/constants/Role.constant';
 import {
   Column,
   CreateDateColumn,
@@ -8,8 +8,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'user' })
-export class User {
+@Entity({ name: 'users' })
+export class UserEntity {
   @PrimaryGeneratedColumn('identity')
   id: number;
 
