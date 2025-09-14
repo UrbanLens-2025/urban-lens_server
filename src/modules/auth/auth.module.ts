@@ -7,7 +7,9 @@ import { ConfigService } from '@nestjs/config';
 import { JwtConfig } from '@/config/jwt.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from '@/modules/auth/domain/User.entity';
-import { UserRepository } from '@/modules/auth/domain/repository/User.repository';
+import { UserRepository } from '@/modules/auth/infra/repository/User.repository';
+import { NotificationModule } from '@/modules/notification/Notification.module';
+import { RedisRegisterConfirmRepository } from '@/modules/auth/infra/repository/RedisRegisterConfirm.repository';
 
 @Module({
   imports: [
@@ -16,8 +18,14 @@ import { UserRepository } from '@/modules/auth/domain/repository/User.repository
       useClass: JwtConfig,
       inject: [ConfigService],
     }),
+    NotificationModule,
   ],
   controllers: [AuthController],
-  providers: [UserRepository, AuthService, TokenService],
+  providers: [
+    UserRepository,
+    RedisRegisterConfirmRepository,
+    AuthService,
+    TokenService,
+  ],
 })
 export class AuthModule {}

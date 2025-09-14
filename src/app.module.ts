@@ -13,6 +13,8 @@ import { ResponseInterceptorConfig } from '@/common/interceptor/response.interce
 import { BullModule } from '@nestjs/bullmq';
 import { BullConfig } from '@/config/bull.config';
 import { AuthModule } from './modules/auth/auth.module';
+import { RedisModule } from '@nestjs-modules/ioredis';
+import { RedisConfig } from '@/config/redis.config';
 
 @Module({
   imports: [
@@ -22,6 +24,10 @@ import { AuthModule } from './modules/auth/auth.module';
       skipProcessEnv: true,
       cache: true,
       validationSchema: envConfig,
+    }),
+    RedisModule.forRootAsync({
+      useClass: RedisConfig,
+      imports: [ConfigModule],
     }),
     TypeOrmModule.forRootAsync({
       useClass: PersistenceConfig,
