@@ -1,10 +1,10 @@
-import { Role } from '@/modules/user/enums/role.enum';
+import { Role } from '@/common/constants/Role.constant';
 import {
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsPhoneNumber,
   IsString,
-  IsEnum,
   MinLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';

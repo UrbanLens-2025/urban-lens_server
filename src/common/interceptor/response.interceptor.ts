@@ -20,7 +20,7 @@ export class ResponseInterceptorConfig<T>
     return next.handle().pipe(
       map((data) => ({
         success: true,
-        message: `Request successful. ${data == null && 'No content returned.'}`,
+        message: `Request successful.${data == null ? ' No content returned.' : ''}`,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
         statusCode: context.switchToHttp().getResponse()['statusCode'] || 200,
         data,
