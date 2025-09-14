@@ -18,4 +18,19 @@ export class UserService {
   async checkUserExists(email: string): Promise<boolean> {
     return checkExist(this.userRepository, { email });
   }
+
+  async getUserByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { email },
+      select: [
+        'id',
+        'email',
+        'firstName',
+        'lastName',
+        'phoneNumber',
+        'role',
+        'password',
+      ],
+    });
+  }
 }
