@@ -15,4 +15,14 @@ export class CoreService {
       ...options,
     });
   }
+
+  mapTo_Raw<T, V>(
+    cls: ClassConstructor<T>,
+    plain: V,
+    options?: ClassTransformOptions,
+  ): T {
+    return plainToInstance(cls, plain, {
+      ...options,
+    });
+  }
 }

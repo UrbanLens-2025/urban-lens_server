@@ -18,6 +18,7 @@ import { EmailNotificationService } from '@/modules/notification/service/EmailNo
 import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
 import { RedisRegisterConfirmRepository } from '@/modules/auth/infra/repository/RedisRegisterConfirm.repository';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
+import { UserEntity } from '@/modules/auth/domain/User.entity';
 
 @Injectable()
 export class AuthService extends CoreService {
@@ -87,10 +88,9 @@ export class AuthService extends CoreService {
       throw new BadRequestException('Invalid confirm code, otp code, or email');
     }
 
-    const user = await this.userRepository.repo.save({
-      ...createAuthDto,
-      password: await bcrypt.hash(createAuthDto.password, 10),
-    });
+    const userEntity = this.mapTo_Raw(UserEntity, createAuthDto);
+    userEntity.password = await bcrypt.hash(createAuthDto.password, 10);
+    const user = await this.userRepository.repo.save(userEntity);
 
     const response = this.mapTo(UserResponseDto, user);
     response.token = await this.tokenService.generateToken(user);
