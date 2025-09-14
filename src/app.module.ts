@@ -10,6 +10,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptorConfig } from '@/common/interceptor/response.interceptor';
 import { BullModule } from '@nestjs/bullmq';
 import { BullConfig } from '@/config/bull.config';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { BullConfig } from '@/config/bull.config';
       imports: [ConfigModule],
     }),
     NotificationModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [
