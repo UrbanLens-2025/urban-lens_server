@@ -5,8 +5,6 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PersistenceConfig } from '@/config/persistence.config';
 import { envConfig } from '@/config/env.config';
-import { MailerModule } from '@nestjs-modules/mailer';
-import { MailerConfig } from '@/config/mailer.config';
 import { NotificationModule } from '@/modules/notification/Notification.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptorConfig } from '@/common/interceptor/response.interceptor';
@@ -31,10 +29,6 @@ import { RedisConfig } from '@/config/redis.config';
     }),
     TypeOrmModule.forRootAsync({
       useClass: PersistenceConfig,
-      imports: [ConfigModule],
-    }),
-    MailerModule.forRootAsync({
-      useClass: MailerConfig,
       imports: [ConfigModule],
     }),
     BullModule.forRootAsync({

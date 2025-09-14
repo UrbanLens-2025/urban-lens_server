@@ -7,10 +7,15 @@ import { EmailNotificationEntity } from '@/modules/notification/domain/EmailNoti
 import { EmailNotificationRepository } from '@/modules/notification/infra/repository/EmailNotification.repository';
 import { BullModule } from '@nestjs/bullmq';
 import { EmailNotificationConsumerService } from '@/modules/notification/service/EmailNotificationConsumer.service';
+import { MailerConfig } from '@/config/mailer.config';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
-    MailerModule,
+    MailerModule.forRootAsync({
+      useClass: MailerConfig,
+      imports: [ConfigModule],
+    }),
     TypeOrmModule.forFeature([EmailNotificationEntity]),
     BullModule.registerQueue({ name: 'email-notifications' }),
   ],

@@ -7,7 +7,9 @@
     "webpack": true,
     "tsConfigPath": "tsconfig.build.json",
     "assets": [
-      "**/*.pug"
-    ]
+      "**/*.pug",
+      "**/*.env.development"
+    ],
+    "watchAssets": true
   }
 }
