@@ -17,6 +17,7 @@ import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
 import { EmailNotificationService } from '@/modules/notification/service/EmailNotification.service';
 import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
 import { RedisRegisterConfirmRepository } from '@/modules/auth/infra/repository/RedisRegisterConfirm.repository';
+import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
 
 @Injectable()
 export class AuthService extends CoreService {
@@ -32,11 +33,11 @@ export class AuthService extends CoreService {
   private readonly LOGGER = new Logger(AuthService.name);
 
   async register(createAuthDto: RegisterDto): Promise<RegisterResponseDto> {
-    const userExists = await this.userRepository.repo.existsBy({
+    const userExistsDb = await this.userRepository.repo.existsBy({
       email: createAuthDto.email,
     });
 
-    if (userExists) {
+    if (userExistsDb) {
       throw new BadRequestException('User already exists');
     }
 
@@ -53,8 +54,7 @@ export class AuthService extends CoreService {
       context: {
         name: createAuthDto.firstName,
         otp: otpCode,
-        expiresInMinutes:
-          this.redisRegisterConfirmRepository.getExpirationS() / 60,
+        expiresInMinutes: RedisRegisterConfirmRepository.getExpirationS() / 60,
       },
     });
 
@@ -76,11 +76,12 @@ export class AuthService extends CoreService {
   }
 
   async registerConfirm(dto: RegisterConfirmDto): Promise<UserResponseDto> {
-    const createAuthDto = await this.redisRegisterConfirmRepository.getAndDel(
-      dto.email,
-      dto.confirmCode,
-      dto.otpCode,
-    );
+    const createAuthDto =
+      await this.redisRegisterConfirmRepository.getAndValidate(
+        dto.email,
+        dto.confirmCode,
+        dto.otpCode,
+      );
 
     if (!createAuthDto) {
       throw new BadRequestException('Invalid confirm code, otp code, or email');
@@ -118,5 +119,9 @@ export class AuthService extends CoreService {
 
     response.token = await this.tokenService.generateToken(user);
     return response;
+  }
+
+  resendOtp(_: RegisterResendOtpDto) {
+    return null;
   }
 }

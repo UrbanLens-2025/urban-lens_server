@@ -10,38 +10,50 @@ export class RedisRegisterConfirmRepository {
   private static readonly REGISTER_CONFIRM_KEY = 'register:confirm:';
   private static readonly REGISTER_EXPIRATION = 60 * 5; // 5 minutes
 
-  async set(dto: RegisterDto, confirmCode: string, otpCode: string) {
-    await this.redis.setex(
-      RedisRegisterConfirmRepository.REGISTER_CONFIRM_KEY.concat(dto.email)
-        .concat(':')
-        .concat(confirmCode)
-        .concat(':')
-        .concat(otpCode),
-      RedisRegisterConfirmRepository.REGISTER_EXPIRATION,
-      JSON.stringify(dto),
-    );
+  static getExpirationS(): number {
+    return RedisRegisterConfirmRepository.REGISTER_EXPIRATION;
   }
 
-  async getAndDel(email: string, confirmCode: string, otpCode: string) {
-    const key = RedisRegisterConfirmRepository.REGISTER_CONFIRM_KEY.concat(email)
-      .concat(':')
-      .concat(confirmCode)
-      .concat(':')
-      .concat(otpCode);
-    const data = await this.redis.get(
-      key
+  async set(
+    dto: RegisterDto,
+    confirmCode: string,
+    otpCode: string,
+  ): Promise<boolean> {
+    const res = await this.redis.setex(
+      RedisRegisterConfirmRepository.REGISTER_CONFIRM_KEY.concat(dto.email),
+      RedisRegisterConfirmRepository.REGISTER_EXPIRATION,
+      JSON.stringify({
+        ...dto,
+        confirmCode,
+        otpCode,
+      }),
     );
 
-    if (!data) {
+    return res === 'OK';
+  }
+
+  async getAndValidate(
+    email: string,
+    confirmCode: string,
+    otpCode: string,
+  ): Promise<RegisterDto | null> {
+    const key =
+      RedisRegisterConfirmRepository.REGISTER_CONFIRM_KEY.concat(email);
+    const dataJson = await this.redis.get(key);
+
+    if (!dataJson) return null;
+
+    const data = JSON.parse(dataJson) as RegisterDto & {
+      confirmCode: string;
+      otpCode: string;
+    };
+
+    if (data.confirmCode !== confirmCode || data.otpCode !== otpCode) {
       return null;
     }
 
     await this.redis.del(key);
 
-    return JSON.parse(data) as RegisterDto;
-  }
-
-  getExpirationS(): number {
-    return RedisRegisterConfirmRepository.REGISTER_EXPIRATION;
+    return data;
   }
 }
