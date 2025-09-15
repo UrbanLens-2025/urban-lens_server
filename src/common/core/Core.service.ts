@@ -5,6 +5,12 @@ import {
 import { plainToInstance } from 'class-transformer';
 
 export class CoreService {
+  /**
+   * Map plain object to class instance. Requires @Expose() decorator on class properties.
+   * @param cls Target class
+   * @param plain Plain object
+   * @param options Class transform options
+   */
   mapTo<T, V>(
     cls: ClassConstructor<T>,
     plain: V,
@@ -16,6 +22,12 @@ export class CoreService {
     });
   }
 
+  /**
+   * Map plain object to class instance. Maps all properties.
+   * @param cls Target class
+   * @param plain Plain object
+   * @param options Class transform options
+   */
   mapTo_Raw<T, V>(
     cls: ClassConstructor<T>,
     plain: V,

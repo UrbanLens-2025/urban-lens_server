@@ -1,11 +1,12 @@
-import { Controller, Post, Body, Put } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { AuthService } from '@/modules/auth/services/auth.service';
 import { RegisterDto } from '@/common/dto/auth/register.dto';
 import { LoginDto } from '@/common/dto/auth/login.dto';
 import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
-import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Auth - Public')
 @ApiBearerAuth()
 @Controller('/public/auth')
 export class AuthPublicController {

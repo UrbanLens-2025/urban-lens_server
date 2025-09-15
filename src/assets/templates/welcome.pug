@@ -1,7 +1,124 @@
-p Hello, #{name}!
-p
-    | Welcome to our application. Please click the link below to verify your email address.
-p
-    a(href=url) Verify Email
-p
-    | If you did not request this email, you can safely ignore it.
+doctype html
+html(lang="en")
+    head
+        meta(http-equiv="Content-Type" content="text/html; charset=utf-8")
+        meta(name="viewport" content="width=device-width, initial-scale=1.0")
+        title Welcome to Urban Lens!
+        style.
+            /* Reset styles */
+            body {
+                margin: 0;
+                padding: 0;
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+            }
+            table, td, div {
+                border-collapse: collapse;
+            }
+            img {
+                -ms-interpolation-mode: bicubic;
+            }
+
+            /* Basic styling */
+            body, table, td, a {
+                font-family: Arial, sans-serif;
+                color: #333333;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                margin: 0;
+            }
+            a {
+                text-decoration: none;
+            }
+
+            /* Main content styles */
+            .content-table {
+                border: 1px solid #cccccc;
+                border-collapse: collapse;
+                background-color: #ffffff;
+            }
+            .header {
+                background-color: #212121;
+                padding: 40px 0 30px 0;
+            }
+            .header h1 {
+                color: #ffffff;
+            }
+            .body-section {
+                padding: 30px 30px 20px 30px;
+            }
+            .body-section h2 {
+                color: #333333;
+            }
+            .cta-button {
+                text-align: center;
+                padding: 20px 0;
+            }
+            .cta-button a {
+                display: inline-block;
+                background-color: #4CAF50;
+                color: #ffffff;
+                padding: 12px 24px;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            .footer {
+                background-color: #eeeded;
+                padding: 30px 30px 30px 30px;
+            }
+            .footer p {
+                margin: 0;
+                font-size: 12px;
+                color: #555555;
+            }
+
+            /* Media Queries for responsiveness */
+            @media only screen and (max-width: 600px) {
+                .content-table {
+                    width: 100% !important;
+                }
+                .body-section, .footer {
+                    padding: 20px !important;
+                }
+                .header h1 {
+                    font-size: 24px;
+                }
+            }
+    body(style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;")
+        table()
+            tr
+                td(style="padding: 20px 0 30px 0;")
+                    table.content-table()
+                        //- Header Section
+                        tr
+                            td.header()
+                                h1 Urban Lens
+                        //- Body Section
+                        tr
+                            td.body-section
+                                h2 Welcome, #{user_name}!
+                                p We're thrilled to have you join the Urban Lens community. Get ready to explore the world's most vibrant cities through unique tours and experiences.
+                                p With Urban Lens, you can easily discover, book, and enjoy curated tours led by local experts. Whether you're a history buff, a foodie, or an art lover, we have a tour for you.
+                                p To get started, you can browse our top-rated tours or search for a specific experience.
+                                .cta-button
+                                    a(href=`[TOUR_LINK_URL]`) Explore Tours
+                                p If you have any questions, feel free to reply to this email. Our team is here to help!
+                                p Happy exploring,
+                                p The Urban Lens Team
+                        //- Footer Section
+                        tr
+                            td.footer
+                                table()
+                                    tr
+                                        td()
+                                            p &copy; 2025 Urban Lens. All rights reserved.
+                                        td()
+                                            table()
+                                                tr
+                                                    td(style="padding: 0 5px;")
+                                                        a(href="[SOCIAL_LINK_URL]")
+                                                            img(src="[TWITTER_ICON_URL]" alt="Twitter" width="38" height="38" style="display: block;")
+                                                    td(style="padding: 0 5px;")
+                                                        a(href="[SOCIAL_LINK_URL]")
+                                                            img(src="[INSTAGRAM_ICON_URL]" alt="Instagram" width="38" height="38" style="display: block;")

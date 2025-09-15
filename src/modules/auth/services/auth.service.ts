@@ -3,9 +3,10 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { RegisterDto } from '@/common/dto/auth/register.dto';
-import { TokenService } from '../../helper/token/token.service';
+import { TokenService } from '@/common/core/token/token.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from '@/common/dto/auth/login.dto';
 import { UserRepository } from '@/modules/auth/infra/repository/User.repository';
@@ -19,9 +20,13 @@ import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
 import { RedisRegisterConfirmRepository } from '@/modules/auth/infra/repository/RedisRegisterConfirm.repository';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
 import { UserEntity } from '@/modules/auth/domain/User.entity';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
 
 @Injectable()
 export class AuthService extends CoreService {
+  private readonly LOGGER = new Logger(AuthService.name);
+
   constructor(
     private readonly redisRegisterConfirmRepository: RedisRegisterConfirmRepository,
     private readonly userRepository: UserRepository,
@@ -31,7 +36,9 @@ export class AuthService extends CoreService {
     super();
   }
 
-  private readonly LOGGER = new Logger(AuthService.name);
+  resendOtp(_: RegisterResendOtpDto): Promise<any> {
+    throw new Error('Method not implemented.');
+  }
 
   async register(createAuthDto: RegisterDto): Promise<RegisterResponseDto> {
     const userExistsDb = await this.userRepository.repo.existsBy({
@@ -92,6 +99,14 @@ export class AuthService extends CoreService {
     userEntity.password = await bcrypt.hash(createAuthDto.password, 10);
     const user = await this.userRepository.repo.save(userEntity);
 
+    await this.emailNotificationService.sendEmail({
+      to: user.email,
+      template: EmailTemplates.WELCOME,
+      context: {
+        user_name: user.firstName + ' ' + user.lastName,
+      },
+    });
+
     const response = this.mapTo(UserResponseDto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
@@ -121,7 +136,26 @@ export class AuthService extends CoreService {
     return response;
   }
 
-  resendOtp(_: RegisterResendOtpDto) {
-    return null;
+  async changePassword(userDto: JwtTokenDto, dto: ChangePasswordDto) {
+    const user = await this.userRepository.repo.findOneBy({
+      id: userDto.sub,
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      dto.currentPassword,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    user.password = await bcrypt.hash(dto.newPassword, 10);
+
+    return this.userRepository.repo.update({ id: user.id }, user);
   }
 }

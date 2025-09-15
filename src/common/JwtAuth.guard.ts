@@ -5,7 +5,7 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { TokenService } from '@/modules/helper/token/token.service';
+import { TokenService } from '@/common/core/token/token.service';
 import { Request } from 'express';
 
 @Injectable()
@@ -31,9 +31,11 @@ export class JwtAuthGuard implements CanActivate {
     const token = authHeader.split(' ')[1];
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const decodedToken = await this.jwtService.verifyToken(token);
-      console.log(decodedToken);
+      this.LOGGER.debug('Received token for user ID: ' + decodedToken.sub);
+
+      decodedToken.mapToHeader(request);
+
       return true;
     } catch (e) {
       this.LOGGER.error(e);

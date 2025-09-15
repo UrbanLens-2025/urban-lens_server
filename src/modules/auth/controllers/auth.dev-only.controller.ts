@@ -3,7 +3,9 @@ import { AuthService } from '@/modules/auth/services/auth.service';
 import { AccountSeederService } from '@/modules/auth/services/account-seeder.service';
 import { plainToInstance } from 'class-transformer';
 import { LoginDto } from '@/common/dto/auth/login.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Auth - Dev Only')
 @Controller('/auth/dev-only')
 export class AuthDevOnlyController {
   constructor(

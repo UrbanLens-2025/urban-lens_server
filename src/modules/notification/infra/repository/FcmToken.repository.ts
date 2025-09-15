@@ -7,6 +7,6 @@ import { FcmTokenEntity } from '@/modules/notification/domain/FcmToken.entity';
 export class FcmTokenRepository {
   constructor(
     @InjectRepository(FcmTokenEntity)
-    private readonly repo: Repository<FcmTokenEntity>,
+    public readonly repo: Repository<FcmTokenEntity>,
   ) {}
 }

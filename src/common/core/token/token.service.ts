@@ -1,6 +1,8 @@
 import { UserEntity } from '@/modules/auth/domain/User.entity';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { plainToInstance } from 'class-transformer';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
 @Injectable()
 export class TokenService {
@@ -12,14 +14,17 @@ export class TokenService {
         sub: user.id,
         email: user.email,
         role: user.role,
-      },
+      } satisfies Partial<JwtTokenDto>,
       {
         expiresIn: '1h', // Token expiration time
       },
     );
   }
 
-  async verifyToken(token: string): Promise<any> {
-    return this.jwtService.verifyAsync(token);
+  async verifyToken(token: string): Promise<JwtTokenDto> {
+    return plainToInstance(
+      JwtTokenDto,
+      await this.jwtService.verifyAsync(token),
+    );
   }
 }

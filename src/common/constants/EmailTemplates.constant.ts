@@ -4,6 +4,6 @@ export enum EmailTemplates {
 }
 
 export const EmailSubjects = {
-  [EmailTemplates.WELCOME]: 'Welcome to Our Service!',
+  [EmailTemplates.WELCOME]: 'Welcome to Urban Lens!',
   [EmailTemplates.CONFIRM_OTP]: 'Your OTP Code',
 };

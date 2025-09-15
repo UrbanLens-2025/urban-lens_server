@@ -8,7 +8,9 @@ import { NotificationModule } from '@/modules/notification/Notification.module';
 import { RedisRegisterConfirmRepository } from '@/modules/auth/infra/repository/RedisRegisterConfirm.repository';
 import { AccountSeederService } from '@/modules/auth/services/account-seeder.service';
 import { AuthDevOnlyController } from '@/modules/auth/controllers/auth.dev-only.controller';
-import { TokenModule } from '@/modules/helper/token/token.module';
+import { TokenModule } from '@/common/core/token/token.module';
+import { AuthUserController } from '@/modules/auth/controllers/auth.user.controller';
+import { UserService } from '@/modules/auth/services/user.service';
 
 @Module({
   imports: [
@@ -16,10 +18,17 @@ import { TokenModule } from '@/modules/helper/token/token.module';
     NotificationModule,
     TokenModule,
   ],
-  controllers: [AuthPublicController, AuthDevOnlyController],
+  controllers: [
+    AuthPublicController,
+    AuthDevOnlyController,
+    AuthUserController,
+  ],
   providers: [
+    // repo
     UserRepository,
     RedisRegisterConfirmRepository,
+    // service
+    UserService,
     AuthService,
     AccountSeederService,
   ],

@@ -15,7 +15,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
 import { RedisConfig } from '@/config/redis.config';
 import { FirebaseAdminProvider } from '@/config/firebase.config';
 import { JwtAuthGuard } from '@/common/JwtAuth.guard';
-import { TokenModule } from '@/modules/helper/token/token.module';
+import { TokenModule } from '@/common/core/token/token.module';
 
 @Module({
   imports: [
