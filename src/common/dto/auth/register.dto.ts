@@ -54,12 +54,4 @@ export class RegisterDto {
   @MinLength(10)
   @IsPhoneNumber()
   phoneNumber: string;
-
-  @IsEnum(Role)
-  @IsNotEmpty()
-  @ApiProperty({
-    description: 'The role of the user',
-    example: Role.USER,
-  })
-  role: Role = Role.USER;
 }

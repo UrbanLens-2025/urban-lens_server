@@ -22,6 +22,7 @@ import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
 import { UserEntity } from '@/modules/auth/domain/User.entity';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
+import { Role } from '@/common/constants/Role.constant';
 
 @Injectable()
 export class AuthService extends CoreService {
@@ -97,6 +98,7 @@ export class AuthService extends CoreService {
 
     const userEntity = this.mapTo_Raw(UserEntity, createAuthDto);
     userEntity.password = await bcrypt.hash(createAuthDto.password, 10);
+    userEntity.role = Role.USER;
     const user = await this.userRepository.repo.save(userEntity);
 
     await this.emailNotificationService.sendEmail({
