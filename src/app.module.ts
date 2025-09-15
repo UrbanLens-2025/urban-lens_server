@@ -13,6 +13,7 @@ import { BullConfig } from '@/config/bull.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { RedisConfig } from '@/config/redis.config';
+import { FirebaseAdminProvider } from '@/config/firebase.config';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { RedisConfig } from '@/config/redis.config';
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptorConfig,
     },
+    FirebaseAdminProvider,
     AppService,
   ],
 })

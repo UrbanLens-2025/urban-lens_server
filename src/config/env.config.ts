@@ -3,6 +3,7 @@ import * as joi from 'joi';
 export interface Environment {
   NODE_ENV: 'development' | 'production' | 'test';
   PORT: number;
+  ENABLE_ACCOUNT_SEEDING: boolean;
 
   DATABASE_HOST: string;
   DATABASE_PORT: number;
@@ -23,6 +24,10 @@ export interface Environment {
 
   JWT_SECRET: string;
   JWT_EXPIRES_IN: string;
+
+  FIREBASE_PROJECT_ID: string;
+  FIREBASE_CLIENT_EMAIL: string;
+  FIREBASE_PRIVATE_KEY: string;
 }
 
 export const envConfig = joi.object<Environment>({
@@ -31,6 +36,7 @@ export const envConfig = joi.object<Environment>({
     .valid('development', 'production', 'test')
     .default('development'),
   PORT: joi.number().default(3000),
+  ENABLE_ACCOUNT_SEEDING: joi.boolean().default(false),
 
   DATABASE_HOST: joi.string().required(),
   DATABASE_PORT: joi.number().required(),
@@ -51,4 +57,8 @@ export const envConfig = joi.object<Environment>({
 
   JWT_SECRET: joi.string().required(),
   JWT_EXPIRES_IN: joi.string().required(),
+
+  FIREBASE_PROJECT_ID: joi.string().required(),
+  FIREBASE_CLIENT_EMAIL: joi.string().required(),
+  FIREBASE_PRIVATE_KEY: joi.string().required(),
 });

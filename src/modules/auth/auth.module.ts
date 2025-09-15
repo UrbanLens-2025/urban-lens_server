@@ -10,6 +10,8 @@ import { UserEntity } from '@/modules/auth/domain/User.entity';
 import { UserRepository } from '@/modules/auth/infra/repository/User.repository';
 import { NotificationModule } from '@/modules/notification/Notification.module';
 import { RedisRegisterConfirmRepository } from '@/modules/auth/infra/repository/RedisRegisterConfirm.repository';
+import { AccountSeederService } from '@/modules/auth/services/account-seeder.service';
+import { AuthDevOnlyController } from '@/modules/auth/controllers/auth.dev-only.controller';
 
 @Module({
   imports: [
@@ -20,12 +22,13 @@ import { RedisRegisterConfirmRepository } from '@/modules/auth/infra/repository/
     }),
     NotificationModule,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, AuthDevOnlyController],
   providers: [
     UserRepository,
     RedisRegisterConfirmRepository,
     AuthService,
     TokenService,
+    AccountSeederService,
   ],
 })
 export class AuthModule {}
