@@ -1,6 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsNotEmptyObject } from 'class-validator';
-import type { Notification } from 'firebase-admin/messaging';
+
+class Notification {
+  @ApiProperty()
+  title?: string;
+  @ApiProperty()
+  body?: string;
+  @ApiProperty()
+  imageUrl?: string;
+}
 
 export class SendPushNotificationDto {
   @ApiProperty()

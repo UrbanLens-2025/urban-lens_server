@@ -1,4 +1,4 @@
-import { Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { SendPushNotificationDto } from '@/common/dto/notification/SendPushNotification.dto';
 import { FirebaseNotificationService } from '@/modules/notification/service/FirebaseNotification.service';
 
@@ -9,7 +9,7 @@ export class PushNotificationDevOnlyController {
   ) {}
 
   @Post('/send')
-  sendNotificationTo(dto: SendPushNotificationDto) {
+  sendNotificationTo(@Body() dto: SendPushNotificationDto) {
     return this.firebaseNotificationService.sendNotificationTo(dto);
   }
 }
