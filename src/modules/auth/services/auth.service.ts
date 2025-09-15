@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { RegisterDto } from '@/common/dto/auth/register.dto';
-import { TokenService } from './token.service';
+import { TokenService } from '../../helper/token/token.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from '@/common/dto/auth/login.dto';
 import { UserRepository } from '@/modules/auth/infra/repository/User.repository';

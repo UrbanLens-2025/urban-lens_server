@@ -8,9 +8,13 @@ import { MailerConfig } from '@/config/mailer.config';
 import { ConfigModule } from '@nestjs/config';
 import { FirebaseNotificationService } from '@/modules/notification/service/FirebaseNotification.service';
 import { PushNotificationController } from '@/modules/notification/interfaces/PushNotification.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { FcmTokenEntity } from '@/modules/notification/domain/FcmToken.entity';
+import { FcmTokenRepository } from '@/modules/notification/infra/repository/FcmToken.repository';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([FcmTokenEntity]),
     MailerModule.forRootAsync({
       useClass: MailerConfig,
       imports: [ConfigModule],
@@ -18,6 +22,9 @@ import { PushNotificationController } from '@/modules/notification/interfaces/Pu
     BullModule.registerQueue({ name: 'email-notifications' }),
   ],
   providers: [
+    // repo
+    FcmTokenRepository,
+    // service
     EmailNotificationService,
     EmailNotificationConsumerService,
     FirebaseNotificationService,

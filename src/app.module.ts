@@ -6,7 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PersistenceConfig } from '@/config/persistence.config';
 import { envConfig } from '@/config/env.config';
 import { NotificationModule } from '@/modules/notification/Notification.module';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptorConfig } from '@/common/interceptor/response.interceptor';
 import { BullModule } from '@nestjs/bullmq';
 import { BullConfig } from '@/config/bull.config';
@@ -14,6 +14,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { RedisConfig } from '@/config/redis.config';
 import { FirebaseAdminProvider } from '@/config/firebase.config';
+import { JwtAuthGuard } from '@/common/JwtAuth.guard';
+import { TokenModule } from '@/modules/helper/token/token.module';
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { FirebaseAdminProvider } from '@/config/firebase.config';
       cache: true,
       validationSchema: envConfig,
     }),
+    TokenModule,
     RedisModule.forRootAsync({
       useClass: RedisConfig,
       imports: [ConfigModule],
@@ -42,11 +45,16 @@ import { FirebaseAdminProvider } from '@/config/firebase.config';
   controllers: [AppController],
   providers: [
     {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptorConfig,
     },
     FirebaseAdminProvider,
     AppService,
   ],
+  exports: [],
 })
 export class AppModule {}
