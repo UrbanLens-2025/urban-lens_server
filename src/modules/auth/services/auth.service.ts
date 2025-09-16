@@ -10,7 +10,7 @@ import { TokenService } from '@/common/core/token/token.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from '@/common/dto/auth/login.dto';
 import { UserRepository } from '@/modules/auth/infra/repository/User.repository';
-import { UserResponseDto } from '@/common/dto/auth/UserResponse.dto';
+import { UserData, UserResponseDto } from '@/common/dto/auth/UserResponse.dto';
 import { CoreService } from '@/common/core/Core.service';
 import { RegisterResponseDto } from '@/common/dto/auth/RegisterResponse.dto';
 import { randomUUID } from 'crypto';
@@ -109,7 +109,8 @@ export class AuthService extends CoreService {
       },
     });
 
-    const response = this.mapTo(UserResponseDto, user);
+    const response = new UserResponseDto();
+    response.user = this.mapTo(UserData, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }
