@@ -10,7 +10,7 @@ import { TokenService } from '@/common/core/token/token.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from '@/common/dto/auth/login.dto';
 import { UserRepository } from '@/modules/auth/infra/repository/User.repository';
-import { UserData, UserResponseDto } from '@/common/dto/auth/UserResponse.dto';
+import { UserResponse } from '@/common/dto/auth/UserResponse.dto';
 import { CoreService } from '@/common/core/Core.service';
 import { RegisterResponseDto } from '@/common/dto/auth/RegisterResponse.dto';
 import { randomUUID } from 'crypto';
@@ -84,7 +84,7 @@ export class AuthService extends CoreService {
     return response;
   }
 
-  async registerConfirm(dto: RegisterConfirmDto): Promise<UserResponseDto> {
+  async registerConfirm(dto: RegisterConfirmDto): Promise<UserResponse.Dto> {
     const createAuthDto =
       await this.redisRegisterConfirmRepository.getAndValidate(
         dto.email,
@@ -109,13 +109,13 @@ export class AuthService extends CoreService {
       },
     });
 
-    const response = new UserResponseDto();
-    response.user = this.mapTo(UserData, user);
+    const response = new UserResponse.Dto();
+    response.user = this.mapTo(UserResponse.UserData, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }
 
-  async login(loginDto: LoginDto): Promise<UserResponseDto> {
+  async login(loginDto: LoginDto): Promise<UserResponse.Dto> {
     const user = await this.userRepository.repo.findOneBy({
       email: loginDto.email,
     });
@@ -133,8 +133,8 @@ export class AuthService extends CoreService {
       throw new BadRequestException('Invalid password');
     }
 
-    const response = this.mapTo(UserResponseDto, user);
-
+    const response = new UserResponse.Dto();
+    response.user = this.mapTo(UserResponse.UserData, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }
