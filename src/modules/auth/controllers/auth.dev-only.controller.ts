@@ -18,8 +18,9 @@ export class AuthDevOnlyController {
   @Post('/login/user')
   loginAsUser() {
     const userDetails = this.accountSeederService.DEFAULT_USERS.find(
-      (i) => i.role === Role.ADMIN,
+      (i) => i.role === Role.USER,
     );
+    console.log(userDetails);
     const loginDto = plainToInstance(LoginDto, userDetails);
     return this.authService.loginUser(loginDto);
   }
@@ -31,6 +32,6 @@ export class AuthDevOnlyController {
       (i) => i.role === Role.ADMIN,
     );
     const loginDto = plainToInstance(LoginDto, adminDetails);
-    return this.authService.loginUser(loginDto);
+    return this.authService.loginAdmin(loginDto);
   }
 }
