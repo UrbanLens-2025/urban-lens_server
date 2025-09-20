@@ -4,6 +4,8 @@ import { Role } from '@/common/constants/Role.constant';
 export namespace UserResponse {
   export class Dto {
     @Expose()
+    id: string;
+    @Expose()
     email: string;
     @Expose()
     firstName: string;
