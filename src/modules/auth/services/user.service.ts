@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserRepository } from '@/modules/auth/infra/repository/User.repository';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { CoreService } from '@/common/core/Core.service';
-import { UserResponse } from '@/common/dto/auth/UserResponse.dto';
 import { UpdateUserDto } from '@/common/dto/auth/UpdateUser.dto';
+import { UserResponse } from '@/common/dto/auth/UserResponse.dto';
 
 @Injectable()
 export class UserService extends CoreService {

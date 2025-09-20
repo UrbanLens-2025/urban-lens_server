@@ -1,8 +1,8 @@
-import { Role } from '@/common/constants/Role.constant';
 import { Expose } from 'class-transformer';
+import { Role } from '@/common/constants/Role.constant';
 
 export namespace UserResponse {
-  export class UserData {
+  export class Dto {
     @Expose()
     email: string;
     @Expose()
@@ -13,13 +13,5 @@ export namespace UserResponse {
     phoneNumber: string;
     @Expose()
     role: Role;
-  }
-
-  export class Dto {
-    @Expose()
-    token: string;
-
-    @Expose()
-    user: UserData;
   }
 }

@@ -10,7 +10,7 @@ import { TokenService } from '@/common/core/token/token.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from '@/common/dto/auth/login.dto';
 import { UserRepository } from '@/modules/auth/infra/repository/User.repository';
-import { UserResponse } from '@/common/dto/auth/UserResponse.dto';
+import { UserLoginResponse } from '@/common/dto/auth/UserLoginResponse.dto';
 import { CoreService } from '@/common/core/Core.service';
 import { RegisterResponseDto } from '@/common/dto/auth/RegisterResponse.dto';
 import { randomUUID } from 'crypto';
@@ -23,6 +23,7 @@ import { UserEntity } from '@/modules/auth/domain/User.entity';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
 import { Role } from '@/common/constants/Role.constant';
+import { UserResponse } from '@/common/dto/auth/UserResponse.dto';
 
 @Injectable()
 export class AuthService extends CoreService {
@@ -84,7 +85,7 @@ export class AuthService extends CoreService {
     return response;
   }
 
-  async registerConfirm(dto: RegisterConfirmDto): Promise<UserResponse.Dto> {
+  async registerConfirm(dto: RegisterConfirmDto): Promise<UserLoginResponse.Dto> {
     const createAuthDto =
       await this.redisRegisterConfirmRepository.getAndValidate(
         dto.email,
@@ -109,13 +110,13 @@ export class AuthService extends CoreService {
       },
     });
 
-    const response = new UserResponse.Dto();
-    response.user = this.mapTo(UserResponse.UserData, user);
+    const response = new UserLoginResponse.Dto();
+    response.user = this.mapTo(UserResponse.Dto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }
 
-  async login(loginDto: LoginDto): Promise<UserResponse.Dto> {
+  async login(loginDto: LoginDto): Promise<UserLoginResponse.Dto> {
     const user = await this.userRepository.repo.findOneBy({
       email: loginDto.email,
     });
@@ -133,8 +134,8 @@ export class AuthService extends CoreService {
       throw new BadRequestException('Invalid password');
     }
 
-    const response = new UserResponse.Dto();
-    response.user = this.mapTo(UserResponse.UserData, user);
+    const response = new UserLoginResponse.Dto();
+    response.user = this.mapTo(UserResponse.Dto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }
