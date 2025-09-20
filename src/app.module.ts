@@ -16,6 +16,7 @@ import { RedisConfig } from '@/config/redis.config';
 import { FirebaseAdminProvider } from '@/config/firebase.config';
 import { JwtAuthGuard } from '@/common/JwtAuth.guard';
 import { TokenModule } from '@/common/core/token/token.module';
+import { RolesGuard } from '@/common/Roles.guard';
 
 @Module({
   imports: [
@@ -47,6 +48,10 @@ import { TokenModule } from '@/common/core/token/token.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
     {
       provide: APP_INTERCEPTOR,

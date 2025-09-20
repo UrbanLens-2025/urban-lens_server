@@ -42,7 +42,7 @@ export class AuthService extends CoreService {
     throw new Error('Method not implemented.');
   }
 
-  async register(createAuthDto: RegisterDto): Promise<RegisterResponseDto> {
+  async registerUser(createAuthDto: RegisterDto): Promise<RegisterResponseDto> {
     const userExistsDb = await this.userRepository.repo.existsBy({
       email: createAuthDto.email,
     });
@@ -85,7 +85,9 @@ export class AuthService extends CoreService {
     return response;
   }
 
-  async registerConfirm(dto: RegisterConfirmDto): Promise<UserLoginResponse.Dto> {
+  async registerUserConfirm(
+    dto: RegisterConfirmDto,
+  ): Promise<UserLoginResponse.Dto> {
     const createAuthDto =
       await this.redisRegisterConfirmRepository.getAndValidate(
         dto.email,
@@ -116,11 +118,28 @@ export class AuthService extends CoreService {
     return response;
   }
 
-  async login(loginDto: LoginDto): Promise<UserLoginResponse.Dto> {
+  async loginUser(loginDto: LoginDto): Promise<UserLoginResponse.Dto> {
     const user = await this.userRepository.repo.findOneBy({
       email: loginDto.email,
+      role: Role.USER,
     });
 
+    return this.validateLogin(loginDto, user);
+  }
+
+  async loginAdmin(loginDto: LoginDto): Promise<UserLoginResponse.Dto> {
+    const user = await this.userRepository.repo.findOneBy({
+      email: loginDto.email,
+      role: Role.ADMIN,
+    });
+
+    return this.validateLogin(loginDto, user);
+  }
+
+  private async validateLogin(
+    loginDto: LoginDto,
+    user: UserEntity | null,
+  ): Promise<UserLoginResponse.Dto> {
     if (!user) {
       throw new BadRequestException('User not found');
     }

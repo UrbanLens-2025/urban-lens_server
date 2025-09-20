@@ -4,8 +4,9 @@ import { AccountSeederService } from '@/modules/auth/services/account-seeder.ser
 import { plainToInstance } from 'class-transformer';
 import { LoginDto } from '@/common/dto/auth/login.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Role } from '@/common/constants/Role.constant';
 
-@ApiTags('Auth - Dev Only')
+@ApiTags('Auth - DEVELOPMENT')
 @Controller('/auth/dev-only')
 export class AuthDevOnlyController {
   constructor(
@@ -16,8 +17,20 @@ export class AuthDevOnlyController {
   @ApiOperation({ summary: 'Get User JWT Token' })
   @Post('/login/user')
   loginAsUser() {
-    const userDetails = this.accountSeederService.DEFAULT_USER_DETAILS;
+    const userDetails = this.accountSeederService.DEFAULT_USERS.find(
+      (i) => i.role === Role.ADMIN,
+    );
     const loginDto = plainToInstance(LoginDto, userDetails);
-    return this.authService.login(loginDto);
+    return this.authService.loginUser(loginDto);
+  }
+
+  @ApiOperation({ summary: 'Get Admin JWT Token' })
+  @Post('/login/admin')
+  loginAsAdmin() {
+    const adminDetails = this.accountSeederService.DEFAULT_USERS.find(
+      (i) => i.role === Role.ADMIN,
+    );
+    const loginDto = plainToInstance(LoginDto, adminDetails);
+    return this.authService.loginUser(loginDto);
   }
 }

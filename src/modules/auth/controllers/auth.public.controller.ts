@@ -15,7 +15,7 @@ export class AuthPublicController {
   @ApiOperation({ summary: 'Create new user' })
   @Post('/register/user')
   register(@Body() createAuthDto: RegisterDto) {
-    return this.authService.register(createAuthDto);
+    return this.authService.registerUser(createAuthDto);
   }
 
   @ApiOperation({
@@ -24,7 +24,7 @@ export class AuthPublicController {
   })
   @Post('/register/confirm')
   registerConfirm(@Body() dto: RegisterConfirmDto) {
-    return this.authService.registerConfirm(dto);
+    return this.authService.registerUserConfirm(dto);
   }
 
   @ApiOperation({
@@ -37,10 +37,16 @@ export class AuthPublicController {
   }
 
   @ApiOperation({
-    summary: 'Login for all accounts',
+    summary: 'Login as User',
   })
   @Post('login')
   login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+    return this.authService.loginUser(loginDto);
+  }
+
+  @ApiOperation({ summary: 'Login as Admin' })
+  @Post('/login/admin')
+  loginAsAdmin(@Body() dto: LoginDto) {
+    return this.authService.loginAdmin(dto);
   }
 }
