@@ -45,6 +45,15 @@ export class UserEntity {
   @Column({ name: 'is_verified', type: 'boolean', default: false })
   isVerified: boolean;
 
+  @Column({ name: 'avatar_url', type: 'varchar', default: null })
+  avatarUrl: string | null;
+
+  @Column({ name: 'cover_url', type: 'varchar', default: null })
+  coverUrl: string | null;
+
+  @Column({ name: 'has_onboarded', type: 'boolean', default: false })
+  hasOnboarded: boolean;
+
   @Column({
     name: 'role',
     type: 'enum',

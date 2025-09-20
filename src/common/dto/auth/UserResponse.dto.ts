@@ -13,5 +13,9 @@ export namespace UserResponse {
     phoneNumber: string;
     @Expose()
     role: Role;
+    @Expose()
+    avatarUrl: string | null;
+    @Expose()
+    coverUrl: string | null;
   }
 }
