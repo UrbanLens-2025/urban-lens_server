@@ -10,9 +10,10 @@ import { UpdateUserAccountDto } from '@/common/dto/auth/UpdateUserAccount.dto';
 import { UserAccountResponse } from '@/common/dto/auth/UserAccountResponse.dto';
 import { OnboardUser } from '@/common/dto/auth/Onboarding.dto';
 import { UpdateResult } from 'typeorm';
+import { IUserAuthService } from '@/modules/auth/app/IUser.auth.service';
 
 @Injectable()
-export class UserAuthService extends CoreService {
+export class UserAuthService extends CoreService implements IUserAuthService {
   constructor(private readonly accountRepository: AccountRepository) {
     super();
   }

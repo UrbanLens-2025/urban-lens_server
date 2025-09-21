@@ -24,9 +24,10 @@ import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
 import { Role } from '@/common/constants/Role.constant';
 import { UserAccountResponse } from '@/common/dto/auth/UserAccountResponse.dto';
+import { IAuthService } from '@/modules/auth/app/IAuth.service';
 
 @Injectable()
-export class AuthService extends CoreService {
+export class AuthService extends CoreService implements IAuthService {
   private readonly LOGGER = new Logger(AuthService.name);
 
   constructor(

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { RegisterAccountDto } from '@/common/dto/auth/RegisterAccount.dto';
+import { RegisterUserDto } from '@/common/dto/auth/RegisterUser.dto';
 
 @Injectable()
 export class RedisRegisterConfirmRepository {
@@ -15,7 +15,7 @@ export class RedisRegisterConfirmRepository {
   }
 
   async set(
-    dto: RegisterAccountDto,
+    dto: RegisterUserDto,
     confirmCode: string,
     otpCode: string,
   ): Promise<boolean> {
@@ -36,14 +36,14 @@ export class RedisRegisterConfirmRepository {
     email: string,
     confirmCode: string,
     otpCode: string,
-  ): Promise<RegisterAccountDto | null> {
+  ): Promise<RegisterUserDto | null> {
     const key =
       RedisRegisterConfirmRepository.REGISTER_CONFIRM_KEY.concat(email);
     const dataJson = await this.redis.get(key);
 
     if (!dataJson) return null;
 
-    const data = JSON.parse(dataJson) as RegisterAccountDto & {
+    const data = JSON.parse(dataJson) as RegisterUserDto & {
       confirmCode: string;
       otpCode: string;
     };

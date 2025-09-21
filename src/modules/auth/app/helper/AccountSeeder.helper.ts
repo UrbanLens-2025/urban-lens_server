@@ -7,13 +7,13 @@ import { Environment } from '@/config/env.config';
 import { In } from 'typeorm';
 
 @Injectable()
-export class AccountSeederService implements OnModuleInit {
+export class AccountSeederHelper implements OnModuleInit {
   constructor(
     private readonly userRepository: AccountRepository,
     private readonly configService: ConfigService<Environment>,
   ) {}
 
-  private readonly LOGGER = new Logger(AccountSeederService.name);
+  private readonly LOGGER = new Logger(AccountSeederHelper.name);
   public readonly DEFAULT_USER_DETAILS = {
     email: 'danganhsang2003@gmail.com',
     password: '123456',

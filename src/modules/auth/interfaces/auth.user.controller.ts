@@ -1,20 +1,20 @@
-import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Patch, Post } from '@nestjs/common';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UserAuthService } from '@/modules/auth/app/User.auth.service';
 import { UpdateUserAccountDto } from '@/common/dto/auth/UpdateUserAccount.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
-import { AuthService } from '@/modules/auth/app/Auth.service';
 import { OnboardUser } from '@/common/dto/auth/Onboarding.dto';
+import { IUserAuthService } from '@/modules/auth/app/IUser.auth.service';
+import { IAuthService } from '@/modules/auth/app/IAuth.service';
 
 @ApiTags('Auth - User')
 @ApiBearerAuth()
 @Controller('/user/auth')
 export class AuthUserController {
   constructor(
-    private readonly userService: UserAuthService,
-    private readonly authService: AuthService,
+    @Inject(IUserAuthService) private readonly userService: IUserAuthService,
+    @Inject(IAuthService) private readonly authService: IAuthService,
   ) {}
 
   @ApiOperation({
