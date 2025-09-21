@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -29,7 +29,7 @@ export class AuthUserController {
   @ApiOperation({
     summary: 'Update current user profile',
   })
-  @Put('/profile')
+  @Patch('/profile')
   updateProfile(@AuthUser() user: JwtTokenDto, @Body() dto: UpdateUserDto) {
     return this.userService.updateUser(user, dto);
   }
