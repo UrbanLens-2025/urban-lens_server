@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from '@/modules/auth/services/auth.service';
-import { AuthPublicController } from '@/modules/auth/controllers/auth.public.controller';
+import { AuthService } from '@/modules/auth/app/auth.service';
+import { AuthPublicController } from '@/modules/auth/interfaces/auth.public.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from '@/modules/auth/domain/User.entity';
 import { UserRepository } from '@/modules/auth/infra/repository/User.repository';
 import { NotificationModule } from '@/modules/notification/Notification.module';
 import { RedisRegisterConfirmRepository } from '@/modules/auth/infra/repository/RedisRegisterConfirm.repository';
-import { AccountSeederService } from '@/modules/auth/services/account-seeder.service';
-import { AuthDevOnlyController } from '@/modules/auth/controllers/auth.dev-only.controller';
+import { AccountSeederService } from '@/modules/auth/app/account-seeder.service';
+import { AuthDevOnlyController } from '@/modules/auth/interfaces/auth.dev-only.controller';
 import { TokenModule } from '@/common/core/token/token.module';
-import { AuthUserController } from '@/modules/auth/controllers/auth.user.controller';
-import { UserService } from '@/modules/auth/services/user.service';
+import { AuthUserController } from '@/modules/auth/interfaces/auth.user.controller';
+import { UserService } from '@/modules/auth/app/user.service';
 
 @Module({
   imports: [
@@ -27,7 +27,7 @@ import { UserService } from '@/modules/auth/services/user.service';
     // repo
     UserRepository,
     RedisRegisterConfirmRepository,
-    // service
+    // app
     UserService,
     AuthService,
     AccountSeederService,

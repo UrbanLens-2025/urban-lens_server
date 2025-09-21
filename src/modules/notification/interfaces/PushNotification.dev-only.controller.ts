@@ -1,6 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { SendPushNotificationDto } from '@/common/dto/notification/SendPushNotification.dto';
-import { FirebaseNotificationService } from '@/modules/notification/service/FirebaseNotification.service';
+import { SendRawPushNotificationDto } from '@/common/dto/notification/SendRawPushNotification.dto';
+import { FirebaseNotificationService } from '@/modules/notification/app/FirebaseNotification.service';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('/dev-only/notifications')
 export class PushNotificationDevOnlyController {

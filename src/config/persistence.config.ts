@@ -18,6 +18,7 @@ export class PersistenceConfig implements TypeOrmOptionsFactory {
       password: this.configService.get('DATABASE_PASSWORD'),
       database: this.configService.get('DATABASE_NAME'),
       synchronize: this.configService.get('DATABASE_ENABLE_SYNC'),
+      schema: 'public',
       logging: 'all',
       autoLoadEntities: true,
     };

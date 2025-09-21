@@ -2,10 +2,10 @@ import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UserService } from '@/modules/auth/services/user.service';
+import { UserService } from '@/modules/auth/app/user.service';
 import { UpdateUserDto } from '@/common/dto/auth/UpdateUser.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
-import { AuthService } from '@/modules/auth/services/auth.service';
+import { AuthService } from '@/modules/auth/app/auth.service';
 import { OnboardUser } from '@/common/dto/auth/Onboarding.dto';
 
 @ApiTags('Auth - User')

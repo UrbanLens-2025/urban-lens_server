@@ -7,7 +7,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { RegisterDeviceDto } from '@/common/dto/notification/RegisterDevice.dto';
-import { FirebaseNotificationService } from '@/modules/notification/service/FirebaseNotification.service';
+import { FirebaseNotificationService } from '@/modules/notification/app/FirebaseNotification.service';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 

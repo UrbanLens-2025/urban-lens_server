@@ -15,7 +15,7 @@ import { CoreService } from '@/common/core/Core.service';
 import { RegisterResponseDto } from '@/common/dto/auth/RegisterResponse.dto';
 import { randomUUID } from 'crypto';
 import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
-import { EmailNotificationService } from '@/modules/notification/service/EmailNotification.service';
+import { EmailNotificationService } from '@/modules/notification/app/EmailNotification.service';
 import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
 import { RedisRegisterConfirmRepository } from '@/modules/auth/infra/repository/RedisRegisterConfirm.repository';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
