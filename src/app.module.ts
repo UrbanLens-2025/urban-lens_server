@@ -18,6 +18,7 @@ import { FirebaseAdminProvider } from '@/config/firebase.config';
 import { JwtAuthGuard } from '@/common/JwtAuth.guard';
 import { TokenModule } from '@/common/core/token/token.module';
 import { RolesGuard } from '@/common/Roles.guard';
+import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { RolesGuard } from '@/common/Roles.guard';
     NotificationModule,
     AuthModule,
     AccountModule,
+    FileStorageModule,
   ],
   controllers: [AppController],
   providers: [
