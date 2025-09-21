@@ -1,7 +1,5 @@
-import { Role } from '@/common/constants/Role.constant';
 import {
   IsEmail,
-  IsEnum,
   IsNotEmpty,
   IsPhoneNumber,
   IsString,
@@ -9,7 +7,7 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class RegisterDto {
+export class RegisterAccountDto {
   @IsEmail()
   @IsNotEmpty()
   @ApiProperty({

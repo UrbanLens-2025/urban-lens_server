@@ -1,7 +1,7 @@
 import { Expose } from 'class-transformer';
 import { Role } from '@/common/constants/Role.constant';
 
-export namespace UserResponse {
+export namespace UserAccountResponse {
   export class Dto {
     @Expose()
     id: string;

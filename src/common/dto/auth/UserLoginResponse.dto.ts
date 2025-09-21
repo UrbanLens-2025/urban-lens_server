@@ -1,5 +1,5 @@
 import { Expose } from 'class-transformer';
-import { UserResponse } from '@/common/dto/auth/UserResponse.dto';
+import { UserAccountResponse } from '@/common/dto/auth/UserAccountResponse.dto';
 
 export namespace UserLoginResponse {
   export class Dto {
@@ -7,6 +7,6 @@ export namespace UserLoginResponse {
     token: string;
 
     @Expose()
-    user: UserResponse.Dto;
+    user: UserAccountResponse.Dto;
   }
 }

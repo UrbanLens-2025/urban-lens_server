@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UpdateUserDto {
+export class UpdateUserAccountDto {
   @IsOptional()
   @IsNotEmpty()
   @MaxLength(255)

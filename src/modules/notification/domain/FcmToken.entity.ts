@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import { UserEntity } from '@/modules/auth/domain/User.entity';
+import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 
 @Entity({ name: 'fcm-token' })
 @Unique(['token'])
@@ -21,13 +21,13 @@ export class FcmTokenEntity {
   @Column({ name: 'device_info', type: 'varchar', length: 255, nullable: true })
   deviceInfo: string | null;
 
-  @ManyToOne(() => UserEntity, (user) => user.id, {
+  @ManyToOne(() => AccountEntity, (user) => user.id, {
     nullable: false,
     lazy: true,
     createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: AccountEntity;
 
   @Column({ name: 'user_id' })
   userId: string;

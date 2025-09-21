@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { AuthService } from '@/modules/auth/app/auth.service';
-import { RegisterDto } from '@/common/dto/auth/register.dto';
+import { RegisterAccountDto } from '@/common/dto/auth/RegisterAccount.dto';
 import { LoginDto } from '@/common/dto/auth/login.dto';
 import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
@@ -14,7 +14,7 @@ export class AuthPublicController {
 
   @ApiOperation({ summary: 'Create new user' })
   @Post('/register/user')
-  register(@Body() createAuthDto: RegisterDto) {
+  register(@Body() createAuthDto: RegisterAccountDto) {
     return this.authService.registerUser(createAuthDto);
   }
 

@@ -1,4 +1,4 @@
-import { UserEntity } from '@/modules/auth/domain/User.entity';
+import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { plainToInstance } from 'class-transformer';
@@ -8,7 +8,7 @@ import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 export class TokenService {
   constructor(private readonly jwtService: JwtService) {}
 
-  async generateToken(user: Partial<UserEntity>): Promise<string> {
+  async generateToken(user: Partial<AccountEntity>): Promise<string> {
     return this.jwtService.signAsync(
       {
         sub: user.id,

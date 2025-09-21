@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { UserRepository } from '@/modules/auth/infra/repository/User.repository';
+import { AccountRepository } from '@/modules/auth/infra/repository/Account.repository';
 import { Role } from '@/common/constants/Role.constant';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
@@ -9,7 +9,7 @@ import { In } from 'typeorm';
 @Injectable()
 export class AccountSeederService implements OnModuleInit {
   constructor(
-    private readonly userRepository: UserRepository,
+    private readonly userRepository: AccountRepository,
     private readonly configService: ConfigService<Environment>,
   ) {}
 

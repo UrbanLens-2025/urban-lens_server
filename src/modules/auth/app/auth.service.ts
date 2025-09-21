@@ -5,11 +5,11 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { RegisterDto } from '@/common/dto/auth/register.dto';
+import { RegisterAccountDto } from '@/common/dto/auth/RegisterAccount.dto';
 import { TokenService } from '@/common/core/token/token.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from '@/common/dto/auth/login.dto';
-import { UserRepository } from '@/modules/auth/infra/repository/User.repository';
+import { AccountRepository } from '@/modules/auth/infra/repository/Account.repository';
 import { UserLoginResponse } from '@/common/dto/auth/UserLoginResponse.dto';
 import { CoreService } from '@/common/core/Core.service';
 import { RegisterResponseDto } from '@/common/dto/auth/RegisterResponse.dto';
@@ -19,11 +19,11 @@ import { EmailNotificationService } from '@/modules/notification/app/EmailNotifi
 import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
 import { RedisRegisterConfirmRepository } from '@/modules/auth/infra/repository/RedisRegisterConfirm.repository';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
-import { UserEntity } from '@/modules/auth/domain/User.entity';
+import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
 import { Role } from '@/common/constants/Role.constant';
-import { UserResponse } from '@/common/dto/auth/UserResponse.dto';
+import { UserAccountResponse } from '@/common/dto/auth/UserAccountResponse.dto';
 
 @Injectable()
 export class AuthService extends CoreService {
@@ -31,7 +31,7 @@ export class AuthService extends CoreService {
 
   constructor(
     private readonly redisRegisterConfirmRepository: RedisRegisterConfirmRepository,
-    private readonly userRepository: UserRepository,
+    private readonly userRepository: AccountRepository,
     private readonly tokenService: TokenService,
     private readonly emailNotificationService: EmailNotificationService,
   ) {
@@ -42,7 +42,9 @@ export class AuthService extends CoreService {
     throw new Error('Method not implemented.');
   }
 
-  async registerUser(createAuthDto: RegisterDto): Promise<RegisterResponseDto> {
+  async registerUser(
+    createAuthDto: RegisterAccountDto,
+  ): Promise<RegisterResponseDto> {
     const userExistsDb = await this.userRepository.repo.existsBy({
       email: createAuthDto.email,
     });
@@ -99,7 +101,7 @@ export class AuthService extends CoreService {
       throw new BadRequestException('Invalid confirm code, otp code, or email');
     }
 
-    const userEntity = this.mapTo_Raw(UserEntity, createAuthDto);
+    const userEntity = this.mapTo_Raw(AccountEntity, createAuthDto);
     userEntity.password = await bcrypt.hash(createAuthDto.password, 10);
     userEntity.role = Role.USER;
     const user = await this.userRepository.repo.save(userEntity);
@@ -113,7 +115,7 @@ export class AuthService extends CoreService {
     });
 
     const response = new UserLoginResponse.Dto();
-    response.user = this.mapTo(UserResponse.Dto, user);
+    response.user = this.mapTo(UserAccountResponse.Dto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }
@@ -138,7 +140,7 @@ export class AuthService extends CoreService {
 
   private async validateLogin(
     loginDto: LoginDto,
-    user: UserEntity | null,
+    user: AccountEntity | null,
   ): Promise<UserLoginResponse.Dto> {
     if (!user) {
       throw new BadRequestException('User not found');
@@ -154,7 +156,7 @@ export class AuthService extends CoreService {
     }
 
     const response = new UserLoginResponse.Dto();
-    response.user = this.mapTo(UserResponse.Dto, user);
+    response.user = this.mapTo(UserAccountResponse.Dto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }

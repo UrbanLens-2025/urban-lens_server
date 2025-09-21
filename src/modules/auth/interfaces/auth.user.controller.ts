@@ -2,8 +2,8 @@ import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UserService } from '@/modules/auth/app/user.service';
-import { UpdateUserDto } from '@/common/dto/auth/UpdateUser.dto';
+import { UserAuthService } from '@/modules/auth/app/User.auth.service';
+import { UpdateUserAccountDto } from '@/common/dto/auth/UpdateUserAccount.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
 import { AuthService } from '@/modules/auth/app/auth.service';
 import { OnboardUser } from '@/common/dto/auth/Onboarding.dto';
@@ -13,7 +13,7 @@ import { OnboardUser } from '@/common/dto/auth/Onboarding.dto';
 @Controller('/user/auth')
 export class AuthUserController {
   constructor(
-    private readonly userService: UserService,
+    private readonly userService: UserAuthService,
     private readonly authService: AuthService,
   ) {}
 
@@ -30,7 +30,10 @@ export class AuthUserController {
     summary: 'Update current user profile',
   })
   @Patch('/profile')
-  updateProfile(@AuthUser() user: JwtTokenDto, @Body() dto: UpdateUserDto) {
+  updateProfile(
+    @AuthUser() user: JwtTokenDto,
+    @Body() dto: UpdateUserAccountDto,
+  ) {
     return this.userService.updateUser(user, dto);
   }
 
