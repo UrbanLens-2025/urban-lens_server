@@ -42,6 +42,7 @@ import { RolesGuard } from '@/common/Roles.guard';
     }),
     NotificationModule,
     AuthModule,
+    AccountModule,
   ],
   controllers: [AppController],
   providers: [
