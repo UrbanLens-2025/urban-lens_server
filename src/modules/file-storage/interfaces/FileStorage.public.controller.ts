@@ -5,21 +5,31 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { AllowedUploadTypes } from '@/common/constants/AllowedUploadTypes.constant';
 
-@Controller('/file-storage/dev-only')
-export class FileStorageDevOnlyController {
+@ApiBearerAuth()
+@ApiTags('File Storage - Public Files')
+@Controller('/file-storage')
+export class FileStoragePublicController {
   constructor(
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
   ) {}
 
-  @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Upload a publicly accessible image',
+    description:
+      'This image will be accessible to anyone with the returned url.',
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -32,7 +42,10 @@ export class FileStorageDevOnlyController {
       required: ['file'],
     },
   })
-  uploadPublic(@UploadedFile() file: Express.Multer.File) {
+  @Post('/image')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  uploadImage(@UploadedFile() file: Express.Multer.File) {
     return this.fileStorageService.uploadFilePublic(
       [AllowedUploadTypes.IMAGE],
       file,

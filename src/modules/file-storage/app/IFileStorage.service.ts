@@ -1,6 +1,10 @@
 import { Observable } from 'rxjs';
+import { AllowedUploadTypes } from '@/common/constants/AllowedUploadTypes.constant';
 
 export const IFileStorageService = Symbol('IFileStorageService');
 export interface IFileStorageService {
-  uploadFilePublic(key: string, body: Buffer): Observable<string>;
+  uploadFilePublic(
+    uploadType: AllowedUploadTypes[],
+    body: Express.Multer.File,
+  ): Observable<string>;
 }
