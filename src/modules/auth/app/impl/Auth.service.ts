@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -15,7 +16,6 @@ import { CoreService } from '@/common/core/Core.service';
 import { RegisterResponseDto } from '@/common/dto/auth/RegisterResponse.dto';
 import { randomUUID } from 'crypto';
 import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
-import { EmailNotificationService } from '@/modules/notification/app/EmailNotification.service';
 import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
 import { RedisRegisterConfirmRepository } from '@/modules/auth/infra/repository/RedisRegisterConfirm.repository';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
@@ -25,6 +25,7 @@ import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
 import { Role } from '@/common/constants/Role.constant';
 import { UserAccountResponse } from '@/common/dto/auth/UserAccountResponse.dto';
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
+import { IEmailNotificationService } from '@/modules/notification/app/IEmailNotification.service';
 
 @Injectable()
 export class AuthService extends CoreService implements IAuthService {
@@ -34,7 +35,8 @@ export class AuthService extends CoreService implements IAuthService {
     private readonly redisRegisterConfirmRepository: RedisRegisterConfirmRepository,
     private readonly userRepository: AccountRepository,
     private readonly tokenService: TokenService,
-    private readonly emailNotificationService: EmailNotificationService,
+    @Inject(IEmailNotificationService)
+    private readonly emailNotificationService: IEmailNotificationService,
   ) {
     super();
   }

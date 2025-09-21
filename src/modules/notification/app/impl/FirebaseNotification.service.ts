@@ -93,5 +93,3 @@ export class FirebaseNotificationService extends CoreService {
     });
   }
 }
-
-

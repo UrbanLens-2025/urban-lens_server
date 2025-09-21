@@ -1,22 +1,20 @@
 import { Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { EmailNotificationService } from '@/modules/notification/app/EmailNotification.service';
+import { EmailNotificationService } from '@/modules/notification/app/impl/EmailNotification.service';
 import { BullModule } from '@nestjs/bullmq';
-import { EmailNotificationConsumerService } from '@/modules/notification/app/EmailNotificationConsumer.service';
+import { EmailNotificationConsumerService } from '@/modules/notification/app/listeners/EmailNotificationConsumer.service';
 import { MailerConfig } from '@/config/mailer.config';
 import { ConfigModule } from '@nestjs/config';
-import { FirebaseNotificationService } from '@/modules/notification/app/FirebaseNotification.service';
+import { FirebaseNotificationService } from '@/modules/notification/app/impl/FirebaseNotification.service';
 import { PushNotificationUserController } from '@/modules/notification/interfaces/PushNotification.user.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { FcmTokenEntity } from '@/modules/notification/domain/FcmToken.entity';
-import { FcmTokenRepository } from '@/modules/notification/infra/repository/FcmToken.repository';
 import { PushNotificationDevOnlyController } from '@/modules/notification/interfaces/PushNotification.dev-only.controller';
-import { PushNotificationEntity } from '@/modules/notification/domain/PushNotification.entity';
-import { PushNotificationRepository } from '@/modules/notification/infra/repository/PushNotification.repository';
+import { NotificationInfraModule } from '@/modules/notification/infra/notification.infra.module';
+import { IEmailNotificationService } from '@/modules/notification/app/IEmailNotification.service';
+import { IFirebaseNotificationService } from '@/modules/notification/app/IFirebaseNotification.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([FcmTokenEntity, PushNotificationEntity]),
+    NotificationInfraModule,
     MailerModule.forRootAsync({
       useClass: MailerConfig,
       imports: [ConfigModule],
@@ -24,18 +22,20 @@ import { PushNotificationRepository } from '@/modules/notification/infra/reposit
     BullModule.registerQueue({ name: 'email-notifications' }),
   ],
   providers: [
-    // repo
-    FcmTokenRepository,
-    PushNotificationRepository,
-    // app
-    EmailNotificationService,
+    {
+      provide: IEmailNotificationService,
+      useClass: EmailNotificationService,
+    },
+    {
+      provide: IFirebaseNotificationService,
+      useClass: FirebaseNotificationService,
+    },
     EmailNotificationConsumerService,
-    FirebaseNotificationService,
   ],
   controllers: [
     PushNotificationUserController,
     PushNotificationDevOnlyController,
   ],
-  exports: [EmailNotificationService, FirebaseNotificationService],
+  exports: [IFirebaseNotificationService, IEmailNotificationService],
 })
 export class NotificationModule {}
