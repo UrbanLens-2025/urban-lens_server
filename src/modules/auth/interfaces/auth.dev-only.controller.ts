@@ -1,5 +1,5 @@
 import { Controller, Post } from '@nestjs/common';
-import { AuthService } from '@/modules/auth/app/auth.service';
+import { AuthService } from '@/modules/auth/app/Auth.service';
 import { AccountSeederService } from '@/modules/auth/app/AccountSeeder.service';
 import { plainToInstance } from 'class-transformer';
 import { LoginDto } from '@/common/dto/auth/login.dto';

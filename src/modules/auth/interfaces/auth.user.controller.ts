@@ -5,7 +5,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserAuthService } from '@/modules/auth/app/User.auth.service';
 import { UpdateUserAccountDto } from '@/common/dto/auth/UpdateUserAccount.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
-import { AuthService } from '@/modules/auth/app/auth.service';
+import { AuthService } from '@/modules/auth/app/Auth.service';
 import { OnboardUser } from '@/common/dto/auth/Onboarding.dto';
 
 @ApiTags('Auth - User')

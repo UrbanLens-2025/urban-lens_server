@@ -5,10 +5,10 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { RegisterAccountDto } from '@/common/dto/auth/RegisterAccount.dto';
+import { RegisterUserDto } from '@/common/dto/auth/RegisterUser.dto';
 import { TokenService } from '@/common/core/token/token.service';
 import * as bcrypt from 'bcrypt';
-import { LoginDto } from '@/common/dto/auth/login.dto';
+import { LoginDto } from '@/common/dto/auth/Login.dto';
 import { AccountRepository } from '@/modules/auth/infra/repository/Account.repository';
 import { UserLoginResponse } from '@/common/dto/auth/UserLoginResponse.dto';
 import { CoreService } from '@/common/core/Core.service';
@@ -43,7 +43,7 @@ export class AuthService extends CoreService {
   }
 
   async registerUser(
-    createAuthDto: RegisterAccountDto,
+    createAuthDto: RegisterUserDto,
   ): Promise<RegisterResponseDto> {
     const userExistsDb = await this.userRepository.repo.existsBy({
       email: createAuthDto.email,
@@ -138,29 +138,6 @@ export class AuthService extends CoreService {
     return this.validateLogin(loginDto, user);
   }
 
-  private async validateLogin(
-    loginDto: LoginDto,
-    user: AccountEntity | null,
-  ): Promise<UserLoginResponse.Dto> {
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    const isPasswordValid = await bcrypt.compare(
-      loginDto.password,
-      user.password,
-    );
-
-    if (!isPasswordValid) {
-      throw new BadRequestException('Invalid password');
-    }
-
-    const response = new UserLoginResponse.Dto();
-    response.user = this.mapTo(UserAccountResponse.Dto, user);
-    response.token = await this.tokenService.generateToken(user);
-    return response;
-  }
-
   async changePassword(userDto: JwtTokenDto, dto: ChangePasswordDto) {
     const user = await this.userRepository.repo.findOneBy({
       id: userDto.sub,
@@ -182,5 +159,28 @@ export class AuthService extends CoreService {
     user.password = await bcrypt.hash(dto.newPassword, 10);
 
     return this.userRepository.repo.update({ id: user.id }, user);
+  }
+
+  private async validateLogin(
+    loginDto: LoginDto,
+    user: AccountEntity | null,
+  ): Promise<UserLoginResponse.Dto> {
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid password');
+    }
+
+    const response = new UserLoginResponse.Dto();
+    response.user = this.mapTo(UserAccountResponse.Dto, user);
+    response.token = await this.tokenService.generateToken(user);
+    return response;
   }
 }
