@@ -1,21 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNotEmptyObject } from 'class-validator';
-
-class Notification {
-  @ApiProperty()
-  title?: string;
-  @ApiProperty()
-  body?: string;
-  @ApiProperty()
-  imageUrl?: string;
-}
+import { NotificationTypes } from '@/common/constants/Notifications.constant';
 
 export class SendPushNotificationDto {
-  @ApiProperty()
-  @IsNotEmpty()
   toUserId: string;
-
-  @ApiProperty()
-  @IsNotEmptyObject()
-  payload: Notification;
+  type: NotificationTypes;
+  context: Record<string, any>;
 }

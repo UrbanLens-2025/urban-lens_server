@@ -11,10 +11,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { FcmTokenEntity } from '@/modules/notification/domain/FcmToken.entity';
 import { FcmTokenRepository } from '@/modules/notification/infra/repository/FcmToken.repository';
 import { PushNotificationDevOnlyController } from '@/modules/notification/interfaces/PushNotification.dev-only.controller';
+import { PushNotificationEntity } from '@/modules/notification/domain/PushNotification.entity';
+import { PushNotificationRepository } from '@/modules/notification/infra/repository/PushNotification.repository';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([FcmTokenEntity]),
+    TypeOrmModule.forFeature([FcmTokenEntity, PushNotificationEntity]),
     MailerModule.forRootAsync({
       useClass: MailerConfig,
       imports: [ConfigModule],

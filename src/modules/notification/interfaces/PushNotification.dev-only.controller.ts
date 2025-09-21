@@ -3,6 +3,7 @@ import { SendRawPushNotificationDto } from '@/common/dto/notification/SendRawPus
 import { FirebaseNotificationService } from '@/modules/notification/app/FirebaseNotification.service';
 import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Push Notifications - DEVELOPMENT')
 @Controller('/dev-only/notifications')
 export class PushNotificationDevOnlyController {
   constructor(
@@ -10,7 +11,7 @@ export class PushNotificationDevOnlyController {
   ) {}
 
   @Post('/send')
-  sendNotificationTo(@Body() dto: SendPushNotificationDto) {
-    return this.firebaseNotificationService.sendNotificationTo(dto);
+  sendNotificationTo(@Body() dto: SendRawPushNotificationDto) {
+    return this.firebaseNotificationService.sendRawNotificationTo(dto);
   }
 }
