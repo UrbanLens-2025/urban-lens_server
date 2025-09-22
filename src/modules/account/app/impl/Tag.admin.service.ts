@@ -4,6 +4,7 @@ import { TagResponse } from '@/common/dto/account/TagResponse.dto';
 import { ITagAdminService } from '@/modules/account/app/ITag.admin.service';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { TagRepository } from '@/modules/account/infra/repository/Tag.repository';
+import { TagEntity } from '@/modules/account/domain/Tag.entity';
 
 @Injectable()
 export class TagAdminService extends CoreService implements ITagAdminService {
@@ -21,6 +22,9 @@ export class TagAdminService extends CoreService implements ITagAdminService {
       throw new ConflictException('Tag with this display name already exists');
     }
 
-    throw new Error();
+    const tag = this.mapTo_Raw(TagEntity, dto);
+    return this.tagRepository.repo
+      .save(tag)
+      .then((res) => this.mapTo(TagResponse.Dto, res));
   }
 }
