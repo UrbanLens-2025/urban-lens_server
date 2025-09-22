@@ -79,7 +79,7 @@ export class R2FileStorageService
       this.publicFileRepository.repo
         .save(fileEntity)
         .then(async (savedFile) => {
-          const _ = await this.r2.send(
+          await this.r2.send(
             new PutObjectCommand({
               Bucket: this.configService.get('R2_PUBLIC_BUCKET_NAME'),
               Key: fileEntity.fileName,
