@@ -1,3 +1,4 @@
+// Post.entity.ts
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import {
   Column,
@@ -8,12 +9,11 @@ import {
   ManyToOne,
   OneToMany,
   OneToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-
-import { PrimaryGeneratedColumn } from 'typeorm';
 import { CommentEntity } from './Comment.entity';
+import { PostSummaryEntity } from './PostSummary.entity';
 
 @Entity({ name: 'posts' })
 export class PostEntity {
@@ -34,6 +34,7 @@ export class PostEntity {
 
   @ManyToOne(() => AccountEntity, (account) => account.posts, {
     nullable: false,
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'author_id' })
   author: AccountEntity;
@@ -45,25 +46,4 @@ export class PostEntity {
     cascade: true,
   })
   postSummary: PostSummaryEntity;
-}
-
-@Entity({ name: 'post_summary' })
-export class PostSummaryEntity {
-  @PrimaryColumn({ name: 'post_id', type: 'uuid' })
-  postId: string;
-
-  @OneToOne(() => PostEntity, (post) => post.postSummary, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'post_id' })
-  post: PostEntity;
-
-  @Column({ name: 'total_comments', type: 'integer', default: 0 })
-  totalComments: number;
-
-  @Column({ name: 'total_likes', type: 'integer', default: 0 })
-  totalLikes: number;
-
-  @Column({ name: 'total_dislikes', type: 'integer', default: 0 })
-  totalDislikes: number;
 }

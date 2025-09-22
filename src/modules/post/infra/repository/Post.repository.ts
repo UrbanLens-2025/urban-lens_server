@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PostEntity, PostSummaryEntity } from '../../domain/Post.entity';
+import { PostEntity } from '../../domain/Post.entity';
+import { PostSummaryEntity } from '../../domain/PostSummary.entity';
 
 @Injectable()
 export class PostRepository {

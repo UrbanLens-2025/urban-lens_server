@@ -1,3 +1,4 @@
+// Account.entity.ts
 import { Role } from '@/common/constants/Role.constant';
 import { PostEntity } from '@/modules/post/domain/Post.entity';
 import { CommentEntity } from '@/modules/post/domain/Comment.entity';
@@ -16,24 +17,19 @@ export class AccountEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'first_name', type: 'varchar', length: 255, nullable: false })
+  @Column({ name: 'first_name', type: 'varchar', length: 255 })
   firstName: string;
 
-  @Column({ name: 'last_name', type: 'varchar', length: 255, nullable: false })
+  @Column({ name: 'last_name', type: 'varchar', length: 255 })
   lastName: string;
 
-  @Column({ name: 'email', type: 'varchar', length: 255, nullable: false })
+  @Column({ name: 'email', type: 'varchar', length: 255, unique: true })
   email: string;
 
-  @Column({
-    name: 'phone_number',
-    type: 'varchar',
-    length: 255,
-    nullable: false,
-  })
+  @Column({ name: 'phone_number', type: 'varchar', length: 255 })
   phoneNumber: string;
 
-  @Column({ name: 'password', type: 'varchar', length: 255, nullable: false })
+  @Column({ name: 'password', type: 'varchar', length: 255 })
   password: string;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -48,21 +44,16 @@ export class AccountEntity {
   @Column({ name: 'is_verified', type: 'boolean', default: false })
   isVerified: boolean;
 
-  @Column({ name: 'avatar_url', type: 'varchar', default: null })
+  @Column({ name: 'avatar_url', type: 'varchar', nullable: true })
   avatarUrl: string | null;
 
-  @Column({ name: 'cover_url', type: 'varchar', default: null })
+  @Column({ name: 'cover_url', type: 'varchar', nullable: true })
   coverUrl: string | null;
 
   @Column({ name: 'has_onboarded', type: 'boolean', default: false })
   hasOnboarded: boolean;
 
-  @Column({
-    name: 'role',
-    type: 'enum',
-    enum: Role,
-    nullable: false,
-  })
+  @Column({ name: 'role', type: 'enum', enum: Role })
   role: Role;
 
   @OneToMany(() => PostEntity, (post) => post.author)

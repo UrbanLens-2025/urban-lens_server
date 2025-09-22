@@ -1,10 +1,12 @@
+// Comment.entity.ts
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
-import { PostEntity } from '@/modules/post/domain/Post.entity';
+import { PostEntity } from './Post.entity';
 import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -12,7 +14,7 @@ import {
 
 @Entity({ name: 'comments' })
 export class CommentEntity {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn('uuid', { name: 'comment_id' })
   commentId: string;
 
   @Column({ name: 'content', type: 'text', nullable: false })
@@ -27,11 +29,17 @@ export class CommentEntity {
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
 
-  @Column({ name: 'author_id', type: 'uuid', nullable: false })
-  @ManyToOne(() => AccountEntity, (account) => account.id)
+  @ManyToOne(() => AccountEntity, (account) => account.comments, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'author_id' })
   author: AccountEntity;
 
-  @Column({ name: 'post_id', type: 'uuid', nullable: false })
-  @ManyToOne(() => PostEntity, (post) => post.postId)
+  @ManyToOne(() => PostEntity, (post) => post.comments, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'post_id' })
   post: PostEntity;
 }
