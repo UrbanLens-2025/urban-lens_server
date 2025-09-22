@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { CoreService } from '@/common/core/Core.service';
 import { R2_CLIENT } from '@/common/core/r2/R2.module';
@@ -11,6 +16,11 @@ import {
   AllowedUploadMimeTypes,
   AllowedUploadTypes,
 } from '@/common/constants/AllowedUploadTypes.constant';
+import { PublicFileRepository } from '@/modules/file-storage/infra/repository/PublicFile.repository';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { PublicFileEntity } from '@/modules/file-storage/domain/PublicFile.entity';
+import { PublicFileStatus } from '@/common/constants/PublicFileStatus.constant';
+import { In, UpdateResult } from 'typeorm';
 
 @Injectable()
 export class R2FileStorageService
@@ -20,15 +30,31 @@ export class R2FileStorageService
   constructor(
     @Inject(R2_CLIENT) private readonly r2: R2Client,
     private readonly configService: ConfigService<Environment>,
+    private readonly publicFileRepository: PublicFileRepository,
   ) {
     super();
   }
 
   private static readonly MAX_NORMAL_SIZE = 5 * 1024 * 1024; // 5MB
 
+  async confirmUpload(fileUrl: string[]): Promise<PublicFileEntity[]> {
+    const publicFile = await this.publicFileRepository.repo.findBy({
+      fileUrl: In(fileUrl),
+    });
+
+    if (!publicFile) {
+      throw new NotFoundException('File not found');
+    }
+
+    publicFile.forEach((file) => (file.status = PublicFileStatus.IN_USE));
+
+    return this.publicFileRepository.repo.save(publicFile);
+  }
+
   uploadFilePublic(
     uploadType: AllowedUploadTypes[],
     body: Express.Multer.File,
+    userDto: JwtTokenDto,
   ): Observable<string> {
     if (!body) {
       throw new BadRequestException('No file provided');
@@ -44,29 +70,31 @@ export class R2FileStorageService
       );
     }
 
+    // save to db, if failed, cancel upload to r2
+    const fileEntity = PublicFileEntity.fromFile(body, userDto.sub);
+    fileEntity.createdById = userDto.sub;
+    fileEntity.status = PublicFileStatus.AWAITING_UPLOAD;
+
     return from(
-      this.r2
-        .send(
-          new PutObjectCommand({
-            Bucket: this.configService.get('R2_PUBLIC_BUCKET_NAME'),
-            Key: body.originalname,
-            Body: body.buffer,
-            ACL: 'public-read',
-          }),
-        )
-        .then((_) => {
-          return `${this.configService.get('R2_PUBLIC_DEVELOPMENT_URL')}/${body.originalname}`;
+      this.publicFileRepository.repo
+        .save(fileEntity)
+        .then(async (savedFile) => {
+          const _ = await this.r2.send(
+            new PutObjectCommand({
+              Bucket: this.configService.get('R2_PUBLIC_BUCKET_NAME'),
+              Key: fileEntity.fileName,
+              Body: body.buffer,
+              ACL: 'public-read',
+            }),
+          );
+          const url = `${this.configService.get('R2_PUBLIC_DEVELOPMENT_URL')}/${savedFile.fileName}`;
+          savedFile.status = PublicFileStatus.AWAITING_CONFIRM_SIGNAL;
+          savedFile.fileUrl = url;
+          await this.publicFileRepository.repo.save(savedFile);
+          return url;
         }),
     );
   }
-
-  // uploadFilePublic(
-  //   uploadType: AllowedUploadTypes[],
-  //   key: string,
-  //   body: Express.Multer.File,
-  // ): Observable<string> {
-
-  // }
 
   private validateFile(
     allowedTypes: AllowedUploadTypes[],

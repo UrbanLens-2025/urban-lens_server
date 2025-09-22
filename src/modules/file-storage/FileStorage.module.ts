@@ -6,9 +6,11 @@ import { FileStorageDevOnlyController } from '@/modules/file-storage/interfaces/
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { R2FileStorageService } from '@/modules/file-storage/app/impl/R2FileStorage.service';
 import { FileStoragePublicController } from '@/modules/file-storage/interfaces/FileStorage.public.controller';
+import { FileStorageInfraModule } from '@/modules/file-storage/infra/FileStorage.infra.module';
 
 @Module({
   imports: [
+    FileStorageInfraModule,
     R2Module.registerAsync({
       imports: [ConfigModule],
       useClass: R2Config,
@@ -21,5 +23,6 @@ import { FileStoragePublicController } from '@/modules/file-storage/interfaces/F
       useClass: R2FileStorageService,
     },
   ],
+  exports: [IFileStorageService],
 })
 export class FileStorageModule {}

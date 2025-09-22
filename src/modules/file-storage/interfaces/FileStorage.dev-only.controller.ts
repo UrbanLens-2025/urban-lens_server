@@ -1,14 +1,5 @@
-import {
-  Controller,
-  Inject,
-  Post,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes } from '@nestjs/swagger';
-import { AllowedUploadTypes } from '@/common/constants/AllowedUploadTypes.constant';
 
 @Controller('/file-storage/dev-only')
 export class FileStorageDevOnlyController {
@@ -16,26 +7,4 @@ export class FileStorageDevOnlyController {
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
   ) {}
-
-  @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-      required: ['file'],
-    },
-  })
-  uploadPublic(@UploadedFile() file: Express.Multer.File) {
-    return this.fileStorageService.uploadFilePublic(
-      [AllowedUploadTypes.IMAGE],
-      file,
-    );
-  }
 }

@@ -15,6 +15,8 @@ import {
 } from '@nestjs/swagger';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { AllowedUploadTypes } from '@/common/constants/AllowedUploadTypes.constant';
+import { AuthUser } from '@/common/AuthUser.decorator';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
 @ApiBearerAuth()
 @ApiTags('File Storage - Public Files')
@@ -45,10 +47,14 @@ export class FileStoragePublicController {
   @Post('/image')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
-  uploadImage(@UploadedFile() file: Express.Multer.File) {
+  uploadImage(
+    @AuthUser() userDto: JwtTokenDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     return this.fileStorageService.uploadFilePublic(
       [AllowedUploadTypes.IMAGE],
       file,
+      userDto,
     );
   }
 }

@@ -19,6 +19,7 @@ import { JwtAuthGuard } from '@/common/JwtAuth.guard';
 import { TokenModule } from '@/common/core/token/token.module';
 import { RolesGuard } from '@/common/Roles.guard';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -41,6 +42,20 @@ import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
     BullModule.forRootAsync({
       useClass: BullConfig,
       imports: [ConfigModule],
+    }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          name: 'upload-limit',
+          ttl: 60000,
+          limit: 10,
+        },
+        {
+          name: 'global-limit',
+          ttl: 60,
+          limit: 100,
+        },
+      ],
     }),
     NotificationModule,
     AuthModule,
