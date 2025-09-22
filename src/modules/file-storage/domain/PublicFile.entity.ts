@@ -6,10 +6,8 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { AllowedUploadTypes } from '@/common/constants/AllowedUploadTypes.constant';
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import { PublicFileStatus } from '@/common/constants/PublicFileStatus.constant';
-import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
 @Entity('public_file')
 export class PublicFileEntity {

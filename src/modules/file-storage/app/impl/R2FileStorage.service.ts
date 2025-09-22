@@ -20,7 +20,7 @@ import { PublicFileRepository } from '@/modules/file-storage/infra/repository/Pu
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { PublicFileEntity } from '@/modules/file-storage/domain/PublicFile.entity';
 import { PublicFileStatus } from '@/common/constants/PublicFileStatus.constant';
-import { In, UpdateResult } from 'typeorm';
+import { In } from 'typeorm';
 
 @Injectable()
 export class R2FileStorageService
