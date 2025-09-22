@@ -4,6 +4,7 @@ import { AccountRepository } from '@/modules/auth/infra/repository/Account.repos
 import { CoreService } from '@/common/core/Core.service';
 import { UserGetAccountInfo } from '@/common/dto/auth/UserGetAccountInfo.dto';
 import { Role } from '@/common/constants/Role.constant';
+import { In } from 'typeorm';
 
 @Injectable({})
 export class AccountUserService extends CoreService {
@@ -16,7 +17,7 @@ export class AccountUserService extends CoreService {
   ): Promise<UserAccountResponse.Dto> {
     const res = await this.accountRepository.repo.findOneBy({
       id: dto.userId,
-      role: Role.USER,
+      role: In([Role.USER, Role.BUSINESS_OWNER]),
     });
     if (res == null) {
       throw new NotFoundException('User not found');
