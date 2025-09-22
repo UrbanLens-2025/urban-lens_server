@@ -4,7 +4,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Account - User')
 @Controller('/public/account')
-export class AccountUserController {
+export class AccountPublicController {
   constructor(private readonly accountUserService: AccountUserService) {}
 
   @ApiOperation({ summary: 'Get user details by id' })
