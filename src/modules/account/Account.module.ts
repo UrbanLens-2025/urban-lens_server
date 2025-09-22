@@ -4,9 +4,10 @@ import { AccountUserService } from '@/modules/account/app/impl/Account.user.serv
 import { AccountUserController } from '@/modules/account/interfaces/account.user.controller';
 import { AccountPublicController } from '@/modules/account/interfaces/account.public.controller';
 import { IAccountUserService } from '@/modules/account/app/IAccount.user.service';
+import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AccountInfraModule, AuthModule],
   controllers: [AccountUserController, AccountPublicController],
   providers: [
     {
