@@ -1,11 +1,14 @@
-import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
-import { AccountUserService } from '@/modules/account/app/account.user.service';
+import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { IAccountUserService } from '@/modules/account/app/IAccount.user.service';
 
 @ApiTags('Account - User')
 @Controller('/public/account')
 export class AccountPublicController {
-  constructor(private readonly accountUserService: AccountUserService) {}
+  constructor(
+    @Inject(IAccountUserService)
+    private readonly accountUserService: IAccountUserService,
+  ) {}
 
   @ApiOperation({ summary: 'Get user details by id' })
   @Get('/info/:id')

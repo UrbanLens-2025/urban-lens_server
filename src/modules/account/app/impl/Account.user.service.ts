@@ -5,9 +5,13 @@ import { CoreService } from '@/common/core/Core.service';
 import { UserGetAccountInfo } from '@/common/dto/auth/UserGetAccountInfo.dto';
 import { Role } from '@/common/constants/Role.constant';
 import { In } from 'typeorm';
+import { IAccountUserService } from '@/modules/account/app/IAccount.user.service';
 
 @Injectable({})
-export class AccountUserService extends CoreService {
+export class AccountUserService
+  extends CoreService
+  implements IAccountUserService
+{
   constructor(private readonly accountRepository: AccountRepository) {
     super();
   }
