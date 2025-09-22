@@ -16,7 +16,7 @@ export class JwtAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext) {
     const request: Request = context.switchToHttp().getRequest();
-    const isPublicPath = request.path.startsWith('/api/public/');
+    const isPublicPath = /^\/api(?:\/v\d+)?\/public\//.test(request.path);
     const isDevOnlyPath = request.path.split('/').includes('dev-only');
 
     if (isPublicPath || isDevOnlyPath) {
