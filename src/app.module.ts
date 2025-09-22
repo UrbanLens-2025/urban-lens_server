@@ -20,6 +20,7 @@ import { TokenModule } from '@/common/core/token/token.module';
 import { RolesGuard } from '@/common/Roles.guard';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { PostModule } from '@/modules/post/Post.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     AuthModule,
     AccountModule,
     FileStorageModule,
+    PostModule,
   ],
   controllers: [AppController],
   providers: [

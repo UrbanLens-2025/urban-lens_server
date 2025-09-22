@@ -1,13 +1,13 @@
 // PostSummary.entity.ts
 import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from 'typeorm';
-import { PostEntity } from './Post.entity';
+import { PostEntity } from '@/modules/post/domain/Post.entity';
 
 @Entity({ name: 'post_summary' })
 export class PostSummaryEntity {
   @PrimaryColumn({ name: 'post_id', type: 'uuid' }) // dùng luôn post_id làm PK
   postId: string;
 
-  @OneToOne(() => PostEntity, (post) => post.postSummary, {
+  @OneToOne(() => PostEntity, (post) => post.postId, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'post_id' })

@@ -32,17 +32,24 @@ export class PostEntity {
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
 
-  @ManyToOne(() => AccountEntity, (account) => account.posts, {
+  @Column({ name: 'image_urls', type: 'text', array: true })
+  imageUrls: string[];
+
+  @ManyToOne(() => AccountEntity, (account) => account.id, {
     nullable: false,
     onDelete: 'CASCADE',
+    createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'author_id' })
   author: AccountEntity;
 
+  @Column({ name: 'author_id' })
+  authorId: string;
+
   @OneToMany(() => CommentEntity, (comment) => comment.post)
   comments: CommentEntity[];
 
-  @OneToOne(() => PostSummaryEntity, (summary) => summary.post, {
+  @OneToOne(() => PostSummaryEntity, (summary) => summary.postId, {
     cascade: true,
   })
   postSummary: PostSummaryEntity;

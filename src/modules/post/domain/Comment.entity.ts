@@ -29,14 +29,14 @@ export class CommentEntity {
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
 
-  @ManyToOne(() => AccountEntity, (account) => account.comments, {
+  @ManyToOne(() => AccountEntity, (account) => account.id, {
     nullable: false,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'author_id' })
   author: AccountEntity;
 
-  @ManyToOne(() => PostEntity, (post) => post.comments, {
+  @ManyToOne(() => PostEntity, (post) => post.postId, {
     nullable: false,
     onDelete: 'CASCADE',
   })

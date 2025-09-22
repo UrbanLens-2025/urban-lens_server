@@ -16,7 +16,7 @@ export class PostController {
   @ApiOperation({ summary: 'Create a new post' })
   @Post()
   createPost(@Body() dto: CreatePostRequestDto, @AuthUser() user: JwtTokenDto) {
-    dto.userId = user.sub;
+    dto.authorId = user.sub;
     return this.postService.createPost(dto);
   }
 

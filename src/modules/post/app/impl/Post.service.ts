@@ -4,11 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { IPostService } from '../IPost.service';
-import {
-  PostRepository,
-  PostSummaryRepository,
-} from '../../infra/repository/Post.repository';
+import { PostRepository } from '../../infra/repository/Post.repository';
 import { CreatePostRequestDto } from '@/common/dto/post/CreatePostRequest.dto';
+import { PostSummaryRepository } from '@/modules/post/infra/repository/PostSummary.repository';
 
 @Injectable()
 export class PostService implements IPostService {
@@ -46,13 +44,13 @@ export class PostService implements IPostService {
 
   async getPostById(postId: string): Promise<any> {
     try {
-      const result = await this.postRepository.repo
-        .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
-        .leftJoinAndSelect('post.comments', 'comments')
-        .leftJoinAndSelect('post.postSummary', 'postSummary')
-        .where('post.postId = :postId', { postId })
-        .getOne();
+      const result = await this.postRepository.repo.find({
+        where: {
+          postId,
+        },
+        relations: ['author', 'postSummary'],
+        take: 1,
+      });
       if (!result) {
         throw new NotFoundException('Post not found');
       }

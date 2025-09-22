@@ -16,7 +16,7 @@ export class CreatePostRequestDto {
     description: 'The ids of the images',
     example: ['1', '2', '3'],
   })
-  imageIds?: string[];
+  imageUrls?: string[];
 
   @IsString()
   @IsOptional()
@@ -32,7 +32,7 @@ export class CreatePostRequestDto {
     description: 'The id of the user',
     example: '1',
   })
-  userId?: string;
+  authorId?: string;
 
   @IsArray()
   @IsOptional()
