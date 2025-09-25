@@ -6,8 +6,6 @@ import { OnboardUser } from '@/common/dto/auth/Onboarding.dto';
 
 export const IUserAuthService = Symbol('IUserAuthService');
 export interface IUserAuthService {
-  onboardUser(accountId: string, dto: OnboardUser.DTO): Promise<UpdateResult>;
-
   getUser(dto: JwtTokenDto): Promise<UserAccountResponse.Dto>;
 
   updateUser(

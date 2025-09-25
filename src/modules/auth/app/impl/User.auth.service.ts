@@ -18,26 +18,6 @@ export class UserAuthService extends CoreService implements IUserAuthService {
     super();
   }
 
-  // TODO: Finish onboarding flow
-  async onboardUser(
-    accountId: string,
-    dto: OnboardUser.DTO,
-  ): Promise<UpdateResult> {
-    const user = await this.accountRepository.repo.findOneByOrFail({
-      id: accountId,
-    });
-
-    if (user.hasOnboarded) {
-      throw new BadRequestException('User has already onboarded');
-    }
-
-    Object.assign(user, dto);
-
-    user.hasOnboarded = true;
-
-    return await this.accountRepository.repo.update({ id: user.id }, user);
-  }
-
   async getUser(dto: JwtTokenDto): Promise<UserAccountResponse.Dto> {
     const account = await this.accountRepository.repo.findOneBy({
       id: dto.sub,
