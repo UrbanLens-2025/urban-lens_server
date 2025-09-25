@@ -1,4 +1,3 @@
-// Post.entity.ts
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import {
   Column,
@@ -8,18 +7,13 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { CommentEntity } from './Comment.entity';
-import { PostSummaryEntity } from './PostSummary.entity';
 
 @Entity({ name: 'posts' })
 export class PostEntity {
-  @PrimaryGeneratedColumn('uuid', { name: 'post_id' })
-  postId: string;
-
   @Column({ name: 'content', type: 'text', nullable: false })
   content: string;
 
@@ -32,7 +26,7 @@ export class PostEntity {
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
 
-  @Column({ name: 'image_urls', type: 'text', array: true })
+  @Column({ name: 'image_urls', type: 'text', array: true, default: [] })
   imageUrls: string[];
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
@@ -49,8 +43,6 @@ export class PostEntity {
   @OneToMany(() => CommentEntity, (comment) => comment.post)
   comments: CommentEntity[];
 
-  @OneToOne(() => PostSummaryEntity, (summary) => summary.postId, {
-    cascade: true,
-  })
-  postSummary: PostSummaryEntity;
+  @PrimaryGeneratedColumn('uuid', { name: 'post_id' })
+  postId: string;
 }
