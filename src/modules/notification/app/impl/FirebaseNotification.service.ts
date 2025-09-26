@@ -8,10 +8,17 @@ import { SendRawPushNotificationDto } from '@/common/dto/notification/SendRawPus
 import * as firebase from 'firebase-admin';
 import { SendPushNotificationDto } from '@/common/dto/notification/SendPushNotification.dto';
 import { formatObjectTemplate } from '@/common/utils/format-template.util';
-import { NotificationsConstant } from '@/common/constants/Notifications.constant';
+import {
+  NotificationsConstant,
+  NotificationTypes,
+} from '@/common/constants/Notifications.constant';
 import { FilterOperator, paginate, PaginateQuery } from 'nestjs-paginate';
 import { PushNotificationRepository } from '@/modules/notification/infra/repository/PushNotification.repository';
 import { IFirebaseNotificationService } from '@/modules/notification/app/IFirebaseNotification.service';
+import { PushNotificationEntity } from '@/modules/notification/domain/PushNotification.entity';
+import { PushNotificationStatus } from '@/common/constants/PushNotificationStatus.constant';
+import { In, UpdateResult } from 'typeorm';
+import { SeenPushNotificationDto } from '@/common/dto/notification/SeenPushNotification.dto';
 
 @Injectable()
 export class FirebaseNotificationService
@@ -49,7 +56,12 @@ export class FirebaseNotificationService
       userId: dto.toUserId,
     });
 
-    // log in db
+    const pushNotificationEntity = new PushNotificationEntity();
+    pushNotificationEntity.toUserId = dto.toUserId;
+    pushNotificationEntity.type = NotificationTypes.CUSTOM;
+    pushNotificationEntity.status = PushNotificationStatus.UNSEEN;
+    pushNotificationEntity.payload = dto.payload;
+    await this.pushNotificationRepository.repo.save(pushNotificationEntity);
 
     const promises: Promise<string>[] = [];
     fcmTokens.forEach((tokenEntity) => {
@@ -74,6 +86,13 @@ export class FirebaseNotificationService
       NotificationsConstant[dto.type].payload,
       dto.context,
     );
+
+    const pushNotificationEntity = new PushNotificationEntity();
+    pushNotificationEntity.toUserId = dto.toUserId;
+    pushNotificationEntity.type = dto.type;
+    pushNotificationEntity.status = PushNotificationStatus.UNSEEN;
+    pushNotificationEntity.payload = formattedObject;
+    await this.pushNotificationRepository.repo.save(pushNotificationEntity);
 
     const promises: Promise<string>[] = [];
     fcmTokens.forEach((tokenEntity) => {
@@ -103,5 +122,20 @@ export class FirebaseNotificationService
       },
       withDeleted: false,
     });
+  }
+
+  async seenNotification(
+    userDto: JwtTokenDto,
+    dto: SeenPushNotificationDto,
+  ): Promise<UpdateResult> {
+    return this.pushNotificationRepository.repo.update(
+      {
+        toUserId: userDto.sub,
+        id: In(dto.notificationId),
+      },
+      {
+        status: PushNotificationStatus.SEEN,
+      },
+    );
   }
 }

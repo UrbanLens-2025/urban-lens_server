@@ -16,7 +16,6 @@ export class PushNotificationEntity {
   id: number;
 
   @CreateDateColumn()
-  @Column({ name: 'created_at' })
   createdAt: Date;
 
   @Column({ name: 'type', type: 'varchar', length: 50, nullable: false })
