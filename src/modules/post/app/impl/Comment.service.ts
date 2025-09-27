@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { ICommentService } from '../IComment.service';
@@ -223,5 +224,49 @@ export class CommentService
     }
 
     return 'React comment successfully';
+  }
+
+  private async getReactionsOfComment(
+    commentId: string,
+    reactType: ReactType,
+  ): Promise<any> {
+    try {
+      const queryBuilder = this.reactRepository.repo
+        .createQueryBuilder('react')
+        .leftJoin('react.author', 'author')
+        .where('react.entityId = :commentId', { commentId })
+        .andWhere('react.entityType = :entityType', {
+          entityType: ReactEntityType.COMMENT,
+        })
+        .andWhere('react.type = :type', { type: reactType })
+        .select([
+          'react.id',
+          'react.entityId',
+          'react.entityType',
+          'react.type',
+          'author.id',
+          'author.firstName',
+          'author.lastName',
+          'author.avatarUrl',
+        ]);
+
+      const [reactions, total] = await queryBuilder.getManyAndCount();
+      const propertyName = reactType === ReactType.LIKE ? 'likes' : 'dislikes';
+      return {
+        [propertyName]: reactions.map((reaction) => reaction.author),
+        total,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async getLikesOfComment(commentId: string): Promise<any> {
+    return this.getReactionsOfComment(commentId, ReactType.LIKE);
+  }
+
+  async getDislikesOfComment(commentId: string): Promise<any> {
+    return this.getReactionsOfComment(commentId, ReactType.DISLIKE);
   }
 }

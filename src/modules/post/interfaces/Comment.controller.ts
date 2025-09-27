@@ -65,4 +65,18 @@ export class CommentController {
     dto.userId = user.sub;
     return this.commentService.reactComment(dto);
   }
+
+  @ApiOperation({ summary: 'Get likes of a comment' })
+  @ApiBearerAuth()
+  @Get(':commentId/likes')
+  getLikesOfComment(@Param('commentId') commentId: string) {
+    return this.commentService.getLikesOfComment(commentId);
+  }
+
+  @ApiOperation({ summary: 'Get dislikes of a comment' })
+  @ApiBearerAuth()
+  @Get(':commentId/dislikes')
+  getDislikesOfComment(@Param('commentId') commentId: string) {
+    return this.commentService.getDislikesOfComment(commentId);
+  }
 }
