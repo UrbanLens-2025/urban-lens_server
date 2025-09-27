@@ -33,6 +33,5 @@ export class FcmTokenEntity {
   userId: string;
 
   @CreateDateColumn()
-  @Column({ name: 'created_at' })
   createdAt: Date;
 }

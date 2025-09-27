@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { RegisterDeviceDto } from '@/common/dto/notification/RegisterDevice.dto';
 import { FcmTokenRepository } from '@/modules/notification/infra/repository/FcmToken.repository';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
@@ -11,9 +11,15 @@ import { formatObjectTemplate } from '@/common/utils/format-template.util';
 import { NotificationsConstant } from '@/common/constants/Notifications.constant';
 import { FilterOperator, paginate, PaginateQuery } from 'nestjs-paginate';
 import { PushNotificationRepository } from '@/modules/notification/infra/repository/PushNotification.repository';
+import { IFirebaseNotificationService } from '@/modules/notification/app/IFirebaseNotification.service';
 
 @Injectable()
-export class FirebaseNotificationService extends CoreService {
+export class FirebaseNotificationService
+  extends CoreService
+  implements IFirebaseNotificationService
+{
+  private readonly log = new Logger(FirebaseNotificationService.name);
+
   constructor(
     private readonly fcmTokenRepository: FcmTokenRepository,
     private readonly pushNotificationRepository: PushNotificationRepository,
@@ -29,6 +35,12 @@ export class FirebaseNotificationService extends CoreService {
     const entity = this.mapTo_Raw(FcmTokenEntity, dto);
     entity.userId = userDto.sub;
     entity.deviceInfo = userAgent;
+    this.log.debug(
+      'Registering device for user: ' +
+        userDto.sub +
+        ' with token: ' +
+        dto.token,
+    );
     return this.fcmTokenRepository.repo.save(entity);
   }
 
