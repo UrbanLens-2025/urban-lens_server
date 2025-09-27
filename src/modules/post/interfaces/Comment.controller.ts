@@ -52,7 +52,7 @@ export class CommentController {
     @Param('commentId') commentId: string,
     @AuthUser() user: JwtTokenDto,
   ) {
-    return this.commentService.deleteComment(commentId, user.sub);
+    return this.commentService.deleteComment({ commentId, userId: user.sub });
   }
 
   @ApiOperation({ summary: 'React a comment' })

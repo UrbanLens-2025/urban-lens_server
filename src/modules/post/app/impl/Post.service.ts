@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -8,12 +9,22 @@ import { IPostService } from '../IPost.service';
 import { PostRepository } from '@/modules/post/infra/repository/Post.repository';
 import { CreatePostRequestDto } from '@/common/dto/post/CreatePostRequest.dto';
 import { AnalyticRepository } from '../../../analytic/infra/repository/Analytic.repository';
-import { AnalyticEntityType } from '@/modules/analytic/domain/Analytic.entity';
+import {
+  AnalyticEntity,
+  AnalyticEntityType,
+} from '@/modules/analytic/domain/Analytic.entity';
 import { BaseService } from '@/common/services/base.service';
 import { PostEntity } from '@/modules/post/domain/Post.entity';
 import { ReactPostRequestDto } from '@/common/dto/post/ReactPostRequest.dto';
 import { ReactRepository } from '@/modules/post/infra/repository/React.repository';
-import { ReactEntityType, ReactType } from '../../domain/React.entity';
+import {
+  ReactEntity,
+  ReactEntityType,
+  ReactType,
+} from '../../domain/React.entity';
+import { DeletePostRequestDto } from '@/common/dto/post/DeletePostRequest.dto';
+import { CommentRepository } from '../../infra/repository/Comment.repository';
+import { CommentEntity } from '../../domain/Comment.entity';
 
 @Injectable()
 export class PostService
@@ -24,6 +35,7 @@ export class PostService
     private readonly postRepository: PostRepository,
     private readonly analyticRepository: AnalyticRepository,
     private readonly reactRepository: ReactRepository,
+    private readonly commentRepository: CommentRepository,
   ) {
     super(postRepository.repo);
   }
@@ -96,7 +108,11 @@ export class PostService
       }
 
       const react = await this.reactRepository.repo.findOne({
-        where: { entityId: dto.postId, authorId: dto.userId },
+        where: {
+          entityId: dto.postId,
+          authorId: dto.userId,
+          entityType: ReactEntityType.POST,
+        },
       });
 
       let likesDelta = 0;
@@ -145,6 +161,105 @@ export class PostService
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException(error);
+    }
+  }
+
+  async deletePost(dto: DeletePostRequestDto): Promise<any> {
+    try {
+      const post = await this.postRepository.repo.findOne({
+        where: { postId: dto.postId },
+        relations: ['author'],
+      });
+
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+
+      if (!post.author || post.author.id !== dto.userId) {
+        throw new ForbiddenException('You are not allowed to delete this post');
+      }
+
+      await this.postRepository.repo.manager.transaction(async (tx) => {
+        await tx.delete(CommentEntity, { post: { postId: post.postId } });
+        await tx.delete(ReactEntity, {
+          entityId: post.postId,
+          entityType: ReactEntityType.POST,
+        });
+        await tx.delete(AnalyticEntity, {
+          entityId: post.postId,
+          entityType: AnalyticEntityType.POST,
+        });
+        await tx.delete(PostEntity, { postId: post.postId });
+      });
+
+      return 'Post deleted successfully';
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  private async getReactionsOfPost(
+    postId: string,
+    reactType: ReactType,
+  ): Promise<any> {
+    try {
+      const queryBuilder = this.reactRepository.repo
+        .createQueryBuilder('react')
+        .leftJoin('react.author', 'author')
+        .where('react.entityId = :postId', { postId })
+        .andWhere('react.entityType = :entityType', {
+          entityType: ReactEntityType.POST,
+        })
+        .andWhere('react.type = :type', { type: reactType })
+        .select([
+          'react.id',
+          'react.entityId',
+          'react.entityType',
+          'react.type',
+          'author.id',
+          'author.firstName',
+          'author.lastName',
+          'author.avatarUrl',
+        ]);
+
+      const [reactions, total] = await queryBuilder.getManyAndCount();
+      const propertyName = reactType === ReactType.LIKE ? 'likes' : 'dislikes';
+      return {
+        [propertyName]: reactions.map((reaction) => reaction.author),
+        total,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async getLikesOfPost(postId: string): Promise<any> {
+    return this.getReactionsOfPost(postId, ReactType.LIKE);
+  }
+
+  async getDislikesOfPost(postId: string): Promise<any> {
+    return this.getReactionsOfPost(postId, ReactType.DISLIKE);
+  }
+
+  async getAllReactionsOfPost(postId: string): Promise<any> {
+    try {
+      const [likes, dislikes] = await Promise.all([
+        this.getLikesOfPost(postId),
+        this.getDislikesOfPost(postId),
+      ]);
+
+      return {
+        likes: likes.likes,
+        totalLikes: likes.total,
+        dislikes: dislikes.dislikes,
+        totalDislikes: dislikes.total,
+        totalReactions: likes.total + dislikes.total,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 }

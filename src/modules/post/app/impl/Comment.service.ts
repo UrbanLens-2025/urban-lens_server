@@ -14,6 +14,7 @@ import { AnalyticEntityType } from '@/modules/analytic/domain/Analytic.entity';
 import { ReactRepository } from '../../infra/repository/React.repository';
 import { ReactCommentRequestDto } from '@/common/dto/post/ReactCommentRequest.dto';
 import { ReactEntityType, ReactType } from '../../domain/React.entity';
+import { DeleteCommentRequestDto } from '@/common/dto/post/DeleteCommentRequest.dto';
 
 @Injectable()
 export class CommentService
@@ -116,16 +117,16 @@ export class CommentService
     };
   }
 
-  async deleteComment(commentId: string, userId: string): Promise<any> {
+  async deleteComment(dto: DeleteCommentRequestDto): Promise<any> {
     const comment = await this.commentRepository.repo.findOne({
-      where: { commentId },
+      where: { commentId: dto.commentId },
       relations: ['author', 'post'],
     });
 
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
-    if (comment.author.id !== userId) {
+    if (comment.author.id !== dto.userId) {
       throw new ForbiddenException(
         'You are not allowed to delete this comment',
       );
@@ -136,7 +137,7 @@ export class CommentService
     if (!post) {
       throw new NotFoundException('Post not found');
     }
-    if (post.author.id !== userId) {
+    if (post.author.id !== dto.userId) {
       throw new ForbiddenException(
         'You are not allowed to delete this comment',
       );
@@ -147,7 +148,7 @@ export class CommentService
         await transactionalEntityManager.remove(
           await this.analyticRepository.repo.findOne({
             where: {
-              entityId: commentId,
+              entityId: dto.commentId,
               entityType: AnalyticEntityType.COMMENT,
             },
           }),

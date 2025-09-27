@@ -41,4 +41,22 @@ export class PostController {
     dto.userId = user.sub;
     return this.postService.reactPost(dto);
   }
+
+  @ApiOperation({ summary: 'Delete a post' })
+  @Delete(':postId')
+  deletePost(@Param('postId') postId: string, @AuthUser() user: JwtTokenDto) {
+    return this.postService.deletePost({ postId, userId: user.sub });
+  }
+
+  @ApiOperation({ summary: 'Get likes of a post' })
+  @Get(':postId/likes')
+  getLikesOfPost(@Param('postId') postId: string) {
+    return this.postService.getLikesOfPost(postId);
+  }
+
+  @ApiOperation({ summary: 'Get dislikes of a post' })
+  @Get(':postId/dislikes')
+  getDislikesOfPost(@Param('postId') postId: string) {
+    return this.postService.getDislikesOfPost(postId);
+  }
 }

@@ -6,7 +6,6 @@ import { ReactEntity } from '@/modules/post/domain/React.entity';
 import {
   Column,
   CreateDateColumn,
-  DeleteDateColumn,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -38,9 +37,6 @@ export class AccountEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-
-  @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date;
 
   @Column({ name: 'is_verified', type: 'boolean', default: false })
   isVerified: boolean;

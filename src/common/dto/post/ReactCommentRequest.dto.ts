@@ -1,6 +1,6 @@
 import { ReactType } from '@/modules/post/domain/React.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class ReactCommentRequestDto {
   @IsString()
@@ -12,8 +12,8 @@ export class ReactCommentRequestDto {
   commentId: string;
 
   @IsString()
-  @IsNotEmpty()
-  userId?: string;
+  @IsOptional()
+  userId: string;
 
   @IsEnum(ReactType)
   @ApiProperty({

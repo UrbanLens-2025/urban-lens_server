@@ -5,10 +5,10 @@ export class AnalyticEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'analytic_id' })
   analyticId: string;
 
-  @Column({ name: 'entity_id', type: 'uuid' })
+  @Column({ name: 'entity_id', type: 'uuid', nullable: true })
   entityId: string;
 
-  @Column({ name: 'entity_type' })
+  @Column({ name: 'entity_type', nullable: true })
   entityType: AnalyticEntityType;
 
   @Column({ name: 'total_likes', default: 0 })
