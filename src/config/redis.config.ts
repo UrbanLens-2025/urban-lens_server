@@ -13,11 +13,8 @@ export class RedisConfig implements RedisModuleOptionsFactory {
   createRedisModuleOptions(): Promise<RedisModuleOptions> | RedisModuleOptions {
     return {
       type: 'single',
-      options: {
-        host: this.configService.get('REDIS_HOST'),
-        port: this.configService.get('REDIS_PORT'),
-        password: this.configService.get('REDIS_PASSWORD'),
-      },
+      url: this.configService.get('REDIS_URL'),
+      options: {},
     };
   }
 }

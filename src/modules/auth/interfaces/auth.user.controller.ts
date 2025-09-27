@@ -1,10 +1,9 @@
-import { Body, Controller, Get, Inject, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Patch } from '@nestjs/common';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UpdateUserAccountDto } from '@/common/dto/auth/UpdateUserAccount.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
-import { OnboardUser } from '@/common/dto/auth/Onboarding.dto';
 import { IUserAuthService } from '@/modules/auth/app/IUser.auth.service';
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
 
@@ -13,7 +12,8 @@ import { IAuthService } from '@/modules/auth/app/IAuth.service';
 @Controller('/user/auth')
 export class AuthUserController {
   constructor(
-    @Inject(IUserAuthService) private readonly userService: IUserAuthService,
+    @Inject(IUserAuthService)
+    private readonly authUserService: IUserAuthService,
     @Inject(IAuthService) private readonly authService: IAuthService,
   ) {}
 
@@ -23,7 +23,7 @@ export class AuthUserController {
   })
   @Get('/profile')
   getProfile(@AuthUser() user: JwtTokenDto) {
-    return this.userService.getUser(user);
+    return this.authUserService.getUser(user);
   }
 
   @ApiOperation({
@@ -34,7 +34,7 @@ export class AuthUserController {
     @AuthUser() user: JwtTokenDto,
     @Body() dto: UpdateUserAccountDto,
   ) {
-    return this.userService.updateUser(user, dto);
+    return this.authUserService.updateUser(user, dto);
   }
 
   @ApiOperation({ summary: 'Change user password' })
@@ -44,11 +44,5 @@ export class AuthUserController {
     @Body() dto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(user, dto);
-  }
-
-  @ApiOperation({ summary: 'Onboard user' })
-  @Post('/onboard')
-  onboardUser(@AuthUser() user: JwtTokenDto, @Body() dto: OnboardUser.DTO) {
-    return this.userService.onboardUser(user.sub, dto);
   }
 }

@@ -21,6 +21,7 @@ export interface Environment {
   REDIS_HOST: string;
   REDIS_PORT: number;
   REDIS_PASSWORD: string;
+  REDIS_URL: string;
 
   JWT_SECRET: string;
   JWT_EXPIRES_IN: string;
@@ -60,6 +61,7 @@ export const envConfig = joi.object<Environment>({
   REDIS_HOST: joi.string().required(),
   REDIS_PORT: joi.number().required(),
   REDIS_PASSWORD: joi.string(),
+  REDIS_URL: joi.string().required(),
 
   JWT_SECRET: joi.string().required(),
   JWT_EXPIRES_IN: joi.string().required(),

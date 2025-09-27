@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsOptional, IsUrl, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsUrl,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export namespace OnboardUser {
@@ -16,5 +22,10 @@ export namespace OnboardUser {
     @MaxLength(1000)
     @ApiProperty({ default: 'https://picsum.photos/id/80/1920/1080' })
     coverUrl?: string;
+
+    @IsOptional()
+    @IsArray()
+    @ApiProperty({ default: [1, 2] })
+    tagIds?: number[];
   }
 }

@@ -1,8 +1,14 @@
+import { Expose } from 'class-transformer';
+
 export namespace TagResponse {
   export class Dto {
+    @Expose()
     id: number;
-    name: string;
+    @Expose()
+    displayName: string;
+    @Expose()
     color: string;
+    @Expose()
     icon: string;
   }
 }
