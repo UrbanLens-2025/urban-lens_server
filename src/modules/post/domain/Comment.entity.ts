@@ -1,13 +1,14 @@
 // Comment.entity.ts
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import { PostEntity } from './Post.entity';
+import { ReactEntity } from './React.entity';
 import {
   Column,
   CreateDateColumn,
-  DeleteDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -26,9 +27,6 @@ export class CommentEntity {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date;
-
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     nullable: false,
     onDelete: 'CASCADE',
@@ -42,4 +40,9 @@ export class CommentEntity {
   })
   @JoinColumn({ name: 'post_id' })
   post: PostEntity;
+
+  @OneToMany(() => ReactEntity, (react) => react.entityId, {
+    cascade: ['remove'],
+  })
+  reacts: ReactEntity[];
 }

@@ -28,10 +28,6 @@ export class CreatePostRequestDto {
 
   @IsString()
   @IsOptional()
-  @ApiProperty({
-    description: 'The id of the user',
-    example: '1',
-  })
   authorId?: string;
 
   @IsArray()
