@@ -1,10 +1,13 @@
 // Account.entity.ts
 import { Role } from '@/common/constants/Role.constant';
+import { CommentEntity } from '@/modules/post/domain/Comment.entity';
+import { PostEntity } from '@/modules/post/domain/Post.entity';
+import { ReactEntity } from '@/modules/post/domain/React.entity';
 import {
   Column,
   CreateDateColumn,
-  DeleteDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -35,9 +38,6 @@ export class AccountEntity {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date;
-
   @Column({ name: 'is_verified', type: 'boolean', default: false })
   isVerified: boolean;
 
@@ -52,10 +52,13 @@ export class AccountEntity {
 
   @Column({ name: 'role', type: 'enum', enum: Role })
   role: Role;
-  //
-  // @OneToMany(() => PostEntity, (post) => post.author)
-  // posts: PostEntity[];
-  //
-  // @OneToMany(() => CommentEntity, (comment) => comment.author)
-  // comments: CommentEntity[];
+
+  @OneToMany(() => PostEntity, (post) => post.author)
+  posts: PostEntity[];
+
+  @OneToMany(() => CommentEntity, (comment) => comment.author)
+  comments: CommentEntity[];
+
+  @OneToMany(() => ReactEntity, (react) => react.author)
+  reacts: ReactEntity[];
 }
