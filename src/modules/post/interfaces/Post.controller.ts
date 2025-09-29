@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IPostService } from '../app/IPost.service';
@@ -13,6 +14,7 @@ import { CreatePostRequestDto } from '@/common/dto/post/CreatePostRequest.dto';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { ReactPostRequestDto } from '@/common/dto/post/ReactPostRequest.dto';
+import type { PaginationParams } from '@/common/services/base.service';
 
 @ApiTags('Post')
 @ApiBearerAuth()
@@ -27,6 +29,12 @@ export class PostController {
   createPost(@Body() dto: CreatePostRequestDto, @AuthUser() user: JwtTokenDto) {
     dto.authorId = user.sub;
     return this.postService.createPost(dto);
+  }
+
+  @ApiOperation({ summary: 'Get my posts' })
+  @Get('my-posts')
+  getMyPosts(@Query() query: PaginationParams, @AuthUser() user: JwtTokenDto) {
+    return this.postService.getPostByAuthorId(user.sub, query, user.sub);
   }
 
   @ApiOperation({ summary: 'Get a post by id' })
@@ -52,6 +60,16 @@ export class PostController {
   @Get(':postId/likes')
   getLikesOfPost(@Param('postId') postId: string) {
     return this.postService.getLikesOfPost(postId);
+  }
+
+  @ApiOperation({ summary: 'Get posts by author id' })
+  @Get('author/:authorId')
+  getPostByAuthorId(
+    @Param('authorId') authorId: string,
+    @Query() query: PaginationParams,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.postService.getPostByAuthorId(authorId, query, user.sub);
   }
 
   @ApiOperation({ summary: 'Get dislikes of a post' })

@@ -13,7 +13,11 @@ import {
   AnalyticEntity,
   AnalyticEntityType,
 } from '@/modules/analytic/domain/Analytic.entity';
-import { BaseService } from '@/common/services/base.service';
+import {
+  BaseService,
+  PaginationParams,
+  PaginationResult,
+} from '@/common/services/base.service';
 import { PostEntity } from '@/modules/post/domain/Post.entity';
 import { ReactPostRequestDto } from '@/common/dto/post/ReactPostRequest.dto';
 import { ReactRepository } from '@/modules/post/infra/repository/React.repository';
@@ -46,7 +50,6 @@ export class PostService
         async (transactionalEntityManager) => {
           const post = this.postRepository.repo.create(dto);
           const savedPost = await transactionalEntityManager.save(post);
-          console.log('savedPost', savedPost);
           const analytic = this.analyticRepository.repo.create({
             entityId: savedPost.postId,
             entityType: AnalyticEntityType.POST,
@@ -256,6 +259,147 @@ export class PostService
         dislikes: dislikes.dislikes,
         totalDislikes: dislikes.total,
         totalReactions: likes.total + dislikes.total,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async getPostByAuthorId(
+    authorId: string,
+    params: PaginationParams = {},
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>> {
+    try {
+      const page = Math.max(params.page ?? 1, 1);
+      const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
+      const skip = (page - 1) * limit;
+
+      const postsQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin(
+          'analytic',
+          'analytic',
+          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
+          { analyticType: AnalyticEntityType.POST },
+        )
+        .where('post.author_id = :authorId', { authorId })
+        .select([
+          'post.post_id as post_postid',
+          'post.content as post_content',
+          'post.image_urls as post_imageurls',
+          'post.created_at as post_createdat',
+          'post.updated_at as post_updatedat',
+          'author.id as author_id',
+          'author.first_name as author_firstname',
+          'author.last_name as author_lastname',
+          'author.avatar_url as author_avatarurl',
+          'analytic.total_likes as analytic_total_likes',
+          'analytic.total_dislikes as analytic_total_dislikes',
+          'analytic.total_comments as analytic_total_comments',
+        ])
+        .orderBy('post.createdAt', 'DESC')
+        .skip(skip)
+        .take(limit);
+
+      const total = await this.postRepository.repo
+        .createQueryBuilder('post')
+        .where('post.author_id = :authorId', { authorId })
+        .getCount();
+
+      const posts = await postsQuery.getRawMany();
+
+      if (!posts.length) {
+        return {
+          data: [],
+          meta: {
+            page,
+            limit,
+            totalItems: total,
+            totalPages: Math.ceil(total / limit),
+            hasNextPage: page < Math.ceil(total / limit),
+            hasPrevPage: page > 1,
+          },
+        };
+      }
+
+      let processedPosts: any[];
+
+      if (currentUserId) {
+        const postIds = posts.map((post) => post.post_postid);
+
+        const userReactions = await this.reactRepository.repo
+          .createQueryBuilder('react')
+          .where('react.entityId IN (:...postIds)', { postIds })
+          .andWhere('react.entityType = :entityType', {
+            entityType: ReactEntityType.POST,
+          })
+          .andWhere('react.authorId = :currentUserId', { currentUserId })
+          .select(['react.entityId', 'react.type'])
+          .getMany();
+
+        const reactionMap = new Map();
+        userReactions.forEach((reaction) => {
+          reactionMap.set(reaction.entityId, reaction.type);
+        });
+
+        processedPosts = posts.map((post) => {
+          return {
+            postId: post.post_postid,
+            content: post.post_content,
+            imageUrls: post.post_imageurls,
+            createdAt: post.post_createdat,
+            updatedAt: post.post_updatedat,
+            author: {
+              id: post.author_id,
+              firstName: post.author_firstname,
+              lastName: post.author_lastname,
+              avatarUrl: post.author_avatarurl,
+            },
+            analytics: {
+              totalLikes: post.analytic_total_likes || 0,
+              totalDislikes: post.analytic_total_dislikes || 0,
+              totalComments: post.analytic_total_comments || 0,
+            },
+            currentUserReaction: reactionMap.get(post.post_postid) || null,
+          };
+        });
+      } else {
+        processedPosts = posts.map((post) => {
+          return {
+            postId: post.post_postid,
+            content: post.post_content,
+            imageUrls: post.post_imageurls,
+            createdAt: post.post_createdat,
+            updatedAt: post.post_updatedat,
+            author: {
+              id: post.author_id,
+              firstName: post.author_firstname,
+              lastName: post.author_lastname,
+              avatarUrl: post.author_avatarurl,
+            },
+            analytics: {
+              totalLikes: post.analytic_total_likes || 0,
+              totalDislikes: post.analytic_total_dislikes || 0,
+              totalComments: post.analytic_total_comments || 0,
+            },
+            currentUserReaction: null,
+          };
+        });
+      }
+
+      return {
+        data: processedPosts,
+        meta: {
+          page,
+          limit,
+          totalItems: total,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1,
+        },
       };
     } catch (error) {
       console.error(error);
