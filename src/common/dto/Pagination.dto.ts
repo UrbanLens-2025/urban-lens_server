@@ -2,7 +2,7 @@ import { PaginateQuery } from 'nestjs-paginate';
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 
 export class PaginationDto implements PaginateQuery {
-  @ApiProperty({ required: false, example: { status: 'active' } })
+  @ApiProperty({ required: false })
   filter: { [p: string]: string | string[] };
 
   @ApiProperty({ required: false, example: 10 })
@@ -13,20 +13,21 @@ export class PaginationDto implements PaginateQuery {
 
   @ApiProperty({
     required: false,
-    example: 'John Doe',
+    example: '',
     description: 'Search term',
   })
   search: string;
 
   @ApiProperty({
     required: false,
-    example: ['firstName', 'lastName'],
+    example: [''],
     description: 'Columns to search in',
   })
   searchBy: string[];
 
   @ApiProperty({
     required: false,
+    example: [''],
     description: 'Columns to include in the result',
   })
   select: string[];

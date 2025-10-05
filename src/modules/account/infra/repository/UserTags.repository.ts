@@ -7,6 +7,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 export class UserTagsRepository {
   constructor(
     @InjectRepository(UserTagsEntity)
-    private readonly repo: Repository<UserTagsEntity>,
+    public readonly repo: Repository<UserTagsEntity>,
   ) {}
 }

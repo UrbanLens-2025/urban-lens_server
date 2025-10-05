@@ -30,17 +30,9 @@ export class AuthPublicController {
   registerConfirm(@Body() dto: RegisterConfirmDto) {
     return this.authService.registerUserConfirm(dto);
   }
-
-  @ApiOperation({ summary: 'Create new business owner' })
-  @Post('/register/bowner')
-  registerBowner(@Body() createAuthDto: unknown) {
-    throw new Error('Method not implemented.');
-  }
-
   //#endregion
 
   //#region Login
-
   @ApiOperation({
     summary: 'Login as User',
   })
@@ -48,19 +40,6 @@ export class AuthPublicController {
   login(@Body() loginDto: LoginDto) {
     return this.authService.loginUser(loginDto);
   }
-
-  @ApiOperation({ summary: 'Login as Admin' })
-  @Post('/login/admin')
-  loginAsAdmin(@Body() dto: LoginDto) {
-    return this.authService.loginAdmin(dto);
-  }
-
-  @ApiOperation({ summary: 'Login as Business Owner' })
-  @Post('/login/bowner')
-  loginAsBowner(@Body() dto: LoginDto) {
-    throw new Error('Method not implemented.');
-  }
-
   //#endregion
 
   @ApiOperation({
