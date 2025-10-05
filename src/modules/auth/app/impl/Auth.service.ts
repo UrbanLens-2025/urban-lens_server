@@ -186,4 +186,13 @@ export class AuthService extends CoreService implements IAuthService {
     response.token = await this.tokenService.generateToken(user);
     return response;
   }
+
+  async loginBusinessOwner(loginDto: LoginDto): Promise<UserLoginResponse.Dto> {
+    const user = await this.userRepository.repo.findOneBy({
+      email: loginDto.email,
+      role: Role.BUSINESS_OWNER,
+    });
+
+    return this.validateLogin(loginDto, user);
+  }
 }

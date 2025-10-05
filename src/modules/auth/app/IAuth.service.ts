@@ -24,4 +24,6 @@ export interface IAuthService {
     userDto: JwtTokenDto,
     dto: ChangePasswordDto,
   ): Promise<UpdateResult>;
+
+  loginBusinessOwner(dto: LoginDto): Promise<UserLoginResponse.Dto>;
 }

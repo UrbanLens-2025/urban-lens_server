@@ -11,6 +11,9 @@ import { ITagAdminService } from '@/modules/account/app/ITag.admin.service';
 import { TagAdminService } from '@/modules/account/app/impl/Tag.admin.service';
 import { TagAdminController } from '@/modules/account/interfaces/Tag.admin.controller';
 import { TagUserController } from '@/modules/account/interfaces/Tag.user.controller';
+import { BusinessController } from './interfaces/Business.controller';
+import { BusinessService } from './app/impl/Business.service';
+import { IBusinessService } from './app/IBusiness.service';
 
 @Module({
   imports: [AccountInfraModule, AuthModule],
@@ -19,6 +22,7 @@ import { TagUserController } from '@/modules/account/interfaces/Tag.user.control
     AccountPublicController,
     TagAdminController,
     TagUserController,
+    BusinessController,
   ],
   providers: [
     {
@@ -32,6 +36,10 @@ import { TagUserController } from '@/modules/account/interfaces/Tag.user.control
     {
       provide: ITagAdminService,
       useClass: TagAdminService,
+    },
+    {
+      provide: IBusinessService,
+      useClass: BusinessService,
     },
   ],
 })

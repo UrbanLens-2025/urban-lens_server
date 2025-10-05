@@ -57,11 +57,9 @@ export class AuthPublicController {
 
   @ApiOperation({ summary: 'Login as Business Owner' })
   @Post('/login/bowner')
-  loginAsBowner(@Body() dto: LoginDto) {
-    throw new Error('Method not implemented.');
+  loginAsBusinessOwner(@Body() dto: LoginDto) {
+    return this.authService.loginBusinessOwner(dto);
   }
-
-  //#endregion
 
   @ApiOperation({
     summary: 'Resend OTP code to email (unimplemented)',
