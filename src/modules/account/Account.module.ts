@@ -14,9 +14,10 @@ import { TagUserController } from '@/modules/account/interfaces/Tag.user.control
 import { BusinessController } from './interfaces/Business.controller';
 import { BusinessService } from './app/impl/Business.service';
 import { IBusinessService } from './app/IBusiness.service';
+import { AuthInfraModule } from '@/modules/auth/infra/auth.infra.module';
 
 @Module({
-  imports: [AccountInfraModule, AuthModule],
+  imports: [AccountInfraModule, AuthInfraModule, AuthModule],
   controllers: [
     AccountUserController,
     AccountPublicController,

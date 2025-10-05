@@ -1,6 +1,7 @@
 import { CreateBusinessDto } from '@/common/dto/business/CreateBusiness.dto';
 import { GetBusinessesQueryDto } from '@/common/dto/business/GetBusinessesQuery.dto';
 import { UpdateBusinessStatusDto } from '@/common/dto/business/UpdateBusinessStatus.dto';
+import { UpdateBusinessDto } from '@/common/dto/business/UpdateBusiness.dto';
 import {
   Body,
   Controller,
@@ -54,6 +55,26 @@ export class BusinessController {
   @ApiOperation({ summary: 'Get business by ID' })
   getBusinessById(@Param('id') id: string) {
     return this.businessService.getBusinessById(id);
+  }
+
+  @Put(':id')
+  @ApiBearerAuth()
+  @Roles(Role.BUSINESS_OWNER)
+  @ApiOperation({
+    summary: 'Update business information (Business Owner only)',
+    description:
+      'Business owner can update their business info, especially after rejection with admin notes',
+  })
+  updateBusiness(
+    @Param('id') businessId: string,
+    @Body() updateBusinessDto: UpdateBusinessDto,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.businessService.updateBusiness(
+      businessId,
+      updateBusinessDto,
+      user.sub,
+    );
   }
 
   @Put(':id/status')

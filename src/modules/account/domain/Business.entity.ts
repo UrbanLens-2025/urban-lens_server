@@ -85,12 +85,6 @@ export class BusinessEntity {
   @Column({ name: 'admin_notes', type: 'text', nullable: true })
   adminNotes: string | null;
 
-  @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })
-  reviewedBy: string | null;
-
-  @Column({ name: 'reviewed_at', type: 'timestamp', nullable: true })
-  reviewedAt: Date | null;
-
   @Column({
     name: 'category',
     type: 'enum',
