@@ -11,6 +11,7 @@ export interface Environment {
   DATABASE_PASSWORD: string;
   DATABASE_NAME: string;
   DATABASE_ENABLE_SYNC: boolean;
+  DATABASE_SCHEMA: string;
 
   MAILER_HOST: string;
   MAILER_PORT: number;
@@ -51,6 +52,7 @@ export const envConfig = joi.object<Environment>({
   DATABASE_PASSWORD: joi.string().required(),
   DATABASE_NAME: joi.string().required(),
   DATABASE_ENABLE_SYNC: joi.boolean().default(false),
+  DATABASE_SCHEMA: joi.string().default('public'),
 
   MAILER_HOST: joi.string().required(),
   MAILER_PORT: joi.number().required(),

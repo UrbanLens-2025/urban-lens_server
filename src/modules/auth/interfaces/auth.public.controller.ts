@@ -3,7 +3,7 @@ import { LoginDto } from '@/common/dto/auth/Login.dto';
 import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { RegisterUserDto } from '@/common/dto/auth/RegisterUser.dto';
+import { RegisterDto } from '@/common/dto/auth/Register.dto';
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
 
 @ApiTags('Auth - Public')
@@ -18,8 +18,8 @@ export class AuthPublicController {
 
   @ApiOperation({ summary: 'Create new user' })
   @Post('/register/user')
-  register(@Body() createAuthDto: RegisterUserDto) {
-    return this.authService.registerUser(createAuthDto);
+  register(@Body() createAuthDto: RegisterDto) {
+    return this.authService.register(createAuthDto);
   }
 
   @ApiOperation({
