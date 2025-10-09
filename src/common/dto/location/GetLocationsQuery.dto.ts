@@ -6,8 +6,11 @@ import {
   Min,
   Max,
   IsString,
+  IsEnum,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { LocationRequestStatus } from '@/common/constants/Location.constant';
+import { OptionalBoolean } from '@/common/decorators/OptionalBoolean.decorator';
 
 export class GetLocationsQueryDto {
   @ApiPropertyOptional({
@@ -38,9 +41,7 @@ export class GetLocationsQueryDto {
     description: 'Filter by availability for rent',
     example: true,
   })
-  @IsOptional()
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
+  @OptionalBoolean()
   isAvailableForRent?: boolean;
 
   @ApiPropertyOptional({
@@ -48,7 +49,11 @@ export class GetLocationsQueryDto {
     example: 200000,
   })
   @IsOptional()
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? undefined : parsed;
+  })
   @IsNumber()
   @Min(0)
   maxPricePerHour?: number;
@@ -58,7 +63,11 @@ export class GetLocationsQueryDto {
     example: 2000000,
   })
   @IsOptional()
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? undefined : parsed;
+  })
   @IsNumber()
   @Min(0)
   maxPricePerDay?: number;
@@ -68,7 +77,11 @@ export class GetLocationsQueryDto {
     example: 50000000,
   })
   @IsOptional()
-  @Transform(({ value }) => parseFloat(value))
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? undefined : parsed;
+  })
   @IsNumber()
   @Min(0)
   maxPricePerMonth?: number;
@@ -96,4 +109,13 @@ export class GetLocationsQueryDto {
   @IsOptional()
   @IsString()
   businessId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by location status',
+    enum: LocationRequestStatus,
+    example: LocationRequestStatus.APPROVED,
+  })
+  @IsOptional()
+  @IsEnum(LocationRequestStatus)
+  status?: LocationRequestStatus;
 }

@@ -1,6 +1,14 @@
 import { Rank } from '@/common/constants/Rank.constant';
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
-import { Entity, JoinColumn, Column, OneToOne, PrimaryColumn } from 'typeorm';
+import { CheckInEntity } from '@/modules/business/domain/CheckIn.entity';
+import {
+  Entity,
+  JoinColumn,
+  Column,
+  OneToOne,
+  PrimaryColumn,
+  OneToMany,
+} from 'typeorm';
 
 @Entity({ name: 'profiles' })
 export class ProfileEntity {
@@ -21,4 +29,7 @@ export class ProfileEntity {
 
   @Column({ name: 'total_achievements', type: 'integer', default: 0 })
   totalAchievements: number;
+
+  @OneToMany(() => CheckInEntity, (checkIn) => checkIn.profile)
+  checkIns: CheckInEntity[];
 }

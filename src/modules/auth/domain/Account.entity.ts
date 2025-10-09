@@ -53,7 +53,7 @@ export class AccountEntity {
   @Column({ name: 'has_onboarded', type: 'boolean', default: false })
   hasOnboarded: boolean;
 
-  @Column({ name: 'role', type: 'enum', enum: Role })
+  @Column({ name: 'role', type: 'enum', enum: Role, default: Role.USER })
   role: Role;
 
   @OneToMany(() => PostEntity, (post) => post.author)

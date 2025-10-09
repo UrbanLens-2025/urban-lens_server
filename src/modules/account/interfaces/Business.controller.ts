@@ -40,7 +40,6 @@ export class BusinessController {
   }
 
   @Get()
-  // @Roles(Role.BUSINESS_OWNER)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get businesses with pagination and filters',
