@@ -1,4 +1,4 @@
-import { RegisterUserDto } from '@/common/dto/auth/RegisterUser.dto';
+import { RegisterDto } from '@/common/dto/auth/Register.dto';
 import { LoginDto } from '@/common/dto/auth/Login.dto';
 import { UserLoginResponse } from '@/common/dto/auth/UserLoginResponse.dto';
 import { RegisterResponseDto } from '@/common/dto/auth/RegisterResponse.dto';
@@ -12,7 +12,7 @@ export const IAuthService = Symbol('IAuthService');
 export interface IAuthService {
   resendOtp(dto: RegisterResendOtpDto): Promise<any>;
 
-  registerUser(dto: RegisterUserDto): Promise<RegisterResponseDto>;
+  register(dto: RegisterDto): Promise<RegisterResponseDto>;
 
   registerUserConfirm(dto: RegisterConfirmDto): Promise<UserLoginResponse.Dto>;
 

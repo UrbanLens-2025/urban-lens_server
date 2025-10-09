@@ -2,7 +2,7 @@ import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IAccountUserService } from '@/modules/account/app/IAccount.user.service';
 
-@ApiTags('Account - User')
+@ApiTags('Account - Public')
 @Controller('/public/account')
 export class AccountPublicController {
   constructor(
@@ -12,7 +12,7 @@ export class AccountPublicController {
 
   @ApiOperation({ summary: 'Get user details by id' })
   @Get('/info/:id')
-  getAccountInfo(@Param('id', ParseUUIDPipe) id: string) {
+  getPublicAccountInfo(@Param('id', ParseUUIDPipe) id: string) {
     return this.accountUserService.getAccountInfo({ userId: id });
   }
 }

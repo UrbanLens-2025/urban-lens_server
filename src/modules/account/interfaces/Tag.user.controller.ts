@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ITagUserService } from '@/modules/account/app/ITag.user.service';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
+import { WithPagination } from '@/common/WithPagination.decorator';
 
 @Roles(Role.USER)
 @ApiBearerAuth()
@@ -16,17 +17,7 @@ export class TagUserController {
   ) {}
 
   @Get()
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({
-    name: 'sortBy',
-    required: false,
-    type: String,
-    isArray: true,
-    example: ['name:ASC'],
-  })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'filter', required: false, type: String, isArray: true })
+  @WithPagination()
   getTags(@Paginate() query: PaginateQuery) {
     return this.tagUserService.listTags(query);
   }

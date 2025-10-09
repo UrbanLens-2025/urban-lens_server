@@ -6,7 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { RegisterUserDto } from '@/common/dto/auth/RegisterUser.dto';
+import { RegisterDto } from '@/common/dto/auth/Register.dto';
 import { TokenService } from '@/common/core/token/token.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from '@/common/dto/auth/Login.dto';
@@ -45,9 +45,11 @@ export class AuthService extends CoreService implements IAuthService {
     throw new Error('Method not implemented.');
   }
 
-  async registerUser(
-    createAuthDto: RegisterUserDto,
-  ): Promise<RegisterResponseDto> {
+  async register(createAuthDto: RegisterDto): Promise<RegisterResponseDto> {
+    if (createAuthDto.role === Role.ADMIN) {
+      throw new BadRequestException('Cannot register as admin');
+    }
+
     const userExistsDb = await this.userRepository.repo.existsBy({
       email: createAuthDto.email,
     });
@@ -106,7 +108,6 @@ export class AuthService extends CoreService implements IAuthService {
 
     const userEntity = this.mapTo_Raw(AccountEntity, createAuthDto);
     userEntity.password = await bcrypt.hash(createAuthDto.password, 10);
-    userEntity.role = Role.USER;
     const user = await this.userRepository.repo.save(userEntity);
 
     await this.emailNotificationService.sendEmail({
@@ -126,7 +127,6 @@ export class AuthService extends CoreService implements IAuthService {
   async loginUser(loginDto: LoginDto): Promise<UserLoginResponse.Dto> {
     const user = await this.userRepository.repo.findOneBy({
       email: loginDto.email,
-      role: Role.USER,
     });
 
     return this.validateLogin(loginDto, user);

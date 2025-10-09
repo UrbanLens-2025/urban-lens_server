@@ -19,5 +19,7 @@ export namespace UserAccountResponse {
     avatarUrl: string | null;
     @Expose()
     coverUrl: string | null;
+    @Expose()
+    hasOnboarded: boolean;
   }
 }

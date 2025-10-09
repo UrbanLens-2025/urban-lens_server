@@ -5,6 +5,7 @@ import { ITagAdminService } from '@/modules/account/app/ITag.admin.service';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { TagRepository } from '@/modules/account/infra/repository/Tag.repository';
 import { TagEntity } from '@/modules/account/domain/Tag.entity';
+import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 
 @Injectable()
 export class TagAdminService extends CoreService implements ITagAdminService {
@@ -26,5 +27,13 @@ export class TagAdminService extends CoreService implements ITagAdminService {
     return this.tagRepository.repo
       .save(tag)
       .then((res) => this.mapTo(TagResponse.Dto, res));
+  }
+
+  search(query: PaginateQuery): Promise<Paginated<TagResponse.Dto>> {
+    return paginate(query, this.tagRepository.repo, {
+      sortableColumns: ['displayName', 'createdAt', 'updatedAt'],
+      defaultSortBy: [['displayName', 'DESC']],
+      searchableColumns: ['displayName'],
+    });
   }
 }
