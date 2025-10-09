@@ -1,0 +1,16 @@
+export enum BusinessRequestStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+export enum BusinessCategory {
+  FOOD = 'FOOD',
+  RETAIL = 'RETAIL',
+  SERVICE = 'SERVICE',
+  ENTERTAINMENT = 'ENTERTAINMENT',
+  HEALTH = 'HEALTH',
+  EDUCATION = 'EDUCATION',
+  TECHNOLOGY = 'TECHNOLOGY',
+  OTHER = 'OTHER',
+}

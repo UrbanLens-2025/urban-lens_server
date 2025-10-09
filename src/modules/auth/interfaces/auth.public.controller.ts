@@ -40,7 +40,18 @@ export class AuthPublicController {
   login(@Body() loginDto: LoginDto) {
     return this.authService.loginUser(loginDto);
   }
-  //#endregion
+
+  @ApiOperation({ summary: 'Login as Admin' })
+  @Post('/login/admin')
+  loginAsAdmin(@Body() dto: LoginDto) {
+    return this.authService.loginAdmin(dto);
+  }
+
+  @ApiOperation({ summary: 'Login as Business Owner' })
+  @Post('/login/bowner')
+  loginAsBusinessOwner(@Body() dto: LoginDto) {
+    return this.authService.loginBusinessOwner(dto);
+  }
 
   @ApiOperation({
     summary: 'Resend OTP code to email (unimplemented)',

@@ -21,6 +21,7 @@ import { RolesGuard } from '@/common/Roles.guard';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { PostModule } from '@/modules/post/Post.module';
+import { BusinessModule } from '@/modules/business/Business.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { PostModule } from '@/modules/post/Post.module';
     NotificationModule,
     AuthModule,
     AccountModule,
+    BusinessModule,
     FileStorageModule,
     PostModule,
   ],

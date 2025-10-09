@@ -3,14 +3,17 @@ import { Role } from '@/common/constants/Role.constant';
 import { CommentEntity } from '@/modules/post/domain/Comment.entity';
 import { PostEntity } from '@/modules/post/domain/Post.entity';
 import { ReactEntity } from '@/modules/post/domain/React.entity';
+import { ProfileEntity } from '@/modules/account/domain/Profile.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 
 @Entity({ name: 'accounts' })
 export class AccountEntity {
@@ -50,7 +53,7 @@ export class AccountEntity {
   @Column({ name: 'has_onboarded', type: 'boolean', default: false })
   hasOnboarded: boolean;
 
-  @Column({ name: 'role', type: 'text' })
+  @Column({ name: 'role', type: 'enum', enum: Role, default: Role.USER })
   role: Role;
 
   @OneToMany(() => PostEntity, (post) => post.author)
@@ -61,4 +64,14 @@ export class AccountEntity {
 
   @OneToMany(() => ReactEntity, (react) => react.author)
   reacts: ReactEntity[];
+
+  @OneToOne(() => ProfileEntity, (profile) => profile.account, {
+    cascade: true,
+  })
+  profile: ProfileEntity;
+
+  @OneToOne(() => BusinessEntity, (business) => business.account, {
+    cascade: true,
+  })
+  business: BusinessEntity;
 }

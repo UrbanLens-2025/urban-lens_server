@@ -34,4 +34,14 @@ export class AuthDevOnlyController {
     const loginDto = plainToInstance(LoginDto, adminDetails);
     return this.authService.loginAdmin(loginDto);
   }
+
+  @ApiOperation({ summary: 'Get Business Owner JWT Token' })
+  @Post('/login/business-owner')
+  loginAsBusinessOwner() {
+    const businessOwnerDetails = this.accountSeederHelper.DEFAULT_USERS.find(
+      (i) => i.role === Role.BUSINESS_OWNER,
+    );
+    const loginDto = plainToInstance(LoginDto, businessOwnerDetails);
+    return this.authService.loginBusinessOwner(loginDto);
+  }
 }
