@@ -18,12 +18,8 @@ export interface IAuthService {
 
   loginUser(dto: LoginDto): Promise<UserLoginResponse.Dto>;
 
-  loginAdmin(dto: LoginDto): Promise<UserLoginResponse.Dto>;
-
   changePassword(
     userDto: JwtTokenDto,
     dto: ChangePasswordDto,
   ): Promise<UpdateResult>;
-
-  loginBusinessOwner(dto: LoginDto): Promise<UserLoginResponse.Dto>;
 }

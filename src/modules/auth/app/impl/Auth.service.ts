@@ -33,7 +33,7 @@ export class AuthService extends CoreService implements IAuthService {
 
   constructor(
     private readonly redisRegisterConfirmRepository: RedisRegisterConfirmRepository,
-    private readonly userRepository: AccountRepository,
+    private readonly accountRepository: AccountRepository,
     private readonly tokenService: TokenService,
     @Inject(IEmailNotificationService)
     private readonly emailNotificationService: IEmailNotificationService,
@@ -50,7 +50,7 @@ export class AuthService extends CoreService implements IAuthService {
       throw new BadRequestException('Cannot register as admin');
     }
 
-    const userExistsDb = await this.userRepository.repo.existsBy({
+    const userExistsDb = await this.accountRepository.repo.existsBy({
       email: createAuthDto.email,
     });
 
@@ -108,7 +108,7 @@ export class AuthService extends CoreService implements IAuthService {
 
     const userEntity = this.mapTo_Raw(AccountEntity, createAuthDto);
     userEntity.password = await bcrypt.hash(createAuthDto.password, 10);
-    const user = await this.userRepository.repo.save(userEntity);
+    const user = await this.accountRepository.repo.save(userEntity);
 
     await this.emailNotificationService.sendEmail({
       to: user.email,
@@ -125,24 +125,15 @@ export class AuthService extends CoreService implements IAuthService {
   }
 
   async loginUser(loginDto: LoginDto): Promise<UserLoginResponse.Dto> {
-    const user = await this.userRepository.repo.findOneBy({
+    const user = await this.accountRepository.repo.findOneBy({
       email: loginDto.email,
-    });
-
-    return this.validateLogin(loginDto, user);
-  }
-
-  async loginAdmin(loginDto: LoginDto): Promise<UserLoginResponse.Dto> {
-    const user = await this.userRepository.repo.findOneBy({
-      email: loginDto.email,
-      role: Role.ADMIN,
     });
 
     return this.validateLogin(loginDto, user);
   }
 
   async changePassword(userDto: JwtTokenDto, dto: ChangePasswordDto) {
-    const user = await this.userRepository.repo.findOneBy({
+    const user = await this.accountRepository.repo.findOneBy({
       id: userDto.sub,
     });
 
@@ -161,7 +152,7 @@ export class AuthService extends CoreService implements IAuthService {
 
     user.password = await bcrypt.hash(dto.newPassword, 10);
 
-    return this.userRepository.repo.update({ id: user.id }, user);
+    return this.accountRepository.repo.update({ id: user.id }, user);
   }
 
   private async validateLogin(
@@ -185,14 +176,5 @@ export class AuthService extends CoreService implements IAuthService {
     response.user = this.mapTo(UserAccountResponse.Dto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
-  }
-
-  async loginBusinessOwner(loginDto: LoginDto): Promise<UserLoginResponse.Dto> {
-    const user = await this.userRepository.repo.findOneBy({
-      email: loginDto.email,
-      role: Role.BUSINESS_OWNER,
-    });
-
-    return this.validateLogin(loginDto, user);
   }
 }

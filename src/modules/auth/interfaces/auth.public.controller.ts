@@ -2,12 +2,11 @@ import { Body, Controller, Inject, Post } from '@nestjs/common';
 import { LoginDto } from '@/common/dto/auth/Login.dto';
 import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RegisterDto } from '@/common/dto/auth/Register.dto';
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
 
 @ApiTags('Auth - Public')
-@ApiBearerAuth()
 @Controller('/public/auth')
 export class AuthPublicController {
   constructor(
@@ -16,14 +15,14 @@ export class AuthPublicController {
 
   //#region Registration
 
-  @ApiOperation({ summary: 'Create new user' })
+  @ApiOperation({ summary: 'Create new account' })
   @Post('/register/user')
   register(@Body() createAuthDto: RegisterDto) {
     return this.authService.register(createAuthDto);
   }
 
   @ApiOperation({
-    summary: 'Confirm user registration',
+    summary: 'Confirm account registration',
     description: "Use confirmCode from '/register/user' and otpCode from email",
   })
   @Post('/register/confirm')
@@ -34,27 +33,16 @@ export class AuthPublicController {
 
   //#region Login
   @ApiOperation({
-    summary: 'Login as User',
+    summary: 'Login',
   })
   @Post('login')
   login(@Body() loginDto: LoginDto) {
     return this.authService.loginUser(loginDto);
   }
 
-  @ApiOperation({ summary: 'Login as Admin' })
-  @Post('/login/admin')
-  loginAsAdmin(@Body() dto: LoginDto) {
-    return this.authService.loginAdmin(dto);
-  }
-
-  @ApiOperation({ summary: 'Login as Business Owner' })
-  @Post('/login/bowner')
-  loginAsBusinessOwner(@Body() dto: LoginDto) {
-    return this.authService.loginBusinessOwner(dto);
-  }
-
   @ApiOperation({
     summary: 'Resend OTP code to email (unimplemented)',
+    deprecated: true,
   })
   @Post('/register/resend-otp')
   resendOtp(@Body('email') dto: RegisterResendOtpDto) {
