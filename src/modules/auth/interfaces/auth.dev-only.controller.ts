@@ -32,7 +32,7 @@ export class AuthDevOnlyController {
       (i) => i.role === Role.ADMIN,
     );
     const loginDto = plainToInstance(LoginDto, adminDetails);
-    return this.authService.loginAdmin(loginDto);
+    return this.authService.loginUser(loginDto);
   }
 
   @ApiOperation({ summary: 'Get Business Owner JWT Token' })
@@ -42,6 +42,6 @@ export class AuthDevOnlyController {
       (i) => i.role === Role.BUSINESS_OWNER,
     );
     const loginDto = plainToInstance(LoginDto, businessOwnerDetails);
-    return this.authService.loginBusinessOwner(loginDto);
+    return this.authService.loginUser(loginDto);
   }
 }

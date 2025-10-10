@@ -19,7 +19,10 @@ export class EmailNotificationService
   }
 
   async sendEmail(dto: SendEmailDto): Promise<void> {
-    const res = await this.emailQueue.add('otp-email', dto, {});
+    const res = await this.emailQueue.add('otp-email', dto, {
+      removeOnComplete: true,
+      removeOnFail: { age: 60 * 30 },
+    });
     this.logger.debug(`Email job added to queue with ID: ${res.id}`);
   }
 }
