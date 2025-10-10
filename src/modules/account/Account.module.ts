@@ -5,17 +5,15 @@ import { AccountUserController } from '@/modules/account/interfaces/Account.user
 import { AccountPublicController } from '@/modules/account/interfaces/Account.public.controller';
 import { IAccountUserService } from '@/modules/account/app/IAccount.user.service';
 import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
-import { ITagUserService } from '@/modules/account/app/ITag.user.service';
-import { TagUserService } from '@/modules/account/app/impl/Tag.user.service';
-import { ITagAdminService } from '@/modules/account/app/ITag.admin.service';
-import { TagAdminService } from '@/modules/account/app/impl/Tag.admin.service';
 import { TagAdminController } from '@/modules/account/interfaces/Tag.admin.controller';
-import { TagUserController } from '@/modules/account/interfaces/Tag.user.controller';
 import { AccountCreatorController } from '@/modules/account/interfaces/Account.creator.controller';
 import { AccountOwnerController } from '@/modules/account/interfaces/Account.owner.controller';
 import { AccountAdminController } from '@/modules/account/interfaces/Account.admin.controller';
 import { IOnboardService } from '@/modules/account/app/IOnboard.service';
 import { OnboardService } from '@/modules/account/app/impl/Onboard.service';
+import { ITagService } from '@/modules/account/app/ITag.service';
+import { TagService } from '@/modules/account/app/impl/Tag.service';
+import { TagPublicController } from '@/modules/account/interfaces/Tag.public.controller';
 
 @Module({
   imports: [AccountInfraModule, AuthModule],
@@ -26,7 +24,7 @@ import { OnboardService } from '@/modules/account/app/impl/Onboard.service';
     AccountOwnerController,
     AccountAdminController,
     TagAdminController,
-    TagUserController,
+    TagPublicController,
   ],
   providers: [
     {
@@ -34,12 +32,8 @@ import { OnboardService } from '@/modules/account/app/impl/Onboard.service';
       useClass: AccountUserService,
     },
     {
-      provide: ITagUserService,
-      useClass: TagUserService,
-    },
-    {
-      provide: ITagAdminService,
-      useClass: TagAdminService,
+      provide: ITagService,
+      useClass: TagService,
     },
     {
       provide: IOnboardService,
