@@ -7,7 +7,10 @@ import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 export const IBusinessService = Symbol('IBusinessService');
 
 export interface IBusinessService {
-  createBusiness(createBusinessDto: CreateBusinessDto): Promise<any>;
+  createBusiness(
+    accountId: string,
+    createBusinessDto: CreateBusinessDto,
+  ): Promise<any>;
   getBusinessById(businessId: string): Promise<any>;
   getBusinessesWithPagination(queryParams: GetBusinessesQueryDto): Promise<any>;
   updateBusinessStatus(

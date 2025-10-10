@@ -35,8 +35,7 @@ export class BusinessController {
     @Body() createBusinessDto: CreateBusinessDto,
     @AuthUser() user: JwtTokenDto,
   ) {
-    createBusinessDto.accountId = user.sub;
-    return this.businessService.createBusiness(createBusinessDto);
+    return this.businessService.createBusiness(user.sub, createBusinessDto);
   }
 
   @Get()
