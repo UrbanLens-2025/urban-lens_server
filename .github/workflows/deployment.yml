@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        node-version: [ 20 ]
+        node-version: [ 22 ]
     steps:
       - uses: actions/checkout@v4
       - name: Install pnpm
@@ -31,3 +31,33 @@ jobs:
         run: pnpm build
       - name: List output directory
         run: ls -la ./
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+  test:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        node-version: [ 22 ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Run tests
+        run: pnpm test --passWithNoTests
