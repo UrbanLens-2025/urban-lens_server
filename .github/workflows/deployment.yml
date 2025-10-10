@@ -28,4 +28,4 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: List output directory
-        run: ls -la ./dist
+        run: ls -la ./
