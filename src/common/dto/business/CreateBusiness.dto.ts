@@ -112,10 +112,6 @@ export class CreateBusinessDto {
 
   @IsOptional()
   @IsString()
-  @ApiProperty({
-    description: 'The account id of the business',
-    example: '1234567890',
-  })
   accountId: string;
 
   @IsEnum(BusinessCategory)

@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import { BusinessRepository } from '../../infra/repository/Business.repository';
 import { PaginationResult } from '@/common/services/base.service';
@@ -15,16 +16,47 @@ import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 import { BusinessRequestStatus } from '@/common/constants/Business.constant';
 import { AccountRepository } from '@/modules/auth/infra/repository/Account.repository';
 import { Role } from '@/common/constants/Role.constant';
+import { IEmailNotificationService } from '@/modules/notification/app/IEmailNotification.service';
+import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
 
 @Injectable()
 export class BusinessService implements IBusinessService {
   constructor(
     private readonly businessRepository: BusinessRepository,
     private readonly accountRepository: AccountRepository,
+    @Inject(IEmailNotificationService)
+    private readonly emailNotificationService: IEmailNotificationService,
   ) {}
 
-  async createBusiness(createBusinessDto: CreateBusinessDto): Promise<any> {
-    const business = this.businessRepository.repo.create(createBusinessDto);
+  async createBusiness(
+    accountId: string,
+    createBusinessDto: CreateBusinessDto,
+  ): Promise<any> {
+    const existingBusiness = await this.businessRepository.repo.findOne({
+      where: { accountId },
+    });
+
+    if (existingBusiness) {
+      throw new BadRequestException(
+        'Business already registered for this account',
+      );
+    }
+
+    // Verify account exists and is business owner
+    const account = await this.accountRepository.repo.findOne({
+      where: { id: accountId, role: Role.BUSINESS_OWNER },
+    });
+
+    if (!account) {
+      throw new NotFoundException('Business owner account not found');
+    }
+
+    const business = this.businessRepository.repo.create({
+      ...createBusinessDto,
+      accountId,
+      status: BusinessRequestStatus.PENDING,
+    });
+
     return await this.businessRepository.repo.save(business);
   }
 
@@ -110,11 +142,37 @@ export class BusinessService implements IBusinessService {
     // Save updated business
     const updatedBusiness = await this.businessRepository.repo.save(business);
 
-    // Update account hasOnboarded status based on business approval
+    // Update account hasOnboarded status and send notification email
     if (updateStatusDto.status === BusinessRequestStatus.APPROVED) {
       await this.accountRepository.repo.update(business.accountId, {
         hasOnboarded: true,
-        role: Role.BUSINESS_OWNER, // Also update role to BUSINESS_OWNER
+        role: Role.BUSINESS_OWNER,
+      });
+
+      // Send approval email
+      await this.emailNotificationService.sendEmail({
+        to: business.account.email,
+        template: EmailTemplates.BUSINESS_APPROVED,
+        context: {
+          businessOwnerName: `${business.account.firstName} ${business.account.lastName}`,
+          businessName: business.name,
+          businessCategory: business.category,
+          approvedDate: new Date().toLocaleDateString(),
+          adminNotes: business.adminNotes,
+        },
+      });
+    } else if (updateStatusDto.status === BusinessRequestStatus.REJECTED) {
+      // Send rejection email with feedback
+      await this.emailNotificationService.sendEmail({
+        to: business.account.email,
+        template: EmailTemplates.BUSINESS_REJECTED,
+        context: {
+          businessOwnerName: `${business.account.firstName} ${business.account.lastName}`,
+          businessName: business.name,
+          businessCategory: business.category,
+          reviewedDate: new Date().toLocaleDateString(),
+          adminNotes: business.adminNotes,
+        },
       });
     }
     // Note: If rejected, hasOnboarded remains false so user can update business info

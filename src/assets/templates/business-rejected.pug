@@ -1,0 +1,51 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    title Business Application Update
+    style.
+      body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background: #dc3545; color: white; padding: 20px; text-align: center; }
+      .content { padding: 20px; background: #f9f9f9; }
+      .button { display: inline-block; padding: 12px 24px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 10px 0; }
+      .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0; }
+  body
+    .container
+      .header
+        h1 📋 Business Application Update
+        p Your Application Requires Attention
+      
+      .content
+        p Dear #{businessOwnerName},
+        
+        p Thank you for submitting your business application for <strong>#{businessName}</strong>. After careful review, we need some additional information or corrections before we can approve your application.
+        
+        .warning
+          p <strong>Admin Feedback:</strong>
+          p #{adminNotes}
+        
+        p <strong>What's Next:</strong>
+        ul
+          li Review the feedback above carefully
+          li Update your business information as needed
+          li Resubmit your application for review
+          li Our team will review your updated application within 2-3 business days
+        
+        p <strong>Business Details:</strong>
+        ul
+          li <strong>Business Name:</strong> #{businessName}
+          li <strong>Category:</strong> #{businessCategory}
+          li <strong>Review Date:</strong> #{reviewedDate}
+        
+        p Don't worry - this is a common part of the approval process. Most applications are approved after addressing the initial feedback.
+        
+        p If you have any questions about the feedback, please don't hesitate to contact our support team.
+        
+        p Best regards,<br>
+          The Urban Lens Team
+      
+      .footer
+        p © 2024 Urban Lens. All rights reserved.
+        p This is an automated message. Please do not reply to this email.
