@@ -27,7 +27,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22.19.0
-          cache: 'pnpm'
 
       # 3️⃣ Now install dependencies (now pnpm is ready)
       - name: Install dependencies
