@@ -1,0 +1,4 @@
+export enum CreatorTypes {
+  INDIVIDUAL = 'INDIVIDUAL',
+  ORGANIZATION = 'ORGANIZATION',
+}

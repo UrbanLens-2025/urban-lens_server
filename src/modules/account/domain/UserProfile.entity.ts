@@ -10,16 +10,19 @@ import {
   OneToMany,
 } from 'typeorm';
 
-@Entity({ name: 'profiles' })
-export class ProfileEntity {
+@Entity({ name: 'user_profiles' })
+export class UserProfileEntity {
   @PrimaryColumn({ name: 'account_id', type: 'uuid' })
   accountId: string;
 
   @OneToOne(() => AccountEntity, (account) => account.profile, {
-    onDelete: 'CASCADE',
+    createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;
+
+  @Column({ name: 'dob', type: 'timestamp' })
+  dob: Date;
 
   @Column({ name: 'rank', type: 'enum', enum: Rank, default: Rank.BRONZE })
   rank: Rank;

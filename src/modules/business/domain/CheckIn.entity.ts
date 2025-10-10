@@ -1,4 +1,4 @@
-import { ProfileEntity } from '@/modules/account/domain/Profile.entity';
+import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 import {
   Column,
   Entity,
@@ -16,9 +16,9 @@ export class CheckInEntity {
   @Column({ name: 'profile_id' })
   profileId: string;
 
-  @ManyToOne(() => ProfileEntity, (profile) => profile.checkIns)
+  @ManyToOne(() => UserProfileEntity, (profile) => profile.checkIns)
   @JoinColumn({ name: 'profile_id' })
-  profile: ProfileEntity;
+  profile: UserProfileEntity;
 
   @Column({ name: 'location_id' })
   locationId: string;

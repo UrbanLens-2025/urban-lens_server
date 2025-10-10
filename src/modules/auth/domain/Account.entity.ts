@@ -3,7 +3,7 @@ import { Role } from '@/common/constants/Role.constant';
 import { CommentEntity } from '@/modules/post/domain/Comment.entity';
 import { PostEntity } from '@/modules/post/domain/Post.entity';
 import { ReactEntity } from '@/modules/post/domain/React.entity';
-import { ProfileEntity } from '@/modules/account/domain/Profile.entity';
+import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 import {
   Column,
   CreateDateColumn,
@@ -65,10 +65,10 @@ export class AccountEntity {
   @OneToMany(() => ReactEntity, (react) => react.author)
   reacts: ReactEntity[];
 
-  @OneToOne(() => ProfileEntity, (profile) => profile.account, {
+  @OneToOne(() => UserProfileEntity, (profile) => profile.account, {
     cascade: true,
   })
-  profile: ProfileEntity;
+  profile: UserProfileEntity;
 
   @OneToOne(() => BusinessEntity, (business) => business.account, {
     cascade: true,

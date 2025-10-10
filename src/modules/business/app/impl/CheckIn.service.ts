@@ -10,7 +10,7 @@ import { CheckInEntity } from '../../domain/CheckIn.entity';
 import { ICheckInService } from '../ICheckIn.service';
 import { CheckInRepository } from '../../infra/repository/CheckIn.repository';
 import { LocationRepository } from '../../infra/repository/Location.repository';
-import { ProfileRepository } from '@/modules/account/infra/repository/Profile.repository';
+import { UserProfileRepository } from '@/modules/account/infra/repository/UserProfile.repository';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
 
 @Injectable()
@@ -18,7 +18,7 @@ export class CheckInService implements ICheckInService {
   constructor(
     private readonly checkInRepository: CheckInRepository,
     private readonly locationRepository: LocationRepository,
-    private readonly profileRepository: ProfileRepository,
+    private readonly profileRepository: UserProfileRepository,
   ) {}
 
   async createCheckIn(

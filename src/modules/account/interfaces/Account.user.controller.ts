@@ -11,9 +11,10 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { IAccountUserService } from '@/modules/account/app/IAccount.user.service';
-import { OnboardUser } from '@/common/dto/auth/Onboarding.dto';
+import { OnboardUserDto } from '@/common/dto/account/OnboardUser.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { IOnboardService } from '@/modules/account/app/IOnboard.service';
 
 @ApiBearerAuth()
 @Roles(Role.USER)
@@ -23,6 +24,8 @@ export class AccountUserController {
   constructor(
     @Inject(IAccountUserService)
     private readonly accountUserService: IAccountUserService,
+    @Inject(IOnboardService)
+    private readonly onboardService: IOnboardService,
   ) {}
 
   @ApiOperation({ summary: 'Get user details by id' })
@@ -33,7 +36,7 @@ export class AccountUserController {
 
   @ApiOperation({ summary: 'Onboard a user' })
   @Post('/onboard')
-  onboard(@Body() dto: OnboardUser.DTO, @AuthUser() userDto: JwtTokenDto) {
-    return this.accountUserService.onboardUser(userDto.sub, dto);
+  onboard(@Body() dto: OnboardUserDto, @AuthUser() userDto: JwtTokenDto) {
+    return this.onboardService.onboardUser(userDto.sub, dto);
   }
 }

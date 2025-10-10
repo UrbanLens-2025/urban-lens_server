@@ -5,15 +5,18 @@ import { TagEntity } from '@/modules/account/domain/Tag.entity';
 import { UserTagsEntity } from '@/modules/account/domain/UserTags.entity';
 import { UserTagsRepository } from '@/modules/account/infra/repository/UserTags.repository';
 import { BusinessRepository } from '@/modules/account/infra/repository/Business.repository';
-import { ProfileRepository } from '@/modules/account/infra/repository/Profile.repository';
+import { UserProfileRepository } from '@/modules/account/infra/repository/UserProfile.repository';
 import { BusinessEntity } from '../domain/Business.entity';
-import { ProfileEntity } from '../domain/Profile.entity';
+import { UserProfileEntity } from '../domain/UserProfile.entity';
+import { CreatorProfileRepository } from '@/modules/account/infra/repository/CreatorProfile.repository';
+import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
 
 const repositories = [
   TagRepository,
   UserTagsRepository,
   BusinessRepository,
-  ProfileRepository,
+  UserProfileRepository,
+  CreatorProfileRepository,
 ];
 
 @Module({
@@ -22,7 +25,8 @@ const repositories = [
       TagEntity,
       UserTagsEntity,
       BusinessEntity,
-      ProfileEntity,
+      UserProfileEntity,
+      CreatorProfileEntity,
     ]),
   ],
   providers: repositories,

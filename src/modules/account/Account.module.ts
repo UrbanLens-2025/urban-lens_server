@@ -14,6 +14,8 @@ import { TagUserController } from '@/modules/account/interfaces/Tag.user.control
 import { AccountCreatorController } from '@/modules/account/interfaces/Account.creator.controller';
 import { AccountOwnerController } from '@/modules/account/interfaces/Account.owner.controller';
 import { AccountAdminController } from '@/modules/account/interfaces/Account.admin.controller';
+import { IOnboardService } from '@/modules/account/app/IOnboard.service';
+import { OnboardService } from '@/modules/account/app/impl/Onboard.service';
 
 @Module({
   imports: [AccountInfraModule, AuthModule],
@@ -38,6 +40,10 @@ import { AccountAdminController } from '@/modules/account/interfaces/Account.adm
     {
       provide: ITagAdminService,
       useClass: TagAdminService,
+    },
+    {
+      provide: IOnboardService,
+      useClass: OnboardService,
     },
     // {
     //   provide: IBusinessService,

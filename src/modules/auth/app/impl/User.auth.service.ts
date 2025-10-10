@@ -1,15 +1,9 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { AccountRepository } from '@/modules/auth/infra/repository/Account.repository';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { CoreService } from '@/common/core/Core.service';
 import { UpdateUserAccountDto } from '@/common/dto/auth/UpdateUserAccount.dto';
 import { UserAccountResponse } from '@/common/dto/auth/UserAccountResponse.dto';
-import { OnboardUser } from '@/common/dto/auth/Onboarding.dto';
-import { UpdateResult } from 'typeorm';
 import { IUserAuthService } from '@/modules/auth/app/IUser.auth.service';
 
 @Injectable()
