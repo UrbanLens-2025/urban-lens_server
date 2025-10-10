@@ -1,4 +1,5 @@
 name: deployment.yml
+
 on:
   push:
     branches:
@@ -6,25 +7,36 @@ on:
   pull_request:
     branches:
       - sandbox/dev
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+
+      # 1️⃣ Install pnpm first (sets up pnpm CLI)
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 9
           run_install: false
+
+      # 2️⃣ Setup Node and enable pnpm caching
       - name: Use Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '22.19.0'
+          node-version: 22.19.0
           cache: 'pnpm'
+
+      # 3️⃣ Now install dependencies (now pnpm is ready)
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # 4️⃣ Build the NestJS app
       - name: Build NestJS app
         run: pnpm build
+
+      # 5️⃣ Just to confirm output
       - name: List output directory
         run: ls -R ./dist
