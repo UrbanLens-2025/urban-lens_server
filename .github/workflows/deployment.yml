@@ -1,0 +1,25 @@
+name: deployment.yml
+on:
+  push:
+    branches:
+      - sandbox/dev
+  pull_request:
+    branches:
+      - sandbox/dev
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Use Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.19.0'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run build
+        run: npm run build
+      - name: List output directory
+        run: ls -R ./dist
