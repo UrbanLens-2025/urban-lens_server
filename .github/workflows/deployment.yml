@@ -38,6 +38,7 @@ jobs:
           path: dist/
   test:
     runs-on: ubuntu-22.04
+    needs: build
     strategy:
       matrix:
         node-version: [ 22 ]
