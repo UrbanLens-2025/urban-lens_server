@@ -108,6 +108,12 @@ export class AuthService extends CoreService implements IAuthService {
 
     const userEntity = this.mapTo_Raw(AccountEntity, createAuthDto);
     userEntity.password = await bcrypt.hash(createAuthDto.password, 10);
+
+    // Business owners need to complete onboarding (register business and get approval)
+    if (createAuthDto.role === Role.BUSINESS_OWNER) {
+      userEntity.hasOnboarded = false;
+    }
+
     const user = await this.userRepository.repo.save(userEntity);
 
     await this.emailNotificationService.sendEmail({

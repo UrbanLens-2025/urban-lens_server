@@ -1,0 +1,49 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    title Business Application Approved
+    style.
+      body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background: #28a745; color: white; padding: 20px; text-align: center; }
+      .content { padding: 20px; background: #f9f9f9; }
+      .button { display: inline-block; padding: 12px 24px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 10px 0; }
+      .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+  body
+    .container
+      .header
+        h1 🎉 Congratulations!
+        p Your Business Application Has Been Approved
+      
+      .content
+        p Dear #{businessOwnerName},
+        
+        p Great news! Your business application for <strong>#{businessName}</strong> has been approved by our admin team.
+        
+        p <strong>Business Details:</strong>
+        ul
+          li <strong>Business Name:</strong> #{businessName}
+          li <strong>Category:</strong> #{businessCategory}
+          li <strong>Status:</strong> Approved ✅
+          li <strong>Approved Date:</strong> #{approvedDate}
+        
+        if adminNotes
+          p <strong>Admin Notes:</strong>
+          p <em>#{adminNotes}</em>
+        
+        p You can now:
+        ul
+          li Access all business owner features
+          li Create and manage locations
+          li View analytics and insights
+          li Manage your business profile
+        
+        p Welcome to the Urban Lens business community!
+        
+        p Best regards,<br>
+          The Urban Lens Team
+      
+      .footer
+        p © 2024 Urban Lens. All rights reserved.
+        p This is an automated message. Please do not reply to this email.
