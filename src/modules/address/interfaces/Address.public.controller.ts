@@ -9,7 +9,7 @@ import { IProvinceService } from '@/modules/address/app/IProvince.service';
 import { IWardService } from '@/modules/address/app/IWard.service';
 import { WithPagination } from '@/common/WithPagination.decorator';
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
-import { ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { CacheInterceptor } from '@nestjs/cache-manager';
 
 @UseInterceptors(CacheInterceptor)

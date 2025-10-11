@@ -34,7 +34,7 @@ export class ProvinceService extends CoreService implements IProvinceService {
       }
 
       const e = await provinceRepository.save(dto.values);
-      return e.map((p) => this.mapTo(ProvinceResponseDto, e));
+      return e.map((p) => this.mapTo(ProvinceResponseDto, p));
     });
   }
 
