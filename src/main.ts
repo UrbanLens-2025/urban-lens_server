@@ -4,6 +4,7 @@ import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { globalValidationConfig } from '@/config/validation.config';
 import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerDocumentConfig } from '@/config/swagger.config';
+import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 
 async function bootstrap() {
   const logLevelString = process.env.LOG_LEVELS || 'log';
@@ -26,11 +27,16 @@ async function bootstrap() {
     defaultVersion: ['1'],
   });
 
+  const theme = new SwaggerTheme();
+
   SwaggerModule.setup(
     'swagger',
     app,
     SwaggerModule.createDocument(app, swaggerDocumentConfig),
-    { jsonDocumentUrl: 'swagger/json' },
+    {
+      jsonDocumentUrl: 'swagger/json',
+      customCss: theme.getBuffer(SwaggerThemeNameEnum.DARK),
+    },
   );
 
   await app.listen(process.env.PORT ?? 3000);
