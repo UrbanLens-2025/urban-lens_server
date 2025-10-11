@@ -18,7 +18,7 @@ export interface IFileStorageService {
    * @param manager Optional EntityManager for transaction management
    */
   confirmUpload(
-    fileUrl: string[],
+    fileUrl: (string | null | undefined)[],
     manager?: EntityManager,
   ): Promise<PublicFileEntity[]>;
 }
