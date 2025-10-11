@@ -3,7 +3,6 @@ import {
   Inject,
   Injectable,
   Logger,
-  NotFoundException,
 } from '@nestjs/common';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { CoreService } from '@/common/core/Core.service';
