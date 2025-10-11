@@ -133,7 +133,6 @@ export class AuthService extends CoreService implements IAuthService {
   async loginUser(loginDto: LoginDto): Promise<UserLoginResponse.Dto> {
     const user = await this.accountRepository.repo.findOneBy({
       email: loginDto.email,
-      role: Role.ADMIN,
     });
 
     return this.validateLogin(loginDto, user);

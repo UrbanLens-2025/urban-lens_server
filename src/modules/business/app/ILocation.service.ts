@@ -43,10 +43,4 @@ export interface ILocationService {
     updateLocationDto: UpdateLocationDto,
     businessOwnerId: string,
   ): Promise<LocationEntity>;
-
-  getAllLocationsDebug(): Promise<LocationEntity[]>;
-
-  getLocationsSimple(): Promise<PaginationResult<LocationEntity>>;
-
-  getLocationsNoFilters(): Promise<PaginationResult<LocationEntity>>;
 }

@@ -43,37 +43,6 @@ export class LocationController {
     return this.locationService.createLocation(createLocationDto, user.sub);
   }
 
-  @Get('debug/all')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Debug: Get all locations',
-    description: 'Debug endpoint to see all locations in database',
-  })
-  getAllLocationsDebug() {
-    return this.locationService.getAllLocationsDebug();
-  }
-
-  @Get('debug/simple')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Debug: Simple location query',
-    description: 'Simple query without any filters to test basic functionality',
-  })
-  getLocationsSimple() {
-    return this.locationService.getLocationsSimple();
-  }
-
-  @Get('debug/no-filters')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Debug: No filters query',
-    description:
-      'Same query structure as main endpoint but with no filters applied',
-  })
-  getLocationsNoFilters() {
-    return this.locationService.getLocationsNoFilters();
-  }
-
   @Get()
   @ApiBearerAuth()
   @ApiOperation({
@@ -99,6 +68,20 @@ export class LocationController {
       businessId,
       queryParams,
     );
+  }
+
+  @Get('my-locations')
+  @ApiBearerAuth()
+  @Roles(Role.BUSINESS_OWNER)
+  @ApiOperation({
+    summary: 'Get all locations by business owner',
+    description: 'Get all locations by business owner',
+  })
+  getMyLocations(@AuthUser() user: JwtTokenDto) {
+    return this.locationService.getLocationsByBusinessId(user.sub, {
+      page: 1,
+      limit: 10,
+    });
   }
 
   @Get(':id')

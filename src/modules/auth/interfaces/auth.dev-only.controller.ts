@@ -42,6 +42,7 @@ export class AuthDevOnlyController {
       (i) => i.role === Role.BUSINESS_OWNER,
     );
     const loginDto = plainToInstance(LoginDto, businessOwnerDetails);
+    console.log(loginDto);
     return this.authService.loginUser(loginDto);
   }
 }
