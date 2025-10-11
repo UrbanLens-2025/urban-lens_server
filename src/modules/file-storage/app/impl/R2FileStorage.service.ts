@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
@@ -34,6 +35,7 @@ export class R2FileStorageService
     super();
   }
 
+  private readonly logger = new Logger(R2FileStorageService.name);
   private static readonly MAX_NORMAL_SIZE = 5 * 1024 * 1024; // 5MB
 
   async confirmUpload(
@@ -41,6 +43,10 @@ export class R2FileStorageService
     manager?: EntityManager,
   ): Promise<PublicFileEntity[]> {
     const filteredUrls = fileUrl.filter((url): url is string => !!url);
+
+    if (filteredUrls.length === 0) {
+      return [];
+    }
 
     return this.ensureTransaction(
       manager,
@@ -55,7 +61,13 @@ export class R2FileStorageService
           files.length === 0 ||
           files.length !== filteredUrls.length
         ) {
-          throw new NotFoundException('File(s) not found');
+          const missingFiles = filteredUrls.filter(
+            (url) => !files.some((file) => file.fileUrl === url),
+          );
+          this.logger.warn(
+            'Some files not found in the database: ' + missingFiles.join(', '),
+          );
+          // TODO - decide if this should throw an error or just log a warning
         }
 
         files.forEach((file) => (file.status = PublicFileStatus.IN_USE));
