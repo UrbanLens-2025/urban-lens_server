@@ -19,7 +19,7 @@ import {
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { PublicFileEntity } from '@/modules/file-storage/domain/PublicFile.entity';
 import { PublicFileStatus } from '@/common/constants/PublicFileStatus.constant';
-import { DataSource, EntityManager, In } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 import { PublicFileRepository } from '@/modules/file-storage/infra/repository/PublicFile.repository';
 
 @Injectable()
