@@ -37,9 +37,13 @@ export class R2FileStorageService
 
   private static readonly MAX_NORMAL_SIZE = 5 * 1024 * 1024; // 5MB
 
-  async confirmUpload(fileUrl: string[]): Promise<PublicFileEntity[]> {
+  async confirmUpload(
+    fileUrl: (string | null | undefined)[],
+  ): Promise<PublicFileEntity[]> {
+    const filteredUrls = fileUrl.filter((url): url is string => !!url);
+
     const publicFile = await this.publicFileRepository.repo.findBy({
-      fileUrl: In(fileUrl),
+      fileUrl: In(filteredUrls),
     });
 
     if (!publicFile) {
