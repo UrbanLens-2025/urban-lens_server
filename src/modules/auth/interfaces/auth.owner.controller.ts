@@ -1,4 +1,13 @@
-import { Controller, Post, Body, UseGuards, Inject, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Inject,
+  Get,
+  Patch,
+  Param,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -13,6 +22,8 @@ import { AuthUser } from '@/common/AuthUser.decorator';
 import { CreateBusinessDto } from '@/common/dto/business/CreateBusiness.dto';
 import { IBusinessService } from '@/modules/account/app/IBusiness.service';
 import { SuccessResponseDto } from '@/common/dto/SuccessResponse.dto';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { UpdateBusinessStatusDto } from '@/common/dto/business/UpdateBusinessStatus.dto';
 
 @ApiTags('Auth - Business Owner')
 @Controller('auth/business-owner')
@@ -45,11 +56,11 @@ export class AuthBusinessOwnerController {
     description: 'Forbidden - Only business owners can register business',
   })
   async registerBusiness(
-    @AuthUser() user: any,
+    @AuthUser() user: JwtTokenDto,
     @Body() createBusinessDto: CreateBusinessDto,
   ) {
     const business = await this.businessService.createBusiness(
-      user.id,
+      user.sub,
       createBusinessDto,
     );
 
@@ -68,9 +79,27 @@ export class AuthBusinessOwnerController {
     description: 'Onboarding status retrieved',
     type: SuccessResponseDto,
   })
-  async getOnboardingStatus(@AuthUser() user: any) {
-    const business = await this.businessService.getBusinessById(user.id);
+  async getOnboardingStatus(@AuthUser() user: JwtTokenDto) {
+    const business = await this.businessService.getBusinessById(user.sub);
 
     return business;
+  }
+
+  @Patch('onboard/:businessId')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Update business onboarding status',
+    description: 'Update business onboarding status',
+  })
+  async updateOnboardingStatus(
+    @AuthUser() user: JwtTokenDto,
+    @Body() updateBusinessDto: UpdateBusinessStatusDto,
+    @Param('businessId') businessId: string,
+  ) {
+    return this.businessService.updateBusinessStatus(
+      businessId,
+      updateBusinessDto,
+      user.sub,
+    );
   }
 }

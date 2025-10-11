@@ -14,6 +14,8 @@ import { OnboardService } from '@/modules/account/app/impl/Onboard.service';
 import { ITagService } from '@/modules/account/app/ITag.service';
 import { TagService } from '@/modules/account/app/impl/Tag.service';
 import { TagPublicController } from '@/modules/account/interfaces/Tag.public.controller';
+import { IBusinessService } from './app/IBusiness.service';
+import { BusinessService } from './app/impl/Business.service';
 
 @Module({
   imports: [AccountInfraModule, AuthModule],
