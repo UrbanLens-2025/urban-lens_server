@@ -23,6 +23,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { PostModule } from '@/modules/post/Post.module';
 import { BusinessModule } from '@/modules/business/Business.module';
 import { EventModule } from '@/modules/event/event.module';
+import { AddressModule } from '@/modules/address/Address.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { EventModule } from '@/modules/event/event.module';
     FileStorageModule,
     PostModule,
     EventModule,
+    AddressModule,
   ],
   controllers: [AppController],
   providers: [
@@ -85,6 +87,5 @@ import { EventModule } from '@/modules/event/event.module';
     FirebaseAdminProvider,
     AppService,
   ],
-  exports: [],
 })
 export class AppModule {}
