@@ -45,4 +45,14 @@ export class AuthDevOnlyController {
     console.log(loginDto);
     return this.authService.loginUser(loginDto);
   }
+
+  @ApiOperation({ summary: 'Get Event Creator JWT Token' })
+  @Post('/login/event-creator')
+  loginAsEventCreator() {
+    const eventCreatorDetails = this.accountSeederHelper.DEFAULT_USERS.find(
+      (i) => i.role === Role.EVENT_CREATOR,
+    );
+    const loginDto = plainToInstance(LoginDto, eventCreatorDetails);
+    return this.authService.loginUser(loginDto);
+  }
 }

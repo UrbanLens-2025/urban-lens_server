@@ -3,8 +3,14 @@ import {
   ClassTransformOptions,
 } from 'class-transformer/types/interfaces';
 import { plainToInstance } from 'class-transformer';
+import { DataSource, EntityManager } from 'typeorm';
+import { Inject, Injectable } from '@nestjs/common';
 
+@Injectable()
 export class CoreService {
+  @Inject(DataSource)
+  protected readonly dataSource: DataSource;
+
   /**
    * Map plain object to class instance. Requires @Expose() decorator on class properties.
    * @param cls Target class
@@ -36,5 +42,16 @@ export class CoreService {
     return plainToInstance(cls, plain, {
       ...options,
     });
+  }
+
+  ensureTransaction<T>(
+    em: EntityManager | null | undefined,
+    fn: (em: EntityManager) => Promise<T>,
+  ) {
+    if (em) {
+      return fn(em);
+    } else {
+      return this.dataSource.transaction(fn);
+    }
   }
 }

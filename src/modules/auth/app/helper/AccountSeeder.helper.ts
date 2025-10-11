@@ -52,6 +52,15 @@ export class AccountSeederHelper implements OnModuleInit {
       phoneNumber: '+84123456789',
       role: Role.BUSINESS_OWNER,
     },
+    {
+      email: 'eventcreator@gmail.com',
+      password: '12345678',
+      firstName: 'Event',
+      lastName: 'Creator',
+      isVerified: true,
+      phoneNumber: '+84123456789',
+      role: Role.EVENT_CREATOR,
+    },
   ];
 
   async onModuleInit() {

@@ -5,11 +5,10 @@ import { ITagService } from '@/modules/account/app/ITag.service';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { TagEntity } from '@/modules/account/domain/Tag.entity';
-import { DataSource } from 'typeorm';
 
 @Injectable()
 export class TagService extends CoreService implements ITagService {
-  constructor(private readonly dataSource: DataSource) {
+  constructor() {
     super();
   }
 

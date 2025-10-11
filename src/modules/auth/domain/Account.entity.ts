@@ -74,4 +74,8 @@ export class AccountEntity {
     cascade: true,
   })
   business: BusinessEntity;
+
+  public canCreateEvent(): boolean {
+    return this.role === Role.EVENT_CREATOR && this.hasOnboarded;
+  }
 }

@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 import { AllowedUploadTypes } from '@/common/constants/AllowedUploadTypes.constant';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { PublicFileEntity } from '@/modules/file-storage/domain/PublicFile.entity';
+import { EntityManager } from 'typeorm';
 
 export const IFileStorageService = Symbol('IFileStorageService');
 export interface IFileStorageService {
@@ -11,5 +12,13 @@ export interface IFileStorageService {
     userDto: JwtTokenDto,
   ): Observable<string>;
 
-  confirmUpload(fileUrl: string[]): Promise<PublicFileEntity[]>;
+  /**
+   * Confirm the upload of files by updating their status to IN_USE
+   * @param fileUrl Array of file URLs to confirm upload
+   * @param manager Optional EntityManager for transaction management
+   */
+  confirmUpload(
+    fileUrl: (string | null | undefined)[],
+    manager?: EntityManager,
+  ): Promise<PublicFileEntity[]>;
 }
