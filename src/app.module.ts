@@ -22,6 +22,7 @@ import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { PostModule } from '@/modules/post/Post.module';
 import { BusinessModule } from '@/modules/business/Business.module';
+import { EventModule } from '@/modules/event/event.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { BusinessModule } from '@/modules/business/Business.module';
     BusinessModule,
     FileStorageModule,
     PostModule,
+    EventModule,
   ],
   controllers: [AppController],
   providers: [
