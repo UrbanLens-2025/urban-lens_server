@@ -5,6 +5,9 @@ import {
 import { plainToInstance } from 'class-transformer';
 
 export class CoreService {
+  @Inject(DataSource)
+  protected readonly dataSource: DataSource;
+
   /**
    * Map plain object to class instance. Requires @Expose() decorator on class properties.
    * @param cls Target class

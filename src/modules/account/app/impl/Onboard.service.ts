@@ -13,7 +13,7 @@ import { Role } from '@/common/constants/Role.constant';
 
 @Injectable()
 export class OnboardService extends CoreService implements IOnboardService {
-  constructor(private readonly dataSource: DataSource) {
+  constructor() {
     super();
   }
 
