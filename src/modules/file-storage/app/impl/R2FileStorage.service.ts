@@ -16,11 +16,11 @@ import {
   AllowedUploadMimeTypes,
   AllowedUploadTypes,
 } from '@/common/constants/AllowedUploadTypes.constant';
-import { PublicFileRepository } from '@/modules/file-storage/infra/repository/PublicFile.repository';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { PublicFileEntity } from '@/modules/file-storage/domain/PublicFile.entity';
 import { PublicFileStatus } from '@/common/constants/PublicFileStatus.constant';
-import { In } from 'typeorm';
+import { DataSource, EntityManager, In } from 'typeorm';
+import { PublicFileRepository } from '@/modules/file-storage/infra/repository/PublicFile.repository';
 
 @Injectable()
 export class R2FileStorageService
@@ -30,7 +30,6 @@ export class R2FileStorageService
   constructor(
     @Inject(R2_CLIENT) private readonly r2: R2Client,
     private readonly configService: ConfigService<Environment>,
-    private readonly publicFileRepository: PublicFileRepository,
   ) {
     super();
   }
@@ -39,20 +38,31 @@ export class R2FileStorageService
 
   async confirmUpload(
     fileUrl: (string | null | undefined)[],
+    manager?: EntityManager,
   ): Promise<PublicFileEntity[]> {
     const filteredUrls = fileUrl.filter((url): url is string => !!url);
 
-    const publicFile = await this.publicFileRepository.repo.findBy({
-      fileUrl: In(filteredUrls),
-    });
+    return this.ensureTransaction(
+      manager,
+      async (manager: EntityManager): Promise<PublicFileEntity[]> => {
+        const publicFileRepository = PublicFileRepository(manager);
+        const files = await publicFileRepository.find({
+          where: { fileUrl: In(filteredUrls) },
+        });
 
-    if (!publicFile) {
-      throw new NotFoundException('File not found');
-    }
+        if (
+          !files ||
+          files.length === 0 ||
+          files.length !== filteredUrls.length
+        ) {
+          throw new NotFoundException('File(s) not found');
+        }
 
-    publicFile.forEach((file) => (file.status = PublicFileStatus.IN_USE));
+        files.forEach((file) => (file.status = PublicFileStatus.IN_USE));
 
-    return this.publicFileRepository.repo.save(publicFile);
+        return publicFileRepository.save(files);
+      },
+    );
   }
 
   uploadFilePublic(
@@ -80,23 +90,27 @@ export class R2FileStorageService
     fileEntity.status = PublicFileStatus.AWAITING_UPLOAD;
 
     return from(
-      this.publicFileRepository.repo
-        .save(fileEntity)
-        .then(async (savedFile) => {
-          await this.r2.send(
-            new PutObjectCommand({
-              Bucket: this.configService.get('R2_PUBLIC_BUCKET_NAME'),
-              Key: fileEntity.fileName,
-              Body: body.buffer,
-              ACL: 'public-read',
-            }),
-          );
-          const url = `${this.configService.get('R2_PUBLIC_DEVELOPMENT_URL')}/${savedFile.fileName}`;
-          savedFile.status = PublicFileStatus.AWAITING_CONFIRM_SIGNAL;
-          savedFile.fileUrl = url;
-          await this.publicFileRepository.repo.save(savedFile);
-          return url;
-        }),
+      this.dataSource.transaction(async (entityManager) => {
+        const publicFileRepository = PublicFileRepository(entityManager);
+
+        const savedFile = await publicFileRepository.save(fileEntity);
+
+        await this.r2.send(
+          new PutObjectCommand({
+            Bucket: this.configService.get('R2_PUBLIC_BUCKET_NAME'),
+            Key: fileEntity.fileName,
+            Body: body.buffer,
+            ACL: 'public-read',
+          }),
+        );
+
+        const url = `${this.configService.get('R2_PUBLIC_DEVELOPMENT_URL')}/${savedFile.fileName}`;
+        savedFile.status = PublicFileStatus.AWAITING_CONFIRM_SIGNAL;
+        savedFile.fileUrl = url;
+        await publicFileRepository.save(savedFile);
+
+        return url;
+      }),
     );
   }
 
