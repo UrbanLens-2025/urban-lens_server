@@ -18,7 +18,7 @@ import {
   PaginationParams,
   PaginationResult,
 } from '@/common/services/base.service';
-import { PostEntity } from '@/modules/post/domain/Post.entity';
+import { PostEntity, PostType } from '@/modules/post/domain/Post.entity';
 import { ReactPostDto } from '@/common/dto/post/ReactPost.dto';
 import { ReactRepository } from '@/modules/post/infra/repository/React.repository';
 import {
@@ -68,11 +68,33 @@ export class PostService
 
           const post = this.postRepository.repo.create(dto);
           const savedPost = await transactionalEntityManager.save(post);
+
+          // Create post analytic
           const analytic = this.analyticRepository.repo.create({
             entityId: savedPost.postId,
             entityType: AnalyticEntityType.POST,
           });
           await transactionalEntityManager.save(analytic);
+
+          // If this is a review post, update location/event analytics
+          if (dto.type === PostType.REVIEW && dto.rating) {
+            if (dto.locationId) {
+              await this.updateEntityRating(
+                dto.locationId,
+                AnalyticEntityType.LOCATION,
+                transactionalEntityManager,
+              );
+            }
+
+            if (dto.eventId) {
+              await this.updateEntityRating(
+                dto.eventId,
+                AnalyticEntityType.EVENT,
+                transactionalEntityManager,
+              );
+            }
+          }
+
           return savedPost;
         },
       );
@@ -82,6 +104,57 @@ export class PostService
       console.error(error);
       throw new InternalServerErrorException(error);
     }
+  }
+
+  private async updateEntityRating(
+    entityId: string,
+    entityType: AnalyticEntityType,
+    transactionalEntityManager: any,
+  ): Promise<void> {
+    const analyticRepo =
+      transactionalEntityManager.getRepository(AnalyticEntity);
+    const postRepo = transactionalEntityManager.getRepository(PostEntity);
+
+    // Find or create analytic record for the entity
+    let analytic = await analyticRepo.findOne({
+      where: { entityId, entityType },
+    });
+
+    if (!analytic) {
+      analytic = analyticRepo.create({
+        entityId,
+        entityType,
+      });
+      await analyticRepo.save(analytic);
+    }
+
+    // Calculate average rating from all reviews
+    const locationField =
+      entityType === AnalyticEntityType.LOCATION ? 'locationId' : 'eventId';
+    const reviews = await postRepo.find({
+      where: {
+        [locationField]: entityId,
+        type: PostType.REVIEW,
+      },
+    });
+
+    // Update total reviews count
+    analytic.totalReviews = reviews.length;
+
+    if (reviews.length > 0) {
+      const totalRating = reviews.reduce(
+        (sum, review) => sum + (review.rating || 0),
+        0,
+      );
+      const avgRating = totalRating / reviews.length;
+
+      analytic.avgRating = parseFloat(avgRating.toFixed(2));
+    } else {
+      // Reset average rating if no reviews
+      analytic.avgRating = 0;
+    }
+
+    await analyticRepo.save(analytic);
   }
 
   async getPostById(postId: string, userId?: string): Promise<any> {
@@ -212,6 +285,25 @@ export class PostService
           entityType: AnalyticEntityType.POST,
         });
         await tx.delete(PostEntity, { postId: post.postId });
+
+        // If this was a review post, update location/event analytics
+        if (post.type === PostType.REVIEW && post.rating) {
+          if (post.locationId) {
+            await this.updateEntityRating(
+              post.locationId,
+              AnalyticEntityType.LOCATION,
+              tx,
+            );
+          }
+
+          if (post.eventId) {
+            await this.updateEntityRating(
+              post.eventId,
+              AnalyticEntityType.EVENT,
+              tx,
+            );
+          }
+        }
       });
 
       return 'Post deleted successfully';

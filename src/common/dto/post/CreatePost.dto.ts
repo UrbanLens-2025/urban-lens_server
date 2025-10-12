@@ -36,6 +36,14 @@ export class CreatePostDto {
 
   @IsString()
   @IsOptional()
+  @ApiProperty({
+    description: 'The id of the event',
+    example: '1',
+  })
+  eventId?: string;
+
+  @IsString()
+  @IsOptional()
   authorId?: string;
 
   @IsArray()

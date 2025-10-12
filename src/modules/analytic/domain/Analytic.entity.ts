@@ -23,6 +23,9 @@ export class AnalyticEntity {
   @Column({ name: 'total_views', default: 0 })
   totalViews: number;
 
+  @Column({ name: 'total_reviews', default: 0 })
+  totalReviews: number;
+
   @Column({ name: 'avg_rating', default: 0 })
   avgRating: number;
 }
@@ -30,4 +33,6 @@ export class AnalyticEntity {
 export enum AnalyticEntityType {
   POST = 'post',
   COMMENT = 'comment',
+  LOCATION = 'location',
+  EVENT = 'event',
 }

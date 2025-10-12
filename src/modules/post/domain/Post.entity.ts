@@ -47,6 +47,12 @@ export class PostEntity {
   @Column({ name: 'author_id' })
   authorId: string;
 
+  @Column({ name: 'location_id', type: 'uuid', nullable: true })
+  locationId: string;
+
+  @Column({ name: 'event_id', type: 'uuid', nullable: true })
+  eventId: string;
+
   @OneToMany(() => CommentEntity, (comment) => comment.post, {
     cascade: ['remove'],
   })
