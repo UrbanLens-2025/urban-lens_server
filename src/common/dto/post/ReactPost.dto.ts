@@ -2,7 +2,7 @@ import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ReactType } from '@/modules/post/domain/React.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ReactPostRequestDto {
+export class ReactPostDto {
   @IsString()
   @IsNotEmpty()
   @ApiProperty({

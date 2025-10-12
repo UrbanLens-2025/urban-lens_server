@@ -17,9 +17,15 @@ import { TagPublicController } from '@/modules/account/interfaces/Tag.public.con
 import { IBusinessService } from './app/IBusiness.service';
 import { BusinessService } from './app/impl/Business.service';
 import { NotificationModule } from '../notification/Notification.module';
+import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 
 @Module({
-  imports: [AccountInfraModule, AuthModule, NotificationModule],
+  imports: [
+    AccountInfraModule,
+    AuthModule,
+    NotificationModule,
+    FileStorageModule,
+  ],
   controllers: [
     AccountUserController,
     AccountPublicController,

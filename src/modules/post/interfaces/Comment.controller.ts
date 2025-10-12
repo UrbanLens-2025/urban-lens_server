@@ -9,12 +9,12 @@ import {
   Query,
 } from '@nestjs/common';
 import { ICommentService } from '../app/IComment.service';
-import { CreateCommentRequestDto } from '@/common/dto/post/CreateCommentRequest.dto';
+import { CreateCommentRequestDto } from '@/common/dto/post/CreateComment.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import type { PaginationParams } from '@/common/services/base.service';
-import { ReactCommentRequestDto } from '@/common/dto/post/ReactCommentRequest.dto';
+import { ReactCommentRequestDto } from '@/common/dto/post/ReactComment.dto';
 
 @ApiTags('Comment')
 @ApiBearerAuth()

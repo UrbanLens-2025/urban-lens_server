@@ -14,6 +14,7 @@ import { AuthInfraModule } from '@/modules/auth/infra/auth.infra.module';
 import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
 import { IBusinessService } from '@/modules/account/app/IBusiness.service';
 import { BusinessService } from '@/modules/account/app/impl/Business.service';
+import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { BusinessService } from '@/modules/account/app/impl/Business.service';
     NotificationModule,
     TokenModule,
     AccountInfraModule,
+    FileStorageModule,
   ],
   controllers: [
     AuthPublicController,
