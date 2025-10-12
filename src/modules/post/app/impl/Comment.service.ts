@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ICommentService } from '../IComment.service';
-import { CreateCommentRequestDto } from '@/common/dto/post/CreateCommentRequest.dto';
+import { CreateCommentRequestDto } from '@/common/dto/post/CreateComment.dto';
 import { CommentRepository } from '../../infra/repository/Comment.repository';
 import { AnalyticRepository } from '../../../analytic/infra/repository/Analytic.repository';
 import { BaseService, PaginationParams } from '@/common/services/base.service';
@@ -13,9 +13,9 @@ import { CommentEntity } from '../../domain/Comment.entity';
 import { PostRepository } from '../../infra/repository/Post.repository';
 import { AnalyticEntityType } from '@/modules/analytic/domain/Analytic.entity';
 import { ReactRepository } from '../../infra/repository/React.repository';
-import { ReactCommentRequestDto } from '@/common/dto/post/ReactCommentRequest.dto';
+import { ReactCommentRequestDto } from '@/common/dto/post/ReactComment.dto';
 import { ReactEntityType, ReactType } from '../../domain/React.entity';
-import { DeleteCommentRequestDto } from '@/common/dto/post/DeleteCommentRequest.dto';
+import { DeleteCommentRequestDto } from '@/common/dto/post/DeleteComment.dto';
 
 @Injectable()
 export class CommentService

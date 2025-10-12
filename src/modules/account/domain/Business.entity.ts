@@ -26,6 +26,9 @@ export class BusinessEntity {
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;
 
+  @Column({ name: 'avatar', type: 'varchar', length: 255, nullable: true })
+  avatar: string;
+
   @Column({ name: 'website', type: 'varchar', length: 255 })
   website: string;
 
@@ -35,17 +38,8 @@ export class BusinessEntity {
   @Column({ name: 'address', type: 'varchar', length: 255 })
   address: string;
 
-  @Column({ name: 'city', type: 'varchar', length: 255 })
-  city: string;
-
-  @Column({ name: 'state', type: 'varchar', length: 255 })
-  state: string;
-
-  @Column({ name: 'zip_code', type: 'varchar', length: 255 })
-  zipCode: string;
-
-  @Column({ name: 'country', type: 'varchar', length: 255 })
-  country: string;
+  @Column({ name: 'ward_code', type: 'varchar', length: 255 })
+  wardCode: string;
 
   @Column({ name: 'description', type: 'text' })
   description: string;
@@ -58,12 +52,6 @@ export class BusinessEntity {
 
   @Column({ name: 'license_type', type: 'varchar', length: 255 })
   licenseType: string;
-
-  @Column({ name: 'latitude', type: 'decimal', precision: 10, scale: 8 })
-  latitude: number;
-
-  @Column({ name: 'longitude', type: 'decimal', precision: 11, scale: 8 })
-  longitude: number;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
@@ -84,6 +72,12 @@ export class BusinessEntity {
 
   @Column({ name: 'admin_notes', type: 'text', nullable: true })
   adminNotes: string | null;
+
+  @Column({ name: 'email', type: 'varchar', length: 255, nullable: false })
+  email: string;
+
+  @Column({ name: 'phone', type: 'varchar', length: 255, nullable: false })
+  phone: string;
 
   @Column({
     name: 'category',

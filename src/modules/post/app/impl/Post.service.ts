@@ -1,13 +1,13 @@
 import {
-  BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { IPostService } from '../IPost.service';
 import { PostRepository } from '@/modules/post/infra/repository/Post.repository';
-import { CreatePostRequestDto } from '@/common/dto/post/CreatePostRequest.dto';
+import { CreatePostDto } from '@/common/dto/post/CreatePost.dto';
 import { AnalyticRepository } from '../../../analytic/infra/repository/Analytic.repository';
 import {
   AnalyticEntity,
@@ -19,17 +19,17 @@ import {
   PaginationResult,
 } from '@/common/services/base.service';
 import { PostEntity } from '@/modules/post/domain/Post.entity';
-import { ReactPostRequestDto } from '@/common/dto/post/ReactPostRequest.dto';
+import { ReactPostDto } from '@/common/dto/post/ReactPost.dto';
 import { ReactRepository } from '@/modules/post/infra/repository/React.repository';
 import {
   ReactEntity,
   ReactEntityType,
   ReactType,
 } from '../../domain/React.entity';
-import { DeletePostRequestDto } from '@/common/dto/post/DeletePostRequest.dto';
+import { DeletePostDto } from '@/common/dto/post/DeletePost.dto';
 import { CommentRepository } from '../../infra/repository/Comment.repository';
 import { CommentEntity } from '../../domain/Comment.entity';
-
+import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 @Injectable()
 export class PostService
   extends BaseService<PostEntity>
@@ -40,14 +40,32 @@ export class PostService
     private readonly analyticRepository: AnalyticRepository,
     private readonly reactRepository: ReactRepository,
     private readonly commentRepository: CommentRepository,
+    @Inject(IFileStorageService)
+    private readonly fileStorageService: IFileStorageService,
   ) {
     super(postRepository.repo);
   }
 
-  async createPost(dto: CreatePostRequestDto): Promise<any> {
+  async createPost(dto: CreatePostDto): Promise<any> {
     try {
       const result = await this.postRepository.repo.manager.transaction(
         async (transactionalEntityManager) => {
+          // Confirm upload for images if provided
+          if (dto.imageUrls && dto.imageUrls.length > 0) {
+            await this.fileStorageService.confirmUpload(
+              dto.imageUrls,
+              transactionalEntityManager,
+            );
+          }
+
+          // Confirm upload for videos if provided
+          if (dto.videoIds && dto.videoIds.length > 0) {
+            await this.fileStorageService.confirmUpload(
+              dto.videoIds,
+              transactionalEntityManager,
+            );
+          }
+
           const post = this.postRepository.repo.create(dto);
           const savedPost = await transactionalEntityManager.save(post);
           const analytic = this.analyticRepository.repo.create({
@@ -58,6 +76,7 @@ export class PostService
           return savedPost;
         },
       );
+
       return result.postId;
     } catch (error) {
       console.error(error);
@@ -101,7 +120,7 @@ export class PostService
     }
   }
 
-  async reactPost(dto: ReactPostRequestDto): Promise<any> {
+  async reactPost(dto: ReactPostDto): Promise<any> {
     try {
       const post = await this.postRepository.repo.findOne({
         where: { postId: dto.postId },
@@ -167,7 +186,7 @@ export class PostService
     }
   }
 
-  async deletePost(dto: DeletePostRequestDto): Promise<any> {
+  async deletePost(dto: DeletePostDto): Promise<any> {
     try {
       const post = await this.postRepository.repo.findOne({
         where: { postId: dto.postId },

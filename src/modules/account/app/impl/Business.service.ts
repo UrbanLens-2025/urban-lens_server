@@ -18,6 +18,7 @@ import { AccountRepository } from '@/modules/auth/infra/repository/Account.repos
 import { Role } from '@/common/constants/Role.constant';
 import { IEmailNotificationService } from '@/modules/notification/app/IEmailNotification.service';
 import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
+import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 
 @Injectable()
 export class BusinessService implements IBusinessService {
@@ -26,6 +27,8 @@ export class BusinessService implements IBusinessService {
     private readonly accountRepository: AccountRepository,
     @Inject(IEmailNotificationService)
     private readonly emailNotificationService: IEmailNotificationService,
+    @Inject(IFileStorageService)
+    private readonly fileStorageService: IFileStorageService,
   ) {}
 
   async createBusiness(
@@ -51,13 +54,25 @@ export class BusinessService implements IBusinessService {
       throw new NotFoundException('Business owner account not found');
     }
 
-    const business = this.businessRepository.repo.create({
-      ...createBusinessDto,
-      accountId,
-      status: BusinessRequestStatus.PENDING,
-    });
+    return await this.businessRepository.repo.manager.transaction(
+      async (transactionalEntityManager) => {
+        // Confirm upload for avatar if provided
+        if (createBusinessDto.avatar) {
+          await this.fileStorageService.confirmUpload(
+            [createBusinessDto.avatar],
+            transactionalEntityManager,
+          );
+        }
 
-    return await this.businessRepository.repo.save(business);
+        const business = this.businessRepository.repo.create({
+          ...createBusinessDto,
+          accountId,
+          status: BusinessRequestStatus.PENDING,
+        });
+
+        return await transactionalEntityManager.save(business);
+      },
+    );
   }
 
   async getBusinessById(businessId: string): Promise<any> {
@@ -204,15 +219,30 @@ export class BusinessService implements IBusinessService {
       );
     }
 
-    // Update business fields
-    Object.assign(business, updateBusinessDto);
+    return await this.businessRepository.repo.manager.transaction(
+      async (transactionalEntityManager) => {
+        // Confirm upload for avatar if provided and different from current
+        if (
+          updateBusinessDto.avatar &&
+          updateBusinessDto.avatar !== business.avatar
+        ) {
+          await this.fileStorageService.confirmUpload(
+            [updateBusinessDto.avatar],
+            transactionalEntityManager,
+          );
+        }
 
-    // Reset status to PENDING when business owner updates after rejection
-    if (business.status === BusinessRequestStatus.REJECTED) {
-      business.status = BusinessRequestStatus.PENDING;
-      business.adminNotes = null; // Clear previous admin notes
-    }
+        // Update business fields
+        Object.assign(business, updateBusinessDto);
 
-    return await this.businessRepository.repo.save(business);
+        // Reset status to PENDING when business owner updates after rejection
+        if (business.status === BusinessRequestStatus.REJECTED) {
+          business.status = BusinessRequestStatus.PENDING;
+          business.adminNotes = null; // Clear previous admin notes
+        }
+
+        return await transactionalEntityManager.save(business);
+      },
+    );
   }
 }

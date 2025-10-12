@@ -10,10 +10,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IPostService } from '../app/IPost.service';
-import { CreatePostRequestDto } from '@/common/dto/post/CreatePostRequest.dto';
+import { CreatePostDto } from '@/common/dto/post/CreatePost.dto';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
-import { ReactPostRequestDto } from '@/common/dto/post/ReactPostRequest.dto';
+import { ReactPostDto } from '@/common/dto/post/ReactPost.dto';
 import type { PaginationParams } from '@/common/services/base.service';
 
 @ApiTags('Post')
@@ -26,7 +26,7 @@ export class PostController {
 
   @ApiOperation({ summary: 'Create a new post' })
   @Post()
-  createPost(@Body() dto: CreatePostRequestDto, @AuthUser() user: JwtTokenDto) {
+  createPost(@Body() dto: CreatePostDto, @AuthUser() user: JwtTokenDto) {
     dto.authorId = user.sub;
     return this.postService.createPost(dto);
   }
@@ -45,7 +45,7 @@ export class PostController {
 
   @ApiOperation({ summary: 'React a post' })
   @Post('react')
-  reactPost(@Body() dto: ReactPostRequestDto, @AuthUser() user: JwtTokenDto) {
+  reactPost(@Body() dto: ReactPostDto, @AuthUser() user: JwtTokenDto) {
     dto.userId = user.sub;
     return this.postService.reactPost(dto);
   }

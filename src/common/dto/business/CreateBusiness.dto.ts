@@ -1,12 +1,6 @@
 import { BusinessCategory } from '@/common/constants/Business.constant';
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateBusinessDto {
   @IsString()
@@ -34,33 +28,36 @@ export class CreateBusinessDto {
   address: string;
 
   @IsString()
-  @ApiProperty({ description: 'The city of the business', example: 'New York' })
+  @ApiProperty({
+    description: 'The ward code of the business',
+    example: '123456',
+  })
   @IsNotEmpty()
-  city: string;
+  wardCode: string;
 
   @IsString()
   @ApiProperty({
-    description: 'The state of the business',
-    example: 'New York',
+    description: 'The email of the business',
+    example: 'business@example.com',
   })
   @IsNotEmpty()
-  state: string;
+  email: string;
 
   @IsString()
   @ApiProperty({
-    description: 'The zip code of the business',
-    example: '10001',
+    description: 'The phone of the business',
+    example: '1234567890',
   })
   @IsNotEmpty()
-  zipCode: string;
+  phone: string;
 
   @IsString()
   @ApiProperty({
-    description: 'The country of the business',
-    example: 'United States',
+    description: 'The avatar of the business',
+    example: 'https://www.business.com/avatar.png',
   })
   @IsNotEmpty()
-  country: string;
+  avatar: string;
 
   @IsString()
   @ApiProperty({
@@ -77,22 +74,6 @@ export class CreateBusinessDto {
   })
   @IsNotEmpty()
   licenseExpirationDate: string;
-
-  @IsNumber()
-  @ApiProperty({
-    description: 'The latitude of the business',
-    example: 40.7128,
-  })
-  @IsNotEmpty()
-  latitude: number;
-
-  @IsNumber()
-  @ApiProperty({
-    description: 'The longitude of the business',
-    example: -74.006,
-  })
-  @IsNotEmpty()
-  longitude: number;
 
   @IsString()
   @ApiProperty({
