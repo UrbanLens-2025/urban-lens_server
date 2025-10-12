@@ -1,7 +1,7 @@
-import { CreateCommentRequestDto } from '@/common/dto/post/CreateCommentRequest.dto';
+import { CreateCommentRequestDto } from '@/common/dto/post/CreateComment.dto';
 import type { PaginationParams } from '@/common/services/base.service';
-import { ReactCommentRequestDto } from '@/common/dto/post/ReactCommentRequest.dto';
-import { DeleteCommentRequestDto } from '@/common/dto/post/DeleteCommentRequest.dto';
+import { ReactCommentRequestDto } from '@/common/dto/post/ReactComment.dto';
+import { DeleteCommentRequestDto } from '@/common/dto/post/DeleteComment.dto';
 
 export const ICommentService = Symbol('ICommentService');
 

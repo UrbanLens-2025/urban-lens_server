@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString } from 'class-validator';
 import { IsNotEmpty } from 'class-validator';
 
-export class DeletePostRequestDto {
+export class DeletePostDto {
   @ApiProperty({
     description: 'The id of the post',
     example: '123e4567-e89b-12d3-a456-426614174000',

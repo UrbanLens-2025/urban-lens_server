@@ -16,9 +16,16 @@ import { TagService } from '@/modules/account/app/impl/Tag.service';
 import { TagPublicController } from '@/modules/account/interfaces/Tag.public.controller';
 import { IBusinessService } from './app/IBusiness.service';
 import { BusinessService } from './app/impl/Business.service';
+import { NotificationModule } from '../notification/Notification.module';
+import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 
 @Module({
-  imports: [AccountInfraModule, AuthModule],
+  imports: [
+    AccountInfraModule,
+    AuthModule,
+    NotificationModule,
+    FileStorageModule,
+  ],
   controllers: [
     AccountUserController,
     AccountPublicController,
@@ -41,10 +48,10 @@ import { BusinessService } from './app/impl/Business.service';
       provide: IOnboardService,
       useClass: OnboardService,
     },
-    // {
-    //   provide: IBusinessService,
-    //   useClass: BusinessService,
-    // },
+    {
+      provide: IBusinessService,
+      useClass: BusinessService,
+    },
   ],
 })
 export class AccountModule {}

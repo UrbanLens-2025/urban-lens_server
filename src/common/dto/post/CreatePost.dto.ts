@@ -1,7 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { PostType } from '@/modules/post/domain/Post.entity';
 
-export class CreatePostRequestDto {
+export class CreatePostDto {
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
@@ -37,4 +45,20 @@ export class CreatePostRequestDto {
     example: ['1', '2', '3'],
   })
   videoIds?: string[];
+
+  @IsEnum(PostType)
+  @IsOptional()
+  @ApiProperty({
+    description: 'The type of the post',
+    example: PostType.BLOG,
+  })
+  type: PostType;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({
+    description: 'The rating of the post',
+    example: 5,
+  })
+  rating: number;
 }
