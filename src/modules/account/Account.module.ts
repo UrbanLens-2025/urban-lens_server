@@ -20,7 +20,7 @@ import { NotificationModule } from '../notification/Notification.module';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 import { IFollowService } from './app/IFollow.service';
 import { FollowService } from './app/impl/Follow.service';
-import { FollowController } from './interfaces/Follow.controller';
+import { FollowUserController } from './interfaces/Follow.user.controller';
 import { TokenModule } from '@/common/core/token/token.module';
 
 @Module({
@@ -39,7 +39,7 @@ import { TokenModule } from '@/common/core/token/token.module';
     AccountAdminController,
     TagAdminController,
     TagPublicController,
-    FollowController,
+    FollowUserController,
   ],
   providers: [
     {

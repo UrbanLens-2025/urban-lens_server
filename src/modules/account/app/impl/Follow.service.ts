@@ -10,13 +10,27 @@ import { UnfollowDto } from '@/common/dto/account/Unfollow.dto';
 import { GetFollowersQueryDto } from '@/common/dto/account/GetFollowersQuery.dto';
 import { PaginationResult } from '@/common/services/base.service';
 import { FollowEntityType } from '@/modules/account/domain/Follow.entity';
+import { DataSource } from 'typeorm';
+import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { LocationEntity } from '@/modules/business/domain/Location.entity';
 
 @Injectable()
 export class FollowService implements IFollowService {
-  constructor(private readonly followRepository: FollowRepository) {}
+  constructor(
+    private readonly followRepository: FollowRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async follow(followerId: string, dto: FollowDto): Promise<any> {
-    // Check if already following
+    await this.validateEntityExists(dto.entityId, dto.entityType);
+
+    if (
+      dto.entityType === FollowEntityType.USER &&
+      followerId === dto.entityId
+    ) {
+      throw new BadRequestException('Cannot follow yourself');
+    }
+
     const existingFollow = await this.followRepository.repo.findOne({
       where: {
         followerId,
@@ -27,14 +41,6 @@ export class FollowService implements IFollowService {
 
     if (existingFollow) {
       throw new BadRequestException('Already following this entity');
-    }
-
-    // Prevent self-follow for users
-    if (
-      dto.entityType === FollowEntityType.USER &&
-      followerId === dto.entityId
-    ) {
-      throw new BadRequestException('Cannot follow yourself');
     }
 
     const follow = this.followRepository.repo.create({
@@ -48,7 +54,32 @@ export class FollowService implements IFollowService {
     return { message: 'Followed successfully' };
   }
 
+  private async validateEntityExists(
+    entityId: string,
+    entityType: FollowEntityType,
+  ): Promise<void> {
+    if (entityType === FollowEntityType.USER) {
+      const accountRepo = this.dataSource.getRepository(AccountEntity);
+      const user = await accountRepo.findOne({ where: { id: entityId } });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+    } else if (entityType === FollowEntityType.LOCATION) {
+      const locationRepo = this.dataSource.getRepository(LocationEntity);
+      const location = await locationRepo.findOne({
+        where: { id: entityId },
+      });
+
+      if (!location) {
+        throw new NotFoundException('Location not found');
+      }
+    }
+  }
+
   async unfollow(followerId: string, dto: UnfollowDto): Promise<any> {
+    await this.validateEntityExists(dto.entityId, dto.entityType);
+
     const follow = await this.followRepository.repo.findOne({
       where: {
         followerId,

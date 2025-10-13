@@ -19,12 +19,6 @@ export class PostPublicController {
     return this.postService.getPostById(postId);
   }
 
-  // @ApiOperation({ summary: 'Delete a post' })
-  // @Delete(':postId')
-  // deletePost(@Param('postId') postId: string, @AuthUser() user: JwtTokenDto) {
-  //   return this.postService.deletePost({ postId, userId: user.sub });
-  // }
-
   @ApiOperation({ summary: 'Get upvotes of a post' })
   @Get(':postId/upvotes')
   getUpvotesOfPost(@Param('postId') postId: string) {
