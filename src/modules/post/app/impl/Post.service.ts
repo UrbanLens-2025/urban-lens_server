@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -48,6 +49,11 @@ export class PostService
 
   async createPost(dto: CreatePostDto): Promise<any> {
     try {
+      // Validate: Blog posts must have visibility
+      if (dto.type === PostType.BLOG && !dto.visibility) {
+        throw new BadRequestException('Visibility is required for blog posts');
+      }
+
       const result = await this.postRepository.repo.manager.transaction(
         async (transactionalEntityManager) => {
           // Confirm upload for images if provided
@@ -128,7 +134,6 @@ export class PostService
       await analyticRepo.save(analytic);
     }
 
-    // Calculate average rating from all reviews
     const locationField =
       entityType === AnalyticEntityType.LOCATION ? 'locationId' : 'eventId';
     const reviews = await postRepo.find({
@@ -138,7 +143,6 @@ export class PostService
       },
     });
 
-    // Update total reviews count
     analytic.totalReviews = reviews.length;
 
     if (reviews.length > 0) {
@@ -150,7 +154,6 @@ export class PostService
 
       analytic.avgRating = parseFloat(avgRating.toFixed(2));
     } else {
-      // Reset average rating if no reviews
       analytic.avgRating = 0;
     }
 
@@ -178,8 +181,8 @@ export class PostService
           'author.firstName',
           'author.lastName',
           'author.avatarUrl',
-          'analytic.total_likes',
-          'analytic.total_dislikes',
+          'analytic.total_upvotes',
+          'analytic.total_downvotes',
           'analytic.total_comments',
         ])
         .getRawOne();
@@ -210,24 +213,27 @@ export class PostService
         },
       });
 
-      let likesDelta = 0;
-      let dislikesDelta = 0;
+      let upvotesDelta = 0;
+      let downvotesDelta = 0;
 
       if (react && react.type === dto.type) {
         await this.reactRepository.repo.delete(react.id);
-        if (dto.type === ReactType.LIKE) likesDelta = -1;
-        if (dto.type === ReactType.DISLIKE) dislikesDelta = -1;
+        if (dto.type === ReactType.UPVOTE) upvotesDelta = -1;
+        if (dto.type === ReactType.DOWNVOTE) downvotesDelta = -1;
       } else if (react && react.type !== dto.type) {
         await this.reactRepository.repo.update(react.id, { type: dto.type });
-        if (react.type === ReactType.LIKE && dto.type === ReactType.DISLIKE) {
-          likesDelta = -1;
-          dislikesDelta = +1;
-        } else if (
-          react.type === ReactType.DISLIKE &&
-          dto.type === ReactType.LIKE
+        if (
+          react.type === ReactType.UPVOTE &&
+          dto.type === ReactType.DOWNVOTE
         ) {
-          dislikesDelta = -1;
-          likesDelta = +1;
+          upvotesDelta = -1;
+          downvotesDelta = +1;
+        } else if (
+          react.type === ReactType.DOWNVOTE &&
+          dto.type === ReactType.UPVOTE
+        ) {
+          downvotesDelta = -1;
+          upvotesDelta = +1;
         }
       } else {
         await this.reactRepository.repo.save(
@@ -238,18 +244,18 @@ export class PostService
             type: dto.type,
           }),
         );
-        if (dto.type === ReactType.LIKE) likesDelta = +1;
-        if (dto.type === ReactType.DISLIKE) dislikesDelta = +1;
+        if (dto.type === ReactType.UPVOTE) upvotesDelta = +1;
+        if (dto.type === ReactType.DOWNVOTE) downvotesDelta = +1;
       }
       await this.analyticRepository.repo.increment(
         { entityId: post.postId, entityType: AnalyticEntityType.POST },
-        'totalLikes',
-        likesDelta,
+        'totalUpvotes',
+        upvotesDelta,
       );
       await this.analyticRepository.repo.increment(
         { entityId: post.postId, entityType: AnalyticEntityType.POST },
-        'totalDislikes',
-        dislikesDelta,
+        'totalDownvotes',
+        downvotesDelta,
       );
 
       return 'React post successfully';
@@ -338,7 +344,8 @@ export class PostService
         ]);
 
       const [reactions, total] = await queryBuilder.getManyAndCount();
-      const propertyName = reactType === ReactType.LIKE ? 'likes' : 'dislikes';
+      const propertyName =
+        reactType === ReactType.UPVOTE ? 'totalUpvotes' : 'totalDownvotes';
       return {
         [propertyName]: reactions.map((reaction) => reaction.author),
         total,
@@ -349,27 +356,27 @@ export class PostService
     }
   }
 
-  async getLikesOfPost(postId: string): Promise<any> {
-    return this.getReactionsOfPost(postId, ReactType.LIKE);
+  async getUpvotesOfPost(postId: string): Promise<any> {
+    return this.getReactionsOfPost(postId, ReactType.UPVOTE);
   }
 
-  async getDislikesOfPost(postId: string): Promise<any> {
-    return this.getReactionsOfPost(postId, ReactType.DISLIKE);
+  async getDownvotesOfPost(postId: string): Promise<any> {
+    return this.getReactionsOfPost(postId, ReactType.DOWNVOTE);
   }
 
   async getAllReactionsOfPost(postId: string): Promise<any> {
     try {
-      const [likes, dislikes] = await Promise.all([
-        this.getLikesOfPost(postId),
-        this.getDislikesOfPost(postId),
+      const [upvotes, downvotes] = await Promise.all([
+        this.getUpvotesOfPost(postId),
+        this.getDownvotesOfPost(postId),
       ]);
 
       return {
-        likes: likes.likes,
-        totalLikes: likes.total,
-        dislikes: dislikes.dislikes,
-        totalDislikes: dislikes.total,
-        totalReactions: likes.total + dislikes.total,
+        upvotes: upvotes.totalUpvotes,
+        totalUpvotes: upvotes.total,
+        downvotes: downvotes.totalDownvotes,
+        totalDownvotes: downvotes.total,
+        totalReactions: upvotes.total + downvotes.total,
       };
     } catch (error) {
       console.error(error);
@@ -407,8 +414,8 @@ export class PostService
           'author.first_name as author_firstname',
           'author.last_name as author_lastname',
           'author.avatar_url as author_avatarurl',
-          'analytic.total_likes as analytic_total_likes',
-          'analytic.total_dislikes as analytic_total_dislikes',
+          'analytic.total_upvotes as analytic_total_upvotes',
+          'analytic.total_downvotes as analytic_total_downvotes',
           'analytic.total_comments as analytic_total_comments',
         ])
         .orderBy('post.createdAt', 'DESC')
@@ -470,8 +477,8 @@ export class PostService
               avatarUrl: post.author_avatarurl,
             },
             analytics: {
-              totalLikes: post.analytic_total_likes || 0,
-              totalDislikes: post.analytic_total_dislikes || 0,
+              totalUpvotes: post.analytic_total_upvotes || 0,
+              totalDownvotes: post.analytic_total_downvotes || 0,
               totalComments: post.analytic_total_comments || 0,
             },
             currentUserReaction: reactionMap.get(post.post_postid) || null,
@@ -492,8 +499,8 @@ export class PostService
               avatarUrl: post.author_avatarurl,
             },
             analytics: {
-              totalLikes: post.analytic_total_likes || 0,
-              totalDislikes: post.analytic_total_dislikes || 0,
+              totalUpvotes: post.analytic_total_upvotes || 0,
+              totalDownvotes: post.analytic_total_downvotes || 0,
               totalComments: post.analytic_total_comments || 0,
             },
             currentUserReaction: null,

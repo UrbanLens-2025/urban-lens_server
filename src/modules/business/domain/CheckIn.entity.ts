@@ -13,12 +13,12 @@ export class CheckInEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'profile_id' })
-  profileId: string;
+  @Column({ name: 'user_profile_id' })
+  userProfileId: string;
 
   @ManyToOne(() => UserProfileEntity, (profile) => profile.checkIns)
-  @JoinColumn({ name: 'profile_id' })
-  profile: UserProfileEntity;
+  @JoinColumn({ name: 'user_profile_id' })
+  userProfile: UserProfileEntity;
 
   @Column({ name: 'location_id' })
   locationId: string;

@@ -10,8 +10,8 @@ import {
 } from 'typeorm';
 
 export enum ReactType {
-  LIKE = 'like',
-  DISLIKE = 'dislike',
+  UPVOTE = 'upvote',
+  DOWNVOTE = 'downvote',
 }
 
 export enum ReactEntityType {

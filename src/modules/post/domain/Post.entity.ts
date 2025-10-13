@@ -17,6 +17,12 @@ export enum PostType {
   REVIEW = 'review',
 }
 
+export enum Visibility {
+  PUBLIC = 'public',
+  PRIVATE = 'private',
+  FOLLOWERS = 'followers',
+}
+
 @Entity({ name: 'posts' })
 export class PostEntity {
   @Column({ name: 'content', type: 'text', nullable: false })
@@ -52,6 +58,14 @@ export class PostEntity {
 
   @Column({ name: 'event_id', type: 'uuid', nullable: true })
   eventId: string;
+
+  @Column({
+    name: 'visibility',
+    type: 'enum',
+    enum: Visibility,
+    nullable: true,
+  })
+  visibility: Visibility;
 
   @OneToMany(() => CommentEntity, (comment) => comment.post, {
     cascade: ['remove'],

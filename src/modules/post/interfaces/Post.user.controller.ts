@@ -8,18 +8,18 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IPostService } from '../app/IPost.service';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreatePostDto } from '@/common/dto/post/CreatePost.dto';
-import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
-import { ReactPostDto } from '@/common/dto/post/ReactPost.dto';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import type { PaginationParams } from '@/common/services/base.service';
+import { ReactPostDto } from '@/common/dto/post/ReactPost.dto';
 
-@ApiTags('Post')
+@ApiTags('Post - User')
 @ApiBearerAuth()
-@Controller('post')
-export class PostController {
+@Controller('user/post')
+export class PostUserController {
   constructor(
     @Inject(IPostService) private readonly postService: IPostService,
   ) {}
@@ -37,12 +37,6 @@ export class PostController {
     return this.postService.getPostByAuthorId(user.sub, query, user.sub);
   }
 
-  @ApiOperation({ summary: 'Get a post by id' })
-  @Get(':postId')
-  getPostById(@Param('postId') postId: string) {
-    return this.postService.getPostById(postId);
-  }
-
   @ApiOperation({ summary: 'React a post' })
   @Post('react')
   reactPost(@Body() dto: ReactPostDto, @AuthUser() user: JwtTokenDto) {
@@ -54,27 +48,5 @@ export class PostController {
   @Delete(':postId')
   deletePost(@Param('postId') postId: string, @AuthUser() user: JwtTokenDto) {
     return this.postService.deletePost({ postId, userId: user.sub });
-  }
-
-  @ApiOperation({ summary: 'Get likes of a post' })
-  @Get(':postId/likes')
-  getLikesOfPost(@Param('postId') postId: string) {
-    return this.postService.getLikesOfPost(postId);
-  }
-
-  @ApiOperation({ summary: 'Get posts by author id' })
-  @Get('author/:authorId')
-  getPostByAuthorId(
-    @Param('authorId') authorId: string,
-    @Query() query: PaginationParams,
-    @AuthUser() user: JwtTokenDto,
-  ) {
-    return this.postService.getPostByAuthorId(authorId, query, user.sub);
-  }
-
-  @ApiOperation({ summary: 'Get dislikes of a post' })
-  @Get(':postId/dislikes')
-  getDislikesOfPost(@Param('postId') postId: string) {
-    return this.postService.getDislikesOfPost(postId);
   }
 }

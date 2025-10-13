@@ -11,11 +11,11 @@ export class AnalyticEntity {
   @Column({ name: 'entity_type', nullable: true })
   entityType: AnalyticEntityType;
 
-  @Column({ name: 'total_likes', default: 0 })
-  totalLikes: number;
+  @Column({ name: 'total_upvotes', default: 0 })
+  totalUpvotes: number;
 
-  @Column({ name: 'total_dislikes', default: 0 })
-  totalDislikes: number;
+  @Column({ name: 'total_downvotes', default: 0 })
+  totalDownvotes: number;
 
   @Column({ name: 'total_comments', default: 0 })
   totalComments: number;
