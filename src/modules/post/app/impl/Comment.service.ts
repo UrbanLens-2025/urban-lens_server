@@ -86,8 +86,8 @@ export class CommentService
         'author.firstName',
         'author.lastName',
         'author.avatarUrl',
-        'analytic.total_likes',
-        'analytic.total_dislikes',
+        'analytic.total_upvotes',
+        'analytic.total_downvotes',
       ])
       .skip(skip)
       .take(limit);
@@ -98,8 +98,8 @@ export class CommentService
       const row = raw[index];
       return {
         ...entity,
-        totalLikes: Number(row.analytic_total_likes) || 0,
-        totalDislikes: Number(row.analytic_total_dislikes) || 0,
+        totalUpvotes: Number(row.analytic_total_upvotes) || 0,
+        totalDownvotes: Number(row.analytic_total_downvotes) || 0,
       };
     });
 
@@ -172,26 +172,26 @@ export class CommentService
       where: { entityId: dto.commentId, authorId: dto.userId },
     });
 
-    let likesDelta = 0;
-    let dislikesDelta = 0;
+    let upvotesDelta = 0;
+    let downvotesDelta = 0;
 
     if (react && react.type === dto.type) {
       // gỡ react
       await this.reactRepository.repo.delete(react.id);
-      if (dto.type === ReactType.LIKE) likesDelta = -1;
-      if (dto.type === ReactType.DISLIKE) dislikesDelta = -1;
+      if (dto.type === ReactType.UPVOTE) upvotesDelta = -1;
+      if (dto.type === ReactType.DOWNVOTE) downvotesDelta = -1;
     } else if (react && react.type !== dto.type) {
       // đổi react
       await this.reactRepository.repo.update(react.id, { type: dto.type });
-      if (react.type === ReactType.LIKE && dto.type === ReactType.DISLIKE) {
-        likesDelta = -1;
-        dislikesDelta = +1;
+      if (react.type === ReactType.UPVOTE && dto.type === ReactType.DOWNVOTE) {
+        upvotesDelta = -1;
+        downvotesDelta = +1;
       } else if (
-        react.type === ReactType.DISLIKE &&
-        dto.type === ReactType.LIKE
+        react.type === ReactType.DOWNVOTE &&
+        dto.type === ReactType.UPVOTE
       ) {
-        dislikesDelta = -1;
-        likesDelta = +1;
+        downvotesDelta = -1;
+        upvotesDelta = +1;
       }
     } else {
       // react lần đầu
@@ -203,23 +203,23 @@ export class CommentService
           type: dto.type,
         }),
       );
-      if (dto.type === ReactType.LIKE) likesDelta = +1;
-      if (dto.type === ReactType.DISLIKE) dislikesDelta = +1;
+      if (dto.type === ReactType.UPVOTE) upvotesDelta = +1;
+      if (dto.type === ReactType.DOWNVOTE) downvotesDelta = +1;
     }
 
     // update analytic
-    if (likesDelta !== 0) {
+    if (upvotesDelta !== 0) {
       await this.analyticRepository.repo.increment(
         { entityId: comment.commentId, entityType: AnalyticEntityType.COMMENT },
-        'totalLikes',
-        likesDelta,
+        'totalUpvotes',
+        upvotesDelta,
       );
     }
-    if (dislikesDelta !== 0) {
+    if (downvotesDelta !== 0) {
       await this.analyticRepository.repo.increment(
         { entityId: comment.commentId, entityType: AnalyticEntityType.COMMENT },
-        'totalDislikes',
-        dislikesDelta,
+        'totalDownvotes',
+        downvotesDelta,
       );
     }
 
@@ -251,7 +251,8 @@ export class CommentService
         ]);
 
       const [reactions, total] = await queryBuilder.getManyAndCount();
-      const propertyName = reactType === ReactType.LIKE ? 'likes' : 'dislikes';
+      const propertyName =
+        reactType === ReactType.UPVOTE ? 'totalUpvotes' : 'totalDownvotes';
       return {
         [propertyName]: reactions.map((reaction) => reaction.author),
         total,
@@ -262,11 +263,11 @@ export class CommentService
     }
   }
 
-  async getLikesOfComment(commentId: string): Promise<any> {
-    return this.getReactionsOfComment(commentId, ReactType.LIKE);
+  async getUpvotesOfComment(commentId: string): Promise<any> {
+    return this.getReactionsOfComment(commentId, ReactType.UPVOTE);
   }
 
-  async getDislikesOfComment(commentId: string): Promise<any> {
-    return this.getReactionsOfComment(commentId, ReactType.DISLIKE);
+  async getDownvotesOfComment(commentId: string): Promise<any> {
+    return this.getReactionsOfComment(commentId, ReactType.DOWNVOTE);
   }
 }

@@ -33,6 +33,6 @@ export class UserProfileEntity {
   @Column({ name: 'total_achievements', type: 'integer', default: 0 })
   totalAchievements: number;
 
-  @OneToMany(() => CheckInEntity, (checkIn) => checkIn.profile)
+  @OneToMany(() => CheckInEntity, (checkIn) => checkIn.userProfile)
   checkIns: CheckInEntity[];
 }

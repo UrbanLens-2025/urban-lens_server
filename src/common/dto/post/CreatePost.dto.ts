@@ -6,8 +6,9 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  ValidateIf,
 } from 'class-validator';
-import { PostType } from '@/modules/post/domain/Post.entity';
+import { PostType, Visibility } from '@/modules/post/domain/Post.entity';
 
 export class CreatePostDto {
   @IsString()
@@ -36,6 +37,14 @@ export class CreatePostDto {
 
   @IsString()
   @IsOptional()
+  @ApiProperty({
+    description: 'The id of the event',
+    example: '1',
+  })
+  eventId?: string;
+
+  @IsString()
+  @IsOptional()
   authorId?: string;
 
   @IsArray()
@@ -53,6 +62,17 @@ export class CreatePostDto {
     example: PostType.BLOG,
   })
   type: PostType;
+
+  @ValidateIf((o) => o.type === PostType.BLOG)
+  @IsNotEmpty({ message: 'Visibility is required for blog posts' })
+  @IsEnum(Visibility)
+  @ApiProperty({
+    description: 'The visibility of the post (required for blog posts)',
+    example: Visibility.PUBLIC,
+    enum: Visibility,
+    required: false,
+  })
+  visibility?: Visibility;
 
   @IsNumber()
   @IsOptional()

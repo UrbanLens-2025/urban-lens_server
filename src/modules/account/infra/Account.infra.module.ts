@@ -10,6 +10,8 @@ import { BusinessEntity } from '../domain/Business.entity';
 import { UserProfileEntity } from '../domain/UserProfile.entity';
 import { CreatorProfileRepository } from '@/modules/account/infra/repository/CreatorProfile.repository';
 import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
+import { FollowRepository } from '@/modules/account/infra/repository/Follow.repository';
+import { FollowEntity } from '@/modules/account/domain/Follow.entity';
 
 const repositories = [
   TagRepository,
@@ -17,6 +19,7 @@ const repositories = [
   BusinessRepository,
   UserProfileRepository,
   CreatorProfileRepository,
+  FollowRepository,
 ];
 
 @Module({
@@ -27,6 +30,7 @@ const repositories = [
       BusinessEntity,
       UserProfileEntity,
       CreatorProfileEntity,
+      FollowEntity,
     ]),
   ],
   providers: repositories,

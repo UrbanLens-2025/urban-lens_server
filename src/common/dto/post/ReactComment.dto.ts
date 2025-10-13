@@ -18,7 +18,7 @@ export class ReactCommentRequestDto {
   @IsEnum(ReactType)
   @ApiProperty({
     description: 'The type of the reaction',
-    example: ReactType.LIKE,
+    example: ReactType.UPVOTE,
   })
   type: ReactType;
 }

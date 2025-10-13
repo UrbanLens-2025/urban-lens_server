@@ -66,17 +66,17 @@ export class CommentController {
     return this.commentService.reactComment(dto);
   }
 
-  @ApiOperation({ summary: 'Get likes of a comment' })
+  @ApiOperation({ summary: 'Get upvotes of a comment' })
   @ApiBearerAuth()
-  @Get(':commentId/likes')
-  getLikesOfComment(@Param('commentId') commentId: string) {
-    return this.commentService.getLikesOfComment(commentId);
+  @Get(':commentId/upvotes')
+  getUpvotesOfComment(@Param('commentId') commentId: string) {
+    return this.commentService.getUpvotesOfComment(commentId);
   }
 
-  @ApiOperation({ summary: 'Get dislikes of a comment' })
+  @ApiOperation({ summary: 'Get downvotes of a comment' })
   @ApiBearerAuth()
-  @Get(':commentId/dislikes')
-  getDislikesOfComment(@Param('commentId') commentId: string) {
-    return this.commentService.getDislikesOfComment(commentId);
+  @Get(':commentId/downvotes')
+  getDownvotesOfComment(@Param('commentId') commentId: string) {
+    return this.commentService.getDownvotesOfComment(commentId);
   }
 }
