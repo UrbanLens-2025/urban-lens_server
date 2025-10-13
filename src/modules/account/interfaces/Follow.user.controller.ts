@@ -24,11 +24,11 @@ import { RolesGuard } from '@/common/Roles.guard';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
-@ApiTags('Follow')
-@Controller('follow')
+@ApiTags('Follow - User')
+@Controller('user/follow')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
-export class FollowController {
+export class FollowUserController {
   constructor(
     @Inject(IFollowService)
     private readonly followService: IFollowService,
