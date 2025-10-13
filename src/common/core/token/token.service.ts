@@ -16,7 +16,7 @@ export class TokenService {
         role: user.role,
       } satisfies Partial<JwtTokenDto>,
       {
-        expiresIn: '1h', // Token expiration time
+        expiresIn: '365 days', // Token expiration time
       },
     );
   }

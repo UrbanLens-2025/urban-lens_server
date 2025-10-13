@@ -3,15 +3,21 @@ import { AppService } from './app.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
+import { AuthUser } from '@/common/AuthUser.decorator';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
 @ApiBearerAuth()
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  @ApiBearerAuth()
   @Get('/public/get-hello')
-  getHello(): string {
-    return this.appService.getHello();
+  getHello(@AuthUser() dto: JwtTokenDto) {
+    if (dto.sub) {
+      return dto;
+    }
+    return 'Hello world!';
   }
 
   @Get('/get-hello')

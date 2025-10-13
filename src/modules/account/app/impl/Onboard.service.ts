@@ -49,7 +49,7 @@ export class OnboardService extends CoreService implements IOnboardService {
         await userTagsRepository.save(
           dto.tagIds.map((tagId) => ({
             tagId,
-            userId: account.id,
+            accountId: account.id,
           })),
         );
       }
@@ -59,13 +59,11 @@ export class OnboardService extends CoreService implements IOnboardService {
         ...dto,
       });
 
-      return await accountRepository.update(
-        { id: account.id },
-        {
-          ...dto,
-          hasOnboarded: true,
-        },
-      );
+      account.hasOnboarded = true;
+      account.avatarUrl = dto.avatarUrl ?? null;
+      account.coverUrl = dto.coverUrl ?? null;
+
+      return await accountRepository.update({ id: account.id }, account);
     });
   }
 
