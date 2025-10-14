@@ -12,8 +12,8 @@ export interface IPostService {
   getPostById(postId: string): Promise<any>;
   reactPost(dto: ReactPostDto): Promise<any>;
   deletePost(dto: DeletePostDto): Promise<any>;
-  getLikesOfPost(postId: string): Promise<any>;
-  getDislikesOfPost(postId: string): Promise<any>;
+  getUpvotesOfPost(postId: string): Promise<any>;
+  getDownvotesOfPost(postId: string): Promise<any>;
   getAllReactionsOfPost(postId: string): Promise<any>;
   getPostByAuthorId(
     authorId: string,

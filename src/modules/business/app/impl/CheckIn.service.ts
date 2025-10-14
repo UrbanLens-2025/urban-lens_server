@@ -12,6 +12,8 @@ import { CheckInRepository } from '../../infra/repository/CheckIn.repository';
 import { LocationRepository } from '../../infra/repository/Location.repository';
 import { UserProfileRepository } from '@/modules/account/infra/repository/UserProfile.repository';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
+import { PaginationResult } from '@/common/services/base.service';
+import { IsNull } from 'typeorm';
 
 @Injectable()
 export class CheckInService implements ICheckInService {
@@ -25,7 +27,6 @@ export class CheckInService implements ICheckInService {
     profileId: string,
     createCheckInDto: CreateCheckInDto,
   ): Promise<CheckInEntity> {
-    // Verify profile exists
     const profile = await this.profileRepository.repo.findOne({
       where: { accountId: profileId },
     });
@@ -33,7 +34,6 @@ export class CheckInService implements ICheckInService {
       throw new NotFoundException('Profile not found');
     }
 
-    // Verify location exists and is approved
     const location = await this.locationRepository.repo.findOne({
       where: {
         id: createCheckInDto.locationId,
@@ -45,17 +45,19 @@ export class CheckInService implements ICheckInService {
       throw new NotFoundException('Location not found or not approved');
     }
 
-    // Check if user already has an active check-in
-    const activeCheckIn = await this.getActiveCheckIn(profileId);
-    if (activeCheckIn) {
+    const hasCheckIn = await this.checkHasCheckIn(
+      profileId,
+      createCheckInDto.locationId,
+    );
+
+    if (hasCheckIn) {
       throw new BadRequestException(
-        'You already have an active check-in. Please check out first.',
+        'You already have a check-in at this location.',
       );
     }
 
-    // Create new check-in
     const checkIn = this.checkInRepository.repo.create({
-      profileId,
+      userProfileId: profileId,
       locationId: createCheckInDto.locationId,
       notes: createCheckInDto.notes,
       checkInTime: new Date(),
@@ -64,137 +66,41 @@ export class CheckInService implements ICheckInService {
     return await this.checkInRepository.repo.save(checkIn);
   }
 
-  async getCheckInsWithFilters(queryDto: GetCheckInsQueryDto): Promise<{
-    data: CheckInEntity[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const { page = 1, limit = 10, locationId, profileId, isActive } = queryDto;
-    const skip = (page - 1) * limit;
-
-    const queryBuilder = this.checkInRepository.repo
-      .createQueryBuilder('checkIn')
-      .leftJoinAndSelect('checkIn.profile', 'profile')
-      .leftJoinAndSelect('checkIn.location', 'location')
-      .leftJoinAndSelect('location.business', 'business');
-
-    // Apply filters
-    if (locationId) {
-      queryBuilder.andWhere('checkIn.locationId = :locationId', { locationId });
-    }
-
-    if (profileId) {
-      queryBuilder.andWhere('checkIn.profileId = :profileId', { profileId });
-    }
-
-    if (isActive !== undefined) {
-      queryBuilder.andWhere('checkIn.isActive = :isActive', { isActive });
-    }
-
-    // Order by check-in time (newest first)
-    queryBuilder.orderBy('checkIn.checkInTime', 'DESC');
-
-    // Apply pagination
-    queryBuilder.skip(skip).take(limit);
-
-    const [data, total] = await queryBuilder.getManyAndCount();
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages,
-    };
-  }
-
   async getCheckInsByProfileId(
     profileId: string,
     queryDto: GetCheckInsQueryDto,
-  ): Promise<{
-    data: CheckInEntity[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    return this.getCheckInsWithFilters({
-      ...queryDto,
-      profileId,
-    });
-  }
-
-  async getCheckInsByLocationId(
-    locationId: string,
-    queryDto: GetCheckInsQueryDto,
-  ): Promise<{
-    data: CheckInEntity[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    return this.getCheckInsWithFilters({
-      ...queryDto,
-      locationId,
-    });
-  }
-
-  async getActiveCheckIn(profileId: string): Promise<CheckInEntity | null> {
-    return await this.checkInRepository.repo.findOne({
-      where: {
-        profileId,
+  ): Promise<PaginationResult<CheckInEntity>> {
+    const { page = 1, limit = 10 } = queryDto;
+    const skip = (page - 1) * limit;
+    const [checkIns, totalItems] =
+      await this.checkInRepository.repo.findAndCount({
+        where: { userProfileId: profileId },
+        skip,
+        take: limit,
+        relations: ['location'],
+        order: {
+          checkInTime: 'DESC',
+        },
+      });
+    return {
+      data: checkIns,
+      meta: {
+        totalItems,
+        page,
+        limit,
+        totalPages: Math.ceil(totalItems / limit),
+        hasNextPage: page < Math.ceil(totalItems / limit),
+        hasPrevPage: page > 1,
       },
-      relations: ['location', 'location.business'],
-    });
+    };
   }
 
-  async checkOut(checkInId: string, profileId: string): Promise<CheckInEntity> {
-    const checkIn = await this.checkInRepository.repo.findOne({
-      where: { id: checkInId },
-      relations: ['location'],
+  private async checkHasCheckIn(
+    profileId: string,
+    locationId: string,
+  ): Promise<CheckInEntity | null> {
+    return this.checkInRepository.repo.findOne({
+      where: { userProfileId: profileId, locationId },
     });
-
-    if (!checkIn) {
-      throw new NotFoundException('Check-in not found');
-    }
-
-    if (checkIn.profileId !== profileId) {
-      throw new ForbiddenException('You can only check out your own check-ins');
-    }
-
-    return await this.checkInRepository.repo.save(checkIn);
-  }
-
-  async getCheckInById(checkInId: string): Promise<CheckInEntity> {
-    const checkIn = await this.checkInRepository.repo.findOne({
-      where: { id: checkInId },
-      relations: ['profile', 'location', 'location.business'],
-    });
-
-    if (!checkIn) {
-      throw new NotFoundException('Check-in not found');
-    }
-
-    return checkIn;
-  }
-
-  async deleteCheckIn(checkInId: string, profileId: string): Promise<void> {
-    const checkIn = await this.checkInRepository.repo.findOne({
-      where: { id: checkInId },
-    });
-
-    if (!checkIn) {
-      throw new NotFoundException('Check-in not found');
-    }
-
-    if (checkIn.profileId !== profileId) {
-      throw new ForbiddenException('You can only delete your own check-ins');
-    }
-
-    await this.checkInRepository.repo.remove(checkIn);
   }
 }

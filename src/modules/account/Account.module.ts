@@ -18,6 +18,10 @@ import { IBusinessService } from './app/IBusiness.service';
 import { BusinessService } from './app/impl/Business.service';
 import { NotificationModule } from '../notification/Notification.module';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
+import { IFollowService } from './app/IFollow.service';
+import { FollowService } from './app/impl/Follow.service';
+import { FollowUserController } from './interfaces/Follow.user.controller';
+import { TokenModule } from '@/common/core/token/token.module';
 
 @Module({
   imports: [
@@ -25,6 +29,7 @@ import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
     AuthModule,
     NotificationModule,
     FileStorageModule,
+    TokenModule,
   ],
   controllers: [
     AccountUserController,
@@ -34,6 +39,7 @@ import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
     AccountAdminController,
     TagAdminController,
     TagPublicController,
+    FollowUserController,
   ],
   providers: [
     {
@@ -51,6 +57,10 @@ import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
     {
       provide: IBusinessService,
       useClass: BusinessService,
+    },
+    {
+      provide: IFollowService,
+      useClass: FollowService,
     },
   ],
 })
