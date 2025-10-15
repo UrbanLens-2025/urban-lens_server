@@ -24,6 +24,7 @@ import { PostModule } from '@/modules/post/Post.module';
 import { BusinessModule } from '@/modules/business/Business.module';
 import { EventModule } from '@/modules/event/event.module';
 import { AddressModule } from '@/modules/address/Address.module';
+import { LocationReservationModule } from '@/modules/location-reservation/LocationReservation.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { AddressModule } from '@/modules/address/Address.module';
     PostModule,
     EventModule,
     AddressModule,
+    LocationReservationModule,
   ],
   controllers: [AppController],
   providers: [

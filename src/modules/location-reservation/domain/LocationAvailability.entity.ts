@@ -10,9 +10,12 @@ import {
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { LocationAvailabilityStatus } from '@/common/constants/LocationAvailabilityStatus.constant';
+import { LocationAvailabilitySource } from '@/common/constants/LocationAvailabilitySource.constant';
 
-@Entity({ name: 'location_availability' })
+@Entity({ name: LocationAvailabilityEntity.TABLE_NAME })
 export class LocationAvailabilityEntity {
+  public static readonly TABLE_NAME = 'location_availability';
+
   @PrimaryGeneratedColumn('identity')
   id: number;
 
@@ -50,4 +53,20 @@ export class LocationAvailabilityEntity {
 
   @Column({ name: 'status', type: 'varchar', length: 50 })
   status: LocationAvailabilityStatus;
+
+  @Column({ name: 'source', type: 'varchar', length: 50 })
+  source: LocationAvailabilitySource;
+
+  @Column({ name: 'note', type: 'text', nullable: true })
+  note: string | null;
+
+  public canBeRemoved(): boolean {
+    const now = new Date();
+    return this.endDateTime >= now;
+  }
+
+  public canBeUpdated(): boolean {
+    const now = new Date();
+    return this.endDateTime >= now;
+  }
 }
