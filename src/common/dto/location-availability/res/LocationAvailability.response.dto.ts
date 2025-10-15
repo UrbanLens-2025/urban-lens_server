@@ -24,19 +24,27 @@ export class LocationAvailabilityResponseDto {
 
   @Expose()
   @Type(() => Date)
-  @Transform(({ value }) => value?.toISOString())
+  @Transform(({ value }) =>
+    (value as unknown as Date | undefined)?.toISOString(),
+  )
   startDateTime: Date;
 
   @Expose()
   @Type(() => Date)
-  @Transform(({ value }) => value?.toISOString())
+  @Transform(({ value }) =>
+    (value as unknown as Date | undefined)?.toISOString(),
+  )
   endDateTime: Date;
 
   @Expose()
-  @Transform(({ value }) => value?.toISOString())
+  @Transform(({ value }) =>
+    (value as unknown as Date | undefined)?.toISOString(),
+  )
   createdAt: Date;
 
   @Expose()
-  @Transform(({ value }) => value?.toISOString())
+  @Transform(({ value }) =>
+    (value as unknown as Date | undefined)?.toISOString(),
+  )
   updatedAt: Date;
 }
