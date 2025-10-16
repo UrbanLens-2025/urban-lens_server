@@ -47,11 +47,21 @@ export class CommentService
           content: dto.content,
         });
         const savedComment = await transactionalEntityManager.save(comment);
+
+        // Create analytic for comment
         const analytic = this.analyticRepository.repo.create({
           entityId: savedComment.commentId,
           entityType: AnalyticEntityType.COMMENT,
         });
         await transactionalEntityManager.save(analytic);
+
+        // Update totalComments of post
+        await this.analyticRepository.repo.increment(
+          { entityId: dto.postId, entityType: AnalyticEntityType.POST },
+          'totalComments',
+          1,
+        );
+
         return savedComment;
       },
     );
@@ -154,6 +164,17 @@ export class CommentService
             },
           }),
         );
+
+        // Decrease totalComments of post
+        await this.analyticRepository.repo.decrement(
+          {
+            entityId: comment.post.postId,
+            entityType: AnalyticEntityType.POST,
+          },
+          'totalComments',
+          1,
+        );
+
         return true;
       },
     );

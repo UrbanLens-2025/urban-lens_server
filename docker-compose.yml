@@ -22,7 +22,7 @@ services:
     image: redis:8.2.1
     container_name: ubl-redis
     restart: on-failure
-    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    command: redis-server --requirepass 123456 --appendonly yes
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
