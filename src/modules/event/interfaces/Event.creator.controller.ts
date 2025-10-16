@@ -22,7 +22,7 @@ import { IEventManagementService } from '@/modules/event/app/IEventManagement.se
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 import { WithPagination } from '@/common/WithPagination.decorator';
 
-@ApiTags('Event - Event Creator')
+@ApiTags('Event')
 @ApiBearerAuth()
 @Roles(Role.EVENT_CREATOR)
 @Controller('/creator/event')
