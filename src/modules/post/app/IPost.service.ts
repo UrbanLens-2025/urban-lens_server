@@ -12,10 +12,20 @@ export interface IPostService {
   getPostById(postId: string): Promise<any>;
   reactPost(dto: ReactPostDto): Promise<any>;
   deletePost(dto: DeletePostDto): Promise<any>;
-  getUpvotesOfPost(postId: string): Promise<any>;
-  getDownvotesOfPost(postId: string): Promise<any>;
+  getUpvotesOfPost(postId: string, params?: PaginationParams): Promise<any>;
+  getDownvotesOfPost(postId: string, params?: PaginationParams): Promise<any>;
   getAllReactionsOfPost(postId: string): Promise<any>;
   getPostByAuthorId(
+    authorId: string,
+    params: PaginationParams,
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>>;
+  getReviewsByAuthorId(
+    authorId: string,
+    params: PaginationParams,
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>>;
+  getBlogsByAuthorId(
     authorId: string,
     params: PaginationParams,
     currentUserId?: string,

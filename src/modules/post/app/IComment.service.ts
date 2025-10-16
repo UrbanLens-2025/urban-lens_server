@@ -10,6 +10,12 @@ export interface ICommentService {
   getCommentsByPostId(postId: string, params: PaginationParams): Promise<any>;
   reactComment(dto: ReactCommentRequestDto): Promise<any>;
   deleteComment(dto: DeleteCommentRequestDto): Promise<any>;
-  getUpvotesOfComment(commentId: string): Promise<any>;
-  getDownvotesOfComment(commentId: string): Promise<any>;
+  getUpvotesOfComment(
+    commentId: string,
+    params?: PaginationParams,
+  ): Promise<any>;
+  getDownvotesOfComment(
+    commentId: string,
+    params?: PaginationParams,
+  ): Promise<any>;
 }

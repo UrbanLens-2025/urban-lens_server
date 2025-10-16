@@ -69,14 +69,20 @@ export class CommentController {
   @ApiOperation({ summary: 'Get upvotes of a comment' })
   @ApiBearerAuth()
   @Get(':commentId/upvotes')
-  getUpvotesOfComment(@Param('commentId') commentId: string) {
-    return this.commentService.getUpvotesOfComment(commentId);
+  getUpvotesOfComment(
+    @Param('commentId') commentId: string,
+    @Query() query: PaginationParams,
+  ) {
+    return this.commentService.getUpvotesOfComment(commentId, query);
   }
 
   @ApiOperation({ summary: 'Get downvotes of a comment' })
   @ApiBearerAuth()
   @Get(':commentId/downvotes')
-  getDownvotesOfComment(@Param('commentId') commentId: string) {
-    return this.commentService.getDownvotesOfComment(commentId);
+  getDownvotesOfComment(
+    @Param('commentId') commentId: string,
+    @Query() query: PaginationParams,
+  ) {
+    return this.commentService.getDownvotesOfComment(commentId, query);
   }
 }
