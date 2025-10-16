@@ -1,6 +1,6 @@
 import { Body, Controller, Inject, Post } from '@nestjs/common';
 import { SendRawPushNotificationDto } from '@/common/dto/notification/SendRawPushNotification.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IFirebaseNotificationService } from '@/modules/notification/app/IFirebaseNotification.service';
 
 @ApiTags('Push Notifications - DEVELOPMENT')
@@ -11,6 +11,7 @@ export class PushNotificationDevOnlyController {
     private readonly firebaseNotificationService: IFirebaseNotificationService,
   ) {}
 
+  @ApiOperation({ summary: 'Send raw notification to a user' })
   @Post('/send')
   sendNotificationTo(@Body() dto: SendRawPushNotificationDto) {
     return this.firebaseNotificationService.sendRawNotificationTo(dto);
