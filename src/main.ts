@@ -35,7 +35,13 @@ async function bootstrap() {
     SwaggerModule.createDocument(app, swaggerDocumentConfig),
     {
       jsonDocumentUrl: 'swagger/json',
-      customCss: theme.getBuffer(SwaggerThemeNameEnum.DARK),
+      swaggerOptions: {
+        persistAuthorization: true,
+        tagsSorter: 'alpha',
+        operationsSorter: 'alpha',
+      },
+      customJs: '/swagger-custom.js',
+      // customCss: theme.getBuffer(SwaggerThemeNameEnum),
     },
   );
 

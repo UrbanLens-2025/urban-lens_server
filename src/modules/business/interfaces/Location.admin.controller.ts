@@ -7,8 +7,8 @@ import { UpdateLocationStatusDto } from '@/common/dto/location/UpdateLocationSta
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 
-@ApiTags('Location - Admin')
-@Controller('admin/locations')
+@ApiTags('Location')
+@Controller('/admin/locations')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
 export class LocationAdminController {

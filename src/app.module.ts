@@ -24,6 +24,8 @@ import { PostModule } from '@/modules/post/Post.module';
 import { BusinessModule } from '@/modules/business/Business.module';
 import { EventModule } from '@/modules/event/event.module';
 import { AddressModule } from '@/modules/address/Address.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -33,6 +35,9 @@ import { AddressModule } from '@/modules/address/Address.module';
       skipProcessEnv: true,
       cache: true,
       validationSchema: envConfig,
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
     }),
     TokenModule,
     RedisModule.forRootAsync({

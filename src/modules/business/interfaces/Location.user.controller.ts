@@ -7,10 +7,10 @@ import { Role } from '@/common/constants/Role.constant';
 import { ICheckInService } from '../app/ICheckIn.service';
 import { CreateCheckInDto } from '@/common/dto/checkin/CreateCheckIn.dto';
 
-@ApiTags('Location - User')
+@ApiTags('Location')
 @ApiBearerAuth()
 @Roles(Role.USER)
-@Controller('user/locations')
+@Controller('/user/locations')
 export class LocationUserController {
   constructor(
     @Inject(ICheckInService)

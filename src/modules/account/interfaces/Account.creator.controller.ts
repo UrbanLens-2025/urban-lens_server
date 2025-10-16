@@ -1,5 +1,5 @@
 import { Body, Controller, Inject, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { IOnboardService } from '@/modules/account/app/IOnboard.service';
@@ -9,7 +9,7 @@ import { OnboardCreatorDto } from '@/common/dto/account/OnboardCreator.dto';
 
 @ApiBearerAuth()
 @Roles(Role.EVENT_CREATOR)
-@ApiTags('Account - Event Creator')
+@ApiTags('Account')
 @Controller('/creator/account')
 export class AccountCreatorController {
   constructor(
@@ -17,6 +17,7 @@ export class AccountCreatorController {
     private readonly onboardService: IOnboardService,
   ) {}
 
+  @ApiOperation({ summary: 'Onboard Event Creator' })
   @Post('/onboard')
   onboard(@AuthUser() userDto: JwtTokenDto, @Body() dto: OnboardCreatorDto) {
     return this.onboardService.onboardCreator(userDto.sub, dto);

@@ -9,7 +9,7 @@ import {
 import { ILocationService } from '../app/ILocation.service';
 
 @ApiTags('Location - Public')
-@Controller('public/locations')
+@Controller('/public/locations')
 export class LocationPublicController {
   constructor(
     @Inject(ILocationService)

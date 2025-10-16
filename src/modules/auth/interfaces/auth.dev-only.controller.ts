@@ -6,7 +6,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@/common/constants/Role.constant';
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
 
-@ApiTags('Auth - DEVELOPMENT')
+@ApiTags('_Development')
 @Controller('/auth/dev-only')
 export class AuthDevOnlyController {
   constructor(
