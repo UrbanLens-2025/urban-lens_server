@@ -5,7 +5,7 @@ import { R2Config } from '@/config/r2.config';
 import { FileStorageDevOnlyController } from '@/modules/file-storage/interfaces/FileStorage.dev-only.controller';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { R2FileStorageService } from '@/modules/file-storage/app/impl/R2FileStorage.service';
-import { FileStoragePublicController } from '@/modules/file-storage/interfaces/FileStorage.public.controller';
+import { FileStoragePrivateController } from '@/modules/file-storage/interfaces/FileStorage.private.controller';
 import { FileStorageInfraModule } from '@/modules/file-storage/infra/FileStorage.infra.module';
 
 @Module({
@@ -16,7 +16,7 @@ import { FileStorageInfraModule } from '@/modules/file-storage/infra/FileStorage
       useClass: R2Config,
     }),
   ],
-  controllers: [FileStorageDevOnlyController, FileStoragePublicController],
+  controllers: [FileStorageDevOnlyController, FileStoragePrivateController],
   providers: [
     {
       provide: IFileStorageService,
