@@ -4,6 +4,8 @@ import { IPostService } from '../app/IPost.service';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import type { PaginationParams } from '@/common/services/base.service';
+import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import { WithPagination } from '@/common/WithPagination.decorator';
 
 @ApiTags('Post')
 @ApiBearerAuth()
@@ -12,6 +14,13 @@ export class PostPublicController {
   constructor(
     @Inject(IPostService) private readonly postService: IPostService,
   ) {}
+
+  @ApiOperation({ summary: 'Get basic posts feed (no recommendations)' })
+  @Get('/feed/basic')
+  @WithPagination()
+  getBasicFeed(@Paginate() query: PaginateQuery) {
+    return this.postService.getBasicFeed(query);
+  }
 
   @ApiOperation({ summary: 'Get a post by id' })
   @Get(':postId')

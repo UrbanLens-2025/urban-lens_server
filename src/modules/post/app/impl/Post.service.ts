@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-return */
+// noinspection ExceptionCaughtLocallyJS
+
 import {
   BadRequestException,
   ForbiddenException,
@@ -31,6 +34,7 @@ import { DeletePostDto } from '@/common/dto/post/DeletePost.dto';
 import { CommentRepository } from '../../infra/repository/Comment.repository';
 import { CommentEntity } from '../../domain/Comment.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
+import { PaginateQuery, Paginated, paginate } from 'nestjs-paginate';
 @Injectable()
 export class PostService
   extends BaseService<PostEntity>
@@ -45,6 +49,14 @@ export class PostService
     private readonly fileStorageService: IFileStorageService,
   ) {
     super(postRepository.repo);
+  }
+
+  getBasicFeed(query: PaginateQuery): Promise<Paginated<PostEntity>> {
+    return paginate(query, this.postRepository.repo, {
+      defaultSortBy: [['createdAt', 'DESC']],
+      sortableColumns: ['createdAt'],
+      nullSort: 'last',
+    });
   }
 
   async createPost(dto: CreatePostDto): Promise<any> {
