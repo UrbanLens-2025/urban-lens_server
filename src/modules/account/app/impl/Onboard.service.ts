@@ -10,6 +10,7 @@ import { TagEntity } from '@/modules/account/domain/Tag.entity';
 import { UserTagsEntity } from '@/modules/account/domain/UserTags.entity';
 import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
 import { Role } from '@/common/constants/Role.constant';
+import { CreatorProfileRepository } from '@/modules/account/infra/repository/CreatorProfile.repository';
 
 @Injectable()
 export class OnboardService extends CoreService implements IOnboardService {
@@ -73,8 +74,7 @@ export class OnboardService extends CoreService implements IOnboardService {
   ): Promise<UpdateResult> {
     return this.dataSource.transaction(async (manager) => {
       const accountRepository = manager.getRepository(AccountEntity);
-      const creatorProfileRepository =
-        manager.getRepository(CreatorProfileEntity);
+      const creatorProfileRepository = CreatorProfileRepository(manager);
 
       const account = await accountRepository.findOneByOrFail({
         id: accountId,
@@ -87,7 +87,6 @@ export class OnboardService extends CoreService implements IOnboardService {
 
       const creatorProfile = this.mapTo_Raw(CreatorProfileEntity, dto);
       creatorProfile.accountId = account.id;
-      console.log(creatorProfile);
       await creatorProfileRepository.save(creatorProfile);
 
       return await accountRepository.update(
