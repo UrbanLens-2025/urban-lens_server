@@ -19,9 +19,9 @@ import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
 @ApiBearerAuth()
-@ApiTags('File Storage - Public Files')
-@Controller('/file-storage')
-export class FileStoragePublicController {
+@ApiTags('File Storage')
+@Controller('/private/file-storage')
+export class FileStoragePrivateController {
   constructor(
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,

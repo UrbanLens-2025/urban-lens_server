@@ -24,8 +24,8 @@ import { UpdateBusinessStatusDto } from '@/common/dto/business/UpdateBusinessSta
 
 @ApiBearerAuth()
 @Roles(Role.BUSINESS_OWNER)
-@ApiTags('Account - Business Owner')
-@Controller('/account/owner')
+@ApiTags('Account')
+@Controller('/owner/account')
 export class AccountOwnerController {
   constructor(
     @Inject(IBusinessService)

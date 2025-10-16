@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-return */
+// noinspection ExceptionCaughtLocallyJS
+
 import {
   BadRequestException,
   ForbiddenException,
@@ -31,6 +34,7 @@ import { DeletePostDto } from '@/common/dto/post/DeletePost.dto';
 import { CommentRepository } from '../../infra/repository/Comment.repository';
 import { CommentEntity } from '../../domain/Comment.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
+import { PaginateQuery, Paginated, paginate } from 'nestjs-paginate';
 @Injectable()
 export class PostService
   extends BaseService<PostEntity>
@@ -47,11 +51,36 @@ export class PostService
     super(postRepository.repo);
   }
 
+  getBasicFeed(query: PaginateQuery): Promise<Paginated<PostEntity>> {
+    return paginate(query, this.postRepository.repo, {
+      defaultSortBy: [['createdAt', 'DESC']],
+      sortableColumns: ['createdAt'],
+      nullSort: 'last',
+    });
+  }
+
   async createPost(dto: CreatePostDto): Promise<any> {
     try {
       // Validate: Blog posts must have visibility
       if (dto.type === PostType.BLOG && !dto.visibility) {
         throw new BadRequestException('Visibility is required for blog posts');
+      }
+
+      // Validate: Review posts must have locationId or eventId and rating
+      if (dto.type === PostType.REVIEW) {
+        if (!dto.locationId && !dto.eventId) {
+          throw new BadRequestException(
+            'Review posts must have either locationId or eventId',
+          );
+        }
+        if (!dto.rating) {
+          throw new BadRequestException('Rating is required for review posts');
+        }
+      }
+
+      // Clear rating for blog posts
+      if (dto.type === PostType.BLOG) {
+        dto.rating = undefined;
       }
 
       const result = await this.postRepository.repo.manager.transaction(
@@ -322,8 +351,13 @@ export class PostService
   private async getReactionsOfPost(
     postId: string,
     reactType: ReactType,
+    params: PaginationParams = {},
   ): Promise<any> {
     try {
+      const page = Math.max(params.page ?? 1, 1);
+      const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
+      const skip = (page - 1) * limit;
+
       const queryBuilder = this.reactRepository.repo
         .createQueryBuilder('react')
         .leftJoin('react.author', 'author')
@@ -341,14 +375,24 @@ export class PostService
           'author.firstName',
           'author.lastName',
           'author.avatarUrl',
-        ]);
+        ])
+        .offset(skip)
+        .limit(limit);
 
       const [reactions, total] = await queryBuilder.getManyAndCount();
       const propertyName =
         reactType === ReactType.UPVOTE ? 'totalUpvotes' : 'totalDownvotes';
+
       return {
         [propertyName]: reactions.map((reaction) => reaction.author),
-        total,
+        meta: {
+          page,
+          limit,
+          totalItems: total,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1,
+        },
       };
     } catch (error) {
       console.error(error);
@@ -356,12 +400,18 @@ export class PostService
     }
   }
 
-  async getUpvotesOfPost(postId: string): Promise<any> {
-    return this.getReactionsOfPost(postId, ReactType.UPVOTE);
+  async getUpvotesOfPost(
+    postId: string,
+    params: PaginationParams = {},
+  ): Promise<any> {
+    return this.getReactionsOfPost(postId, ReactType.UPVOTE, params);
   }
 
-  async getDownvotesOfPost(postId: string): Promise<any> {
-    return this.getReactionsOfPost(postId, ReactType.DOWNVOTE);
+  async getDownvotesOfPost(
+    postId: string,
+    params: PaginationParams = {},
+  ): Promise<any> {
+    return this.getReactionsOfPost(postId, ReactType.DOWNVOTE, params);
   }
 
   async getAllReactionsOfPost(postId: string): Promise<any> {
@@ -384,10 +434,11 @@ export class PostService
     }
   }
 
-  async getPostByAuthorId(
+  private async getPostsByAuthorIdAndType(
     authorId: string,
     params: PaginationParams = {},
     currentUserId?: string,
+    postType?: PostType,
   ): Promise<PaginationResult<any>> {
     try {
       const page = Math.max(params.page ?? 1, 1);
@@ -403,11 +454,19 @@ export class PostService
           'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
           { analyticType: AnalyticEntityType.POST },
         )
-        .where('post.author_id = :authorId', { authorId })
+        .where('post.author_id = :authorId', { authorId });
+
+      // Add type filter if specified
+      if (postType) {
+        postsQuery.andWhere('post.type = :postType', { postType });
+      }
+
+      postsQuery
         .select([
           'post.post_id as post_postid',
           'post.content as post_content',
           'post.image_urls as post_imageurls',
+          'post.type as post_type',
           'post.created_at as post_createdat',
           'post.updated_at as post_updatedat',
           'author.id as author_id',
@@ -419,14 +478,18 @@ export class PostService
           'analytic.total_comments as analytic_total_comments',
         ])
         .orderBy('post.createdAt', 'DESC')
-        .skip(skip)
-        .take(limit);
+        .offset(skip)
+        .limit(limit);
 
-      const total = await this.postRepository.repo
+      const countQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .where('post.author_id = :authorId', { authorId })
-        .getCount();
+        .where('post.author_id = :authorId', { authorId });
 
+      if (postType) {
+        countQuery.andWhere('post.type = :postType', { postType });
+      }
+
+      const total = await countQuery.getCount();
       const posts = await postsQuery.getRawMany();
 
       if (!posts.length) {
@@ -468,6 +531,7 @@ export class PostService
             postId: post.post_postid,
             content: post.post_content,
             imageUrls: post.post_imageurls,
+            type: post.post_type,
             createdAt: post.post_createdat,
             updatedAt: post.post_updatedat,
             author: {
@@ -490,6 +554,7 @@ export class PostService
             postId: post.post_postid,
             content: post.post_content,
             imageUrls: post.post_imageurls,
+            type: post.post_type,
             createdAt: post.post_createdat,
             updatedAt: post.post_updatedat,
             author: {
@@ -523,5 +588,39 @@ export class PostService
       console.error(error);
       throw new InternalServerErrorException(error.message);
     }
+  }
+
+  async getPostByAuthorId(
+    authorId: string,
+    params: PaginationParams = {},
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>> {
+    return this.getPostsByAuthorIdAndType(authorId, params, currentUserId);
+  }
+
+  async getReviewsByAuthorId(
+    authorId: string,
+    params: PaginationParams = {},
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>> {
+    return this.getPostsByAuthorIdAndType(
+      authorId,
+      params,
+      currentUserId,
+      PostType.REVIEW,
+    );
+  }
+
+  async getBlogsByAuthorId(
+    authorId: string,
+    params: PaginationParams = {},
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>> {
+    return this.getPostsByAuthorIdAndType(
+      authorId,
+      params,
+      currentUserId,
+      PostType.BLOG,
+    );
   }
 }

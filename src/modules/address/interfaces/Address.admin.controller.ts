@@ -9,7 +9,7 @@ import { IWardService } from '@/modules/address/app/IWard.service';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 
-@ApiTags('Address - Admin')
+@ApiTags('Address')
 @Roles(Role.ADMIN)
 @ApiBearerAuth()
 @Controller('/admin/address')

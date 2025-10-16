@@ -3,7 +3,7 @@ import { PostPublicController } from '@/modules/post/interfaces/Post.public.cont
 import { IPostService } from '@/modules/post/app/IPost.service';
 import { PostService } from '@/modules/post/app/impl/Post.service';
 import { AnalyticInfraModule } from '@/modules/analytic/infra/Analytic.infra.module';
-import { CommentController } from '@/modules/post/interfaces/Comment.controller';
+import { CommentPrivateController } from '@/modules/post/interfaces/Comment.private.controller';
 import { ICommentService } from '@/modules/post/app/IComment.service';
 import { CommentService } from '@/modules/post/app/impl/Comment.service';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
@@ -12,7 +12,11 @@ import { PostInfraModule } from './infra/Post.infra.module';
 
 @Module({
   imports: [PostInfraModule, AnalyticInfraModule, FileStorageModule],
-  controllers: [PostPublicController, CommentController, PostUserController],
+  controllers: [
+    PostPublicController,
+    CommentPrivateController,
+    PostUserController,
+  ],
   providers: [
     {
       provide: IPostService,

@@ -18,8 +18,8 @@ import { IOnboardService } from '@/modules/account/app/IOnboard.service';
 
 @ApiBearerAuth()
 @Roles(Role.USER)
-@ApiTags('Account - User')
-@Controller('/account/user')
+@ApiTags('Account')
+@Controller('/user/account')
 export class AccountUserController {
   constructor(
     @Inject(IAccountUserService)

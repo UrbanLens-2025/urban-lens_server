@@ -88,10 +88,6 @@ export class LocationService implements ILocationService {
       where.name = ILike(`%${search}%`);
     }
 
-    if (isAvailableForRent !== undefined) {
-      where.isAvailableForRent = isAvailableForRent;
-    }
-
     if (status) {
       where.status = status;
     }

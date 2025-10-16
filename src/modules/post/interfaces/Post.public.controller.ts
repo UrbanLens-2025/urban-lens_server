@@ -4,14 +4,23 @@ import { IPostService } from '../app/IPost.service';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import type { PaginationParams } from '@/common/services/base.service';
+import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import { WithPagination } from '@/common/WithPagination.decorator';
 
-@ApiTags('Post - Public')
+@ApiTags('Post')
 @ApiBearerAuth()
 @Controller('post')
 export class PostPublicController {
   constructor(
     @Inject(IPostService) private readonly postService: IPostService,
   ) {}
+
+  @ApiOperation({ summary: 'Get basic posts feed (no recommendations)' })
+  @Get('/feed/basic')
+  @WithPagination()
+  getBasicFeed(@Paginate() query: PaginateQuery) {
+    return this.postService.getBasicFeed(query);
+  }
 
   @ApiOperation({ summary: 'Get a post by id' })
   @Get(':postId')
@@ -21,8 +30,11 @@ export class PostPublicController {
 
   @ApiOperation({ summary: 'Get upvotes of a post' })
   @Get(':postId/upvotes')
-  getUpvotesOfPost(@Param('postId') postId: string) {
-    return this.postService.getUpvotesOfPost(postId);
+  getUpvotesOfPost(
+    @Param('postId') postId: string,
+    @Query() query: PaginationParams,
+  ) {
+    return this.postService.getUpvotesOfPost(postId, query);
   }
 
   @ApiOperation({ summary: 'Get posts by author id' })
@@ -35,9 +47,32 @@ export class PostPublicController {
     return this.postService.getPostByAuthorId(authorId, query, user.sub);
   }
 
+  @ApiOperation({ summary: 'Get review posts by author id' })
+  @Get('author/:authorId/reviews')
+  getReviewsByAuthorId(
+    @Param('authorId') authorId: string,
+    @Query() query: PaginationParams,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.postService.getReviewsByAuthorId(authorId, query, user.sub);
+  }
+
+  @ApiOperation({ summary: 'Get blog posts by author id' })
+  @Get('author/:authorId/blogs')
+  getBlogsByAuthorId(
+    @Param('authorId') authorId: string,
+    @Query() query: PaginationParams,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.postService.getBlogsByAuthorId(authorId, query, user.sub);
+  }
+
   @ApiOperation({ summary: 'Get downvotes of a post' })
   @Get(':postId/downvotes')
-  getDownvotesOfPost(@Param('postId') postId: string) {
-    return this.postService.getDownvotesOfPost(postId);
+  getDownvotesOfPost(
+    @Param('postId') postId: string,
+    @Query() query: PaginationParams,
+  ) {
+    return this.postService.getDownvotesOfPost(postId, query);
   }
 }

@@ -1,15 +1,9 @@
 import { Controller, Get, Inject, Param } from '@nestjs/common';
-import { LocationService } from '../app/impl/Location.service';
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ILocationService } from '../app/ILocation.service';
 
-@ApiTags('Location - Public')
-@Controller('public/locations')
+@ApiTags('Location')
+@Controller('/public/locations')
 export class LocationPublicController {
   constructor(
     @Inject(ILocationService)

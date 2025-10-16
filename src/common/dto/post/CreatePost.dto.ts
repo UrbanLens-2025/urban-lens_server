@@ -7,6 +7,8 @@ import {
   IsOptional,
   IsString,
   ValidateIf,
+  Min,
+  Max,
 } from 'class-validator';
 import { PostType, Visibility } from '@/modules/post/domain/Post.entity';
 
@@ -27,19 +29,25 @@ export class CreatePostDto {
   })
   imageUrls?: string[];
 
+  @ValidateIf((o) => o.type === PostType.REVIEW)
   @IsString()
   @IsOptional()
   @ApiProperty({
-    description: 'The id of the location',
+    description:
+      'The id of the location (required for review posts if eventId is not provided)',
     example: '1',
+    required: false,
   })
   locationId?: string;
 
+  @ValidateIf((o) => o.type === PostType.REVIEW)
   @IsString()
   @IsOptional()
   @ApiProperty({
-    description: 'The id of the event',
+    description:
+      'The id of the event (required for review posts if locationId is not provided)',
     example: '1',
+    required: false,
   })
   eventId?: string;
 
@@ -74,11 +82,17 @@ export class CreatePostDto {
   })
   visibility?: Visibility;
 
+  @ValidateIf((o) => o.type === PostType.REVIEW)
+  @IsNotEmpty({ message: 'Rating is required for review posts' })
   @IsNumber()
-  @IsOptional()
+  @Min(1, { message: 'Rating must be at least 1' })
+  @Max(5, { message: 'Rating must be at most 5' })
   @ApiProperty({
-    description: 'The rating of the post',
+    description: 'The rating of the post (required for review posts, 1-5)',
     example: 5,
+    minimum: 1,
+    maximum: 5,
+    required: false,
   })
-  rating: number;
+  rating?: number;
 }

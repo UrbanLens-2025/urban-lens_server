@@ -98,11 +98,16 @@ export class CommentService
         'author.avatarUrl',
         'analytic.total_upvotes',
         'analytic.total_downvotes',
-      ])
-      .skip(skip)
-      .take(limit);
+      ]);
 
-    const { raw, entities } = await queryBuilder.getRawAndEntities();
+    // Get total count before applying pagination
+    const total = await queryBuilder.getCount();
+
+    // Apply pagination and get results
+    const { raw, entities } = await queryBuilder
+      .offset(skip)
+      .limit(limit)
+      .getRawAndEntities();
 
     const data = entities.map((entity, index) => {
       const row = raw[index];
@@ -112,8 +117,6 @@ export class CommentService
         totalDownvotes: Number(row.analytic_total_downvotes) || 0,
       };
     });
-
-    const total = await queryBuilder.getCount();
 
     return {
       data,
@@ -250,8 +253,13 @@ export class CommentService
   private async getReactionsOfComment(
     commentId: string,
     reactType: ReactType,
+    params: PaginationParams = {},
   ): Promise<any> {
     try {
+      const page = Math.max(params.page ?? 1, 1);
+      const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
+      const skip = (page - 1) * limit;
+
       const queryBuilder = this.reactRepository.repo
         .createQueryBuilder('react')
         .leftJoin('react.author', 'author')
@@ -269,14 +277,24 @@ export class CommentService
           'author.firstName',
           'author.lastName',
           'author.avatarUrl',
-        ]);
+        ])
+        .offset(skip)
+        .limit(limit);
 
       const [reactions, total] = await queryBuilder.getManyAndCount();
       const propertyName =
         reactType === ReactType.UPVOTE ? 'totalUpvotes' : 'totalDownvotes';
+
       return {
         [propertyName]: reactions.map((reaction) => reaction.author),
-        total,
+        meta: {
+          page,
+          limit,
+          totalItems: total,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1,
+        },
       };
     } catch (error) {
       console.error(error);
@@ -284,11 +302,17 @@ export class CommentService
     }
   }
 
-  async getUpvotesOfComment(commentId: string): Promise<any> {
-    return this.getReactionsOfComment(commentId, ReactType.UPVOTE);
+  async getUpvotesOfComment(
+    commentId: string,
+    params: PaginationParams = {},
+  ): Promise<any> {
+    return this.getReactionsOfComment(commentId, ReactType.UPVOTE, params);
   }
 
-  async getDownvotesOfComment(commentId: string): Promise<any> {
-    return this.getReactionsOfComment(commentId, ReactType.DOWNVOTE);
+  async getDownvotesOfComment(
+    commentId: string,
+    params: PaginationParams = {},
+  ): Promise<any> {
+    return this.getReactionsOfComment(commentId, ReactType.DOWNVOTE, params);
   }
 }

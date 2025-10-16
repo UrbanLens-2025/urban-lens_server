@@ -9,7 +9,7 @@ import { ITagService } from '@/modules/account/app/ITag.service';
 
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
-@ApiTags('Tag - Admin')
+@ApiTags('Tag')
 @Controller('/admin/tag')
 export class TagAdminController {
   constructor(

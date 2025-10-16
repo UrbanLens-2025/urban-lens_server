@@ -17,8 +17,8 @@ import { UpdateLocationDto } from '@/common/dto/location/UpdateLocation.dto';
 import { CreateLocationDto } from '@/common/dto/location/CreateLocation.dto';
 
 @ApiBearerAuth()
-@ApiTags('Location - Business')
-@Controller('business/locations')
+@ApiTags('Location')
+@Controller('/owner/locations')
 export class LocationBusinessController {
   constructor(
     @Inject(ILocationService)

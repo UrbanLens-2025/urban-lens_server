@@ -79,56 +79,6 @@ export class CreateLocationDto {
   @IsString({ each: true })
   imageUrl?: string[];
 
-  @ApiPropertyOptional({
-    description: 'Whether the location is available for rent',
-    example: true,
-    default: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isAvailableForRent?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Rental price per hour (VND)',
-    example: 100000,
-    minimum: 0,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  rentalPricePerHour?: number;
-
-  @ApiPropertyOptional({
-    description: 'Rental price per day (VND)',
-    example: 1500000,
-    minimum: 0,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  rentalPricePerDay?: number;
-
-  @ApiPropertyOptional({
-    description: 'Rental price per month (VND)',
-    example: 30000000,
-    minimum: 0,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  rentalPricePerMonth?: number;
-
-  @ApiPropertyOptional({
-    description: 'Additional notes about rental terms',
-    example: 'Includes cleaning service and basic equipment',
-  })
-  @IsOptional()
-  @IsString()
-  rentalNotes?: string;
-
-  @ApiPropertyOptional({
-    description: 'Business ID (will be set automatically from auth)',
-  })
   @IsOptional()
   @IsString()
   businessId?: string;
