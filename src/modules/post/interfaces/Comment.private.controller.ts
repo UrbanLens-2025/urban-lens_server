@@ -18,8 +18,8 @@ import { ReactCommentRequestDto } from '@/common/dto/post/ReactComment.dto';
 
 @ApiTags('Comment')
 @ApiBearerAuth()
-@Controller('comment')
-export class CommentController {
+@Controller('/private/comment')
+export class CommentPrivateController {
   constructor(
     @Inject(ICommentService) private readonly commentService: ICommentService,
   ) {}

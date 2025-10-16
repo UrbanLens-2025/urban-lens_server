@@ -15,10 +15,13 @@ import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import type { PaginationParams } from '@/common/services/base.service';
 import { ReactPostDto } from '@/common/dto/post/ReactPost.dto';
+import { Roles } from '@/common/Roles.decorator';
+import { Role } from '@/common/constants/Role.constant';
 
-@ApiTags('Post - User')
+@ApiTags('Post')
 @ApiBearerAuth()
-@Controller('user/post')
+@Roles(Role.USER)
+@Controller('/user/post')
 export class PostUserController {
   constructor(
     @Inject(IPostService) private readonly postService: IPostService,
