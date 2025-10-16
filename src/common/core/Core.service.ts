@@ -28,6 +28,14 @@ export class CoreService {
     });
   }
 
+  mapToList<T, V>(
+    cls: ClassConstructor<T>,
+    plain: V[],
+    options?: ClassTransformOptions,
+  ): T[] {
+    return plain.map((i) => this.mapTo(cls, i, options));
+  }
+
   /**
    * Map plain object to class instance. Maps all properties.
    * @param cls Target class

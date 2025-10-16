@@ -1,12 +1,9 @@
-import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
-import { Repository } from 'typeorm';
-import { Injectable } from '@nestjs/common';
 
-@Injectable()
-export class CreatorProfileRepository {
-  constructor(
-    @InjectRepository(CreatorProfileEntity)
-    public readonly repo: Repository<CreatorProfileEntity>,
-  ) {}
-}
+export const CreatorProfileRepository = (ctx: DataSource | EntityManager) =>
+  ctx.getRepository(CreatorProfileEntity).extend({});
+
+export type CreatorProfileRepository = ReturnType<
+  typeof CreatorProfileRepository
+>;

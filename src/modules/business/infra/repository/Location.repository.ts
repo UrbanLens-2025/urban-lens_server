@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable } from '@nestjs/common';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
@@ -10,3 +10,9 @@ export class LocationRepository {
     public readonly repo: Repository<LocationEntity>,
   ) {}
 }
+
+export const LocationRepositoryProvider = (ctx: DataSource | EntityManager) =>
+  ctx.getRepository(LocationEntity).extend({});
+export type LocationRepositoryProvider = ReturnType<
+  typeof LocationRepositoryProvider
+>;

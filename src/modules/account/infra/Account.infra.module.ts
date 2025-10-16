@@ -8,7 +8,6 @@ import { BusinessRepository } from '@/modules/account/infra/repository/Business.
 import { UserProfileRepository } from '@/modules/account/infra/repository/UserProfile.repository';
 import { BusinessEntity } from '../domain/Business.entity';
 import { UserProfileEntity } from '../domain/UserProfile.entity';
-import { CreatorProfileRepository } from '@/modules/account/infra/repository/CreatorProfile.repository';
 import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
 import { FollowRepository } from '@/modules/account/infra/repository/Follow.repository';
 import { FollowEntity } from '@/modules/account/domain/Follow.entity';
@@ -18,7 +17,6 @@ const repositories = [
   UserTagsRepository,
   BusinessRepository,
   UserProfileRepository,
-  CreatorProfileRepository,
   FollowRepository,
 ];
 

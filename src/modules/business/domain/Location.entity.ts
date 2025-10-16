@@ -12,8 +12,10 @@ import {
 } from 'typeorm';
 import { CheckInEntity } from './CheckIn.entity';
 
-@Entity('locations')
+@Entity({ name: LocationEntity.TABLE_NAME })
 export class LocationEntity {
+  public static readonly TABLE_NAME = 'locations';
+
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
