@@ -1,0 +1,6 @@
+export enum LocationBookingRequestStatus {
+  DRAFT = 'DRAFT',
+  SUBMITTED_FOR_APPROVAL = 'SUBMITTED_FOR_APPROVAL',
+  CANCELLED = 'CANCELLED',
+  APPROVED = 'APPROVED',
+}

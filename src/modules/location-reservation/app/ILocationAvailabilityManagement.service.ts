@@ -9,13 +9,6 @@ export const ILocationAvailabilityManagementService = Symbol(
   'IManualLocationManagementService',
 );
 export interface ILocationAvailabilityManagementService {
-  /**
-   * Gets location availability by month and year, fetches one month adjacent to the given month
-   * For example:
-   * - Given: month = 5, year = 2023
-   * - Fetches: from 2023-04-01 to 2023-06-30
-   * @param dto
-   */
   addLocationAvailability(
     dto: AddLocationAvailabilityDto,
   ): Promise<LocationAvailabilityResponseDto>;
@@ -28,6 +21,13 @@ export interface ILocationAvailabilityManagementService {
     dto: RemoveLocationAvailabilityDto,
   ): Promise<LocationAvailabilityResponseDto>;
 
+  /**
+   * Gets location availability by month and year, fetches one month adjacent to the given month
+   * For example:
+   * - Given: month = 5, year = 2023
+   * - Fetches: from 2023-04-01 to 2023-06-30
+   * @param dto
+   */
   getLocationAvailabilityByMonthYear(
     dto: GetLocationAvailabilityByMonthYearDto,
   ): Promise<LocationAvailabilityResponseDto[]>;
