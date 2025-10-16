@@ -11,7 +11,7 @@ import { AddLocationAvailabilityDto } from '@/common/dto/location-availability/A
 import { LocationAvailabilityEntity } from '@/modules/location-reservation/domain/LocationAvailability.entity';
 import { LocationAvailabilityResponseDto } from '@/common/dto/location-availability/res/LocationAvailability.response.dto';
 import { UpdateLocationAvailabilityDto } from '@/common/dto/location-availability/UpdateLocationAvailability.dto';
-import { LessThanOrEqual, MoreThanOrEqual, UpdateResult } from 'typeorm';
+import { UpdateResult } from 'typeorm';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { RemoveLocationAvailabilityDto } from '@/common/dto/location-availability/RemoveLocationAvailability.dto';
 import { LocationAvailabilitySource } from '@/common/constants/LocationAvailabilitySource.constant';
@@ -25,20 +25,20 @@ export class LocationAvailabilityManagementService
   getLocationAvailabilityByMonthYear(
     dto: GetLocationAvailabilityByMonthYearDto,
   ): Promise<LocationAvailabilityResponseDto[]> {
-    const startDate = new Date(dto.year, dto.month - 1, 1);
-    const endDate = new Date(dto.year, dto.month + 1, 0, 23, 59, 59, 999);
+    const startDate = new Date(dto.year, dto.month - 2, 1);
+    const endDate = new Date(dto.year, dto.month + 1, 1);
 
     const locationAvailabilityRepository = LocationAvailabilityRepository(
       this.dataSource,
     );
 
-    return locationAvailabilityRepository.find({
-      where: {
-        startDateTime: LessThanOrEqual(startDate),
-        endDateTime: MoreThanOrEqual(endDate),
+    return locationAvailabilityRepository
+      .findAvailabilityInRange({
         locationId: dto.locationId,
-      },
-    });
+        startDateTime: startDate,
+        endDateTime: endDate,
+      })
+      .then((res) => this.mapToList(LocationAvailabilityResponseDto, res));
   }
 
   updateLocationAvailability(

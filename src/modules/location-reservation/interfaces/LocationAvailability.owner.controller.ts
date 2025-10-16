@@ -6,19 +6,21 @@ import {
   Inject,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Post,
   Put,
   Query,
 } from '@nestjs/common';
 import { ILocationAvailabilityManagementService } from '@/modules/location-reservation/app/ILocationAvailabilityManagement.service';
 import { AddLocationAvailabilityDto } from '@/common/dto/location-availability/AddLocationAvailability.dto';
-import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UpdateLocationAvailabilityDto } from '@/common/dto/location-availability/UpdateLocationAvailability.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 
+@ApiTags('Location Availability')
 @ApiBearerAuth()
 @Roles(Role.BUSINESS_OWNER)
 @Controller('location-availability')
@@ -34,9 +36,9 @@ export class LocationAvailabilityOwnerController {
   })
   @Get('/calendar')
   getLocationAvailabilityForCalendar(
-    @Query('month') month: number,
-    @Query('year') year: number,
-    @Query('locationId') locationId: string,
+    @Query('month', ParseIntPipe) month: number,
+    @Query('year', ParseIntPipe) year: number,
+    @Query('locationId', ParseUUIDPipe) locationId: string,
   ) {
     return this.manualLocationAvailabilityManagement.getLocationAvailabilityByMonthYear(
       {

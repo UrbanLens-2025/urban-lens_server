@@ -13,8 +13,12 @@ export const LocationAvailabilityRepository = (
     ) {
       return this.createQueryBuilder('availability')
         .where('availability.location_id = :locationId', { locationId })
-        .andWhere('availability.start_time <= :endDateTime', { endDateTime })
-        .andWhere('availability.end_time >= :startDateTime', { startDateTime })
+        .andWhere('availability.start_date_time <= :endDateTime', {
+          endDateTime,
+        })
+        .andWhere('availability.end_date_time >= :startDateTime', {
+          startDateTime,
+        })
         .getExists();
     },
 
@@ -34,6 +38,24 @@ export const LocationAvailabilityRepository = (
           endDateTime: dto.endDateTime,
         })
         .getExists();
+    },
+
+    findAvailabilityInRange: function (
+      this: Repository<LocationAvailabilityEntity>,
+      dto: { locationId: string; startDateTime: Date; endDateTime: Date },
+    ) {
+      return this.createQueryBuilder('availability')
+        .where('availability.location_id = :locationId', {
+          locationId: dto.locationId,
+        })
+        .andWhere(
+          'availability.start_date_time < :endDateTime AND availability.end_date_time > :startDateTime',
+          {
+            startDateTime: dto.startDateTime,
+            endDateTime: dto.endDateTime,
+          },
+        )
+        .getMany();
     },
   });
 
