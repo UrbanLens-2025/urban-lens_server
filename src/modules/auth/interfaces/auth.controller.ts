@@ -1,16 +1,16 @@
 import { Body, Controller, Get, Inject, Patch } from '@nestjs/common';
-import { AuthUser } from '@/common/AuthUser.decorator';
-import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UpdateUserAccountDto } from '@/common/dto/auth/UpdateUserAccount.dto';
-import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
 import { IUserAuthService } from '@/modules/auth/app/IUser.auth.service';
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AuthUser } from '@/common/AuthUser.decorator';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { UpdateUserAccountDto } from '@/common/dto/auth/UpdateUserAccount.dto';
+import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
 
-@ApiTags('Auth - User')
+@ApiTags('Auth')
 @ApiBearerAuth()
-@Controller('/user/auth')
-export class AuthUserController {
+@Controller('auth')
+export class AuthController {
   constructor(
     @Inject(IUserAuthService)
     private readonly authUserService: IUserAuthService,
@@ -18,7 +18,7 @@ export class AuthUserController {
   ) {}
 
   @ApiOperation({
-    summary: 'Get current user profile',
+    summary: 'Get current auth profile',
     description: 'MUST send jwt token in HTTP headers',
   })
   @Get('/profile')
@@ -27,7 +27,7 @@ export class AuthUserController {
   }
 
   @ApiOperation({
-    summary: 'Update current user profile',
+    summary: 'Update current auth profile',
   })
   @Patch('/profile')
   updateProfile(
@@ -37,7 +37,7 @@ export class AuthUserController {
     return this.authUserService.updateUser(user, dto);
   }
 
-  @ApiOperation({ summary: 'Change user password' })
+  @ApiOperation({ summary: 'Change password' })
   @Patch('/profile/password')
   changePassword(
     @AuthUser() user: JwtTokenDto,
