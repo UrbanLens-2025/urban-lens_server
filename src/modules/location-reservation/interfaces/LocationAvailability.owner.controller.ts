@@ -23,7 +23,7 @@ import { Role } from '@/common/constants/Role.constant';
 @ApiTags('Location Availability')
 @ApiBearerAuth()
 @Roles(Role.BUSINESS_OWNER)
-@Controller('location-availability')
+@Controller('/owner/location-availability')
 export class LocationAvailabilityOwnerController {
   constructor(
     @Inject(ILocationAvailabilityManagementService)
