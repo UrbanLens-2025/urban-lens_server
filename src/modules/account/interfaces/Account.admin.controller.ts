@@ -5,6 +5,6 @@ import { Role } from '@/common/constants/Role.constant';
 
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
-@ApiTags('Account - Admin')
+@ApiTags('Account')
 @Controller('/admin/account')
 export class AccountAdminController {}

@@ -24,7 +24,7 @@ import { RolesGuard } from '@/common/Roles.guard';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
-@ApiTags('Follow - User')
+@ApiTags('Follow')
 @Controller('user/follow')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
