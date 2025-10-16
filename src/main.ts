@@ -40,7 +40,8 @@ async function bootstrap() {
         tagsSorter: 'alpha',
         operationsSorter: 'alpha',
       },
-      customCss: theme.getBuffer(SwaggerThemeNameEnum.DARK),
+      customJs: '/swagger-custom.js',
+      // customCss: theme.getBuffer(SwaggerThemeNameEnum),
     },
   );
 
