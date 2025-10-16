@@ -3,7 +3,7 @@ import { SendRawPushNotificationDto } from '@/common/dto/notification/SendRawPus
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IFirebaseNotificationService } from '@/modules/notification/app/IFirebaseNotification.service';
 
-@ApiTags('Push Notifications - DEVELOPMENT')
+@ApiTags('_Development')
 @Controller('/dev-only/notifications')
 export class PushNotificationDevOnlyController {
   constructor(
