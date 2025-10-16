@@ -5,7 +5,7 @@ import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import type { PaginationParams } from '@/common/services/base.service';
 
-@ApiTags('Post - Public')
+@ApiTags('Post')
 @ApiBearerAuth()
 @Controller('post')
 export class PostPublicController {

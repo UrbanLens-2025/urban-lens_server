@@ -13,7 +13,7 @@ import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { CacheInterceptor } from '@nestjs/cache-manager';
 
 @UseInterceptors(CacheInterceptor)
-@ApiTags('Address - Public')
+@ApiTags('Address')
 @Controller('/public/address')
 export class AddressPublicController {
   constructor(
