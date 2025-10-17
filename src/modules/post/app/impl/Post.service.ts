@@ -247,12 +247,10 @@ export class PostService
 
   async createPost(dto: CreatePostDto): Promise<any> {
     try {
-      // Validate: Blog posts must have visibility
       if (dto.type === PostType.BLOG && !dto.visibility) {
         throw new BadRequestException('Visibility is required for blog posts');
       }
 
-      // Validate: Review posts must have locationId or eventId and rating
       if (dto.type === PostType.REVIEW) {
         if (!dto.locationId && !dto.eventId) {
           throw new BadRequestException(
@@ -823,5 +821,57 @@ export class PostService
       currentUserId,
       PostType.BLOG,
     );
+  }
+
+  async getAllPosts(
+    params: PaginationParams = {},
+  ): Promise<PaginationResult<any>> {
+    const page = Math.max(params.page ?? 1, 1);
+    const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.postRepository.repo.findAndCount({
+      skip,
+      take: limit,
+      order: {
+        createdAt: 'DESC',
+      },
+      relations: ['author'],
+      select: {
+        postId: true,
+        content: true,
+        type: true,
+        rating: true,
+        imageUrls: true,
+        visibility: true,
+        isVerified: true,
+        locationId: true,
+        eventId: true,
+        createdAt: true,
+        updatedAt: true,
+        authorId: true,
+        author: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+          email: true,
+        },
+      },
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        totalItems: total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
   }
 }

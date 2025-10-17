@@ -4,8 +4,9 @@ import { IPostService } from '../app/IPost.service';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import type { PaginationParams } from '@/common/services/base.service';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 import { WithPagination } from '@/common/WithPagination.decorator';
+import { Roles } from '@/common/Roles.decorator';
+import { Role } from '@/common/constants/Role.constant';
 
 @ApiTags('Post')
 @ApiBearerAuth()
@@ -14,6 +15,14 @@ export class PostPublicController {
   constructor(
     @Inject(IPostService) private readonly postService: IPostService,
   ) {}
+
+  @ApiOperation({ summary: 'Get all posts (Admin only)' })
+  @Get()
+  @Roles(Role.ADMIN)
+  @WithPagination()
+  getAllPosts(@Query() query: PaginationParams) {
+    return this.postService.getAllPosts(query);
+  }
 
   @ApiOperation({ summary: 'Get feed of all public posts' })
   @Get('feed')

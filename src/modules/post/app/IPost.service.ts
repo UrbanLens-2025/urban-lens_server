@@ -36,4 +36,5 @@ export interface IPostService {
     params: PaginationParams,
     currentUserId?: string,
   ): Promise<PaginationResult<any>>;
+  getAllPosts(params: PaginationParams): Promise<PaginationResult<any>>;
 }

@@ -27,6 +27,7 @@ import { AddressModule } from '@/modules/address/Address.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { LocationReservationModule } from '@/modules/location-reservation/LocationReservation.module';
+import { ReportModule } from '@/modules/report/Report.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { LocationReservationModule } from '@/modules/location-reservation/Locati
     EventModule,
     AddressModule,
     LocationReservationModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [
