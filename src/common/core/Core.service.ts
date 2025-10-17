@@ -28,6 +28,17 @@ export class CoreService {
     });
   }
 
+  mapTo_safe<T extends object, V extends object>(cls: new () => T, plain: V) {
+    const instance = new cls();
+    const validKeys = Object.keys(instance);
+
+    const filtered = Object.fromEntries(
+      Object.entries(plain).filter(([key]) => validKeys.includes(key)),
+    );
+
+    return plainToInstance(cls, filtered);
+  }
+
   /**
    * Map plain object to class instance. Maps all properties.
    * @param cls Target class

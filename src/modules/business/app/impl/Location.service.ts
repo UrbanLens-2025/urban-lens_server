@@ -1,8 +1,8 @@
 import {
+  BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
-  BadRequestException,
 } from '@nestjs/common';
 import { ILocationService } from '../ILocation.service';
 import { CreateLocationDto } from '@/common/dto/location/CreateLocation.dto';
@@ -410,7 +410,7 @@ export class LocationService implements ILocationService {
 
     // Reset status to PENDING when business owner updates after rejection
     if (location.status === LocationRequestStatus.REJECTED) {
-      location.status = LocationRequestStatus.PENDING;
+      location.status = LocationRequestStatus.AWAITING_ADMIN_REVIEW;
       location.adminNotes = null; // Clear previous admin notes
     }
 

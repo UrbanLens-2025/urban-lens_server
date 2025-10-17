@@ -10,10 +10,16 @@ import { TokenModule } from '@/common/core/token/token.module';
 import { LocationPublicController } from './interfaces/Location.public.controller';
 import { LocationBusinessController } from './interfaces/Location.business.controller';
 import { LocationAdminController } from './interfaces/Location.admin.controller';
+import { LocationRequestBusinessController } from '@/modules/business/interfaces/LocationRequest.business.controller';
+import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
+import { LocationRequestManagementService } from '@/modules/business/app/impl/LocationRequestManagement.service';
+import { LocationRequestAdminController } from '@/modules/business/interfaces/LocationRequest.admin.controller';
 
 @Module({
   imports: [BusinessInfraModule, AccountInfraModule, TokenModule],
   controllers: [
+    LocationRequestBusinessController,
+    LocationRequestAdminController,
     LocationUserController,
     LocationPublicController,
     LocationBusinessController,
@@ -27,6 +33,10 @@ import { LocationAdminController } from './interfaces/Location.admin.controller'
     {
       provide: ICheckInService,
       useClass: CheckInService,
+    },
+    {
+      provide: ILocationRequestManagementService,
+      useClass: LocationRequestManagementService,
     },
   ],
   exports: [BusinessInfraModule],

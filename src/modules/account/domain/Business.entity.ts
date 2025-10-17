@@ -15,8 +15,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'business' })
+@Entity({ name: BusinessEntity.TABLE_NAME })
 export class BusinessEntity {
+  public static readonly TABLE_NAME = 'business';
+
   @PrimaryColumn({ name: 'account_id', type: 'uuid' })
   accountId: string;
 
@@ -91,4 +93,8 @@ export class BusinessEntity {
     cascade: true,
   })
   locations: LocationEntity[];
+
+  canCreateLocation(): boolean {
+    return this.status === BusinessRequestStatus.APPROVED && this.isActive;
+  }
 }
