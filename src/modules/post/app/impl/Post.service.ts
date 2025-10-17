@@ -35,6 +35,7 @@ import { CommentRepository } from '../../infra/repository/Comment.repository';
 import { CommentEntity } from '../../domain/Comment.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { PaginateQuery, Paginated, paginate } from 'nestjs-paginate';
+import { CheckInRepository } from '@/modules/business/infra/repository/CheckIn.repository';
 @Injectable()
 export class PostService
   extends BaseService<PostEntity>
@@ -45,18 +46,203 @@ export class PostService
     private readonly analyticRepository: AnalyticRepository,
     private readonly reactRepository: ReactRepository,
     private readonly commentRepository: CommentRepository,
+    private readonly checkInRepository: CheckInRepository,
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
   ) {
     super(postRepository.repo);
   }
 
-  getBasicFeed(query: PaginateQuery): Promise<Paginated<PostEntity>> {
-    return paginate(query, this.postRepository.repo, {
-      defaultSortBy: [['createdAt', 'DESC']],
-      sortableColumns: ['createdAt'],
-      nullSort: 'last',
-    });
+  async getBasicFeed(
+    params: PaginationParams = {},
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>> {
+    try {
+      const page = Math.max(params.page ?? 1, 1);
+      const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
+      const skip = (page - 1) * limit;
+
+      // Build query to get public posts
+      const postsQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin(
+          'analytic',
+          'analytic',
+          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
+          { analyticType: AnalyticEntityType.POST },
+        )
+        .where('post.visibility = :visibility OR post.visibility IS NULL', {
+          visibility: 'public',
+        })
+        .select([
+          'post.post_id as post_postid',
+          'post.content as post_content',
+          'post.image_urls as post_imageurls',
+          'post.type as post_type',
+          'post.rating as post_rating',
+          'post.location_id as post_locationid',
+          'post.event_id as post_eventid',
+          'post.is_verified as post_isverified',
+          'post.created_at as post_createdat',
+          'post.updated_at as post_updatedat',
+          'author.id as author_id',
+          'author.first_name as author_firstname',
+          'author.last_name as author_lastname',
+          'author.avatar_url as author_avatarurl',
+          'analytic.total_upvotes as analytic_total_upvotes',
+          'analytic.total_downvotes as analytic_total_downvotes',
+          'analytic.total_comments as analytic_total_comments',
+        ])
+        .orderBy('post.created_at', 'DESC')
+        .offset(skip)
+        .limit(limit);
+
+      // Count total posts
+      const countQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .where('post.visibility = :visibility OR post.visibility IS NULL', {
+          visibility: 'public',
+        });
+
+      const [posts, total] = await Promise.all([
+        postsQuery.getRawMany(),
+        countQuery.getCount(),
+      ]);
+
+      if (!posts.length) {
+        return {
+          data: [],
+          meta: {
+            page,
+            limit,
+            totalItems: total,
+            totalPages: Math.ceil(total / limit),
+            hasNextPage: page < Math.ceil(total / limit),
+            hasPrevPage: page > 1,
+          },
+        };
+      }
+
+      let processedPosts: any[];
+
+      // If user is logged in, get their reactions
+      if (currentUserId) {
+        const postIds = posts.map((post) => post.post_postid);
+
+        const userReactions = await this.reactRepository.repo
+          .createQueryBuilder('react')
+          .where('react.entityId IN (:...postIds)', { postIds })
+          .andWhere('react.entityType = :entityType', {
+            entityType: ReactEntityType.POST,
+          })
+          .andWhere('react.authorId = :currentUserId', { currentUserId })
+          .select(['react.entityId', 'react.type'])
+          .getMany();
+
+        const reactionMap = new Map();
+        userReactions.forEach((reaction) => {
+          reactionMap.set(reaction.entityId, reaction.type);
+        });
+
+        processedPosts = posts.map((post) => {
+          const result: any = {
+            postId: post.post_postid,
+            content: post.post_content,
+            imageUrls: post.post_imageurls,
+            type: post.post_type,
+            isVerified: post.post_isverified,
+            createdAt: post.post_createdat,
+            updatedAt: post.post_updatedat,
+            author: {
+              id: post.author_id,
+              firstName: post.author_firstname,
+              lastName: post.author_lastname,
+              avatarUrl: post.author_avatarurl,
+            },
+            analytics: {
+              totalUpvotes: post.analytic_total_upvotes || 0,
+              totalDownvotes: post.analytic_total_downvotes || 0,
+              totalComments: post.analytic_total_comments || 0,
+            },
+            currentUserReaction: reactionMap.get(post.post_postid) || null,
+          };
+
+          // Add rating for review posts
+          if (post.post_type === PostType.REVIEW && post.post_rating) {
+            result.rating = post.post_rating;
+          }
+
+          // Add locationId if exists
+          if (post.post_locationid) {
+            result.locationId = post.post_locationid;
+          }
+
+          // Add eventId if exists
+          if (post.post_eventid) {
+            result.eventId = post.post_eventid;
+          }
+
+          return result;
+        });
+      } else {
+        processedPosts = posts.map((post) => {
+          const result: any = {
+            postId: post.post_postid,
+            content: post.post_content,
+            imageUrls: post.post_imageurls,
+            type: post.post_type,
+            isVerified: post.post_isverified,
+            createdAt: post.post_createdat,
+            updatedAt: post.post_updatedat,
+            author: {
+              id: post.author_id,
+              firstName: post.author_firstname,
+              lastName: post.author_lastname,
+              avatarUrl: post.author_avatarurl,
+            },
+            analytics: {
+              totalUpvotes: post.analytic_total_upvotes || 0,
+              totalDownvotes: post.analytic_total_downvotes || 0,
+              totalComments: post.analytic_total_comments || 0,
+            },
+            currentUserReaction: null,
+          };
+
+          // Add rating for review posts
+          if (post.post_type === PostType.REVIEW && post.post_rating) {
+            result.rating = post.post_rating;
+          }
+
+          // Add locationId if exists
+          if (post.post_locationid) {
+            result.locationId = post.post_locationid;
+          }
+
+          // Add eventId if exists
+          if (post.post_eventid) {
+            result.eventId = post.post_eventid;
+          }
+
+          return result;
+        });
+      }
+
+      return {
+        data: processedPosts,
+        meta: {
+          page,
+          limit,
+          totalItems: total,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
   }
 
   async createPost(dto: CreatePostDto): Promise<any> {
@@ -83,6 +269,18 @@ export class PostService
         dto.rating = undefined;
       }
 
+      // Check if user has checked in at location (for review posts)
+      let isVerified = false;
+      if (dto.type === PostType.REVIEW && dto.locationId) {
+        const checkIn = await this.checkInRepository.repo.findOne({
+          where: {
+            userProfileId: dto.authorId,
+            locationId: dto.locationId,
+          },
+        });
+        isVerified = !!checkIn;
+      }
+
       const result = await this.postRepository.repo.manager.transaction(
         async (transactionalEntityManager) => {
           // Confirm upload for images if provided
@@ -101,7 +299,10 @@ export class PostService
             );
           }
 
-          const post = this.postRepository.repo.create(dto);
+          const post = this.postRepository.repo.create({
+            ...dto,
+            isVerified,
+          });
           const savedPost = await transactionalEntityManager.save(post);
 
           // Create post analytic

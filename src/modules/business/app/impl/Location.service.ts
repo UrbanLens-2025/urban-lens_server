@@ -98,7 +98,6 @@ export class LocationService implements ILocationService {
       .leftJoinAndSelect('location.business', 'business')
       .leftJoinAndSelect('business.account', 'account');
 
-    // Add price filters
     if (maxPricePerHour !== undefined) {
       queryBuilder.andWhere(
         '(location.rentalPricePerHour IS NULL OR location.rentalPricePerHour <= :maxPricePerHour)',
@@ -144,7 +143,6 @@ export class LocationService implements ILocationService {
     updateLocationDto: UpdateLocationDto,
     businessOwnerId: string,
   ): Promise<LocationEntity> {
-    // Find location with business relationship
     const location = await this.locationRepository.repo.findOne({
       where: { id: locationId },
       relations: ['business'],

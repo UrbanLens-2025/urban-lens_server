@@ -79,4 +79,7 @@ export class PostEntity {
 
   @PrimaryGeneratedColumn('uuid', { name: 'post_id' })
   postId: string;
+
+  @Column({ name: 'is_verified', type: 'boolean', default: false })
+  isVerified: boolean;
 }

@@ -15,11 +15,13 @@ export class PostPublicController {
     @Inject(IPostService) private readonly postService: IPostService,
   ) {}
 
-  @ApiOperation({ summary: 'Get basic posts feed (no recommendations)' })
-  @Get('/feed/basic')
-  @WithPagination()
-  getBasicFeed(@Paginate() query: PaginateQuery) {
-    return this.postService.getBasicFeed(query);
+  @ApiOperation({ summary: 'Get feed of all public posts' })
+  @Get('feed')
+  getBasicFeed(
+    @Query() query: PaginationParams,
+    @AuthUser() user?: JwtTokenDto,
+  ) {
+    return this.postService.getBasicFeed(query, user?.sub);
   }
 
   @ApiOperation({ summary: 'Get a post by id' })
