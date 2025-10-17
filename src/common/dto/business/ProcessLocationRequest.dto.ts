@@ -1,6 +1,12 @@
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+} from 'class-validator';
 
 export class ProcessLocationRequestDto {
   // transient fields
@@ -8,8 +14,15 @@ export class ProcessLocationRequestDto {
   accountId: string;
 
   // persistent fields
-  @ApiProperty({ enum: LocationRequestStatus })
-  @IsEnum(LocationRequestStatus)
+  @ApiProperty({
+    enum: LocationRequestStatus,
+    example: LocationRequestStatus.APPROVED,
+  })
+  @IsIn([
+    LocationRequestStatus.APPROVED,
+    LocationRequestStatus.NEEDS_MORE_INFO,
+    LocationRequestStatus.REJECTED,
+  ])
   @IsNotEmpty()
   status: LocationRequestStatus;
 

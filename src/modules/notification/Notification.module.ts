@@ -12,6 +12,8 @@ import { NotificationInfraModule } from '@/modules/notification/infra/notificati
 import { IEmailNotificationService } from '@/modules/notification/app/IEmailNotification.service';
 import { IFirebaseNotificationService } from '@/modules/notification/app/IFirebaseNotification.service';
 import { LocationRequestApprovedListener } from '@/modules/notification/app/event-listeners/LocationRequestApproved.listener';
+import { LocationRequestNeedsMoreInfoListener } from '@/modules/notification/app/event-listeners/LocationRequestNeedsMoreInfo.listener';
+import { LocationRequestRejectedListener } from '@/modules/notification/app/event-listeners/LocationRequestRejected.listener';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { LocationRequestApprovedListener } from '@/modules/notification/app/even
     },
     EmailNotificationConsumerService,
     LocationRequestApprovedListener,
+    LocationRequestNeedsMoreInfoListener,
+    LocationRequestRejectedListener,
   ],
   controllers: [
     PushNotificationUserController,

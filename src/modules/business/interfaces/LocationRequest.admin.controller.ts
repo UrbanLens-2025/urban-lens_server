@@ -1,4 +1,4 @@
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import {
@@ -27,16 +27,18 @@ export class LocationRequestAdminController {
     private readonly locationRequestManagementService: ILocationRequestManagementService,
   ) {}
 
-  @Get('/to-process')
+  @ApiOperation({ summary: 'Search location requests' })
+  @Get('/search')
   @WithPagination()
-  getLocationRequestsToProcess(@Paginate() query: PaginateQuery) {
-    return this.locationRequestManagementService.getLocationRequestsToProcess(
+  searchAllLocationRequests(@Paginate() query: PaginateQuery) {
+    return this.locationRequestManagementService.searchAllLocationRequests(
       query,
     );
   }
 
-  @Get('/to-process/:locationRequestId')
-  getLocationRequestToProcessById(
+  @ApiOperation({ summary: 'Get location request by ID' })
+  @Get('/search/:locationRequestId')
+  searchLocationRequestById(
     @Param('locationRequestId', ParseUUIDPipe) locationRequestId: string,
   ) {
     return this.locationRequestManagementService.getLocationRequestToProcessById(
@@ -46,6 +48,7 @@ export class LocationRequestAdminController {
     );
   }
 
+  @ApiOperation({ summary: 'Process location request' })
   @Post('/process/:locationRequestId')
   processLocationRequest(
     @Param('locationRequestId', ParseUUIDPipe) locationRequestId: string,

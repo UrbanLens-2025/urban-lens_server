@@ -15,6 +15,7 @@ import { ILocationRequestManagementService } from '@/modules/business/app/ILocat
 import { LocationRequestManagementService } from '@/modules/business/app/impl/LocationRequestManagement.service';
 import { LocationRequestAdminController } from '@/modules/business/interfaces/LocationRequest.admin.controller';
 import { LocationRequestApprovedListener } from '@/modules/business/app/listeners/LocationRequestApproved.listener';
+import { LocationV2Service } from '@/modules/business/app/impl/LocationV2.service';
 
 @Module({
   imports: [BusinessInfraModule, AccountInfraModule, TokenModule],
@@ -29,7 +30,7 @@ import { LocationRequestApprovedListener } from '@/modules/business/app/listener
   providers: [
     {
       provide: ILocationService,
-      useClass: LocationService,
+      useClass: LocationV2Service,
     },
     {
       provide: ICheckInService,

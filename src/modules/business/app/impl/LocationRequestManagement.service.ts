@@ -18,6 +18,8 @@ import {
   LOCATION_REQUEST_APPROVED_EVENT,
   LocationRequestApprovedEvent,
 } from '@/modules/business/domain/events/LocationRequestApproved.event';
+import { LOCATION_REQUEST_REJECTED_EVENT } from '@/modules/business/domain/events/LocationRequestRejected.event';
+import { LOCATION_REQUEST_NEEDS_MORE_INFO_EVENT } from '@/modules/business/domain/events/LocationRequestNeedsMoreInfo.event';
 
 @Injectable()
 export class LocationRequestManagementService
@@ -27,7 +29,6 @@ export class LocationRequestManagementService
   constructor(private readonly eventEmitter: EventEmitter2) {
     super();
   }
-
   createLocationRequest(
     dto: CreateLocationRequestDto,
   ): Promise<LocationRequestResponseDto> {
@@ -74,6 +75,8 @@ export class LocationRequestManagementService
         LocationRequestEntity,
         dto,
       );
+      updatedLocationRequest.status =
+        LocationRequestStatus.AWAITING_ADMIN_REVIEW;
 
       return locationRequestRepository.update(
         { id: locationRequest.id },
@@ -106,15 +109,32 @@ export class LocationRequestManagementService
     });
   }
 
-  getLocationRequestsToProcess(
+  getMyLocationRequests(
+    accountId: string,
     query: PaginateQuery,
   ): Promise<Paginated<LocationRequestResponseDto>> {
     return paginate(query, LocationRequestRepository(this.dataSource), {
       sortableColumns: ['createdAt'],
       defaultSortBy: [['createdAt', 'DESC']],
       where: {
-        status: LocationRequestStatus.AWAITING_ADMIN_REVIEW,
+        createdById: accountId,
       },
+      relations: ['processedBy'],
+    }).then(
+      (res) =>
+        ({
+          ...res,
+          data: res.data.map((i) => this.mapTo(LocationRequestResponseDto, i)),
+        }) as Paginated<LocationRequestResponseDto>,
+    );
+  }
+
+  searchAllLocationRequests(
+    query: PaginateQuery,
+  ): Promise<Paginated<LocationRequestResponseDto>> {
+    return paginate(query, LocationRequestRepository(this.dataSource), {
+      sortableColumns: ['createdAt'],
+      defaultSortBy: [['createdAt', 'DESC']],
     }).then(
       (res) =>
         ({
@@ -152,7 +172,7 @@ export class LocationRequestManagementService
         id: dto.locationRequestId,
       });
 
-      if (!locationRequest.canBeUpdated()) {
+      if (!locationRequest.canBeProcessed()) {
         throw new BadRequestException(
           'This location request cannot be updated',
         );
@@ -170,9 +190,23 @@ export class LocationRequestManagementService
           locationRequest,
         )
         .then((res) => {
-          this.eventEmitter.emit(LOCATION_REQUEST_APPROVED_EVENT, {
-            locationRequest,
-          } satisfies LocationRequestApprovedEvent);
+          switch (dto.status) {
+            case LocationRequestStatus.APPROVED:
+              this.eventEmitter.emit(LOCATION_REQUEST_APPROVED_EVENT, {
+                locationRequest,
+              } satisfies LocationRequestApprovedEvent);
+              break;
+            case LocationRequestStatus.REJECTED:
+              this.eventEmitter.emit(LOCATION_REQUEST_REJECTED_EVENT, {
+                locationRequest,
+              } satisfies LocationRequestApprovedEvent);
+              break;
+            case LocationRequestStatus.NEEDS_MORE_INFO:
+              this.eventEmitter.emit(LOCATION_REQUEST_NEEDS_MORE_INFO_EVENT, {
+                locationRequest,
+              } satisfies LocationRequestApprovedEvent);
+              break;
+          }
 
           return res;
         });

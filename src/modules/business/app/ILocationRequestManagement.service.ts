@@ -19,7 +19,12 @@ export interface ILocationRequestManagementService {
 
   cancelLocationRequest(dto: CancelLocationRequestDto): Promise<UpdateResult>;
 
-  getLocationRequestsToProcess(
+  getMyLocationRequests(
+    accountId: string,
+    query: PaginateQuery,
+  ): Promise<Paginated<LocationRequestResponseDto>>;
+
+  searchAllLocationRequests(
     query: PaginateQuery,
   ): Promise<Paginated<LocationRequestResponseDto>>;
 

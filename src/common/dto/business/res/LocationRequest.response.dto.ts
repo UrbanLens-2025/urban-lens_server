@@ -2,6 +2,7 @@ import { Exclude, Expose, Type } from 'class-transformer';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { LocationValidationDocumentsJson } from '@/common/json/LocationValidationDocuments.json';
 import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
+import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 
 @Exclude()
 export class LocationRequestResponseDto {
@@ -53,4 +54,11 @@ export class LocationRequestResponseDto {
 
   @Expose()
   locationValidationDocuments: LocationValidationDocumentsJson[];
+
+  @Expose()
+  processedById: string;
+
+  @Expose()
+  @Type(() => AccountResponseDto)
+  processedBy: AccountResponseDto;
 }

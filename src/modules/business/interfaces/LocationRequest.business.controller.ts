@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Inject,
   Param,
   ParseUUIDPipe,
@@ -15,6 +16,8 @@ import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
 import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
+import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import { WithPagination } from '@/common/WithPagination.decorator';
 
 @ApiTags('Location Request')
 @ApiBearerAuth()
@@ -25,6 +28,19 @@ export class LocationRequestBusinessController {
     @Inject(ILocationRequestManagementService)
     private readonly locationRequestManagementService: ILocationRequestManagementService,
   ) {}
+
+  @ApiOperation({ summary: 'Get my location requests' })
+  @WithPagination()
+  @Get()
+  getMyLocationRequests(
+    @AuthUser() userDto: JwtTokenDto,
+    @Paginate() query: PaginateQuery,
+  ) {
+    return this.locationRequestManagementService.getMyLocationRequests(
+      userDto.sub,
+      query,
+    );
+  }
 
   @ApiOperation({ summary: 'Create location request' })
   @Post()

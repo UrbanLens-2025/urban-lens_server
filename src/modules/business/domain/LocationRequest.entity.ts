@@ -91,6 +91,15 @@ export class LocationRequestEntity {
   adminNotes: string | null;
 
   canBeUpdated(): boolean {
-    return this.status === LocationRequestStatus.AWAITING_ADMIN_REVIEW;
+    const updatableStatuses = [
+      LocationRequestStatus.AWAITING_ADMIN_REVIEW,
+      LocationRequestStatus.NEEDS_MORE_INFO,
+    ];
+    return updatableStatuses.includes(this.status);
+  }
+
+  canBeProcessed(): boolean {
+    const processableStatuses = [LocationRequestStatus.AWAITING_ADMIN_REVIEW];
+    return processableStatuses.includes(this.status);
   }
 }
