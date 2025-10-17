@@ -1,5 +1,4 @@
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
-import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import {
   Column,
   CreateDateColumn,
@@ -7,10 +6,12 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { CheckInEntity } from './CheckIn.entity';
+import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 
 @Entity('locations')
 export class LocationEntity {
@@ -30,7 +31,7 @@ export class LocationEntity {
   longitude: number;
 
   @Column({ name: 'address_line', type: 'varchar', length: 255 })
-  address_line: string;
+  addressLine: string;
 
   @Column({ name: 'address_level_1', type: 'varchar', length: 100 })
   addressLevel1: string;
@@ -40,17 +41,6 @@ export class LocationEntity {
 
   @Column({ type: 'text', array: true, nullable: true })
   imageUrl: string[];
-
-  @Column({
-    name: 'status',
-    type: 'varchar',
-    length: 50,
-    default: LocationRequestStatus.AWAITING_ADMIN_REVIEW,
-  })
-  status: LocationRequestStatus;
-
-  @Column({ name: 'admin_notes', type: 'text', nullable: true })
-  adminNotes: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
@@ -66,6 +56,20 @@ export class LocationEntity {
 
   @Column({ name: 'business_id', type: 'uuid' })
   businessId: string;
+
+  @OneToOne(
+    () => LocationRequestEntity,
+    (locationRequest) => locationRequest.id,
+    {
+      createForeignKeyConstraints: false,
+      nullable: true,
+    },
+  )
+  @JoinColumn({ name: 'source_location_request_id' })
+  sourceLocationRequest: LocationRequestEntity;
+
+  @Column({ name: 'source_location_request_id', type: 'uuid', nullable: true })
+  sourceLocationRequestId: string;
 
   @OneToMany(() => CheckInEntity, (checkIn) => checkIn.location)
   checkIns: CheckInEntity[];

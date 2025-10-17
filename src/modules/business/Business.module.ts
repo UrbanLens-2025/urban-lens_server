@@ -14,6 +14,7 @@ import { LocationRequestBusinessController } from '@/modules/business/interfaces
 import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
 import { LocationRequestManagementService } from '@/modules/business/app/impl/LocationRequestManagement.service';
 import { LocationRequestAdminController } from '@/modules/business/interfaces/LocationRequest.admin.controller';
+import { LocationRequestApprovedListener } from '@/modules/business/app/listeners/LocationRequestApproved.listener';
 
 @Module({
   imports: [BusinessInfraModule, AccountInfraModule, TokenModule],
@@ -38,6 +39,7 @@ import { LocationRequestAdminController } from '@/modules/business/interfaces/Lo
       provide: ILocationRequestManagementService,
       useClass: LocationRequestManagementService,
     },
+    LocationRequestApprovedListener,
   ],
   exports: [BusinessInfraModule],
 })

@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable } from '@nestjs/common';
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
@@ -10,3 +10,10 @@ export class AccountRepository {
     public readonly repo: Repository<AccountEntity>,
   ) {}
 }
+
+export const AccountRepositoryProvider = (ctx: DataSource | EntityManager) =>
+  ctx.getRepository(AccountEntity).extend({});
+
+export type AccountRepositoryProvider = ReturnType<
+  typeof AccountRepositoryProvider
+>;

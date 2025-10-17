@@ -13,12 +13,21 @@ import { CancelLocationRequestDto } from '@/common/dto/business/CancelLocationRe
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { GetLocationRequestToProcessByIdDto } from '@/common/dto/business/GetLocationRequestToProcessById.dto';
 import { ProcessLocationRequestDto } from '@/common/dto/business/ProcessLocationRequest.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  LOCATION_REQUEST_APPROVED_EVENT,
+  LocationRequestApprovedEvent,
+} from '@/modules/business/domain/events/LocationRequestApproved.event';
 
 @Injectable()
 export class LocationRequestManagementService
   extends CoreService
   implements ILocationRequestManagementService
 {
+  constructor(private readonly eventEmitter: EventEmitter2) {
+    super();
+  }
+
   createLocationRequest(
     dto: CreateLocationRequestDto,
   ): Promise<LocationRequestResponseDto> {
@@ -149,18 +158,24 @@ export class LocationRequestManagementService
         );
       }
 
-      const updatedLocationRequest = this.mapTo_safe(
-        LocationRequestEntity,
-        dto,
-      );
-      updatedLocationRequest.processedById = dto.accountId;
+      locationRequest.processedById = dto.accountId;
+      locationRequest.status = dto.status;
+      locationRequest.adminNotes = dto.adminNotes || null;
 
-      return locationRequestRepository.update(
-        {
-          id: dto.locationRequestId,
-        },
-        updatedLocationRequest,
-      );
+      return locationRequestRepository
+        .update(
+          {
+            id: dto.locationRequestId,
+          },
+          locationRequest,
+        )
+        .then((res) => {
+          this.eventEmitter.emit(LOCATION_REQUEST_APPROVED_EVENT, {
+            locationRequest,
+          } satisfies LocationRequestApprovedEvent);
+
+          return res;
+        });
     });
   }
 }

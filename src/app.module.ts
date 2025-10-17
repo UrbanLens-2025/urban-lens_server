@@ -26,6 +26,8 @@ import { EventModule } from '@/modules/event/event.module';
 import { AddressModule } from '@/modules/address/Address.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EventEmitterConfig } from '@/config/event-emitter.config';
 
 @Module({
   imports: [
@@ -66,6 +68,7 @@ import { join } from 'path';
         },
       ],
     }),
+    EventEmitterModule.forRoot(EventEmitterConfig),
     NotificationModule,
     AuthModule,
     AccountModule,
