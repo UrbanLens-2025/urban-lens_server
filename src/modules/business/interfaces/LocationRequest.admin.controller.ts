@@ -41,11 +41,9 @@ export class LocationRequestAdminController {
   searchLocationRequestById(
     @Param('locationRequestId', ParseUUIDPipe) locationRequestId: string,
   ) {
-    return this.locationRequestManagementService.getLocationRequestToProcessById(
-      {
-        locationRequestId,
-      },
-    );
+    return this.locationRequestManagementService.getAnyLocationRequestById({
+      locationRequestId,
+    });
   }
 
   @ApiOperation({ summary: 'Process location request' })

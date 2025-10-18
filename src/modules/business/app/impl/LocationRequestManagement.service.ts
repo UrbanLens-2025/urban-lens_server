@@ -11,7 +11,7 @@ import { DeleteResult, In, UpdateResult } from 'typeorm';
 import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
 import { CancelLocationRequestDto } from '@/common/dto/business/CancelLocationRequest.dto';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
-import { GetLocationRequestToProcessByIdDto } from '@/common/dto/business/GetLocationRequestToProcessById.dto';
+import { GetAnyLocationRequestByIdDto } from '@/common/dto/business/GetAnyLocationRequestById.dto';
 import { ProcessLocationRequestDto } from '@/common/dto/business/ProcessLocationRequest.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
@@ -25,6 +25,7 @@ import { LocationRequestTagsRepository } from '@/modules/business/infra/reposito
 import { AddLocationRequestTagsDto } from '@/common/dto/business/AddLocationRequestTags.dto';
 import { DeleteLocationRequestTagDto } from '@/common/dto/business/DeleteLocationRequestTag.dto';
 import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/LocationRequestTags.response.dto';
+import { GetMyLocationRequestByIdDto } from '@/common/dto/business/GetMyLocationRequestById.dto';
 
 @Injectable()
 export class LocationRequestManagementService
@@ -204,6 +205,24 @@ export class LocationRequestManagementService
     );
   }
 
+  getMyLocationRequestById(
+    dto: GetMyLocationRequestByIdDto,
+  ): Promise<LocationRequestResponseDto> {
+    const locationRequestRepository = LocationRequestRepository(
+      this.dataSource,
+    );
+
+    return locationRequestRepository
+      .findOneOrFail({
+        where: {
+          id: dto.locationRequestId,
+          createdById: dto.accountId,
+        },
+        relations: ['createdBy', 'processedBy', 'tags'],
+      })
+      .then((e) => this.mapTo(LocationRequestResponseDto, e));
+  }
+
   searchAllLocationRequests(
     query: PaginateQuery,
   ): Promise<Paginated<LocationRequestResponseDto>> {
@@ -220,8 +239,8 @@ export class LocationRequestManagementService
     );
   }
 
-  getLocationRequestToProcessById(
-    dto: GetLocationRequestToProcessByIdDto,
+  getAnyLocationRequestById(
+    dto: GetAnyLocationRequestByIdDto,
   ): Promise<LocationRequestResponseDto> {
     const locationRequestRepository = LocationRequestRepository(
       this.dataSource,
@@ -231,7 +250,6 @@ export class LocationRequestManagementService
       .findOneOrFail({
         where: {
           id: dto.locationRequestId,
-          status: LocationRequestStatus.AWAITING_ADMIN_REVIEW,
         },
         relations: ['createdBy', 'processedBy', 'tags'],
       })

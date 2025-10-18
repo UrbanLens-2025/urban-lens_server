@@ -45,6 +45,18 @@ export class LocationRequestBusinessController {
     );
   }
 
+  @ApiOperation({ summary: 'Get my location request by ID' })
+  @Get(':locationRequestId')
+  getMyLocationRequestById(
+    @AuthUser() userDto: JwtTokenDto,
+    @Param('locationRequestId', ParseUUIDPipe) locationRequestId: string,
+  ) {
+    return this.locationRequestManagementService.getMyLocationRequestById({
+      locationRequestId,
+      accountId: userDto.sub,
+    });
+  }
+
   @ApiOperation({ summary: 'Create location request' })
   @Post()
   createLocationRequest(
