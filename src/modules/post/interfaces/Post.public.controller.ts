@@ -65,8 +65,8 @@ export class PostPublicController {
 
   @ApiOperation({ summary: 'Get a post by id' })
   @Get(':postId')
-  getPostById(@Param('postId') postId: string) {
-    return this.postService.getPostById(postId);
+  getPostById(@Param('postId') postId: string, @AuthUser() user?: JwtTokenDto) {
+    return this.postService.getPostById(postId, user?.sub);
   }
 
   @ApiOperation({ summary: 'Get upvotes of a post' })

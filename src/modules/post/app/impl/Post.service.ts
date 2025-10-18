@@ -392,7 +392,7 @@ export class PostService
 
   async getPostById(postId: string, userId?: string): Promise<any> {
     try {
-      const result = await this.postRepository.repo
+      const post = await this.postRepository.repo
         .createQueryBuilder('post')
         .leftJoinAndSelect('post.author', 'author')
         .leftJoin(
@@ -403,22 +403,83 @@ export class PostService
         )
         .where('post.post_id = :postId', { postId })
         .select([
-          'post.postId',
-          'post.content',
-          'post.createdAt',
-          'post.updatedAt',
-          'author.id',
-          'author.firstName',
-          'author.lastName',
-          'author.avatarUrl',
-          'analytic.total_upvotes',
-          'analytic.total_downvotes',
-          'analytic.total_comments',
+          'post.post_id as post_postid',
+          'post.content as post_content',
+          'post.image_urls as post_imageurls',
+          'post.type as post_type',
+          'post.rating as post_rating',
+          'post.location_id as post_locationid',
+          'post.event_id as post_eventid',
+          'post.is_verified as post_isverified',
+          'post.created_at as post_createdat',
+          'post.updated_at as post_updatedat',
+          'author.id as author_id',
+          'author.first_name as author_firstname',
+          'author.last_name as author_lastname',
+          'author.avatar_url as author_avatarurl',
+          'analytic.total_upvotes as analytic_total_upvotes',
+          'analytic.total_downvotes as analytic_total_downvotes',
+          'analytic.total_comments as analytic_total_comments',
         ])
         .getRawOne();
-      if (!result) {
+
+      if (!post) {
         throw new NotFoundException('Post not found');
       }
+
+      const result: any = {
+        postId: post.post_postid,
+        content: post.post_content,
+        imageUrls: post.post_imageurls,
+        type: post.post_type,
+        isVerified: post.post_isverified,
+        createdAt: post.post_createdat,
+        updatedAt: post.post_updatedat,
+        author: {
+          id: post.author_id,
+          firstName: post.author_firstname,
+          lastName: post.author_lastname,
+          avatarUrl: post.author_avatarurl,
+        },
+        analytics: {
+          totalUpvotes: post.analytic_total_upvotes || 0,
+          totalDownvotes: post.analytic_total_downvotes || 0,
+          totalComments: post.analytic_total_comments || 0,
+        },
+        currentUserReaction: null,
+      };
+
+      // Add rating for review posts
+      if (post.post_type === PostType.REVIEW && post.post_rating) {
+        result.rating = post.post_rating;
+      }
+
+      // Add locationId if exists
+      if (post.post_locationid) {
+        result.locationId = post.post_locationid;
+      }
+
+      // Add eventId if exists
+      if (post.post_eventid) {
+        result.eventId = post.post_eventid;
+      }
+
+      // Get user reaction if userId is provided
+      if (userId) {
+        const userReaction = await this.reactRepository.repo.findOne({
+          where: {
+            entityId: postId,
+            entityType: ReactEntityType.POST,
+            authorId: userId,
+          },
+          select: ['type'],
+        });
+
+        if (userReaction) {
+          result.currentUserReaction = userReaction.type;
+        }
+      }
+
       return result;
     } catch (error) {
       console.error(error);

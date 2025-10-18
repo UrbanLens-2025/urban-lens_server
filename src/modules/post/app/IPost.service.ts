@@ -15,7 +15,7 @@ export interface IPostService {
     currentUserId?: string,
   ): Promise<PaginationResult<any>>;
   createPost(dto: CreatePostDto): Promise<any>;
-  getPostById(postId: string): Promise<any>;
+  getPostById(postId: string, userId?: string): Promise<any>;
   reactPost(dto: ReactPostDto): Promise<any>;
   deletePost(dto: DeletePostDto): Promise<any>;
   getUpvotesOfPost(postId: string, params?: PaginationParams): Promise<any>;
