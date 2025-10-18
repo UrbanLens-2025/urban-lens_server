@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-return */
-// noinspection ExceptionCaughtLocallyJS
-
 import {
   BadRequestException,
   ForbiddenException,
@@ -34,8 +31,28 @@ import { DeletePostDto } from '@/common/dto/post/DeletePost.dto';
 import { CommentRepository } from '../../infra/repository/Comment.repository';
 import { CommentEntity } from '../../domain/Comment.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
-import { PaginateQuery, Paginated, paginate } from 'nestjs-paginate';
 import { CheckInRepository } from '@/modules/business/infra/repository/CheckIn.repository';
+
+interface RawPost {
+  post_postid: string;
+  post_content: string;
+  post_imageurls: string[];
+  post_type: PostType;
+  post_rating?: number;
+  post_locationid?: string;
+  post_eventid?: string;
+  post_isverified: boolean;
+  post_createdat: Date;
+  post_updatedat: Date;
+  author_id: string;
+  author_firstname: string;
+  author_lastname: string;
+  author_avatarurl: string;
+  analytic_total_upvotes?: number;
+  analytic_total_downvotes?: number;
+  analytic_total_comments?: number;
+}
+
 @Injectable()
 export class PostService
   extends BaseService<PostEntity>
@@ -53,14 +70,139 @@ export class PostService
     super(postRepository.repo);
   }
 
+  // Helper methods
+  private getPostSelectFields(): string[] {
+    return [
+      'post.post_id as post_postid',
+      'post.content as post_content',
+      'post.image_urls as post_imageurls',
+      'post.type as post_type',
+      'post.rating as post_rating',
+      'post.location_id as post_locationid',
+      'post.event_id as post_eventid',
+      'post.is_verified as post_isverified',
+      'post.created_at as post_createdat',
+      'post.updated_at as post_updatedat',
+      'author.id as author_id',
+      'author.first_name as author_firstname',
+      'author.last_name as author_lastname',
+      'author.avatar_url as author_avatarurl',
+      'analytic.total_upvotes as analytic_total_upvotes',
+      'analytic.total_downvotes as analytic_total_downvotes',
+      'analytic.total_comments as analytic_total_comments',
+    ];
+  }
+
+  private mapRawPostToDto(
+    rawPost: RawPost,
+    currentUserReaction: ReactType | null = null,
+  ): any {
+    const result: any = {
+      postId: rawPost.post_postid,
+      content: rawPost.post_content,
+      imageUrls: rawPost.post_imageurls,
+      type: rawPost.post_type,
+      isVerified: rawPost.post_isverified,
+      createdAt: rawPost.post_createdat,
+      updatedAt: rawPost.post_updatedat,
+      author: {
+        id: rawPost.author_id,
+        firstName: rawPost.author_firstname,
+        lastName: rawPost.author_lastname,
+        avatarUrl: rawPost.author_avatarurl,
+      },
+      analytics: {
+        totalUpvotes: rawPost.analytic_total_upvotes || 0,
+        totalDownvotes: rawPost.analytic_total_downvotes || 0,
+        totalComments: rawPost.analytic_total_comments || 0,
+      },
+      currentUserReaction,
+    };
+
+    // Add rating for review posts
+    if (rawPost.post_type === PostType.REVIEW && rawPost.post_rating) {
+      result.rating = rawPost.post_rating;
+    }
+
+    // Add locationId if exists
+    if (rawPost.post_locationid) {
+      result.locationId = rawPost.post_locationid;
+    }
+
+    // Add eventId if exists
+    if (rawPost.post_eventid) {
+      result.eventId = rawPost.post_eventid;
+    }
+
+    return result;
+  }
+
+  private async getUserReactionsMap(
+    postIds: string[],
+    userId: string,
+  ): Promise<Map<string, ReactType>> {
+    const userReactions = await this.reactRepository.repo
+      .createQueryBuilder('react')
+      .where('react.entityId IN (:...postIds)', { postIds })
+      .andWhere('react.entityType = :entityType', {
+        entityType: ReactEntityType.POST,
+      })
+      .andWhere('react.authorId = :userId', { userId })
+      .select(['react.entityId', 'react.type'])
+      .getMany();
+
+    return new Map(userReactions.map((r) => [r.entityId, r.type]));
+  }
+
+  private normalizePaginationParams(params: PaginationParams = {}): {
+    page: number;
+    limit: number;
+    skip: number;
+  } {
+    const page = Math.max(params.page ?? 1, 1);
+    const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
+    const skip = (page - 1) * limit;
+    return { page, limit, skip };
+  }
+
+  private buildPaginationMeta(
+    page: number,
+    limit: number,
+    total: number,
+  ): PaginationResult<any>['meta'] {
+    const totalPages = Math.ceil(total / limit);
+    return {
+      page,
+      limit,
+      totalItems: total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    };
+  }
+
+  private async processPostsWithReactions(
+    posts: RawPost[],
+    currentUserId?: string,
+  ): Promise<any[]> {
+    if (!currentUserId) {
+      return posts.map((post) => this.mapRawPostToDto(post, null));
+    }
+
+    const postIds = posts.map((post) => post.post_postid);
+    const reactionMap = await this.getUserReactionsMap(postIds, currentUserId);
+
+    return posts.map((post) =>
+      this.mapRawPostToDto(post, reactionMap.get(post.post_postid) || null),
+    );
+  }
+
   async getBasicFeed(
     params: PaginationParams = {},
     currentUserId?: string,
   ): Promise<PaginationResult<any>> {
     try {
-      const page = Math.max(params.page ?? 1, 1);
-      const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
-      const skip = (page - 1) * limit;
+      const { page, limit, skip } = this.normalizePaginationParams(params);
 
       // Build query to get public posts
       const postsQuery = this.postRepository.repo
@@ -76,25 +218,7 @@ export class PostService
           visibility: 'public',
         })
         .andWhere('post.is_hidden = :isHidden', { isHidden: false })
-        .select([
-          'post.post_id as post_postid',
-          'post.content as post_content',
-          'post.image_urls as post_imageurls',
-          'post.type as post_type',
-          'post.rating as post_rating',
-          'post.location_id as post_locationid',
-          'post.event_id as post_eventid',
-          'post.is_verified as post_isverified',
-          'post.created_at as post_createdat',
-          'post.updated_at as post_updatedat',
-          'author.id as author_id',
-          'author.first_name as author_firstname',
-          'author.last_name as author_lastname',
-          'author.avatar_url as author_avatarurl',
-          'analytic.total_upvotes as analytic_total_upvotes',
-          'analytic.total_downvotes as analytic_total_downvotes',
-          'analytic.total_comments as analytic_total_comments',
-        ])
+        .select(this.getPostSelectFields())
         .orderBy('post.created_at', 'DESC')
         .offset(skip)
         .limit(limit);
@@ -112,134 +236,14 @@ export class PostService
         countQuery.getCount(),
       ]);
 
-      if (!posts.length) {
-        return {
-          data: [],
-          meta: {
-            page,
-            limit,
-            totalItems: total,
-            totalPages: Math.ceil(total / limit),
-            hasNextPage: page < Math.ceil(total / limit),
-            hasPrevPage: page > 1,
-          },
-        };
-      }
-
-      let processedPosts: any[];
-
-      // If user is logged in, get their reactions
-      if (currentUserId) {
-        const postIds = posts.map((post) => post.post_postid);
-
-        const userReactions = await this.reactRepository.repo
-          .createQueryBuilder('react')
-          .where('react.entityId IN (:...postIds)', { postIds })
-          .andWhere('react.entityType = :entityType', {
-            entityType: ReactEntityType.POST,
-          })
-          .andWhere('react.authorId = :currentUserId', { currentUserId })
-          .select(['react.entityId', 'react.type'])
-          .getMany();
-
-        const reactionMap = new Map();
-        userReactions.forEach((reaction) => {
-          reactionMap.set(reaction.entityId, reaction.type);
-        });
-
-        processedPosts = posts.map((post) => {
-          const result: any = {
-            postId: post.post_postid,
-            content: post.post_content,
-            imageUrls: post.post_imageurls,
-            type: post.post_type,
-            isVerified: post.post_isverified,
-            createdAt: post.post_createdat,
-            updatedAt: post.post_updatedat,
-            author: {
-              id: post.author_id,
-              firstName: post.author_firstname,
-              lastName: post.author_lastname,
-              avatarUrl: post.author_avatarurl,
-            },
-            analytics: {
-              totalUpvotes: post.analytic_total_upvotes || 0,
-              totalDownvotes: post.analytic_total_downvotes || 0,
-              totalComments: post.analytic_total_comments || 0,
-            },
-            currentUserReaction: reactionMap.get(post.post_postid) || null,
-          };
-
-          // Add rating for review posts
-          if (post.post_type === PostType.REVIEW && post.post_rating) {
-            result.rating = post.post_rating;
-          }
-
-          // Add locationId if exists
-          if (post.post_locationid) {
-            result.locationId = post.post_locationid;
-          }
-
-          // Add eventId if exists
-          if (post.post_eventid) {
-            result.eventId = post.post_eventid;
-          }
-
-          return result;
-        });
-      } else {
-        processedPosts = posts.map((post) => {
-          const result: any = {
-            postId: post.post_postid,
-            content: post.post_content,
-            imageUrls: post.post_imageurls,
-            type: post.post_type,
-            isVerified: post.post_isverified,
-            createdAt: post.post_createdat,
-            updatedAt: post.post_updatedat,
-            author: {
-              id: post.author_id,
-              firstName: post.author_firstname,
-              lastName: post.author_lastname,
-              avatarUrl: post.author_avatarurl,
-            },
-            analytics: {
-              totalUpvotes: post.analytic_total_upvotes || 0,
-              totalDownvotes: post.analytic_total_downvotes || 0,
-              totalComments: post.analytic_total_comments || 0,
-            },
-            currentUserReaction: null,
-          };
-
-          // Add rating for review posts
-          if (post.post_type === PostType.REVIEW && post.post_rating) {
-            result.rating = post.post_rating;
-          }
-
-          // Add locationId if exists
-          if (post.post_locationid) {
-            result.locationId = post.post_locationid;
-          }
-
-          // Add eventId if exists
-          if (post.post_eventid) {
-            result.eventId = post.post_eventid;
-          }
-
-          return result;
-        });
-      }
+      const processedPosts = await this.processPostsWithReactions(
+        posts,
+        currentUserId,
+      );
 
       return {
         data: processedPosts,
-        meta: {
-          page,
-          limit,
-          totalItems: total,
-          totalPages: Math.ceil(total / limit),
-          hasNextPage: page < Math.ceil(total / limit),
-          hasPrevPage: page > 1,
-        },
+        meta: this.buildPaginationMeta(page, limit, total),
       };
     } catch (error) {
       console.error(error);
@@ -402,67 +406,14 @@ export class PostService
           { type: AnalyticEntityType.POST },
         )
         .where('post.post_id = :postId', { postId })
-        .select([
-          'post.post_id as post_postid',
-          'post.content as post_content',
-          'post.image_urls as post_imageurls',
-          'post.type as post_type',
-          'post.rating as post_rating',
-          'post.location_id as post_locationid',
-          'post.event_id as post_eventid',
-          'post.is_verified as post_isverified',
-          'post.created_at as post_createdat',
-          'post.updated_at as post_updatedat',
-          'author.id as author_id',
-          'author.first_name as author_firstname',
-          'author.last_name as author_lastname',
-          'author.avatar_url as author_avatarurl',
-          'analytic.total_upvotes as analytic_total_upvotes',
-          'analytic.total_downvotes as analytic_total_downvotes',
-          'analytic.total_comments as analytic_total_comments',
-        ])
+        .select(this.getPostSelectFields())
         .getRawOne();
 
       if (!post) {
         throw new NotFoundException('Post not found');
       }
 
-      const result: any = {
-        postId: post.post_postid,
-        content: post.post_content,
-        imageUrls: post.post_imageurls,
-        type: post.post_type,
-        isVerified: post.post_isverified,
-        createdAt: post.post_createdat,
-        updatedAt: post.post_updatedat,
-        author: {
-          id: post.author_id,
-          firstName: post.author_firstname,
-          lastName: post.author_lastname,
-          avatarUrl: post.author_avatarurl,
-        },
-        analytics: {
-          totalUpvotes: post.analytic_total_upvotes || 0,
-          totalDownvotes: post.analytic_total_downvotes || 0,
-          totalComments: post.analytic_total_comments || 0,
-        },
-        currentUserReaction: null,
-      };
-
-      // Add rating for review posts
-      if (post.post_type === PostType.REVIEW && post.post_rating) {
-        result.rating = post.post_rating;
-      }
-
-      // Add locationId if exists
-      if (post.post_locationid) {
-        result.locationId = post.post_locationid;
-      }
-
-      // Add eventId if exists
-      if (post.post_eventid) {
-        result.eventId = post.post_eventid;
-      }
+      let currentUserReaction: ReactType | null = null;
 
       // Get user reaction if userId is provided
       if (userId) {
@@ -476,11 +427,11 @@ export class PostService
         });
 
         if (userReaction) {
-          result.currentUserReaction = userReaction.type;
+          currentUserReaction = userReaction.type;
         }
       }
 
-      return result;
+      return this.mapRawPostToDto(post, currentUserReaction);
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException(error);
@@ -616,9 +567,7 @@ export class PostService
     params: PaginationParams = {},
   ): Promise<any> {
     try {
-      const page = Math.max(params.page ?? 1, 1);
-      const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
-      const skip = (page - 1) * limit;
+      const { page, limit, skip } = this.normalizePaginationParams(params);
 
       const queryBuilder = this.reactRepository.repo
         .createQueryBuilder('react')
@@ -647,14 +596,7 @@ export class PostService
 
       return {
         [propertyName]: reactions.map((reaction) => reaction.author),
-        meta: {
-          page,
-          limit,
-          totalItems: total,
-          totalPages: Math.ceil(total / limit),
-          hasNextPage: page < Math.ceil(total / limit),
-          hasPrevPage: page > 1,
-        },
+        meta: this.buildPaginationMeta(page, limit, total),
       };
     } catch (error) {
       console.error(error);
@@ -703,9 +645,7 @@ export class PostService
     postType?: PostType,
   ): Promise<PaginationResult<any>> {
     try {
-      const page = Math.max(params.page ?? 1, 1);
-      const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
-      const skip = (page - 1) * limit;
+      const { page, limit, skip } = this.normalizePaginationParams(params);
 
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
@@ -724,21 +664,7 @@ export class PostService
       }
 
       postsQuery
-        .select([
-          'post.post_id as post_postid',
-          'post.content as post_content',
-          'post.image_urls as post_imageurls',
-          'post.type as post_type',
-          'post.created_at as post_createdat',
-          'post.updated_at as post_updatedat',
-          'author.id as author_id',
-          'author.first_name as author_firstname',
-          'author.last_name as author_lastname',
-          'author.avatar_url as author_avatarurl',
-          'analytic.total_upvotes as analytic_total_upvotes',
-          'analytic.total_downvotes as analytic_total_downvotes',
-          'analytic.total_comments as analytic_total_comments',
-        ])
+        .select(this.getPostSelectFields())
         .orderBy('post.createdAt', 'DESC')
         .offset(skip)
         .limit(limit);
@@ -751,100 +677,19 @@ export class PostService
         countQuery.andWhere('post.type = :postType', { postType });
       }
 
-      const total = await countQuery.getCount();
-      const posts = await postsQuery.getRawMany();
+      const [posts, total] = await Promise.all([
+        postsQuery.getRawMany(),
+        countQuery.getCount(),
+      ]);
 
-      if (!posts.length) {
-        return {
-          data: [],
-          meta: {
-            page,
-            limit,
-            totalItems: total,
-            totalPages: Math.ceil(total / limit),
-            hasNextPage: page < Math.ceil(total / limit),
-            hasPrevPage: page > 1,
-          },
-        };
-      }
-
-      let processedPosts: any[];
-
-      if (currentUserId) {
-        const postIds = posts.map((post) => post.post_postid);
-
-        const userReactions = await this.reactRepository.repo
-          .createQueryBuilder('react')
-          .where('react.entityId IN (:...postIds)', { postIds })
-          .andWhere('react.entityType = :entityType', {
-            entityType: ReactEntityType.POST,
-          })
-          .andWhere('react.authorId = :currentUserId', { currentUserId })
-          .select(['react.entityId', 'react.type'])
-          .getMany();
-
-        const reactionMap = new Map();
-        userReactions.forEach((reaction) => {
-          reactionMap.set(reaction.entityId, reaction.type);
-        });
-
-        processedPosts = posts.map((post) => {
-          return {
-            postId: post.post_postid,
-            content: post.post_content,
-            imageUrls: post.post_imageurls,
-            type: post.post_type,
-            createdAt: post.post_createdat,
-            updatedAt: post.post_updatedat,
-            author: {
-              id: post.author_id,
-              firstName: post.author_firstname,
-              lastName: post.author_lastname,
-              avatarUrl: post.author_avatarurl,
-            },
-            analytics: {
-              totalUpvotes: post.analytic_total_upvotes || 0,
-              totalDownvotes: post.analytic_total_downvotes || 0,
-              totalComments: post.analytic_total_comments || 0,
-            },
-            currentUserReaction: reactionMap.get(post.post_postid) || null,
-          };
-        });
-      } else {
-        processedPosts = posts.map((post) => {
-          return {
-            postId: post.post_postid,
-            content: post.post_content,
-            imageUrls: post.post_imageurls,
-            type: post.post_type,
-            createdAt: post.post_createdat,
-            updatedAt: post.post_updatedat,
-            author: {
-              id: post.author_id,
-              firstName: post.author_firstname,
-              lastName: post.author_lastname,
-              avatarUrl: post.author_avatarurl,
-            },
-            analytics: {
-              totalUpvotes: post.analytic_total_upvotes || 0,
-              totalDownvotes: post.analytic_total_downvotes || 0,
-              totalComments: post.analytic_total_comments || 0,
-            },
-            currentUserReaction: null,
-          };
-        });
-      }
+      const processedPosts = await this.processPostsWithReactions(
+        posts,
+        currentUserId,
+      );
 
       return {
         data: processedPosts,
-        meta: {
-          page,
-          limit,
-          totalItems: total,
-          totalPages: Math.ceil(total / limit),
-          hasNextPage: page < Math.ceil(total / limit),
-          hasPrevPage: page > 1,
-        },
+        meta: this.buildPaginationMeta(page, limit, total),
       };
     } catch (error) {
       console.error(error);
@@ -889,9 +734,7 @@ export class PostService
   async getAllPosts(
     params: PaginationParams = {},
   ): Promise<PaginationResult<any>> {
-    const page = Math.max(params.page ?? 1, 1);
-    const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = this.normalizePaginationParams(params);
 
     const [data, total] = await this.postRepository.repo.findAndCount({
       skip,
@@ -924,18 +767,9 @@ export class PostService
       },
     });
 
-    const totalPages = Math.ceil(total / limit);
-
     return {
       data,
-      meta: {
-        page,
-        limit,
-        totalItems: total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-      },
+      meta: this.buildPaginationMeta(page, limit, total),
     };
   }
 
@@ -952,9 +786,7 @@ export class PostService
         );
       }
 
-      const page = Math.max(params.page ?? 1, 1);
-      const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
-      const skip = (page - 1) * limit;
+      const { page, limit, skip } = this.normalizePaginationParams(params);
 
       // Build posts query
       const postsQuery = this.postRepository.repo
@@ -982,25 +814,7 @@ export class PostService
       }
 
       postsQuery
-        .select([
-          'post.post_id as post_postid',
-          'post.content as post_content',
-          'post.image_urls as post_imageurls',
-          'post.type as post_type',
-          'post.rating as post_rating',
-          'post.location_id as post_locationid',
-          'post.event_id as post_eventid',
-          'post.is_verified as post_isverified',
-          'post.created_at as post_createdat',
-          'post.updated_at as post_updatedat',
-          'author.id as author_id',
-          'author.first_name as author_firstname',
-          'author.last_name as author_lastname',
-          'author.avatar_url as author_avatarurl',
-          'analytic.total_upvotes as analytic_total_upvotes',
-          'analytic.total_downvotes as analytic_total_downvotes',
-          'analytic.total_comments as analytic_total_comments',
-        ])
+        .select(this.getPostSelectFields())
         .orderBy('post.created_at', 'DESC')
         .offset(skip)
         .limit(limit);
@@ -1027,100 +841,14 @@ export class PostService
         countQuery.getCount(),
       ]);
 
-      if (!posts.length) {
-        return {
-          data: [],
-          meta: {
-            page,
-            limit,
-            totalItems: total,
-            totalPages: Math.ceil(total / limit),
-            hasNextPage: page < Math.ceil(total / limit),
-            hasPrevPage: page > 1,
-          },
-        };
-      }
-
-      let processedPosts: any[];
-
-      // Get user reactions if logged in
-      if (currentUserId) {
-        const postIds = posts.map((post) => post.post_postid);
-        const userReactions = await this.reactRepository.repo
-          .createQueryBuilder('react')
-          .where('react.entityId IN (:...postIds)', { postIds })
-          .andWhere('react.entityType = :entityType', {
-            entityType: ReactEntityType.POST,
-          })
-          .andWhere('react.authorId = :currentUserId', { currentUserId })
-          .select(['react.entityId', 'react.type'])
-          .getMany();
-
-        const reactionMap = new Map(
-          userReactions.map((r) => [r.entityId, r.type]),
-        );
-
-        processedPosts = posts.map((post) => ({
-          postId: post.post_postid,
-          content: post.post_content,
-          imageUrls: post.post_imageurls,
-          type: post.post_type,
-          rating: post.post_rating,
-          locationId: post.post_locationid,
-          eventId: post.post_eventid,
-          isVerified: post.post_isverified,
-          createdAt: post.post_createdat,
-          updatedAt: post.post_updatedat,
-          author: {
-            id: post.author_id,
-            firstName: post.author_firstname,
-            lastName: post.author_lastname,
-            avatarUrl: post.author_avatarurl,
-          },
-          analytics: {
-            totalUpvotes: post.analytic_total_upvotes || 0,
-            totalDownvotes: post.analytic_total_downvotes || 0,
-            totalComments: post.analytic_total_comments || 0,
-          },
-          currentUserReaction: reactionMap.get(post.post_postid) || null,
-        }));
-      } else {
-        processedPosts = posts.map((post) => ({
-          postId: post.post_postid,
-          content: post.post_content,
-          imageUrls: post.post_imageurls,
-          type: post.post_type,
-          rating: post.post_rating,
-          locationId: post.post_locationid,
-          eventId: post.post_eventid,
-          isVerified: post.post_isverified,
-          createdAt: post.post_createdat,
-          updatedAt: post.post_updatedat,
-          author: {
-            id: post.author_id,
-            firstName: post.author_firstname,
-            lastName: post.author_lastname,
-            avatarUrl: post.author_avatarurl,
-          },
-          analytics: {
-            totalUpvotes: post.analytic_total_upvotes || 0,
-            totalDownvotes: post.analytic_total_downvotes || 0,
-            totalComments: post.analytic_total_comments || 0,
-          },
-          currentUserReaction: null,
-        }));
-      }
+      const processedPosts = await this.processPostsWithReactions(
+        posts,
+        currentUserId,
+      );
 
       return {
         data: processedPosts,
-        meta: {
-          page,
-          limit,
-          totalItems: total,
-          totalPages: Math.ceil(total / limit),
-          hasNextPage: page < Math.ceil(total / limit),
-          hasPrevPage: page > 1,
-        },
+        meta: this.buildPaginationMeta(page, limit, total),
       };
     } catch (error) {
       console.error(error);
