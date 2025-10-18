@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.module';
 import { LocationUserController } from './interfaces/Location.user.controller';
-import { LocationService } from './app/impl/Location.service';
 import { CheckInService } from './app/impl/CheckIn.service';
 import { ILocationService } from './app/ILocation.service';
 import { ICheckInService } from './app/ICheckIn.service';
@@ -16,6 +15,8 @@ import { LocationRequestManagementService } from '@/modules/business/app/impl/Lo
 import { LocationRequestAdminController } from '@/modules/business/interfaces/LocationRequest.admin.controller';
 import { LocationRequestApprovedListener } from '@/modules/business/app/listeners/LocationRequestApproved.listener';
 import { LocationV2Service } from '@/modules/business/app/impl/LocationV2.service';
+import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
+import { LocationQueryService } from '@/modules/business/app/impl/LocationQuery.service';
 
 @Module({
   imports: [BusinessInfraModule, AccountInfraModule, TokenModule],
@@ -39,6 +40,10 @@ import { LocationV2Service } from '@/modules/business/app/impl/LocationV2.servic
     {
       provide: ILocationRequestManagementService,
       useClass: LocationRequestManagementService,
+    },
+    {
+      provide: ILocationQueryService,
+      useClass: LocationQueryService,
     },
     LocationRequestApprovedListener,
   ],

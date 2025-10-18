@@ -3,6 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -17,6 +18,21 @@ import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest
 export class LocationEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
+  updatedAt: Date;
+
+  @ManyToOne(() => BusinessEntity, (business) => business.locations, {
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'business_id' })
+  business: BusinessEntity;
+
+  @Column({ name: 'business_id', type: 'uuid' })
+  businessId: string;
 
   @Column({ name: 'name', type: 'varchar', length: 255 })
   name: string;
@@ -42,20 +58,18 @@ export class LocationEntity {
   @Column({ type: 'text', array: true, nullable: true })
   imageUrl: string[];
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
-  createdAt: Date;
+  @Column({ name: 'is_visible_on_map', type: 'boolean', default: false })
+  isVisibleOnMap: boolean;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
-  updatedAt: Date;
-
-  @ManyToOne(() => BusinessEntity, (business) => business.locations, {
-    createForeignKeyConstraints: false,
+  @Column({
+    name: 'geom',
+    type: 'geography',
+    spatialFeatureType: 'Point',
+    srid: 4326,
+    nullable: true,
   })
-  @JoinColumn({ name: 'business_id' })
-  business: BusinessEntity;
-
-  @Column({ name: 'business_id', type: 'uuid' })
-  businessId: string;
+  @Index({ spatial: true })
+  geom: string;
 
   @OneToOne(
     () => LocationRequestEntity,

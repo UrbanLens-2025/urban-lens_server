@@ -5,6 +5,7 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { DataSource, EntityManager } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
+import { Paginated } from 'nestjs-paginate';
 
 @Injectable()
 export class CoreService {
@@ -43,6 +44,17 @@ export class CoreService {
       return [];
     }
     return plainArray.map((item) => this.mapTo(cls, item, options));
+  }
+
+  mapToPaginated<T, V>(
+    cls: ClassConstructor<T>,
+    plain: Paginated<V>,
+    options?: ClassTransformOptions,
+  ): Paginated<T> {
+    return {
+      ...plain,
+      data: this.mapToArray(cls, plain.data, options),
+    } as unknown as Paginated<T>;
   }
 
   mapTo_safe<T extends object, V extends object>(cls: new () => T, plain: V) {

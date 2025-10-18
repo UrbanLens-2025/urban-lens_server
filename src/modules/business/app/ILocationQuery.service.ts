@@ -1,11 +1,47 @@
+import { Paginated, PaginateQuery } from 'nestjs-paginate';
+import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
+import { GetAnyLocationByIdDto } from '@/common/dto/business/GetAnyLocationById.dto';
+import { GetNearbyVisibleLocationsByCoordinatesDto } from '@/common/dto/business/GetNearbyVisibleLocationsByCoordinates.dto';
+import { GetVisibleLocationByIdDto } from '@/common/dto/business/GetVisibleLocationById.dto';
+import { GetMyCheckedInLocationsDto } from '@/common/dto/business/GetMyCheckedInLocations.dto';
+import { GetMyCreatedLocationsDto } from '@/common/dto/business/GetMyCreatedLocations.dto';
+import { GetVisibleLocationsByBusinessIdDto } from '@/common/dto/business/GetVisibleLocationsByBusinessId.dto';
+import { GetMyCreatedLocationByIdDto } from '@/common/dto/business/GetMyCreatedLocationById.dto';
+
 export const ILocationQueryService = Symbol('ILocationQueryService');
+
 export interface ILocationQueryService {
   // public locations
-  getNearbyPublicLocationsByCoordinates(): Promise<unknown>;
-  getPublicLocationDetailsById(): Promise<unknown>;
+  getNearbyVisibleLocationsByCoordinates(
+    dto: GetNearbyVisibleLocationsByCoordinatesDto,
+  ): Promise<LocationResponseDto[]>;
+
+  getVisibleLocationById(
+    dto: GetVisibleLocationByIdDto,
+  ): Promise<LocationResponseDto>;
+
+  getVisibleLocationsByBusinessId(
+    dto: GetVisibleLocationsByBusinessIdDto,
+  ): Promise<LocationResponseDto[]>;
+
+  // my locations
+  getMyCheckedInLocations(
+    dto: GetMyCheckedInLocationsDto,
+  ): Promise<LocationResponseDto>;
+
+  // business locations
+  getMyCreatedLocations(
+    dto: GetMyCreatedLocationsDto,
+  ): Promise<LocationResponseDto[]>;
+
+  getMyCreatedLocationById(
+    dto: GetMyCreatedLocationByIdDto,
+  ): Promise<LocationResponseDto>;
 
   // all locations
-  searchAllLocations(): Promise<unknown>;
-  getBusinessOwnedLocations(): Promise<unknown>;
-  getAnyLocationDetailsById(): Promise<unknown>;
+  searchAnyLocation(
+    query: PaginateQuery,
+  ): Promise<Paginated<LocationResponseDto>>;
+
+  getAnyLocationById(dto: GetAnyLocationByIdDto): Promise<LocationResponseDto>;
 }

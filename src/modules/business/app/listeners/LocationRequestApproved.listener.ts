@@ -25,6 +25,7 @@ export class LocationRequestApprovedListener extends CoreService {
       location.imageUrl = event.locationRequest.locationImageUrls;
       location.businessId = event.locationRequest.createdById;
       location.sourceLocationRequestId = event.locationRequest.id;
+      location.isVisibleOnMap = false; // default not visible. User must update to make it visible
 
       await locationRepository.save(location);
     });

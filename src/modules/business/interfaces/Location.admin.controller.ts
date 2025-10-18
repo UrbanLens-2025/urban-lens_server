@@ -1,11 +1,10 @@
-import { ILocationService } from '../app/ILocation.service';
-import { Body, Controller, Inject, Param, Patch } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
-import { UpdateLocationStatusDto } from '@/common/dto/location/UpdateLocationStatus.dto';
-import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import { AuthUser } from '@/common/AuthUser.decorator';
+import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
+import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import { WithPagination } from '@/common/WithPagination.decorator';
 
 @ApiTags('Location')
 @Controller('/admin/locations')
@@ -13,20 +12,24 @@ import { AuthUser } from '@/common/AuthUser.decorator';
 @Roles(Role.ADMIN)
 export class LocationAdminController {
   constructor(
-    @Inject(ILocationService)
-    private readonly locationService: ILocationService,
+    @Inject(ILocationQueryService)
+    private readonly locationQueryService: ILocationQueryService,
   ) {}
 
-  @Patch('/:locationId')
-  async updateLocationStatus(
-    @Param('locationId') locationId: string,
-    @Body() updateLocationStatusDto: UpdateLocationStatusDto,
-    @AuthUser() admin: JwtTokenDto,
+  @ApiOperation({ summary: 'Get all locations in database for management' })
+  @WithPagination()
+  @Get('/search')
+  async searchLocations(@Paginate() query: PaginateQuery) {
+    return this.locationQueryService.searchAnyLocation(query);
+  }
+
+  @ApiOperation({ summary: 'Get any location by ID for management' })
+  @Get('/:locationId')
+  async getLocationById(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
   ) {
-    return this.locationService.updateLocationStatus(
+    return this.locationQueryService.getAnyLocationById({
       locationId,
-      updateLocationStatusDto,
-      admin.sub,
-    );
+    });
   }
 }
