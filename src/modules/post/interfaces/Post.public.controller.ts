@@ -1,4 +1,12 @@
-import { Controller, Get, Inject, Param, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IPostService } from '../app/IPost.service';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
@@ -7,6 +15,8 @@ import type { PaginationParams } from '@/common/services/base.service';
 import { WithPagination } from '@/common/WithPagination.decorator';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
+import { GetReviewsQueryDto } from '@/common/dto/post/GetReviewsQuery.dto';
+import { UpdatePostVisibilityDto } from '@/common/dto/post/UpdatePostVisibility.dto';
 
 @ApiTags('Post')
 @ApiBearerAuth()
@@ -31,6 +41,26 @@ export class PostPublicController {
     @AuthUser() user?: JwtTokenDto,
   ) {
     return this.postService.getBasicFeed(query, user?.sub);
+  }
+
+  @ApiOperation({
+    summary: 'Get review posts by location or event',
+    description:
+      'Get all review posts filtered by locationId and/or eventId. At least one filter is required.',
+  })
+  @Get('reviews')
+  @WithPagination()
+  getReviews(
+    @Query() filterQuery: GetReviewsQueryDto,
+    @Query() paginationQuery: PaginationParams,
+    @AuthUser() user?: JwtTokenDto,
+  ) {
+    return this.postService.getReviews(
+      filterQuery.locationId,
+      filterQuery.eventId,
+      paginationQuery,
+      user?.sub,
+    );
   }
 
   @ApiOperation({ summary: 'Get a post by id' })
@@ -85,5 +115,15 @@ export class PostPublicController {
     @Query() query: PaginationParams,
   ) {
     return this.postService.getDownvotesOfPost(postId, query);
+  }
+
+  @ApiOperation({
+    summary: 'Update post visibility (Admin only)',
+    description: 'Admin can hide or show posts based on reports',
+  })
+  @Patch('visibility')
+  @Roles(Role.ADMIN)
+  updatePostVisibility(@Body() dto: UpdatePostVisibilityDto) {
+    return this.postService.updatePostVisibility(dto.postId, dto.isHidden);
   }
 }

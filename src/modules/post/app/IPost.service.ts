@@ -37,4 +37,11 @@ export interface IPostService {
     currentUserId?: string,
   ): Promise<PaginationResult<any>>;
   getAllPosts(params: PaginationParams): Promise<PaginationResult<any>>;
+  getReviews(
+    locationId: string | undefined,
+    eventId: string | undefined,
+    params: PaginationParams,
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>>;
+  updatePostVisibility(postId: string, isHidden: boolean): Promise<any>;
 }

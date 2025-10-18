@@ -29,7 +29,7 @@ export class CheckInEntity {
 
   @Column({
     name: 'check_in_time',
-    type: 'timestamp',
+    type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
   })
   checkInTime: Date;

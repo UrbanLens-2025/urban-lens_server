@@ -35,10 +35,10 @@ export class AccountEntity {
   @Column({ name: 'password', type: 'varchar', length: 255 })
   password: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
   @Column({ name: 'is_verified', type: 'boolean', default: false })

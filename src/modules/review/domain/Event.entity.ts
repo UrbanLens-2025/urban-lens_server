@@ -11,6 +11,6 @@ export class EventEntity {
   @Column({ name: 'event_description', type: 'text' })
   eventDescription: string;
 
-  @Column({ name: 'event_date', type: 'timestamp' })
+  @Column({ name: 'event_date', type: 'timestamp with time zone' })
   eventDate: Date;
 }

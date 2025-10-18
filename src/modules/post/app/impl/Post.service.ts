@@ -75,6 +75,7 @@ export class PostService
         .where('post.visibility = :visibility OR post.visibility IS NULL', {
           visibility: 'public',
         })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false })
         .select([
           'post.post_id as post_postid',
           'post.content as post_content',
@@ -103,7 +104,8 @@ export class PostService
         .createQueryBuilder('post')
         .where('post.visibility = :visibility OR post.visibility IS NULL', {
           visibility: 'public',
-        });
+        })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
 
       const [posts, total] = await Promise.all([
         postsQuery.getRawMany(),
@@ -845,6 +847,7 @@ export class PostService
         imageUrls: true,
         visibility: true,
         isVerified: true,
+        isHidden: true,
         locationId: true,
         eventId: true,
         createdAt: true,
@@ -873,5 +876,217 @@ export class PostService
         hasPrevPage: page > 1,
       },
     };
+  }
+
+  async getReviews(
+    locationId: string | undefined,
+    eventId: string | undefined,
+    params: PaginationParams = {},
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>> {
+    try {
+      if (!locationId && !eventId) {
+        throw new BadRequestException(
+          'Either locationId or eventId is required',
+        );
+      }
+
+      const page = Math.max(params.page ?? 1, 1);
+      const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
+      const skip = (page - 1) * limit;
+
+      // Build posts query
+      const postsQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin(
+          'analytic',
+          'analytic',
+          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
+          { analyticType: AnalyticEntityType.POST },
+        )
+        .where('post.type = :type', { type: PostType.REVIEW })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
+
+      // Add location/event filters
+      if (locationId && eventId) {
+        postsQuery.andWhere(
+          '(post.location_id = :locationId OR post.event_id = :eventId)',
+          { locationId, eventId },
+        );
+      } else if (locationId) {
+        postsQuery.andWhere('post.location_id = :locationId', { locationId });
+      } else if (eventId) {
+        postsQuery.andWhere('post.event_id = :eventId', { eventId });
+      }
+
+      postsQuery
+        .select([
+          'post.post_id as post_postid',
+          'post.content as post_content',
+          'post.image_urls as post_imageurls',
+          'post.type as post_type',
+          'post.rating as post_rating',
+          'post.location_id as post_locationid',
+          'post.event_id as post_eventid',
+          'post.is_verified as post_isverified',
+          'post.created_at as post_createdat',
+          'post.updated_at as post_updatedat',
+          'author.id as author_id',
+          'author.first_name as author_firstname',
+          'author.last_name as author_lastname',
+          'author.avatar_url as author_avatarurl',
+          'analytic.total_upvotes as analytic_total_upvotes',
+          'analytic.total_downvotes as analytic_total_downvotes',
+          'analytic.total_comments as analytic_total_comments',
+        ])
+        .orderBy('post.created_at', 'DESC')
+        .offset(skip)
+        .limit(limit);
+
+      // Build count query
+      const countQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .where('post.type = :type', { type: PostType.REVIEW })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
+
+      if (locationId && eventId) {
+        countQuery.andWhere(
+          '(post.location_id = :locationId OR post.event_id = :eventId)',
+          { locationId, eventId },
+        );
+      } else if (locationId) {
+        countQuery.andWhere('post.location_id = :locationId', { locationId });
+      } else if (eventId) {
+        countQuery.andWhere('post.event_id = :eventId', { eventId });
+      }
+
+      const [posts, total] = await Promise.all([
+        postsQuery.getRawMany(),
+        countQuery.getCount(),
+      ]);
+
+      if (!posts.length) {
+        return {
+          data: [],
+          meta: {
+            page,
+            limit,
+            totalItems: total,
+            totalPages: Math.ceil(total / limit),
+            hasNextPage: page < Math.ceil(total / limit),
+            hasPrevPage: page > 1,
+          },
+        };
+      }
+
+      let processedPosts: any[];
+
+      // Get user reactions if logged in
+      if (currentUserId) {
+        const postIds = posts.map((post) => post.post_postid);
+        const userReactions = await this.reactRepository.repo
+          .createQueryBuilder('react')
+          .where('react.entityId IN (:...postIds)', { postIds })
+          .andWhere('react.entityType = :entityType', {
+            entityType: ReactEntityType.POST,
+          })
+          .andWhere('react.authorId = :currentUserId', { currentUserId })
+          .select(['react.entityId', 'react.type'])
+          .getMany();
+
+        const reactionMap = new Map(
+          userReactions.map((r) => [r.entityId, r.type]),
+        );
+
+        processedPosts = posts.map((post) => ({
+          postId: post.post_postid,
+          content: post.post_content,
+          imageUrls: post.post_imageurls,
+          type: post.post_type,
+          rating: post.post_rating,
+          locationId: post.post_locationid,
+          eventId: post.post_eventid,
+          isVerified: post.post_isverified,
+          createdAt: post.post_createdat,
+          updatedAt: post.post_updatedat,
+          author: {
+            id: post.author_id,
+            firstName: post.author_firstname,
+            lastName: post.author_lastname,
+            avatarUrl: post.author_avatarurl,
+          },
+          analytics: {
+            totalUpvotes: post.analytic_total_upvotes || 0,
+            totalDownvotes: post.analytic_total_downvotes || 0,
+            totalComments: post.analytic_total_comments || 0,
+          },
+          currentUserReaction: reactionMap.get(post.post_postid) || null,
+        }));
+      } else {
+        processedPosts = posts.map((post) => ({
+          postId: post.post_postid,
+          content: post.post_content,
+          imageUrls: post.post_imageurls,
+          type: post.post_type,
+          rating: post.post_rating,
+          locationId: post.post_locationid,
+          eventId: post.post_eventid,
+          isVerified: post.post_isverified,
+          createdAt: post.post_createdat,
+          updatedAt: post.post_updatedat,
+          author: {
+            id: post.author_id,
+            firstName: post.author_firstname,
+            lastName: post.author_lastname,
+            avatarUrl: post.author_avatarurl,
+          },
+          analytics: {
+            totalUpvotes: post.analytic_total_upvotes || 0,
+            totalDownvotes: post.analytic_total_downvotes || 0,
+            totalComments: post.analytic_total_comments || 0,
+          },
+          currentUserReaction: null,
+        }));
+      }
+
+      return {
+        data: processedPosts,
+        meta: {
+          page,
+          limit,
+          totalItems: total,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async updatePostVisibility(postId: string, isHidden: boolean): Promise<any> {
+    try {
+      const post = await this.postRepository.repo.findOne({
+        where: { postId },
+      });
+
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+
+      await this.postRepository.repo.update({ postId }, { isHidden });
+
+      return {
+        message: `Post ${isHidden ? 'hidden' : 'shown'} successfully`,
+        postId,
+        isHidden,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
   }
 }

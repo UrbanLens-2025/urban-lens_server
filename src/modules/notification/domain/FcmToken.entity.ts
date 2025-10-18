@@ -32,6 +32,6 @@ export class FcmTokenEntity {
   @Column({ name: 'user_id' })
   userId: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 }

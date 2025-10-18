@@ -40,7 +40,7 @@ export class PublicFileEntity {
   @Column({ name: 'created_by' })
   createdById: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 
   static fromFile(file: Express.Multer.File, userId: string) {

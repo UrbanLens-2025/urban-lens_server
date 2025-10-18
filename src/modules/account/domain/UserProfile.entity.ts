@@ -21,7 +21,7 @@ export class UserProfileEntity {
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;
 
-  @Column({ name: 'dob', type: 'timestamp' })
+  @Column({ name: 'dob', type: 'timestamp with time zone' })
   dob: Date;
 
   @Column({ name: 'rank', type: 'enum', enum: Rank, default: Rank.BRONZE })
