@@ -6,6 +6,7 @@ import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { ICheckInService } from '../app/ICheckIn.service';
 import { CreateCheckInDto } from '@/common/dto/checkin/CreateCheckIn.dto';
+import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
 
 @ApiTags('Location')
 @ApiBearerAuth()
@@ -13,25 +14,7 @@ import { CreateCheckInDto } from '@/common/dto/checkin/CreateCheckIn.dto';
 @Controller('/user/locations')
 export class LocationUserController {
   constructor(
-    @Inject(ICheckInService)
-    private readonly checkInService: ICheckInService,
+    @Inject(ILocationQueryService)
+    private locationQueryService: ILocationQueryService,
   ) {}
-
-  @Post('checkin')
-  @ApiOperation({ summary: 'Check in to a location' })
-  async checkIn(
-    @AuthUser() user: JwtTokenDto,
-    @Body() checkInDto: CreateCheckInDto,
-  ) {
-    return this.checkInService.createCheckIn(user.sub, checkInDto);
-  }
-
-  @Get('my-checkins')
-  @ApiOperation({ summary: 'Get all my checkins' })
-  async getMyCheckins(@AuthUser() user: JwtTokenDto) {
-    return this.checkInService.getCheckInsByProfileId(user.sub, {
-      page: 1,
-      limit: 10,
-    });
-  }
 }
