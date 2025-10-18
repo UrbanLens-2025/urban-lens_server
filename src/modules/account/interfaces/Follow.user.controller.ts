@@ -23,6 +23,7 @@ import { JwtAuthGuard } from '@/common/JwtAuth.guard';
 import { RolesGuard } from '@/common/Roles.guard';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { FollowEntityType } from '../domain/Follow.entity';
 
 @ApiTags('Follow')
 @Controller('user/follow')
@@ -71,7 +72,12 @@ export class FollowUserController {
   @Get('check/:entityId/:entityType')
   @ApiOperation({ summary: 'Check if following an entity' })
   @ApiParam({ name: 'entityId', description: 'ID of the entity' })
-  @ApiParam({ name: 'entityType', description: 'Type of the entity' })
+  @ApiParam({
+    name: 'entityType',
+    type: 'enum',
+    enum: FollowEntityType,
+    description: 'Type of the entity',
+  })
   checkFollowing(
     @AuthUser() user: JwtTokenDto,
     @Param('entityId') entityId: string,

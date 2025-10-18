@@ -14,6 +14,10 @@ export interface IPostService {
     params: PaginationParams,
     currentUserId?: string,
   ): Promise<PaginationResult<any>>;
+  getFollowingFeed(
+    currentUserId: string,
+    params: PaginationParams,
+  ): Promise<PaginationResult<any>>;
   createPost(dto: CreatePostDto): Promise<any>;
   getPostById(postId: string, userId?: string): Promise<any>;
   reactPost(dto: ReactPostDto): Promise<any>;

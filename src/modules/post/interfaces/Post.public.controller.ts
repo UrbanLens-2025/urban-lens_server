@@ -44,6 +44,19 @@ export class PostPublicController {
   }
 
   @ApiOperation({
+    summary: 'Get feed of posts from users you follow',
+    description: 'Returns posts from users that the current user is following',
+  })
+  @Get('feed/following')
+  @WithPagination()
+  getFollowingFeed(
+    @Query() query: PaginationParams,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.postService.getFollowingFeed(user.sub, query);
+  }
+
+  @ApiOperation({
     summary: 'Get review posts by location or event',
     description:
       'Get all review posts filtered by locationId and/or eventId. At least one filter is required.',

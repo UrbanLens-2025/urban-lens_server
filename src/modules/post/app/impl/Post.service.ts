@@ -32,6 +32,8 @@ import { CommentRepository } from '../../infra/repository/Comment.repository';
 import { CommentEntity } from '../../domain/Comment.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { CheckInRepository } from '@/modules/business/infra/repository/CheckIn.repository';
+import { FollowRepository } from '@/modules/account/infra/repository/Follow.repository';
+import { FollowEntityType } from '@/modules/account/domain/Follow.entity';
 
 interface RawPost {
   post_postid: string;
@@ -64,6 +66,7 @@ export class PostService
     private readonly reactRepository: ReactRepository,
     private readonly commentRepository: CommentRepository,
     private readonly checkInRepository: CheckInRepository,
+    private readonly followRepository: FollowRepository,
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
   ) {
@@ -96,6 +99,7 @@ export class PostService
   private mapRawPostToDto(
     rawPost: RawPost,
     currentUserReaction: ReactType | null = null,
+    isFollowing: boolean = false,
   ): any {
     const result: any = {
       postId: rawPost.post_postid,
@@ -110,6 +114,7 @@ export class PostService
         firstName: rawPost.author_firstname,
         lastName: rawPost.author_lastname,
         avatarUrl: rawPost.author_avatarurl,
+        isFollow: isFollowing,
       },
       analytics: {
         totalUpvotes: rawPost.analytic_total_upvotes || 0,
@@ -154,6 +159,23 @@ export class PostService
     return new Map(userReactions.map((r) => [r.entityId, r.type]));
   }
 
+  private async getFollowStatusMap(
+    authorIds: string[],
+    currentUserId: string,
+  ): Promise<Map<string, boolean>> {
+    const follows = await this.followRepository.repo
+      .createQueryBuilder('follow')
+      .where('follow.entityId IN (:...authorIds)', { authorIds })
+      .andWhere('follow.entityType = :entityType', {
+        entityType: FollowEntityType.USER,
+      })
+      .andWhere('follow.followerId = :currentUserId', { currentUserId })
+      .select(['follow.entityId'])
+      .getMany();
+
+    return new Map(follows.map((f) => [f.entityId, true]));
+  }
+
   private normalizePaginationParams(params: PaginationParams = {}): {
     page: number;
     limit: number;
@@ -186,14 +208,23 @@ export class PostService
     currentUserId?: string,
   ): Promise<any[]> {
     if (!currentUserId) {
-      return posts.map((post) => this.mapRawPostToDto(post, null));
+      return posts.map((post) => this.mapRawPostToDto(post, null, false));
     }
 
     const postIds = posts.map((post) => post.post_postid);
-    const reactionMap = await this.getUserReactionsMap(postIds, currentUserId);
+    const authorIds = [...new Set(posts.map((post) => post.author_id))];
+
+    const [reactionMap, followMap] = await Promise.all([
+      this.getUserReactionsMap(postIds, currentUserId),
+      this.getFollowStatusMap(authorIds, currentUserId),
+    ]);
 
     return posts.map((post) =>
-      this.mapRawPostToDto(post, reactionMap.get(post.post_postid) || null),
+      this.mapRawPostToDto(
+        post,
+        reactionMap.get(post.post_postid) || null,
+        followMap.get(post.author_id) || false,
+      ),
     );
   }
 
@@ -230,6 +261,83 @@ export class PostService
           visibility: 'public',
         })
         .andWhere('post.is_hidden = :isHidden', { isHidden: false });
+
+      const [posts, total] = await Promise.all([
+        postsQuery.getRawMany(),
+        countQuery.getCount(),
+      ]);
+
+      const processedPosts = await this.processPostsWithReactions(
+        posts,
+        currentUserId,
+      );
+
+      return {
+        data: processedPosts,
+        meta: this.buildPaginationMeta(page, limit, total),
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async getFollowingFeed(
+    currentUserId: string,
+    params: PaginationParams = {},
+  ): Promise<PaginationResult<any>> {
+    try {
+      const { page, limit, skip } = this.normalizePaginationParams(params);
+
+      // Get list of users that current user is following
+      const followedUsers = await this.followRepository.repo.find({
+        where: {
+          followerId: currentUserId,
+          entityType: FollowEntityType.USER,
+        },
+        select: ['entityId'],
+      });
+
+      const followedUserIds = followedUsers.map((f) => f.entityId);
+
+      // If not following anyone, return empty result
+      if (followedUserIds.length === 0) {
+        return {
+          data: [],
+          meta: this.buildPaginationMeta(page, limit, 0),
+        };
+      }
+
+      // Build query to get posts from followed users
+      const postsQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin(
+          'analytic',
+          'analytic',
+          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
+          { analyticType: AnalyticEntityType.POST },
+        )
+        .where('post.author_id IN (:...followedUserIds)', { followedUserIds })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false })
+        .andWhere(
+          '(post.visibility = :public OR post.visibility = :followers OR post.visibility IS NULL)',
+          { public: 'public', followers: 'followers' },
+        )
+        .select(this.getPostSelectFields())
+        .orderBy('post.created_at', 'DESC')
+        .offset(skip)
+        .limit(limit);
+
+      // Count total posts
+      const countQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .where('post.author_id IN (:...followedUserIds)', { followedUserIds })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false })
+        .andWhere(
+          '(post.visibility = :public OR post.visibility = :followers OR post.visibility IS NULL)',
+          { public: 'public', followers: 'followers' },
+        );
 
       const [posts, total] = await Promise.all([
         postsQuery.getRawMany(),
@@ -414,24 +522,38 @@ export class PostService
       }
 
       let currentUserReaction: ReactType | null = null;
+      let isFollowing = false;
 
-      // Get user reaction if userId is provided
+      // Get user reaction and follow status if userId is provided
       if (userId) {
-        const userReaction = await this.reactRepository.repo.findOne({
-          where: {
-            entityId: postId,
-            entityType: ReactEntityType.POST,
-            authorId: userId,
-          },
-          select: ['type'],
-        });
+        const [userReaction, followStatus] = await Promise.all([
+          this.reactRepository.repo.findOne({
+            where: {
+              entityId: postId,
+              entityType: ReactEntityType.POST,
+              authorId: userId,
+            },
+            select: ['type'],
+          }),
+          this.followRepository.repo.findOne({
+            where: {
+              followerId: userId,
+              entityId: post.author_id,
+              entityType: FollowEntityType.USER,
+            },
+          }),
+        ]);
 
         if (userReaction) {
           currentUserReaction = userReaction.type;
         }
+
+        if (followStatus) {
+          isFollowing = true;
+        }
       }
 
-      return this.mapRawPostToDto(post, currentUserReaction);
+      return this.mapRawPostToDto(post, currentUserReaction, isFollowing);
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException(error);

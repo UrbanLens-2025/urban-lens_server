@@ -10,6 +10,7 @@ import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 import { PostUserController } from './interfaces/Post.user.controller';
 import { PostInfraModule } from './infra/Post.infra.module';
 import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.module';
+import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.mod
     AnalyticInfraModule,
     FileStorageModule,
     BusinessInfraModule,
+    AccountInfraModule,
   ],
   controllers: [
     PostPublicController,
