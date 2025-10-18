@@ -3,6 +3,7 @@ import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { LocationValidationDocumentsJson } from '@/common/json/LocationValidationDocuments.json';
 import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
+import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/LocationRequestTags.response.dto';
 
 @Exclude()
 export class LocationRequestResponseDto {
@@ -61,4 +62,8 @@ export class LocationRequestResponseDto {
   @Expose()
   @Type(() => AccountResponseDto)
   processedBy: AccountResponseDto;
+
+  @Expose()
+  @Type(() => LocationRequestTagsResponseDto)
+  tags: LocationRequestTagsResponseDto[];
 }

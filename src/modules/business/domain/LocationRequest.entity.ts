@@ -4,6 +4,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -11,6 +12,7 @@ import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 import { LocationValidationDocumentsJson } from '@/common/json/LocationValidationDocuments.json';
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { LocationRequestTagsEntity } from '@/modules/business/domain/LocationRequestTags.entity';
 
 @Entity({ name: LocationRequestEntity.TABLE_NAME })
 export class LocationRequestEntity {
@@ -89,6 +91,11 @@ export class LocationRequestEntity {
 
   @Column({ name: 'admin_notes', type: 'text', nullable: true })
   adminNotes: string | null;
+
+  @OneToMany(() => LocationRequestTagsEntity, (tags) => tags.locationRequest, {
+    createForeignKeyConstraints: false,
+  })
+  tags: LocationRequestTagsEntity[];
 
   canBeUpdated(): boolean {
     const updatableStatuses = [

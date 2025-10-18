@@ -4,6 +4,7 @@ import {
   IsArray,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsUrl,
   MaxLength,
   ValidateNested,
@@ -82,4 +83,11 @@ export class CreateLocationRequestDto {
   @ArrayNotEmpty()
   @Type(() => LocationValidationDocumentsDto)
   locationValidationDocuments: LocationValidationDocumentsDto;
+
+  @ApiProperty({ isArray: true, type: Number, example: [1, 2, 3] })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsNumber({}, { each: true })
+  @IsNotEmpty({ each: true })
+  tagIds: number[];
 }

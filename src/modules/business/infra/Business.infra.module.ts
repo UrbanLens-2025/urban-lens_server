@@ -5,6 +5,7 @@ import { CheckInEntity } from '../domain/CheckIn.entity';
 import { LocationRepository } from './repository/Location.repository';
 import { CheckInRepository } from './repository/CheckIn.repository';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
+import { LocationRequestTagsEntity } from '@/modules/business/domain/LocationRequestTags.entity';
 
 const repositories = [LocationRepository, CheckInRepository];
 
@@ -14,6 +15,7 @@ const repositories = [LocationRepository, CheckInRepository];
       LocationEntity,
       CheckInEntity,
       LocationRequestEntity,
+      LocationRequestTagsEntity,
     ]),
   ],
   providers: repositories,

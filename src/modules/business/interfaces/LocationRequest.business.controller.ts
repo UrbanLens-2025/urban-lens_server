@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -18,6 +19,8 @@ import { ILocationRequestManagementService } from '@/modules/business/app/ILocat
 import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 import { WithPagination } from '@/common/WithPagination.decorator';
+import { AddLocationRequestTagsDto } from '@/common/dto/business/AddLocationRequestTags.dto';
+import { DeleteLocationRequestTagDto } from '@/common/dto/business/DeleteLocationRequestTag.dto';
 
 @ApiTags('Location Request')
 @ApiBearerAuth()
@@ -51,6 +54,34 @@ export class LocationRequestBusinessController {
     return this.locationRequestManagementService.createLocationRequest({
       ...dto,
       createdById: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Add tags to location request' })
+  @Post(':locationRequestId/tags')
+  addLocationRequestTags(
+    @AuthUser() userDto: JwtTokenDto,
+    @Param('locationRequestId', ParseUUIDPipe) locationRequestId: string,
+    @Body() dto: AddLocationRequestTagsDto,
+  ) {
+    return this.locationRequestManagementService.addLocationRequestTags({
+      ...dto,
+      locationRequestId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Delete tags in location request' })
+  @Delete(':locationRequestId/tags')
+  deleteLocationRequestTag(
+    @AuthUser() userDto: JwtTokenDto,
+    @Param('locationRequestId', ParseUUIDPipe) locationRequestId: string,
+    @Body() dto: DeleteLocationRequestTagDto,
+  ) {
+    return this.locationRequestManagementService.deleteLocationRequestTag({
+      ...dto,
+      locationRequestId,
+      accountId: userDto.sub,
     });
   }
 

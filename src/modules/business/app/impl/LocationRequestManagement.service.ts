@@ -7,7 +7,7 @@ import { LocationRequestRepository } from '@/modules/business/infra/repository/L
 import { BusinessRepositoryProvider } from '@/modules/account/infra/repository/Business.repository';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
-import { UpdateResult } from 'typeorm';
+import { DeleteResult, In, UpdateResult } from 'typeorm';
 import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
 import { CancelLocationRequestDto } from '@/common/dto/business/CancelLocationRequest.dto';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
@@ -20,6 +20,11 @@ import {
 } from '@/modules/business/domain/events/LocationRequestApproved.event';
 import { LOCATION_REQUEST_REJECTED_EVENT } from '@/modules/business/domain/events/LocationRequestRejected.event';
 import { LOCATION_REQUEST_NEEDS_MORE_INFO_EVENT } from '@/modules/business/domain/events/LocationRequestNeedsMoreInfo.event';
+import { TagRepositoryProvider } from '@/modules/account/infra/repository/Tag.repository';
+import { LocationRequestTagsRepository } from '@/modules/business/infra/repository/LocationRequestTags.repository';
+import { AddLocationRequestTagsDto } from '@/common/dto/business/AddLocationRequestTags.dto';
+import { DeleteLocationRequestTagDto } from '@/common/dto/business/DeleteLocationRequestTag.dto';
+import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/LocationRequestTags.response.dto';
 
 @Injectable()
 export class LocationRequestManagementService
@@ -35,6 +40,8 @@ export class LocationRequestManagementService
     return this.ensureTransaction(null, async (em) => {
       const locationRequestRepository = LocationRequestRepository(em);
       const businessProfileRepository = BusinessRepositoryProvider(em);
+      const tagRepository = TagRepositoryProvider(em);
+      const locationRequestTagRepository = LocationRequestTagsRepository(em);
 
       const businessProfile = await businessProfileRepository.findOneByOrFail({
         accountId: dto.createdById,
@@ -46,13 +53,81 @@ export class LocationRequestManagementService
         );
       }
 
+      // validate tags
+      const existsSelectedTags = await tagRepository.existsSelectableTagsById(
+        dto.tagIds,
+      );
+      if (!existsSelectedTags) {
+        throw new BadRequestException(
+          'One or more provided tags are invalid/not selectable',
+        );
+      }
+
       const locationRequest = this.mapTo_Raw(LocationRequestEntity, dto);
       // TODO add automatic location validation process here
       locationRequest.status = LocationRequestStatus.AWAITING_ADMIN_REVIEW;
 
-      return locationRequestRepository
-        .save(locationRequest)
-        .then((e) => this.mapTo(LocationRequestResponseDto, e));
+      return locationRequestRepository.save(locationRequest).then(async (e) => {
+        e.tags = await locationRequestTagRepository.persistEntities({
+          tagIds: dto.tagIds,
+          locationRequestId: e.id,
+        });
+
+        return this.mapTo(LocationRequestResponseDto, e);
+      });
+    });
+  }
+
+  addLocationRequestTags(
+    dto: AddLocationRequestTagsDto,
+  ): Promise<LocationRequestTagsResponseDto[]> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationRequestRepository = LocationRequestRepository(em);
+      const tagRepository = TagRepositoryProvider(em);
+      const locationRequestTagRepository = LocationRequestTagsRepository(em);
+
+      const locationRequest = await locationRequestRepository.findOneByOrFail({
+        id: dto.locationRequestId,
+        createdById: dto.accountId,
+      });
+
+      if (!locationRequest.canBeUpdated()) {
+        throw new BadRequestException(
+          'This location request cannot be updated',
+        );
+      }
+
+      // validate tags
+      const existsSelectedTags = await tagRepository.existsSelectableTagsById(
+        dto.tagIds,
+      );
+      if (!existsSelectedTags) {
+        throw new BadRequestException(
+          'One or more provided tags are invalid/not selectable',
+        );
+      }
+
+      return await locationRequestTagRepository
+        .persistEntities({
+          tagIds: dto.tagIds,
+          locationRequestId: locationRequest.id,
+        })
+        .then((e) => this.mapToArray(LocationRequestTagsResponseDto, e));
+    });
+  }
+  deleteLocationRequestTag(
+    dto: DeleteLocationRequestTagDto,
+  ): Promise<DeleteResult> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationRequestTagRepository = LocationRequestTagsRepository(em);
+
+      return locationRequestTagRepository.delete({
+        id: In(dto.tagIds),
+        locationRequest: {
+          id: dto.locationRequestId,
+          createdById: dto.accountId,
+        },
+      });
     });
   }
 
@@ -119,7 +194,7 @@ export class LocationRequestManagementService
       where: {
         createdById: accountId,
       },
-      relations: ['processedBy'],
+      relations: ['createdBy', 'processedBy', 'tags'],
     }).then(
       (res) =>
         ({
@@ -135,6 +210,7 @@ export class LocationRequestManagementService
     return paginate(query, LocationRequestRepository(this.dataSource), {
       sortableColumns: ['createdAt'],
       defaultSortBy: [['createdAt', 'DESC']],
+      relations: ['createdBy', 'processedBy', 'tags'],
     }).then(
       (res) =>
         ({
@@ -157,7 +233,7 @@ export class LocationRequestManagementService
           id: dto.locationRequestId,
           status: LocationRequestStatus.AWAITING_ADMIN_REVIEW,
         },
-        relations: ['createdBy'],
+        relations: ['createdBy', 'processedBy', 'tags'],
       })
       .then((e) => this.mapTo(LocationRequestResponseDto, e));
   }

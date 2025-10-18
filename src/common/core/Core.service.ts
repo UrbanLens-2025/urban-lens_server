@@ -28,6 +28,23 @@ export class CoreService {
     });
   }
 
+  /**
+   * Map plain array object to class instance. Requires @Expose() decorator on class properties.
+   * @param cls Target class
+   * @param plainArray Plain array object
+   * @param options Class transform options
+   */
+  mapToArray<T, V>(
+    cls: ClassConstructor<T>,
+    plainArray: V[],
+    options?: ClassTransformOptions,
+  ): T[] {
+    if (!Array.isArray(plainArray) || plainArray.length === 0) {
+      return [];
+    }
+    return plainArray.map((item) => this.mapTo(cls, item, options));
+  }
+
   mapTo_safe<T extends object, V extends object>(cls: new () => T, plain: V) {
     const instance = new cls();
     const validKeys = Object.keys(instance);
