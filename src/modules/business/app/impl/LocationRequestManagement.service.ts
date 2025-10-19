@@ -368,7 +368,7 @@ export class LocationRequestManagementService
       });
 
       savedLocation.tags = await locationTagsRepository.persistEntities({
-        tagIds: locationRequestTags.map((t) => t.id),
+        tagIds: locationRequestTags.map((t) => t.tagId),
         locationId: savedLocation.id,
       });
 
