@@ -76,13 +76,14 @@ export class CreateLocationRequestDto {
   locationImageUrls: string[];
 
   @ApiProperty({
-    type: [LocationValidationDocumentsDto],
+    isArray: true,
+    type: LocationValidationDocumentsDto,
   })
   @ValidateNested({ each: true })
   @IsArray()
   @ArrayNotEmpty()
   @Type(() => LocationValidationDocumentsDto)
-  locationValidationDocuments: LocationValidationDocumentsDto;
+  locationValidationDocuments: LocationValidationDocumentsDto[];
 
   @ApiProperty({ isArray: true, type: Number, example: [1, 2, 3] })
   @IsArray()

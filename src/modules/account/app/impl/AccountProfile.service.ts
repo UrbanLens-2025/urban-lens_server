@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CoreService } from '@/common/core/Core.service';
 import { IAccountProfileService } from '@/modules/account/app/IAccountProfile.service';
 import { GetCreatorProfileDto } from '@/common/dto/account/GetCreatorProfile.dto';
 import { CreatorProfileResponseDto } from '@/common/dto/account/res/CreatorProfile.response.dto';
+import { UserProfileResponseDto } from '@/common/dto/account/res/UserProfile.response.dto';
 import { CreatorProfileRepository } from '@/modules/account/infra/repository/CreatorProfile.repository';
+import { UserProfileRepository } from '@/modules/account/infra/repository/UserProfile.repository';
 import { UpdateResult } from 'typeorm';
 import { UpdateCreatorProfileDto } from '@/common/dto/account/UpdateCreatorProfile.dto';
 
@@ -12,6 +14,10 @@ export class AccountProfileService
   extends CoreService
   implements IAccountProfileService
 {
+  constructor(private readonly userProfileRepository: UserProfileRepository) {
+    super();
+  }
+
   getCreatorProfile(
     dto: GetCreatorProfileDto,
   ): Promise<CreatorProfileResponseDto> {
@@ -23,6 +29,19 @@ export class AccountProfileService
         },
       })
       .then((res) => this.mapTo(CreatorProfileResponseDto, res));
+  }
+
+  async getUserProfile(userId: string): Promise<UserProfileResponseDto> {
+    const userProfile = await this.userProfileRepository.repo.findOne({
+      where: { accountId: userId },
+      relations: ['rank'],
+    });
+
+    if (!userProfile) {
+      throw new NotFoundException('User profile not found');
+    }
+
+    return this.mapTo(UserProfileResponseDto, userProfile);
   }
 
   updateCreatorProfile(dto: UpdateCreatorProfileDto): Promise<UpdateResult> {

@@ -82,6 +82,32 @@ export class LocationQueryService
       .then((e) => this.mapToArray(LocationResponseDto, e));
   }
 
+  searchVisibleLocations(
+    query: PaginateQuery,
+  ): Promise<Paginated<LocationResponseDto>> {
+    const locationRepository = LocationRepositoryProvider(this.dataSource);
+    return paginate(query, locationRepository, {
+      sortableColumns: ['name', 'createdAt', 'updatedAt'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      searchableColumns: [
+        'name',
+        'description',
+        'addressLine',
+        'addressLevel1',
+        'addressLevel2',
+      ],
+      where: {
+        isVisibleOnMap: true,
+      },
+      relations: {
+        business: true,
+        tags: {
+          tag: true,
+        },
+      },
+    }).then((res) => this.mapToPaginated(LocationResponseDto, res));
+  }
+
   getMyCheckedInLocations(
     dto: GetMyCheckedInLocationsDto,
   ): Promise<Paginated<LocationResponseDto>> {

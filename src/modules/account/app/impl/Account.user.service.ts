@@ -19,9 +19,12 @@ export class AccountUserService
   public async getAccountInfo(
     dto: UserGetAccountInfo.Dto,
   ): Promise<UserAccountResponse.Dto> {
-    const res = await this.accountRepository.repo.findOneBy({
-      id: dto.userId,
-      role: In([Role.USER, Role.BUSINESS_OWNER, Role.EVENT_CREATOR]),
+    const res = await this.accountRepository.repo.findOne({
+      where: {
+        id: dto.userId,
+        role: In([Role.USER, Role.BUSINESS_OWNER, Role.EVENT_CREATOR]),
+      },
+      relations: ['userProfile', 'userProfile.rank'],
     });
     if (res == null) {
       throw new NotFoundException('User not found');

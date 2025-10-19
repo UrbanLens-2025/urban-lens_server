@@ -78,14 +78,15 @@ export class UpdateLocationRequestDto {
   @IsArray()
   @IsUrl({}, { each: true })
   @IsNotEmpty({ each: true })
-  locationImageUrls: string[];
+  locationImageUrls?: string[];
 
   @ApiPropertyOptional({
-    type: [LocationValidationDocumentsDto],
+    isArray: true,
+    type: LocationValidationDocumentsDto,
   })
   @IsOptional()
   @ValidateNested({ each: true })
   @IsArray()
   @Type(() => LocationValidationDocumentsDto)
-  locationValidationDocuments: LocationValidationDocumentsDto;
+  locationValidationDocuments?: LocationValidationDocumentsDto[];
 }

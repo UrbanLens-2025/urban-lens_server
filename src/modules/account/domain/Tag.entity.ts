@@ -21,6 +21,9 @@ export class TagEntity {
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp with time zone' })
   deletedAt: Date;
 
+  @Column({ name: 'group_name', type: 'varchar', length: 100, nullable: true })
+  groupName: string;
+
   @Column({ name: 'display_name', type: 'varchar', length: 255 })
   displayName: string;
 

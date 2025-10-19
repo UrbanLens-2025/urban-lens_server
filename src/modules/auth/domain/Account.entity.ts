@@ -68,7 +68,7 @@ export class AccountEntity {
   @OneToOne(() => UserProfileEntity, (profile) => profile.account, {
     cascade: true,
   })
-  profile: UserProfileEntity;
+  userProfile?: UserProfileEntity;
 
   @OneToOne(() => BusinessEntity, (business) => business.account, {
     cascade: true,

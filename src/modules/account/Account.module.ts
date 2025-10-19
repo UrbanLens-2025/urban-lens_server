@@ -25,6 +25,8 @@ import { TokenModule } from '@/common/core/token/token.module';
 import { IAccountProfileService } from '@/modules/account/app/IAccountProfile.service';
 import { AccountProfileService } from '@/modules/account/app/impl/AccountProfile.service';
 import { GamificationInfraModule } from '@/modules/gamification/infra/Gamification.infra.module';
+import { IAccountQueryService } from '@/modules/account/app/IAccountQuery.service';
+import { AccountQueryService } from '@/modules/account/app/impl/AccountQuery.service';
 
 @Module({
   imports: [
@@ -49,6 +51,10 @@ import { GamificationInfraModule } from '@/modules/gamification/infra/Gamificati
     {
       provide: IAccountUserService,
       useClass: AccountUserService,
+    },
+    {
+      provide: IAccountQueryService,
+      useClass: AccountQueryService,
     },
     {
       provide: ITagService,

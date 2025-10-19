@@ -1,10 +1,11 @@
 import { CoreService } from '@/common/core/Core.service';
-import { CreateTag } from '@/common/dto/account/CreateTag.dto';
+import { CreateTagDto } from '@/common/dto/account/CreateTag.dto';
 import { TagResponseDto } from '@/common/dto/account/TagResponse.dto';
 import { ITagService } from '@/modules/account/app/ITag.service';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { TagEntity } from '@/modules/account/domain/Tag.entity';
+import { TagRepositoryProvider } from '@/modules/account/infra/repository/Tag.repository';
 
 @Injectable()
 export class TagService extends CoreService implements ITagService {
@@ -12,23 +13,26 @@ export class TagService extends CoreService implements ITagService {
     super();
   }
 
-  async create(dto: CreateTag.Dto): Promise<TagResponseDto> {
+  async create(dto: CreateTagDto): Promise<TagResponseDto> {
     return this.dataSource.transaction(async (manager) => {
-      const tagRepository = manager.getRepository(TagEntity);
+      const tagRepository = TagRepositoryProvider(manager);
 
-      const isNotUnique = await tagRepository.existsBy({
-        displayName: dto.displayName,
+      const existsDuplicate = await tagRepository.existsDuplicate({
+        items: dto.list.map((item) => ({
+          displayName: item.displayName,
+          groupName: item.groupName,
+        })),
       });
 
-      if (isNotUnique) {
+      if (existsDuplicate) {
         throw new ConflictException(
-          'Tag with this display name already exists',
+          'One or more tags with the same display name and group name already exist',
         );
       }
 
-      const tag = this.mapTo_Raw(TagEntity, dto);
+      const tags = dto.list.map((item) => this.mapTo_safe(TagEntity, item));
       return tagRepository
-        .save(tag)
+        .save(tags)
         .then((res) => this.mapTo(TagResponseDto, res));
     });
   }

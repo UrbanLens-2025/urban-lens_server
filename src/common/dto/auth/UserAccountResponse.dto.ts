@@ -1,5 +1,6 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { Role } from '@/common/constants/Role.constant';
+import { UserProfileResponseDto } from '@/common/dto/account/res/UserProfile.response.dto';
 
 export namespace UserAccountResponse {
   export class Dto {
@@ -21,5 +22,8 @@ export namespace UserAccountResponse {
     coverUrl: string | null;
     @Expose()
     hasOnboarded: boolean;
+    @Expose()
+    @Type(() => UserProfileResponseDto)
+    userProfile?: UserProfileResponseDto;
   }
 }
