@@ -349,12 +349,10 @@ export class LocationRequestManagementService
         },
       });
 
-      savedLocation.locationTags = await locationTagsRepository.persistEntities(
-        {
-          tagIds: locationRequestTags.map((t) => t.id),
-          locationId: savedLocation.id,
-        },
-      );
+      savedLocation.tags = await locationTagsRepository.persistEntities({
+        tagIds: locationRequestTags.map((t) => t.id),
+        locationId: savedLocation.id,
+      });
 
       return savedLocation;
     });
