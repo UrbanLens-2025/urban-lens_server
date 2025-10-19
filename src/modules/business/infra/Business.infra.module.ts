@@ -4,11 +4,20 @@ import { LocationEntity } from '../domain/Location.entity';
 import { CheckInEntity } from '../domain/CheckIn.entity';
 import { LocationRepository } from './repository/Location.repository';
 import { CheckInRepository } from './repository/CheckIn.repository';
+import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
+import { LocationRequestTagsEntity } from '@/modules/business/domain/LocationRequestTags.entity';
 
 const repositories = [LocationRepository, CheckInRepository];
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LocationEntity, CheckInEntity])],
+  imports: [
+    TypeOrmModule.forFeature([
+      LocationEntity,
+      CheckInEntity,
+      LocationRequestEntity,
+      LocationRequestTagsEntity,
+    ]),
+  ],
   providers: repositories,
   exports: repositories,
 })

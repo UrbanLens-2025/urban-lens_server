@@ -26,6 +26,8 @@ import { EventModule } from '@/modules/event/event.module';
 import { AddressModule } from '@/modules/address/Address.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EventEmitterConfig } from '@/config/event-emitter.config';
 import { LocationReservationModule } from '@/modules/location-reservation/LocationReservation.module';
 import { ReportModule } from '@/modules/report/Report.module';
 
@@ -68,6 +70,7 @@ import { ReportModule } from '@/modules/report/Report.module';
         },
       ],
     }),
+    EventEmitterModule.forRoot(EventEmitterConfig),
     NotificationModule,
     AuthModule,
     AccountModule,

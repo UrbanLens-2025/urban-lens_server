@@ -1,0 +1,3 @@
+export enum AcceptedLocationValidationDocuments {
+  LOCATION_REGISTRATION_CERTIFICATE = 'LOCATION_REGISTRATION_CERTIFICATE',
+}

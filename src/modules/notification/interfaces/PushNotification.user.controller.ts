@@ -8,7 +8,6 @@ import {
   Inject,
   Post,
   Put,
-  Query,
 } from '@nestjs/common';
 import { RegisterDeviceDto } from '@/common/dto/notification/RegisterDevice.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
@@ -17,6 +16,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 import { IFirebaseNotificationService } from '@/modules/notification/app/IFirebaseNotification.service';
 import { SeenPushNotificationDto } from '@/common/dto/notification/SeenPushNotification.dto';
+import { WithPagination } from '@/common/WithPagination.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Push Notifications')
@@ -41,10 +41,11 @@ export class PushNotificationUserController {
   }
 
   @ApiOperation({ summary: 'Fetch my notifications' })
+  @WithPagination()
   @Get()
   searchNotifications(
     @AuthUser() userDto: JwtTokenDto,
-    @Paginate() @Query() query: PaginateQuery,
+    @Paginate() query: PaginateQuery,
   ) {
     return this.firebaseNotificationService.searchNotifications(userDto, query);
   }

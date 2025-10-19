@@ -3,8 +3,6 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  JoinTable,
-  ManyToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -31,4 +29,7 @@ export class TagEntity {
 
   @Column({ name: 'icon', type: 'varchar', length: 10 })
   icon: string;
+
+  @Column({ name: 'is_selectable', type: 'boolean', default: true })
+  isSelectable: boolean;
 }

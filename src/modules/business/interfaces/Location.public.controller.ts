@@ -1,31 +1,49 @@
-import { Controller, Get, Inject, Param } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ILocationService } from '../app/ILocation.service';
+import {
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseFloatPipe,
+  ParseIntPipe,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
+import { AuthUser } from '@/common/AuthUser.decorator';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
 @ApiTags('Location')
 @Controller('/public/locations')
 export class LocationPublicController {
   constructor(
-    @Inject(ILocationService)
-    private readonly locationService: ILocationService,
+    @Inject(ILocationQueryService)
+    private locationQueryService: ILocationQueryService,
   ) {}
 
-  @Get()
-  @ApiOperation({ summary: 'Get all locations' })
-  async getLocations() {
-    return this.locationService.getLocationsWithFilters({
-      page: 1,
-      limit: 10,
+  @ApiOperation({
+    summary: 'Get nearby visible locations by coordinates',
+  })
+  @Get('/nearby/:latitude/:longitude/:radiusMeters')
+  getNearbyVisibleLocationsByCoordinates(
+    @AuthUser() userDto: JwtTokenDto, // for future recommendations based on user preferences
+    @Param('latitude', ParseFloatPipe) latitude: number,
+    @Param('longitude', ParseFloatPipe) longitude: number,
+    @Param('radiusMeters', ParseIntPipe) radiusMeters: number,
+  ) {
+    return this.locationQueryService.getNearbyVisibleLocationsByCoordinates({
+      latitude,
+      longitude,
+      radiusMeters,
     });
   }
 
-  @Get(':id')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Get location by ID',
-    description: 'Get detailed information about a specific location',
-  })
-  getLocationById(@Param('id') locationId: string) {
-    return this.locationService.getLocationById(locationId);
+  @ApiOperation({ summary: 'Get visible location by ID' })
+  @Get('/:locationId')
+  getVisibleLocationById(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+  ) {
+    return this.locationQueryService.getVisibleLocationById({
+      locationId,
+    });
   }
 }
