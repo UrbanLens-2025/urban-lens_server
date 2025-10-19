@@ -11,6 +11,11 @@ import { CheckInRepository } from '../../infra/repository/CheckIn.repository';
 import { LocationRepository } from '../../infra/repository/Location.repository';
 import { UserProfileRepository } from '@/modules/account/infra/repository/UserProfile.repository';
 import { PaginationResult } from '@/common/services/base.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  CHECK_IN_CREATED_EVENT,
+  CheckInCreatedEvent,
+} from '@/modules/gamification/domain/events/CheckInCreated.event';
 
 @Injectable()
 export class CheckInService implements ICheckInService {
@@ -18,6 +23,7 @@ export class CheckInService implements ICheckInService {
     private readonly checkInRepository: CheckInRepository,
     private readonly locationRepository: LocationRepository,
     private readonly profileRepository: UserProfileRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createCheckIn(
@@ -59,7 +65,16 @@ export class CheckInService implements ICheckInService {
       checkInTime: new Date(),
     });
 
-    return await this.checkInRepository.repo.save(checkIn);
+    const savedCheckIn = await this.checkInRepository.repo.save(checkIn);
+
+    // Emit check-in created event for gamification
+    const checkInCreatedEvent = new CheckInCreatedEvent();
+    checkInCreatedEvent.checkInId = savedCheckIn.id;
+    checkInCreatedEvent.userId = profileId;
+    checkInCreatedEvent.locationId = createCheckInDto.locationId;
+    this.eventEmitter.emit(CHECK_IN_CREATED_EVENT, checkInCreatedEvent);
+
+    return savedCheckIn;
   }
 
   async getCheckInsByProfileId(

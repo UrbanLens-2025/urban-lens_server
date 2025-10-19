@@ -6,6 +6,7 @@ import { RewardPointType } from '@/modules/gamification/domain/RewardPoint.entit
 import { PostRepository } from '@/modules/post/infra/repository/Post.repository';
 import { CommentRepository } from '@/modules/post/infra/repository/Comment.repository';
 import { ReactRepository } from '@/modules/post/infra/repository/React.repository';
+import { CheckInRepository } from '@/modules/business/infra/repository/CheckIn.repository';
 import { PostType } from '@/modules/post/domain/Post.entity';
 import { ReactEntityType } from '@/modules/post/domain/React.entity';
 import { IUserPointsService } from '../IUserPoints.service';
@@ -22,6 +23,7 @@ export class PointsRecalculationService {
     private readonly postRepository: PostRepository,
     private readonly commentRepository: CommentRepository,
     private readonly reactRepository: ReactRepository,
+    private readonly checkInRepository: CheckInRepository,
     @Inject(IUserPointsService)
     private readonly userPointsService: IUserPointsService,
   ) {}
@@ -43,6 +45,9 @@ export class PointsRecalculationService {
         this.commentRepository.repo.target,
       );
       const reactRepo = manager.getRepository(this.reactRepository.repo.target);
+      const checkInRepo = manager.getRepository(
+        this.checkInRepository.repo.target,
+      );
 
       // Get user profile
       const userProfile = await userProfileRepo.findOne({
@@ -62,7 +67,7 @@ export class PointsRecalculationService {
       );
 
       // Count user's activities
-      const [blogCount, reviewCount, commentCount, reactCount] =
+      const [blogCount, reviewCount, commentCount, reactCount, checkInCount] =
         await Promise.all([
           // Count blogs
           postRepo.count({
@@ -81,6 +86,10 @@ export class PointsRecalculationService {
           reactRepo.count({
             where: { authorId: userId, entityType: ReactEntityType.POST },
           }),
+          // Count check-ins
+          checkInRepo.count({
+            where: { userProfileId: userId },
+          }),
         ]);
 
       // Calculate points for each activity
@@ -96,6 +105,8 @@ export class PointsRecalculationService {
         reactions:
           reactCount *
           (rewardPointsMap.get(RewardPointType.UPVOTE_DOWNVOTE) || 0),
+        checkIns:
+          checkInCount * (rewardPointsMap.get(RewardPointType.CHECK_IN) || 0),
       };
 
       // Calculate total points
