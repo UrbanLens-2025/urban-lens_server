@@ -26,13 +26,13 @@ export class UserProfileEntity {
   dob: Date;
 
   @ManyToOne(() => RankEntity, {
-    nullable: false,
+    nullable: true,
     createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'rank_id' })
   rank: RankEntity;
 
-  @Column({ name: 'rank_id', type: 'uuid', nullable: false })
+  @Column({ name: 'rank_id', type: 'uuid', nullable: true })
   rankId: string;
 
   @Column({ name: 'points', type: 'integer', default: 0 })
