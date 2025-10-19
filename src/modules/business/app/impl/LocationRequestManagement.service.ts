@@ -63,10 +63,11 @@ export class LocationRequestManagementService
       }
 
       // validate tags
-      const existsSelectedTags = await tagRepository.existsSelectableTagsById(
+      const tagCountInDb = await tagRepository.countSelectableTagsById(
         dto.tagIds,
       );
-      if (!existsSelectedTags) {
+
+      if (tagCountInDb !== dto.tagIds.length) {
         throw new BadRequestException(
           'One or more provided tags are invalid/not selectable',
         );
@@ -113,7 +114,7 @@ export class LocationRequestManagementService
       }
 
       // validate tags
-      const existsSelectedTags = await tagRepository.existsSelectableTagsById(
+      const existsSelectedTags = await tagRepository.countSelectableTagsById(
         dto.tagIds,
       );
       if (!existsSelectedTags) {
