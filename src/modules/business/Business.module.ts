@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.module';
 import { LocationUserController } from './interfaces/Location.user.controller';
 import { CheckInService } from './app/impl/CheckIn.service';
-import { ILocationService } from './app/ILocation.service';
 import { ICheckInService } from './app/ICheckIn.service';
 import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
 import { TokenModule } from '@/common/core/token/token.module';
@@ -13,7 +12,6 @@ import { LocationRequestBusinessController } from '@/modules/business/interfaces
 import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
 import { LocationRequestManagementService } from '@/modules/business/app/impl/LocationRequestManagement.service';
 import { LocationRequestAdminController } from '@/modules/business/interfaces/LocationRequest.admin.controller';
-import { LocationV2Service } from '@/modules/business/app/impl/LocationV2.service';
 import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
 import { LocationQueryService } from '@/modules/business/app/impl/LocationQuery.service';
 import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
@@ -36,10 +34,6 @@ import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
     LocationAdminController,
   ],
   providers: [
-    {
-      provide: ILocationService,
-      useClass: LocationV2Service,
-    },
     {
       provide: ICheckInService,
       useClass: CheckInService,
