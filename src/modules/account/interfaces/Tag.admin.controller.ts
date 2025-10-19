@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CreateTag } from '@/common/dto/account/CreateTag.dto';
+import { CreateTagDto } from '@/common/dto/account/CreateTag.dto';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
@@ -18,7 +18,7 @@ export class TagAdminController {
   ) {}
 
   @Post()
-  create(@Body() dto: CreateTag.Dto) {
+  create(@Body() dto: CreateTagDto) {
     return this.tagService.create(dto);
   }
 

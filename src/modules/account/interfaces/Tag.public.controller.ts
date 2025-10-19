@@ -4,7 +4,7 @@ import { ITagService } from '@/modules/account/app/ITag.service';
 import { WithPagination } from '@/common/WithPagination.decorator';
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 
-@ApiTags('Tag - Public')
+@ApiTags('Tag')
 @Controller('/public/tag')
 export class TagPublicController {
   constructor(
