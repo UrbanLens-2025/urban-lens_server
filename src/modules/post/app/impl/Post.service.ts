@@ -146,6 +146,10 @@ export class PostService
     postIds: string[],
     userId: string,
   ): Promise<Map<string, ReactType>> {
+    if (postIds.length === 0) {
+      return new Map();
+    }
+
     const userReactions = await this.reactRepository.repo
       .createQueryBuilder('react')
       .where('react.entityId IN (:...postIds)', { postIds })
@@ -163,6 +167,10 @@ export class PostService
     authorIds: string[],
     currentUserId: string,
   ): Promise<Map<string, boolean>> {
+    if (authorIds.length === 0) {
+      return new Map();
+    }
+
     const follows = await this.followRepository.repo
       .createQueryBuilder('follow')
       .where('follow.entityId IN (:...authorIds)', { authorIds })
