@@ -16,6 +16,8 @@ import { LocationRequestAdminController } from '@/modules/business/interfaces/Lo
 import { LocationV2Service } from '@/modules/business/app/impl/LocationV2.service';
 import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
 import { LocationQueryService } from '@/modules/business/app/impl/LocationQuery.service';
+import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
+import { LocationManagementService } from '@/modules/business/app/impl/LocationManagement.service';
 
 @Module({
   imports: [BusinessInfraModule, AccountInfraModule, TokenModule],
@@ -43,6 +45,10 @@ import { LocationQueryService } from '@/modules/business/app/impl/LocationQuery.
     {
       provide: ILocationQueryService,
       useClass: LocationQueryService,
+    },
+    {
+      provide: ILocationManagementService,
+      useClass: LocationManagementService,
     },
   ],
   exports: [BusinessInfraModule],

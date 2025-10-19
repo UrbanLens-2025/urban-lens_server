@@ -92,7 +92,7 @@ export class LocationEntity {
   @OneToMany(() => CheckInEntity, (checkIn) => checkIn.location)
   checkIns: CheckInEntity[];
 
-  //#region TRANSIENT FIELDS - Do NOT add @Column to these
+  //#region TRANSIENT FIELDS - Do NOT add @Column to these. These are NOT PERSISTED to the db.
 
   distanceMeters?: number;
 
