@@ -5,8 +5,6 @@ import {
   PaginationParams,
   PaginationResult,
 } from '@/common/services/base.service';
-import { Paginated, PaginateQuery } from 'nestjs-paginate';
-import { PostEntity } from '@/modules/post/domain/Post.entity';
 
 export const IPostService = Symbol('IPostService');
 export interface IPostService {

@@ -34,6 +34,15 @@ import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.ser
 import { CheckInRepository } from '@/modules/business/infra/repository/CheckIn.repository';
 import { FollowRepository } from '@/modules/account/infra/repository/Follow.repository';
 import { FollowEntityType } from '@/modules/account/domain/Follow.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  POST_CREATED_EVENT,
+  PostCreatedEvent,
+} from '@/modules/gamification/domain/events/PostCreated.event';
+import {
+  POST_REACTED_EVENT,
+  PostReactedEvent,
+} from '@/modules/gamification/domain/events/PostReacted.event';
 
 interface RawPost {
   post_postid: string;
@@ -44,6 +53,7 @@ interface RawPost {
   post_locationid?: string;
   post_eventid?: string;
   post_isverified: boolean;
+  post_visibility?: string;
   post_createdat: Date;
   post_updatedat: Date;
   author_id: string;
@@ -53,6 +63,12 @@ interface RawPost {
   analytic_total_upvotes?: number;
   analytic_total_downvotes?: number;
   analytic_total_comments?: number;
+  location_id?: string;
+  location_name?: string;
+  location_addressline?: string;
+  location_latitude?: number;
+  location_longitude?: number;
+  location_imageurl?: string[];
 }
 
 @Injectable()
@@ -67,6 +83,7 @@ export class PostService
     private readonly commentRepository: CommentRepository,
     private readonly checkInRepository: CheckInRepository,
     private readonly followRepository: FollowRepository,
+    private readonly eventEmitter: EventEmitter2,
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
   ) {
@@ -84,6 +101,7 @@ export class PostService
       'post.location_id as post_locationid',
       'post.event_id as post_eventid',
       'post.is_verified as post_isverified',
+      'post.visibility as post_visibility',
       'post.created_at as post_createdat',
       'post.updated_at as post_updatedat',
       'author.id as author_id',
@@ -93,6 +111,12 @@ export class PostService
       'analytic.total_upvotes as analytic_total_upvotes',
       'analytic.total_downvotes as analytic_total_downvotes',
       'analytic.total_comments as analytic_total_comments',
+      'location.id as location_id',
+      'location.name as location_name',
+      'location.address_line as location_addressline',
+      'location.latitude as location_latitude',
+      'location.longitude as location_longitude',
+      'location.imageUrl as location_imageurl',
     ];
   }
 
@@ -107,6 +131,7 @@ export class PostService
       imageUrls: rawPost.post_imageurls,
       type: rawPost.post_type,
       isVerified: rawPost.post_isverified,
+      visibility: rawPost.post_visibility || null,
       createdAt: rawPost.post_createdat,
       updatedAt: rawPost.post_updatedat,
       author: {
@@ -129,9 +154,20 @@ export class PostService
       result.rating = rawPost.post_rating;
     }
 
-    // Add locationId if exists
-    if (rawPost.post_locationid) {
-      result.locationId = rawPost.post_locationid;
+    // Add location if exists
+    if (rawPost.location_id) {
+      result.location = {
+        id: rawPost.location_id,
+        name: rawPost.location_name,
+        addressLine: rawPost.location_addressline,
+        latitude: rawPost.location_latitude
+          ? parseFloat(rawPost.location_latitude.toString())
+          : null,
+        longitude: rawPost.location_longitude
+          ? parseFloat(rawPost.location_longitude.toString())
+          : null,
+        imageUrl: rawPost.location_imageurl || [],
+      };
     }
 
     // Add eventId if exists
@@ -253,6 +289,7 @@ export class PostService
           'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
           { analyticType: AnalyticEntityType.POST },
         )
+        .leftJoin('locations', 'location', 'location.id = post.location_id')
         .where('post.visibility = :visibility OR post.visibility IS NULL', {
           visibility: 'public',
         })
@@ -326,6 +363,7 @@ export class PostService
           'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
           { analyticType: AnalyticEntityType.POST },
         )
+        .leftJoin('locations', 'location', 'location.id = post.location_id')
         .where('post.author_id IN (:...followedUserIds)', { followedUserIds })
         .andWhere('post.is_hidden = :isHidden', { isHidden: false })
         .andWhere(
@@ -455,6 +493,16 @@ export class PostService
         },
       );
 
+      // Emit post created event for gamification
+      if (dto.authorId) {
+        const postCreatedEvent = new PostCreatedEvent();
+        postCreatedEvent.postId = result.postId;
+        postCreatedEvent.authorId = dto.authorId;
+        postCreatedEvent.postType = dto.type;
+        postCreatedEvent.isVerified = isVerified;
+        this.eventEmitter.emit(POST_CREATED_EVENT, postCreatedEvent);
+      }
+
       return result.postId;
     } catch (error) {
       console.error(error);
@@ -521,6 +569,7 @@ export class PostService
           'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :type',
           { type: AnalyticEntityType.POST },
         )
+        .leftJoin('locations', 'location', 'location.id = post.location_id')
         .where('post.post_id = :postId', { postId })
         .select(this.getPostSelectFields())
         .getRawOne();
@@ -629,6 +678,15 @@ export class PostService
         'totalDownvotes',
         downvotesDelta,
       );
+
+      // Emit post reacted event for gamification (only on new reaction, not toggle off)
+      if (upvotesDelta > 0 || downvotesDelta > 0) {
+        const postReactedEvent = new PostReactedEvent();
+        postReactedEvent.postId = dto.postId;
+        postReactedEvent.userId = dto.userId;
+        postReactedEvent.reactType = dto.type;
+        this.eventEmitter.emit(POST_REACTED_EVENT, postReactedEvent);
+      }
 
       return 'React post successfully';
     } catch (error) {
@@ -786,6 +844,7 @@ export class PostService
           'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
           { analyticType: AnalyticEntityType.POST },
         )
+        .leftJoin('locations', 'location', 'location.id = post.location_id')
         .where('post.author_id = :authorId', { authorId });
 
       // Add type filter if specified
@@ -928,6 +987,7 @@ export class PostService
           'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
           { analyticType: AnalyticEntityType.POST },
         )
+        .leftJoin('locations', 'location', 'location.id = post.location_id')
         .where('post.type = :type', { type: PostType.REVIEW })
         .andWhere('post.is_hidden = :isHidden', { isHidden: false });
 

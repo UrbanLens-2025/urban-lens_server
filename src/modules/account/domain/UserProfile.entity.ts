@@ -1,6 +1,6 @@
-import { Rank } from '@/common/constants/Rank.constant';
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import { CheckInEntity } from '@/modules/business/domain/CheckIn.entity';
+import { RankEntity } from '@/modules/gamification/domain/Rank.entity';
 import {
   Entity,
   JoinColumn,
@@ -8,6 +8,7 @@ import {
   OneToOne,
   PrimaryColumn,
   OneToMany,
+  ManyToOne,
 } from 'typeorm';
 
 @Entity({ name: 'user_profiles' })
@@ -24,8 +25,15 @@ export class UserProfileEntity {
   @Column({ name: 'dob', type: 'timestamp with time zone' })
   dob: Date;
 
-  @Column({ name: 'rank', type: 'enum', enum: Rank, default: Rank.BRONZE })
-  rank: Rank;
+  @ManyToOne(() => RankEntity, {
+    nullable: false,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'rank_id' })
+  rank: RankEntity;
+
+  @Column({ name: 'rank_id', type: 'uuid', nullable: false })
+  rankId: string;
 
   @Column({ name: 'points', type: 'integer', default: 0 })
   points: number;

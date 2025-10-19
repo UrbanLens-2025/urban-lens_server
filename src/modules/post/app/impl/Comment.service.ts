@@ -16,6 +16,11 @@ import { ReactRepository } from '../../infra/repository/React.repository';
 import { ReactCommentRequestDto } from '@/common/dto/post/ReactComment.dto';
 import { ReactEntityType, ReactType } from '../../domain/React.entity';
 import { DeleteCommentRequestDto } from '@/common/dto/post/DeleteComment.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  COMMENT_CREATED_EVENT,
+  CommentCreatedEvent,
+} from '@/modules/gamification/domain/events/CommentCreated.event';
 
 @Injectable()
 export class CommentService
@@ -27,6 +32,7 @@ export class CommentService
     private readonly analyticRepository: AnalyticRepository,
     private readonly postRepository: PostRepository,
     private readonly reactRepository: ReactRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     super(commentRepository.repo);
   }
@@ -65,6 +71,14 @@ export class CommentService
         return savedComment;
       },
     );
+
+    // Emit comment created event for gamification
+    const commentCreatedEvent = new CommentCreatedEvent();
+    commentCreatedEvent.commentId = result.commentId;
+    commentCreatedEvent.authorId = dto.authorId ?? '';
+    commentCreatedEvent.postId = dto.postId;
+    this.eventEmitter.emit(COMMENT_CREATED_EVENT, commentCreatedEvent);
+
     return result;
   }
 

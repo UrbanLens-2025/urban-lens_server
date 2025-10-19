@@ -30,6 +30,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { EventEmitterConfig } from '@/config/event-emitter.config';
 import { LocationReservationModule } from '@/modules/location-reservation/LocationReservation.module';
 import { ReportModule } from '@/modules/report/Report.module';
+import { GamificationModule } from './modules/gamification/Gamification.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { ReportModule } from '@/modules/report/Report.module';
     AddressModule,
     LocationReservationModule,
     ReportModule,
+    GamificationModule,
   ],
   controllers: [AppController],
   providers: [

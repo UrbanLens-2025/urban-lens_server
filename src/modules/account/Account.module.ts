@@ -24,6 +24,7 @@ import { FollowUserController } from './interfaces/Follow.user.controller';
 import { TokenModule } from '@/common/core/token/token.module';
 import { IAccountProfileService } from '@/modules/account/app/IAccountProfile.service';
 import { AccountProfileService } from '@/modules/account/app/impl/AccountProfile.service';
+import { GamificationInfraModule } from '@/modules/gamification/infra/Gamification.infra.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AccountProfileService } from '@/modules/account/app/impl/AccountProfile
     NotificationModule,
     FileStorageModule,
     TokenModule,
+    GamificationInfraModule,
   ],
   controllers: [
     AccountUserController,

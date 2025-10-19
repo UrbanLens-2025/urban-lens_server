@@ -11,10 +11,12 @@ import { UserTagsEntity } from '@/modules/account/domain/UserTags.entity';
 import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
 import { Role } from '@/common/constants/Role.constant';
 import { CreatorProfileRepository } from '@/modules/account/infra/repository/CreatorProfile.repository';
+import { RankRepository } from '@/modules/gamification/infra/repository/Rank.repository';
+import { RankEntity } from '@/modules/gamification/domain/Rank.entity';
 
 @Injectable()
 export class OnboardService extends CoreService implements IOnboardService {
-  constructor() {
+  constructor(private readonly rankRepository: RankRepository) {
     super();
   }
 
@@ -55,8 +57,21 @@ export class OnboardService extends CoreService implements IOnboardService {
         );
       }
 
+      // Get the lowest rank (smallest minPoints)
+      const lowestRank = await manager.getRepository(RankEntity).findOne({
+        order: { minPoints: 'ASC' },
+      });
+
+      if (!lowestRank) {
+        throw new BadRequestException(
+          'No ranks found in system. Please create ranks first.',
+        );
+      }
+
       await userProfileRepository.save({
         accountId: account.id,
+        rankId: lowestRank.id,
+        points: 0,
         ...dto,
       });
 
