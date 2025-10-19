@@ -26,9 +26,9 @@ export class AccountInteractionEntity {
 
   reviewId: string;
 
-  @Column({ name: 'created_at', type: 'timestamp' })
+  @Column({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 
-  @Column({ name: 'updated_at', type: 'timestamp' })
+  @Column({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 }

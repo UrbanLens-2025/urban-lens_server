@@ -28,6 +28,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { EventEmitterConfig } from '@/config/event-emitter.config';
+import { LocationReservationModule } from '@/modules/location-reservation/LocationReservation.module';
+import { ReportModule } from '@/modules/report/Report.module';
 
 @Module({
   imports: [
@@ -77,6 +79,8 @@ import { EventEmitterConfig } from '@/config/event-emitter.config';
     PostModule,
     EventModule,
     AddressModule,
+    LocationReservationModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [

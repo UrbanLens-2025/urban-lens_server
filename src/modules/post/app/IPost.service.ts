@@ -10,9 +10,16 @@ import { PostEntity } from '@/modules/post/domain/Post.entity';
 
 export const IPostService = Symbol('IPostService');
 export interface IPostService {
-  getBasicFeed(query: PaginateQuery): Promise<Paginated<PostEntity>>;
+  getBasicFeed(
+    params: PaginationParams,
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>>;
+  getFollowingFeed(
+    currentUserId: string,
+    params: PaginationParams,
+  ): Promise<PaginationResult<any>>;
   createPost(dto: CreatePostDto): Promise<any>;
-  getPostById(postId: string): Promise<any>;
+  getPostById(postId: string, userId?: string): Promise<any>;
   reactPost(dto: ReactPostDto): Promise<any>;
   deletePost(dto: DeletePostDto): Promise<any>;
   getUpvotesOfPost(postId: string, params?: PaginationParams): Promise<any>;
@@ -33,4 +40,12 @@ export interface IPostService {
     params: PaginationParams,
     currentUserId?: string,
   ): Promise<PaginationResult<any>>;
+  getAllPosts(params: PaginationParams): Promise<PaginationResult<any>>;
+  getReviews(
+    locationId: string | undefined,
+    eventId: string | undefined,
+    params: PaginationParams,
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>>;
+  updatePostVisibility(postId: string, isHidden: boolean): Promise<any>;
 }

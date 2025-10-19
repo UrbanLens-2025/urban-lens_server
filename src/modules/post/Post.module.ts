@@ -9,9 +9,17 @@ import { CommentService } from '@/modules/post/app/impl/Comment.service';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 import { PostUserController } from './interfaces/Post.user.controller';
 import { PostInfraModule } from './infra/Post.infra.module';
+import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.module';
+import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
 
 @Module({
-  imports: [PostInfraModule, AnalyticInfraModule, FileStorageModule],
+  imports: [
+    PostInfraModule,
+    AnalyticInfraModule,
+    FileStorageModule,
+    BusinessInfraModule,
+    AccountInfraModule,
+  ],
   controllers: [
     PostPublicController,
     CommentPrivateController,

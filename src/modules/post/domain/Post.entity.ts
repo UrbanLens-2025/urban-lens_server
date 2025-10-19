@@ -34,10 +34,10 @@ export class PostEntity {
   @Column({ name: 'rating', type: 'int', nullable: true })
   rating: number;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
   @Column({ name: 'image_urls', type: 'text', array: true, default: [] })
@@ -79,4 +79,10 @@ export class PostEntity {
 
   @PrimaryGeneratedColumn('uuid', { name: 'post_id' })
   postId: string;
+
+  @Column({ name: 'is_verified', type: 'boolean', default: false })
+  isVerified: boolean;
+
+  @Column({ name: 'is_hidden', type: 'boolean', default: false })
+  isHidden: boolean;
 }

@@ -29,6 +29,14 @@ export class CoreService {
     });
   }
 
+  mapToList<T, V>(
+    cls: ClassConstructor<T>,
+    plain: V[],
+    options?: ClassTransformOptions,
+  ): T[] {
+    return plain.map((i) => this.mapTo(cls, i, options));
+  }
+
   /**
    * Map plain array object to class instance. Requires @Expose() decorator on class properties.
    * @param cls Target class

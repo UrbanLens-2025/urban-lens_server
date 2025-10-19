@@ -15,7 +15,7 @@ export class PushNotificationEntity {
   @PrimaryGeneratedColumn('identity')
   id: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 
   @Column({ name: 'type', type: 'varchar', length: 50, nullable: false })

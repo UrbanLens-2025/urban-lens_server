@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-return */
-// noinspection ExceptionCaughtLocallyJS
-
 import {
   BadRequestException,
   ForbiddenException,
@@ -34,7 +31,30 @@ import { DeletePostDto } from '@/common/dto/post/DeletePost.dto';
 import { CommentRepository } from '../../infra/repository/Comment.repository';
 import { CommentEntity } from '../../domain/Comment.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
-import { PaginateQuery, Paginated, paginate } from 'nestjs-paginate';
+import { CheckInRepository } from '@/modules/business/infra/repository/CheckIn.repository';
+import { FollowRepository } from '@/modules/account/infra/repository/Follow.repository';
+import { FollowEntityType } from '@/modules/account/domain/Follow.entity';
+
+interface RawPost {
+  post_postid: string;
+  post_content: string;
+  post_imageurls: string[];
+  post_type: PostType;
+  post_rating?: number;
+  post_locationid?: string;
+  post_eventid?: string;
+  post_isverified: boolean;
+  post_createdat: Date;
+  post_updatedat: Date;
+  author_id: string;
+  author_firstname: string;
+  author_lastname: string;
+  author_avatarurl: string;
+  analytic_total_upvotes?: number;
+  analytic_total_downvotes?: number;
+  analytic_total_comments?: number;
+}
+
 @Injectable()
 export class PostService
   extends BaseService<PostEntity>
@@ -45,28 +65,314 @@ export class PostService
     private readonly analyticRepository: AnalyticRepository,
     private readonly reactRepository: ReactRepository,
     private readonly commentRepository: CommentRepository,
+    private readonly checkInRepository: CheckInRepository,
+    private readonly followRepository: FollowRepository,
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
   ) {
     super(postRepository.repo);
   }
 
-  getBasicFeed(query: PaginateQuery): Promise<Paginated<PostEntity>> {
-    return paginate(query, this.postRepository.repo, {
-      defaultSortBy: [['createdAt', 'DESC']],
-      sortableColumns: ['createdAt'],
-      nullSort: 'last',
-    });
+  // Helper methods
+  private getPostSelectFields(): string[] {
+    return [
+      'post.post_id as post_postid',
+      'post.content as post_content',
+      'post.image_urls as post_imageurls',
+      'post.type as post_type',
+      'post.rating as post_rating',
+      'post.location_id as post_locationid',
+      'post.event_id as post_eventid',
+      'post.is_verified as post_isverified',
+      'post.created_at as post_createdat',
+      'post.updated_at as post_updatedat',
+      'author.id as author_id',
+      'author.first_name as author_firstname',
+      'author.last_name as author_lastname',
+      'author.avatar_url as author_avatarurl',
+      'analytic.total_upvotes as analytic_total_upvotes',
+      'analytic.total_downvotes as analytic_total_downvotes',
+      'analytic.total_comments as analytic_total_comments',
+    ];
+  }
+
+  private mapRawPostToDto(
+    rawPost: RawPost,
+    currentUserReaction: ReactType | null = null,
+    isFollowing: boolean = false,
+  ): any {
+    const result: any = {
+      postId: rawPost.post_postid,
+      content: rawPost.post_content,
+      imageUrls: rawPost.post_imageurls,
+      type: rawPost.post_type,
+      isVerified: rawPost.post_isverified,
+      createdAt: rawPost.post_createdat,
+      updatedAt: rawPost.post_updatedat,
+      author: {
+        id: rawPost.author_id,
+        firstName: rawPost.author_firstname,
+        lastName: rawPost.author_lastname,
+        avatarUrl: rawPost.author_avatarurl,
+        isFollow: isFollowing,
+      },
+      analytics: {
+        totalUpvotes: rawPost.analytic_total_upvotes || 0,
+        totalDownvotes: rawPost.analytic_total_downvotes || 0,
+        totalComments: rawPost.analytic_total_comments || 0,
+      },
+      currentUserReaction,
+    };
+
+    // Add rating for review posts
+    if (rawPost.post_type === PostType.REVIEW && rawPost.post_rating) {
+      result.rating = rawPost.post_rating;
+    }
+
+    // Add locationId if exists
+    if (rawPost.post_locationid) {
+      result.locationId = rawPost.post_locationid;
+    }
+
+    // Add eventId if exists
+    if (rawPost.post_eventid) {
+      result.eventId = rawPost.post_eventid;
+    }
+
+    return result;
+  }
+
+  private async getUserReactionsMap(
+    postIds: string[],
+    userId: string,
+  ): Promise<Map<string, ReactType>> {
+    if (postIds.length === 0) {
+      return new Map();
+    }
+
+    const userReactions = await this.reactRepository.repo
+      .createQueryBuilder('react')
+      .where('react.entityId IN (:...postIds)', { postIds })
+      .andWhere('react.entityType = :entityType', {
+        entityType: ReactEntityType.POST,
+      })
+      .andWhere('react.authorId = :userId', { userId })
+      .select(['react.entityId', 'react.type'])
+      .getMany();
+
+    return new Map(userReactions.map((r) => [r.entityId, r.type]));
+  }
+
+  private async getFollowStatusMap(
+    authorIds: string[],
+    currentUserId: string,
+  ): Promise<Map<string, boolean>> {
+    if (authorIds.length === 0) {
+      return new Map();
+    }
+
+    const follows = await this.followRepository.repo
+      .createQueryBuilder('follow')
+      .where('follow.entityId IN (:...authorIds)', { authorIds })
+      .andWhere('follow.entityType = :entityType', {
+        entityType: FollowEntityType.USER,
+      })
+      .andWhere('follow.followerId = :currentUserId', { currentUserId })
+      .select(['follow.entityId'])
+      .getMany();
+
+    return new Map(follows.map((f) => [f.entityId, true]));
+  }
+
+  private normalizePaginationParams(params: PaginationParams = {}): {
+    page: number;
+    limit: number;
+    skip: number;
+  } {
+    const page = Math.max(params.page ?? 1, 1);
+    const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
+    const skip = (page - 1) * limit;
+    return { page, limit, skip };
+  }
+
+  private buildPaginationMeta(
+    page: number,
+    limit: number,
+    total: number,
+  ): PaginationResult<any>['meta'] {
+    const totalPages = Math.ceil(total / limit);
+    return {
+      page,
+      limit,
+      totalItems: total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    };
+  }
+
+  private async processPostsWithReactions(
+    posts: RawPost[],
+    currentUserId?: string,
+  ): Promise<any[]> {
+    if (!currentUserId) {
+      return posts.map((post) => this.mapRawPostToDto(post, null, false));
+    }
+
+    const postIds = posts.map((post) => post.post_postid);
+    const authorIds = [...new Set(posts.map((post) => post.author_id))];
+
+    const [reactionMap, followMap] = await Promise.all([
+      this.getUserReactionsMap(postIds, currentUserId),
+      this.getFollowStatusMap(authorIds, currentUserId),
+    ]);
+
+    return posts.map((post) =>
+      this.mapRawPostToDto(
+        post,
+        reactionMap.get(post.post_postid) || null,
+        followMap.get(post.author_id) || false,
+      ),
+    );
+  }
+
+  async getBasicFeed(
+    params: PaginationParams = {},
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>> {
+    try {
+      const { page, limit, skip } = this.normalizePaginationParams(params);
+
+      // Build query to get public posts
+      const postsQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin(
+          'analytic',
+          'analytic',
+          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
+          { analyticType: AnalyticEntityType.POST },
+        )
+        .where('post.visibility = :visibility OR post.visibility IS NULL', {
+          visibility: 'public',
+        })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false })
+        .select(this.getPostSelectFields())
+        .orderBy('post.created_at', 'DESC')
+        .offset(skip)
+        .limit(limit);
+
+      // Count total posts
+      const countQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .where('post.visibility = :visibility OR post.visibility IS NULL', {
+          visibility: 'public',
+        })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
+
+      const [posts, total] = await Promise.all([
+        postsQuery.getRawMany(),
+        countQuery.getCount(),
+      ]);
+
+      const processedPosts = await this.processPostsWithReactions(
+        posts,
+        currentUserId,
+      );
+
+      return {
+        data: processedPosts,
+        meta: this.buildPaginationMeta(page, limit, total),
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async getFollowingFeed(
+    currentUserId: string,
+    params: PaginationParams = {},
+  ): Promise<PaginationResult<any>> {
+    try {
+      const { page, limit, skip } = this.normalizePaginationParams(params);
+
+      // Get list of users that current user is following
+      const followedUsers = await this.followRepository.repo.find({
+        where: {
+          followerId: currentUserId,
+          entityType: FollowEntityType.USER,
+        },
+        select: ['entityId'],
+      });
+
+      const followedUserIds = followedUsers.map((f) => f.entityId);
+
+      // If not following anyone, return empty result
+      if (followedUserIds.length === 0) {
+        return {
+          data: [],
+          meta: this.buildPaginationMeta(page, limit, 0),
+        };
+      }
+
+      // Build query to get posts from followed users
+      const postsQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin(
+          'analytic',
+          'analytic',
+          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
+          { analyticType: AnalyticEntityType.POST },
+        )
+        .where('post.author_id IN (:...followedUserIds)', { followedUserIds })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false })
+        .andWhere(
+          '(post.visibility = :public OR post.visibility = :followers OR post.visibility IS NULL)',
+          { public: 'public', followers: 'followers' },
+        )
+        .select(this.getPostSelectFields())
+        .orderBy('post.created_at', 'DESC')
+        .offset(skip)
+        .limit(limit);
+
+      // Count total posts
+      const countQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .where('post.author_id IN (:...followedUserIds)', { followedUserIds })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false })
+        .andWhere(
+          '(post.visibility = :public OR post.visibility = :followers OR post.visibility IS NULL)',
+          { public: 'public', followers: 'followers' },
+        );
+
+      const [posts, total] = await Promise.all([
+        postsQuery.getRawMany(),
+        countQuery.getCount(),
+      ]);
+
+      const processedPosts = await this.processPostsWithReactions(
+        posts,
+        currentUserId,
+      );
+
+      return {
+        data: processedPosts,
+        meta: this.buildPaginationMeta(page, limit, total),
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
   }
 
   async createPost(dto: CreatePostDto): Promise<any> {
     try {
-      // Validate: Blog posts must have visibility
       if (dto.type === PostType.BLOG && !dto.visibility) {
         throw new BadRequestException('Visibility is required for blog posts');
       }
 
-      // Validate: Review posts must have locationId or eventId and rating
       if (dto.type === PostType.REVIEW) {
         if (!dto.locationId && !dto.eventId) {
           throw new BadRequestException(
@@ -81,6 +387,18 @@ export class PostService
       // Clear rating for blog posts
       if (dto.type === PostType.BLOG) {
         dto.rating = undefined;
+      }
+
+      // Check if user has checked in at location (for review posts)
+      let isVerified = false;
+      if (dto.type === PostType.REVIEW && dto.locationId) {
+        const checkIn = await this.checkInRepository.repo.findOne({
+          where: {
+            userProfileId: dto.authorId,
+            locationId: dto.locationId,
+          },
+        });
+        isVerified = !!checkIn;
       }
 
       const result = await this.postRepository.repo.manager.transaction(
@@ -101,7 +419,10 @@ export class PostService
             );
           }
 
-          const post = this.postRepository.repo.create(dto);
+          const post = this.postRepository.repo.create({
+            ...dto,
+            isVerified,
+          });
           const savedPost = await transactionalEntityManager.save(post);
 
           // Create post analytic
@@ -191,7 +512,7 @@ export class PostService
 
   async getPostById(postId: string, userId?: string): Promise<any> {
     try {
-      const result = await this.postRepository.repo
+      const post = await this.postRepository.repo
         .createQueryBuilder('post')
         .leftJoinAndSelect('post.author', 'author')
         .leftJoin(
@@ -201,24 +522,46 @@ export class PostService
           { type: AnalyticEntityType.POST },
         )
         .where('post.post_id = :postId', { postId })
-        .select([
-          'post.postId',
-          'post.content',
-          'post.createdAt',
-          'post.updatedAt',
-          'author.id',
-          'author.firstName',
-          'author.lastName',
-          'author.avatarUrl',
-          'analytic.total_upvotes',
-          'analytic.total_downvotes',
-          'analytic.total_comments',
-        ])
+        .select(this.getPostSelectFields())
         .getRawOne();
-      if (!result) {
+
+      if (!post) {
         throw new NotFoundException('Post not found');
       }
-      return result;
+
+      let currentUserReaction: ReactType | null = null;
+      let isFollowing = false;
+
+      // Get user reaction and follow status if userId is provided
+      if (userId) {
+        const [userReaction, followStatus] = await Promise.all([
+          this.reactRepository.repo.findOne({
+            where: {
+              entityId: postId,
+              entityType: ReactEntityType.POST,
+              authorId: userId,
+            },
+            select: ['type'],
+          }),
+          this.followRepository.repo.findOne({
+            where: {
+              followerId: userId,
+              entityId: post.author_id,
+              entityType: FollowEntityType.USER,
+            },
+          }),
+        ]);
+
+        if (userReaction) {
+          currentUserReaction = userReaction.type;
+        }
+
+        if (followStatus) {
+          isFollowing = true;
+        }
+      }
+
+      return this.mapRawPostToDto(post, currentUserReaction, isFollowing);
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException(error);
@@ -354,9 +697,7 @@ export class PostService
     params: PaginationParams = {},
   ): Promise<any> {
     try {
-      const page = Math.max(params.page ?? 1, 1);
-      const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
-      const skip = (page - 1) * limit;
+      const { page, limit, skip } = this.normalizePaginationParams(params);
 
       const queryBuilder = this.reactRepository.repo
         .createQueryBuilder('react')
@@ -385,14 +726,7 @@ export class PostService
 
       return {
         [propertyName]: reactions.map((reaction) => reaction.author),
-        meta: {
-          page,
-          limit,
-          totalItems: total,
-          totalPages: Math.ceil(total / limit),
-          hasNextPage: page < Math.ceil(total / limit),
-          hasPrevPage: page > 1,
-        },
+        meta: this.buildPaginationMeta(page, limit, total),
       };
     } catch (error) {
       console.error(error);
@@ -441,9 +775,7 @@ export class PostService
     postType?: PostType,
   ): Promise<PaginationResult<any>> {
     try {
-      const page = Math.max(params.page ?? 1, 1);
-      const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
-      const skip = (page - 1) * limit;
+      const { page, limit, skip } = this.normalizePaginationParams(params);
 
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
@@ -462,21 +794,7 @@ export class PostService
       }
 
       postsQuery
-        .select([
-          'post.post_id as post_postid',
-          'post.content as post_content',
-          'post.image_urls as post_imageurls',
-          'post.type as post_type',
-          'post.created_at as post_createdat',
-          'post.updated_at as post_updatedat',
-          'author.id as author_id',
-          'author.first_name as author_firstname',
-          'author.last_name as author_lastname',
-          'author.avatar_url as author_avatarurl',
-          'analytic.total_upvotes as analytic_total_upvotes',
-          'analytic.total_downvotes as analytic_total_downvotes',
-          'analytic.total_comments as analytic_total_comments',
-        ])
+        .select(this.getPostSelectFields())
         .orderBy('post.createdAt', 'DESC')
         .offset(skip)
         .limit(limit);
@@ -489,100 +807,19 @@ export class PostService
         countQuery.andWhere('post.type = :postType', { postType });
       }
 
-      const total = await countQuery.getCount();
-      const posts = await postsQuery.getRawMany();
+      const [posts, total] = await Promise.all([
+        postsQuery.getRawMany(),
+        countQuery.getCount(),
+      ]);
 
-      if (!posts.length) {
-        return {
-          data: [],
-          meta: {
-            page,
-            limit,
-            totalItems: total,
-            totalPages: Math.ceil(total / limit),
-            hasNextPage: page < Math.ceil(total / limit),
-            hasPrevPage: page > 1,
-          },
-        };
-      }
-
-      let processedPosts: any[];
-
-      if (currentUserId) {
-        const postIds = posts.map((post) => post.post_postid);
-
-        const userReactions = await this.reactRepository.repo
-          .createQueryBuilder('react')
-          .where('react.entityId IN (:...postIds)', { postIds })
-          .andWhere('react.entityType = :entityType', {
-            entityType: ReactEntityType.POST,
-          })
-          .andWhere('react.authorId = :currentUserId', { currentUserId })
-          .select(['react.entityId', 'react.type'])
-          .getMany();
-
-        const reactionMap = new Map();
-        userReactions.forEach((reaction) => {
-          reactionMap.set(reaction.entityId, reaction.type);
-        });
-
-        processedPosts = posts.map((post) => {
-          return {
-            postId: post.post_postid,
-            content: post.post_content,
-            imageUrls: post.post_imageurls,
-            type: post.post_type,
-            createdAt: post.post_createdat,
-            updatedAt: post.post_updatedat,
-            author: {
-              id: post.author_id,
-              firstName: post.author_firstname,
-              lastName: post.author_lastname,
-              avatarUrl: post.author_avatarurl,
-            },
-            analytics: {
-              totalUpvotes: post.analytic_total_upvotes || 0,
-              totalDownvotes: post.analytic_total_downvotes || 0,
-              totalComments: post.analytic_total_comments || 0,
-            },
-            currentUserReaction: reactionMap.get(post.post_postid) || null,
-          };
-        });
-      } else {
-        processedPosts = posts.map((post) => {
-          return {
-            postId: post.post_postid,
-            content: post.post_content,
-            imageUrls: post.post_imageurls,
-            type: post.post_type,
-            createdAt: post.post_createdat,
-            updatedAt: post.post_updatedat,
-            author: {
-              id: post.author_id,
-              firstName: post.author_firstname,
-              lastName: post.author_lastname,
-              avatarUrl: post.author_avatarurl,
-            },
-            analytics: {
-              totalUpvotes: post.analytic_total_upvotes || 0,
-              totalDownvotes: post.analytic_total_downvotes || 0,
-              totalComments: post.analytic_total_comments || 0,
-            },
-            currentUserReaction: null,
-          };
-        });
-      }
+      const processedPosts = await this.processPostsWithReactions(
+        posts,
+        currentUserId,
+      );
 
       return {
         data: processedPosts,
-        meta: {
-          page,
-          limit,
-          totalItems: total,
-          totalPages: Math.ceil(total / limit),
-          hasNextPage: page < Math.ceil(total / limit),
-          hasPrevPage: page > 1,
-        },
+        meta: this.buildPaginationMeta(page, limit, total),
       };
     } catch (error) {
       console.error(error);
@@ -622,5 +859,153 @@ export class PostService
       currentUserId,
       PostType.BLOG,
     );
+  }
+
+  async getAllPosts(
+    params: PaginationParams = {},
+  ): Promise<PaginationResult<any>> {
+    const { page, limit, skip } = this.normalizePaginationParams(params);
+
+    const [data, total] = await this.postRepository.repo.findAndCount({
+      skip,
+      take: limit,
+      order: {
+        createdAt: 'DESC',
+      },
+      relations: ['author'],
+      select: {
+        postId: true,
+        content: true,
+        type: true,
+        rating: true,
+        imageUrls: true,
+        visibility: true,
+        isVerified: true,
+        isHidden: true,
+        locationId: true,
+        eventId: true,
+        createdAt: true,
+        updatedAt: true,
+        authorId: true,
+        author: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+          email: true,
+        },
+      },
+    });
+
+    return {
+      data,
+      meta: this.buildPaginationMeta(page, limit, total),
+    };
+  }
+
+  async getReviews(
+    locationId: string | undefined,
+    eventId: string | undefined,
+    params: PaginationParams = {},
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>> {
+    try {
+      if (!locationId && !eventId) {
+        throw new BadRequestException(
+          'Either locationId or eventId is required',
+        );
+      }
+
+      const { page, limit, skip } = this.normalizePaginationParams(params);
+
+      // Build posts query
+      const postsQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin(
+          'analytic',
+          'analytic',
+          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
+          { analyticType: AnalyticEntityType.POST },
+        )
+        .where('post.type = :type', { type: PostType.REVIEW })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
+
+      // Add location/event filters
+      if (locationId && eventId) {
+        postsQuery.andWhere(
+          '(post.location_id = :locationId OR post.event_id = :eventId)',
+          { locationId, eventId },
+        );
+      } else if (locationId) {
+        postsQuery.andWhere('post.location_id = :locationId', { locationId });
+      } else if (eventId) {
+        postsQuery.andWhere('post.event_id = :eventId', { eventId });
+      }
+
+      postsQuery
+        .select(this.getPostSelectFields())
+        .orderBy('post.created_at', 'DESC')
+        .offset(skip)
+        .limit(limit);
+
+      // Build count query
+      const countQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .where('post.type = :type', { type: PostType.REVIEW })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
+
+      if (locationId && eventId) {
+        countQuery.andWhere(
+          '(post.location_id = :locationId OR post.event_id = :eventId)',
+          { locationId, eventId },
+        );
+      } else if (locationId) {
+        countQuery.andWhere('post.location_id = :locationId', { locationId });
+      } else if (eventId) {
+        countQuery.andWhere('post.event_id = :eventId', { eventId });
+      }
+
+      const [posts, total] = await Promise.all([
+        postsQuery.getRawMany(),
+        countQuery.getCount(),
+      ]);
+
+      const processedPosts = await this.processPostsWithReactions(
+        posts,
+        currentUserId,
+      );
+
+      return {
+        data: processedPosts,
+        meta: this.buildPaginationMeta(page, limit, total),
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async updatePostVisibility(postId: string, isHidden: boolean): Promise<any> {
+    try {
+      const post = await this.postRepository.repo.findOne({
+        where: { postId },
+      });
+
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+
+      await this.postRepository.repo.update({ postId }, { isHidden });
+
+      return {
+        message: `Post ${isHidden ? 'hidden' : 'shown'} successfully`,
+        postId,
+        isHidden,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
   }
 }

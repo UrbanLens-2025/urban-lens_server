@@ -22,6 +22,8 @@ import { IFollowService } from './app/IFollow.service';
 import { FollowService } from './app/impl/Follow.service';
 import { FollowUserController } from './interfaces/Follow.user.controller';
 import { TokenModule } from '@/common/core/token/token.module';
+import { IAccountProfileService } from '@/modules/account/app/IAccountProfile.service';
+import { AccountProfileService } from '@/modules/account/app/impl/AccountProfile.service';
 
 @Module({
   imports: [
@@ -53,6 +55,10 @@ import { TokenModule } from '@/common/core/token/token.module';
     {
       provide: IOnboardService,
       useClass: OnboardService,
+    },
+    {
+      provide: IAccountProfileService,
+      useClass: AccountProfileService,
     },
     {
       provide: IBusinessService,

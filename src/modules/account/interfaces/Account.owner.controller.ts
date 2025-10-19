@@ -46,24 +46,6 @@ export class AccountOwnerController {
     return business;
   }
 
-  @Get('onboard-status')
-  @Roles(Role.BUSINESS_OWNER)
-  @ApiOperation({
-    summary: 'Check business onboarding status',
-    description:
-      'Check if business registration is pending, approved, or rejected',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Onboarding status retrieved',
-    type: SuccessResponseDto,
-  })
-  async getOnboardingStatus(@AuthUser() user: JwtTokenDto) {
-    const business = await this.businessService.getBusinessById(user.sub);
-
-    return business;
-  }
-
   @Patch('onboard/:businessId')
   @Roles(Role.ADMIN)
   @ApiOperation({
