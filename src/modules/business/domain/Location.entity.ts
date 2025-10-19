@@ -15,6 +15,7 @@ import {
 } from 'typeorm';
 import { CheckInEntity } from './CheckIn.entity';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
+import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
 
 @Entity({ name: LocationEntity.TABLE_NAME })
 export class LocationEntity {
@@ -95,6 +96,19 @@ export class LocationEntity {
   //#region TRANSIENT FIELDS - Do NOT add @Column to these. These are NOT PERSISTED to the db.
 
   distanceMeters?: number;
+
+  //#endregion
+
+  //#region TRANSIENT RELATIONS - These are for development purposes ONLY.
+
+  @OneToMany(
+    () => LocationTagsEntity,
+    (locationTags) => locationTags.location,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
+  tags: LocationTagsEntity[];
 
   //#endregion
 

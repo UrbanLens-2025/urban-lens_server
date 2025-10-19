@@ -34,11 +34,10 @@ export class LocationQueryService
           where: {
             isVisibleOnMap: true,
           },
-          relations: ['business'],
+          relations: ['business', 'tags', 'tags.tag'],
         },
       )
       .then((locations) => {
-        console.log(locations);
         return this.mapToArray(LocationWithDistanceResponseDto, locations);
       });
   }
@@ -53,7 +52,12 @@ export class LocationQueryService
           id: dto.locationId,
           isVisibleOnMap: true,
         },
-        relations: ['business'],
+        relations: {
+          business: true,
+          tags: {
+            tag: true,
+          },
+        },
       })
       .then((e) => this.mapTo(LocationResponseDto, e));
   }
@@ -67,6 +71,12 @@ export class LocationQueryService
         where: {
           businessId: dto.businessId,
           isVisibleOnMap: true,
+        },
+        relations: {
+          business: true,
+          tags: {
+            tag: true,
+          },
         },
       })
       .then((e) => this.mapToArray(LocationResponseDto, e));
@@ -82,7 +92,9 @@ export class LocationQueryService
       where: {
         userProfileId: dto.accountId,
       },
-      relations: ['location'],
+      relations: {
+        location: true,
+      },
     }).then(
       (e) =>
         ({
@@ -115,6 +127,12 @@ export class LocationQueryService
       where: {
         businessId: dto.businessId,
       },
+      relations: {
+        business: true,
+        tags: {
+          tag: true,
+        },
+      },
     }).then((e) => this.mapToPaginated(LocationResponseDto, e));
   }
 
@@ -123,9 +141,17 @@ export class LocationQueryService
   ): Promise<LocationResponseDto> {
     const locationRepository = LocationRepositoryProvider(this.dataSource);
     return locationRepository
-      .findOneByOrFail({
-        id: dto.locationId,
-        businessId: dto.businessId,
+      .findOneOrFail({
+        where: {
+          id: dto.locationId,
+          businessId: dto.businessId,
+        },
+        relations: {
+          business: true,
+          tags: {
+            tag: true,
+          },
+        },
       })
       .then((e) => {
         return this.mapTo(LocationResponseDto, e);
@@ -147,13 +173,27 @@ export class LocationQueryService
         'addressLevel1',
         'addressLevel2',
       ],
+      relations: {
+        business: true,
+        tags: {
+          tag: true,
+        },
+      },
     }).then((res) => this.mapToPaginated(LocationResponseDto, res));
   }
 
   getAnyLocationById(dto: GetAnyLocationByIdDto): Promise<LocationResponseDto> {
     const repo = LocationRepositoryProvider(this.dataSource);
     return repo
-      .findOneByOrFail({ id: dto.locationId })
+      .findOneOrFail({
+        where: { id: dto.locationId },
+        relations: {
+          business: true,
+          tags: {
+            tag: true,
+          },
+        },
+      })
       .then((location) => this.mapTo(LocationResponseDto, location));
   }
 }

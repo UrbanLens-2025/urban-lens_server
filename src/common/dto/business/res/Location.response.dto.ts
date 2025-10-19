@@ -1,6 +1,7 @@
 import { Exclude, Expose, Type } from 'class-transformer';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
+import { LocationTagsResponseDto } from '@/common/dto/business/res/LocationTags.response.dto';
 
 @Exclude()
 export class LocationResponseDto {
@@ -49,4 +50,8 @@ export class LocationResponseDto {
   @Expose()
   @Type(() => BusinessResponseDto)
   business: BusinessResponseDto;
+
+  @Expose()
+  @Type(() => LocationTagsResponseDto)
+  tags: LocationTagsResponseDto[];
 }

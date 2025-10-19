@@ -28,6 +28,7 @@ import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/Locati
 import { GetMyLocationRequestByIdDto } from '@/common/dto/business/GetMyLocationRequestById.dto';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
+import { LocationTagsRepository } from '@/modules/business/infra/repository/LocationTags.repository';
 
 @Injectable()
 export class LocationRequestManagementService
@@ -325,6 +326,8 @@ export class LocationRequestManagementService
     locationRequest: LocationRequestEntity,
   ) {
     const locationRepository = LocationRepositoryProvider(em);
+    const locationRequestTagsRepository = LocationRequestTagsRepository(em);
+    const locationTagsRepository = LocationTagsRepository(em);
 
     const location = new LocationEntity();
     location.name = locationRequest.name;
@@ -339,6 +342,21 @@ export class LocationRequestManagementService
     location.sourceLocationRequestId = locationRequest.id;
     location.isVisibleOnMap = false; // default not visible. User must update to make it visible
 
-    return locationRepository.save(location);
+    return locationRepository.save(location).then(async (savedLocation) => {
+      const locationRequestTags = await locationRequestTagsRepository.find({
+        where: {
+          locationRequestId: locationRequest.id,
+        },
+      });
+
+      savedLocation.locationTags = await locationTagsRepository.persistEntities(
+        {
+          tagIds: locationRequestTags.map((t) => t.id),
+          locationId: savedLocation.id,
+        },
+      );
+
+      return savedLocation;
+    });
   }
 }
