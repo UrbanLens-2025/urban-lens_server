@@ -37,7 +37,6 @@ export class CheckInService implements ICheckInService {
     const location = await this.locationRepository.repo.findOne({
       where: {
         id: createCheckInDto.locationId,
-        status: LocationRequestStatus.APPROVED,
       },
       relations: ['business'],
     });

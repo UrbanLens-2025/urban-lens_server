@@ -1,5 +1,7 @@
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
@@ -14,8 +16,10 @@ import {
 import { CheckInEntity } from './CheckIn.entity';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 
-@Entity('locations')
+@Entity({ name: LocationEntity.TABLE_NAME })
 export class LocationEntity {
+  public static readonly TABLE_NAME = 'locations';
+
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -69,7 +73,7 @@ export class LocationEntity {
     nullable: true,
   })
   @Index({ spatial: true })
-  geom: string;
+  geom: string | (() => string);
 
   @OneToOne(
     () => LocationRequestEntity,
@@ -87,4 +91,14 @@ export class LocationEntity {
 
   @OneToMany(() => CheckInEntity, (checkIn) => checkIn.location)
   checkIns: CheckInEntity[];
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  setGeom() {
+    if (this.latitude && this.longitude) {
+      // i have to add the function wrapper so typeorm executes the postgis functions on db side
+      this.geom = () =>
+        `ST_SetSRID(ST_MakePoint(${this.longitude}, ${this.latitude}), 4326)::geography`;
+    }
+  }
 }

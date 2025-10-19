@@ -13,7 +13,6 @@ import { LocationRequestBusinessController } from '@/modules/business/interfaces
 import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
 import { LocationRequestManagementService } from '@/modules/business/app/impl/LocationRequestManagement.service';
 import { LocationRequestAdminController } from '@/modules/business/interfaces/LocationRequest.admin.controller';
-import { LocationRequestApprovedListener } from '@/modules/business/app/listeners/LocationRequestApproved.listener';
 import { LocationV2Service } from '@/modules/business/app/impl/LocationV2.service';
 import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
 import { LocationQueryService } from '@/modules/business/app/impl/LocationQuery.service';
@@ -45,7 +44,6 @@ import { LocationQueryService } from '@/modules/business/app/impl/LocationQuery.
       provide: ILocationQueryService,
       useClass: LocationQueryService,
     },
-    LocationRequestApprovedListener,
   ],
   exports: [BusinessInfraModule],
 })

@@ -7,7 +7,7 @@ import { LocationRequestRepository } from '@/modules/business/infra/repository/L
 import { BusinessRepositoryProvider } from '@/modules/account/infra/repository/Business.repository';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
-import { DeleteResult, In, UpdateResult } from 'typeorm';
+import { DeleteResult, EntityManager, In, UpdateResult } from 'typeorm';
 import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
 import { CancelLocationRequestDto } from '@/common/dto/business/CancelLocationRequest.dto';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
@@ -26,6 +26,8 @@ import { AddLocationRequestTagsDto } from '@/common/dto/business/AddLocationRequ
 import { DeleteLocationRequestTagDto } from '@/common/dto/business/DeleteLocationRequestTag.dto';
 import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/LocationRequestTags.response.dto';
 import { GetMyLocationRequestByIdDto } from '@/common/dto/business/GetMyLocationRequestById.dto';
+import { LocationEntity } from '@/modules/business/domain/Location.entity';
+import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 
 @Injectable()
 export class LocationRequestManagementService
@@ -276,34 +278,70 @@ export class LocationRequestManagementService
       locationRequest.status = dto.status;
       locationRequest.adminNotes = dto.adminNotes || null;
 
-      return locationRequestRepository
-        .update(
-          {
-            id: dto.locationRequestId,
-          },
-          locationRequest,
-        )
-        .then((res) => {
-          switch (dto.status) {
-            case LocationRequestStatus.APPROVED:
-              this.eventEmitter.emit(LOCATION_REQUEST_APPROVED_EVENT, {
+      return (
+        locationRequestRepository
+          // update location request
+          .update(
+            {
+              id: dto.locationRequestId,
+            },
+            locationRequest,
+          )
+          // if approved, convert to location
+          .then(async (res) => {
+            if (dto.status === LocationRequestStatus.APPROVED) {
+              const _location = await this.convertLocationRequestToLocation(
+                em,
                 locationRequest,
-              } satisfies LocationRequestApprovedEvent);
-              break;
-            case LocationRequestStatus.REJECTED:
-              this.eventEmitter.emit(LOCATION_REQUEST_REJECTED_EVENT, {
-                locationRequest,
-              } satisfies LocationRequestApprovedEvent);
-              break;
-            case LocationRequestStatus.NEEDS_MORE_INFO:
-              this.eventEmitter.emit(LOCATION_REQUEST_NEEDS_MORE_INFO_EVENT, {
-                locationRequest,
-              } satisfies LocationRequestApprovedEvent);
-              break;
-          }
+              );
+            }
+            return res;
+          })
+          // fire events
+          .then((res) => {
+            switch (dto.status) {
+              case LocationRequestStatus.APPROVED:
+                this.eventEmitter.emit(LOCATION_REQUEST_APPROVED_EVENT, {
+                  locationRequest,
+                } satisfies LocationRequestApprovedEvent);
+                break;
+              case LocationRequestStatus.REJECTED:
+                this.eventEmitter.emit(LOCATION_REQUEST_REJECTED_EVENT, {
+                  locationRequest,
+                } satisfies LocationRequestApprovedEvent);
+                break;
+              case LocationRequestStatus.NEEDS_MORE_INFO:
+                this.eventEmitter.emit(LOCATION_REQUEST_NEEDS_MORE_INFO_EVENT, {
+                  locationRequest,
+                } satisfies LocationRequestApprovedEvent);
+                break;
+            }
 
-          return res;
-        });
+            return res;
+          })
+      );
     });
+  }
+
+  private async convertLocationRequestToLocation(
+    em: EntityManager,
+    locationRequest: LocationRequestEntity,
+  ) {
+    const locationRepository = LocationRepositoryProvider(em);
+
+    const location = new LocationEntity();
+    location.name = locationRequest.name;
+    location.description = locationRequest.description;
+    location.addressLine = locationRequest.addressLine;
+    location.addressLevel1 = locationRequest.addressLevel1;
+    location.addressLevel2 = locationRequest.addressLevel2;
+    location.latitude = locationRequest.latitude;
+    location.longitude = locationRequest.longitude;
+    location.imageUrl = locationRequest.locationImageUrls;
+    location.businessId = locationRequest.createdById;
+    location.sourceLocationRequestId = locationRequest.id;
+    location.isVisibleOnMap = false; // default not visible. User must update to make it visible
+
+    return locationRepository.save(location);
   }
 }
