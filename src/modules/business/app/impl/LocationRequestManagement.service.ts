@@ -1,7 +1,7 @@
 import { CoreService } from '@/common/core/Core.service';
 import { CreateLocationRequestDto } from '@/common/dto/business/CreateLocationRequest.dto';
 import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { LocationRequestResponseDto } from '@/common/dto/business/res/LocationRequest.response.dto';
 import { LocationRequestRepository } from '@/modules/business/infra/repository/LocationRequest.repository';
 import { BusinessRepositoryProvider } from '@/modules/account/infra/repository/Business.repository';
@@ -29,13 +29,18 @@ import { GetMyLocationRequestByIdDto } from '@/common/dto/business/GetMyLocation
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { LocationTagsRepository } from '@/modules/business/infra/repository/LocationTags.repository';
+import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 
 @Injectable()
 export class LocationRequestManagementService
   extends CoreService
   implements ILocationRequestManagementService
 {
-  constructor(private readonly eventEmitter: EventEmitter2) {
+  constructor(
+    private readonly eventEmitter: EventEmitter2,
+    @Inject(IFileStorageService)
+    private readonly fileStorageService: IFileStorageService,
+  ) {
     super();
   }
   createLocationRequest(
@@ -66,6 +71,12 @@ export class LocationRequestManagementService
           'One or more provided tags are invalid/not selectable',
         );
       }
+
+      // confirm image uploads
+      await this.fileStorageService.confirmUpload([
+        ...dto.locationImageUrls,
+        ...dto.locationValidationDocuments.flatMap((d) => d.documentImageUrls),
+      ]);
 
       const locationRequest = this.mapTo_Raw(LocationRequestEntity, dto);
       // TODO add automatic location validation process here
@@ -149,6 +160,13 @@ export class LocationRequestManagementService
           'This location request cannot be updated',
         );
       }
+
+      await this.fileStorageService.confirmUpload([
+        ...(dto.locationImageUrls ?? []),
+        ...(dto.locationValidationDocuments?.flatMap(
+          (d) => d.documentImageUrls,
+        ) ?? []),
+      ]);
 
       const updatedLocationRequest = this.mapTo_safe(
         LocationRequestEntity,

@@ -18,9 +18,15 @@ import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.ser
 import { LocationQueryService } from '@/modules/business/app/impl/LocationQuery.service';
 import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
 import { LocationManagementService } from '@/modules/business/app/impl/LocationManagement.service';
+import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 
 @Module({
-  imports: [BusinessInfraModule, AccountInfraModule, TokenModule],
+  imports: [
+    BusinessInfraModule,
+    AccountInfraModule,
+    TokenModule,
+    FileStorageModule,
+  ],
   controllers: [
     LocationRequestBusinessController,
     LocationRequestAdminController,
