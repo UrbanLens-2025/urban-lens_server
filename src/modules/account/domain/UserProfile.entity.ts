@@ -15,7 +15,7 @@ export class UserProfileEntity {
   @PrimaryColumn({ name: 'account_id', type: 'uuid' })
   accountId: string;
 
-  @OneToOne(() => AccountEntity, (account) => account.profile, {
+  @OneToOne(() => AccountEntity, (account) => account.userProfile, {
     createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'account_id' })

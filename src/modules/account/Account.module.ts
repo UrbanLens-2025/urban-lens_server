@@ -24,6 +24,8 @@ import { FollowUserController } from './interfaces/Follow.user.controller';
 import { TokenModule } from '@/common/core/token/token.module';
 import { IAccountProfileService } from '@/modules/account/app/IAccountProfile.service';
 import { AccountProfileService } from '@/modules/account/app/impl/AccountProfile.service';
+import { IAccountQueryService } from '@/modules/account/app/IAccountQuery.service';
+import { AccountQueryService } from '@/modules/account/app/impl/AccountQuery.service';
 
 @Module({
   imports: [
@@ -47,6 +49,10 @@ import { AccountProfileService } from '@/modules/account/app/impl/AccountProfile
     {
       provide: IAccountUserService,
       useClass: AccountUserService,
+    },
+    {
+      provide: IAccountQueryService,
+      useClass: AccountQueryService,
     },
     {
       provide: ITagService,

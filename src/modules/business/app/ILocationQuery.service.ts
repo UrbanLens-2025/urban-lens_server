@@ -25,6 +25,10 @@ export interface ILocationQueryService {
     dto: GetVisibleLocationsByBusinessIdDto,
   ): Promise<LocationResponseDto[]>;
 
+  searchVisibleLocations(
+    query: PaginateQuery,
+  ): Promise<Paginated<LocationResponseDto>>;
+
   // my locations
   getMyCheckedInLocations(
     dto: GetMyCheckedInLocationsDto,
