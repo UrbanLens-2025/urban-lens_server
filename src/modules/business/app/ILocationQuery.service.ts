@@ -7,6 +7,7 @@ import { GetMyCheckedInLocationsDto } from '@/common/dto/business/GetMyCheckedIn
 import { GetMyCreatedLocationsDto } from '@/common/dto/business/GetMyCreatedLocations.dto';
 import { GetVisibleLocationsByBusinessIdDto } from '@/common/dto/business/GetVisibleLocationsByBusinessId.dto';
 import { GetMyCreatedLocationByIdDto } from '@/common/dto/business/GetMyCreatedLocationById.dto';
+import { LocationWithDistanceResponseDto } from '@/common/dto/business/stub/LocationWithDistance.response.dto';
 
 export const ILocationQueryService = Symbol('ILocationQueryService');
 
@@ -14,7 +15,7 @@ export interface ILocationQueryService {
   // public locations
   getNearbyVisibleLocationsByCoordinates(
     dto: GetNearbyVisibleLocationsByCoordinatesDto,
-  ): Promise<LocationResponseDto[]>;
+  ): Promise<LocationWithDistanceResponseDto[]>;
 
   getVisibleLocationById(
     dto: GetVisibleLocationByIdDto,
@@ -27,12 +28,12 @@ export interface ILocationQueryService {
   // my locations
   getMyCheckedInLocations(
     dto: GetMyCheckedInLocationsDto,
-  ): Promise<LocationResponseDto>;
+  ): Promise<Paginated<LocationResponseDto>>;
 
   // business locations
   getMyCreatedLocations(
     dto: GetMyCreatedLocationsDto,
-  ): Promise<LocationResponseDto[]>;
+  ): Promise<Paginated<LocationResponseDto>>;
 
   getMyCreatedLocationById(
     dto: GetMyCreatedLocationByIdDto,

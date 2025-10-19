@@ -92,6 +92,12 @@ export class LocationEntity {
   @OneToMany(() => CheckInEntity, (checkIn) => checkIn.location)
   checkIns: CheckInEntity[];
 
+  //#region TRANSIENT FIELDS - Do NOT add @Column to these
+
+  distanceMeters?: number;
+
+  //#endregion
+
   @BeforeInsert()
   @BeforeUpdate()
   setGeom() {

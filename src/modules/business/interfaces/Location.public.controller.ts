@@ -1,8 +1,16 @@
-import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseFloatPipe,
+  ParseIntPipe,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
-import { WithPagination } from '@/common/WithPagination.decorator';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import { AuthUser } from '@/common/AuthUser.decorator';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
 @ApiTags('Location')
 @Controller('/public/locations')
@@ -12,19 +20,29 @@ export class LocationPublicController {
     private locationQueryService: ILocationQueryService,
   ) {}
 
-  @ApiOperation({ summary: 'Get all locations in database' })
-  @WithPagination()
-  @Get()
-  async getAllLocations(@Paginate() query: PaginateQuery) {
-    return this.locationQueryService.searchAnyLocation(query);
+  @ApiOperation({
+    summary: 'Get nearby visible locations by coordinates',
+  })
+  @Get('/nearby/:latitude/:longitude/:radiusMeters')
+  getNearbyVisibleLocationsByCoordinates(
+    @AuthUser() userDto: JwtTokenDto, // for future recommendations based on user preferences
+    @Param('latitude', ParseFloatPipe) latitude: number,
+    @Param('longitude', ParseFloatPipe) longitude: number,
+    @Param('radiusMeters', ParseIntPipe) radiusMeters: number,
+  ) {
+    return this.locationQueryService.getNearbyVisibleLocationsByCoordinates({
+      latitude,
+      longitude,
+      radiusMeters,
+    });
   }
 
-  @ApiOperation({ summary: 'Get any location by ID' })
+  @ApiOperation({ summary: 'Get visible location by ID' })
   @Get('/:locationId')
-  async getLocationById(
+  getVisibleLocationById(
     @Param('locationId', ParseUUIDPipe) locationId: string,
   ) {
-    return this.locationQueryService.getAnyLocationById({
+    return this.locationQueryService.getVisibleLocationById({
       locationId,
     });
   }

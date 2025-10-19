@@ -7,7 +7,7 @@ import { ICheckInService } from './app/ICheckIn.service';
 import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
 import { TokenModule } from '@/common/core/token/token.module';
 import { LocationPublicController } from './interfaces/Location.public.controller';
-import { LocationBusinessController } from './interfaces/Location.business.controller';
+import { LocationOwnerController } from './interfaces/Location.owner.controller';
 import { LocationAdminController } from './interfaces/Location.admin.controller';
 import { LocationRequestBusinessController } from '@/modules/business/interfaces/LocationRequest.business.controller';
 import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
@@ -24,7 +24,7 @@ import { LocationQueryService } from '@/modules/business/app/impl/LocationQuery.
     LocationRequestAdminController,
     LocationUserController,
     LocationPublicController,
-    LocationBusinessController,
+    LocationOwnerController,
     LocationAdminController,
   ],
   providers: [

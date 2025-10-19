@@ -109,4 +109,7 @@ export class LocationRequestEntity {
     const processableStatuses = [LocationRequestStatus.AWAITING_ADMIN_REVIEW];
     return processableStatuses.includes(this.status);
   }
+
+  // transient fields
+  distanceMeters?: number;
 }

@@ -1,8 +1,7 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { CreateCheckInDto } from '@/common/dto/checkin/CreateCheckIn.dto';
 import { GetCheckInsQueryDto } from '@/common/dto/checkin/GetCheckInsQuery.dto';
@@ -11,9 +10,7 @@ import { ICheckInService } from '../ICheckIn.service';
 import { CheckInRepository } from '../../infra/repository/CheckIn.repository';
 import { LocationRepository } from '../../infra/repository/Location.repository';
 import { UserProfileRepository } from '@/modules/account/infra/repository/UserProfile.repository';
-import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { PaginationResult } from '@/common/services/base.service';
-import { IsNull } from 'typeorm';
 
 @Injectable()
 export class CheckInService implements ICheckInService {

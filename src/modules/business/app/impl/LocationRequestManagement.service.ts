@@ -290,7 +290,7 @@ export class LocationRequestManagementService
           // if approved, convert to location
           .then(async (res) => {
             if (dto.status === LocationRequestStatus.APPROVED) {
-              const _location = await this.convertLocationRequestToLocation(
+              await this.convertLocationRequestToLocation(
                 em,
                 locationRequest,
               );

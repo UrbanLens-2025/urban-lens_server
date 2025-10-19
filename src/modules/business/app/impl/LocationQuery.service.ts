@@ -11,6 +11,8 @@ import { PaginateQuery, Paginated, paginate } from 'nestjs-paginate';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { GetVisibleLocationsByBusinessIdDto } from '@/common/dto/business/GetVisibleLocationsByBusinessId.dto';
 import { GetMyCreatedLocationByIdDto } from '@/common/dto/business/GetMyCreatedLocationById.dto';
+import { LocationWithDistanceResponseDto } from '@/common/dto/business/stub/LocationWithDistance.response.dto';
+import { CheckInRepositoryProvider } from '@/modules/business/infra/repository/CheckIn.repository';
 
 @Injectable()
 export class LocationQueryService
@@ -19,8 +21,26 @@ export class LocationQueryService
 {
   getNearbyVisibleLocationsByCoordinates(
     dto: GetNearbyVisibleLocationsByCoordinatesDto,
-  ): Promise<LocationResponseDto[]> {
-    throw new Error('Method not implemented.');
+  ): Promise<LocationWithDistanceResponseDto[]> {
+    const locationRepository = LocationRepositoryProvider(this.dataSource);
+    return locationRepository
+      .findNearbyLocations(
+        {
+          latitude: dto.latitude,
+          longitude: dto.longitude,
+          radiusInMeters: dto.radiusMeters,
+        },
+        {
+          where: {
+            isVisibleOnMap: true,
+          },
+          relations: ['business'],
+        },
+      )
+      .then((locations) => {
+        console.log(locations);
+        return this.mapToArray(LocationWithDistanceResponseDto, locations);
+      });
   }
 
   getVisibleLocationById(
@@ -33,6 +53,7 @@ export class LocationQueryService
           id: dto.locationId,
           isVisibleOnMap: true,
         },
+        relations: ['business'],
       })
       .then((e) => this.mapTo(LocationResponseDto, e));
   }
@@ -53,21 +74,48 @@ export class LocationQueryService
 
   getMyCheckedInLocations(
     dto: GetMyCheckedInLocationsDto,
-  ): Promise<LocationResponseDto> {
-    throw new Error('Method not implemented.');
+  ): Promise<Paginated<LocationResponseDto>> {
+    const checkInRepository = CheckInRepositoryProvider(this.dataSource);
+    return paginate(dto.query, checkInRepository, {
+      sortableColumns: ['checkInTime'],
+      defaultSortBy: [['checkInTime', 'DESC']],
+      where: {
+        userProfileId: dto.accountId,
+      },
+      relations: ['location'],
+    }).then(
+      (e) =>
+        ({
+          ...e,
+          data: this.mapToArray(
+            LocationResponseDto,
+            e.data.map((checkIn) => checkIn.location),
+          ),
+        }) as Paginated<LocationResponseDto>,
+    );
   }
 
   getMyCreatedLocations(
     dto: GetMyCreatedLocationsDto,
-  ): Promise<LocationResponseDto[]> {
+  ): Promise<Paginated<LocationResponseDto>> {
     const locationRepository = LocationRepositoryProvider(this.dataSource);
-    return locationRepository
-      .find({
-        where: {
-          businessId: dto.businessId,
-        },
-      })
-      .then((e) => this.mapToArray(LocationResponseDto, e));
+
+    return paginate(dto.query, locationRepository, {
+      sortableColumns: ['createdAt', 'updatedAt', 'name'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      searchableColumns: [
+        'name',
+        'description',
+        'latitude',
+        'longitude',
+        'addressLine',
+        'addressLevel1',
+        'addressLevel2',
+      ],
+      where: {
+        businessId: dto.businessId,
+      },
+    }).then((e) => this.mapToPaginated(LocationResponseDto, e));
   }
 
   getMyCreatedLocationById(
