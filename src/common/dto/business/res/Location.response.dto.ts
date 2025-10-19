@@ -45,6 +45,9 @@ export class LocationResponseDto {
   updatedAt: Date;
 
   @Expose()
+  isVisibleOnMap: boolean;
+
+  @Expose()
   businessId: string;
 
   @Expose()

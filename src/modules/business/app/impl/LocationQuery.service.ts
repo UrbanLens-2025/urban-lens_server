@@ -34,7 +34,7 @@ export class LocationQueryService
           where: {
             isVisibleOnMap: true,
           },
-          relations: ['business', 'tags', 'tags.tag'],
+          relations: ['business'],
         },
       )
       .then((locations) => {
