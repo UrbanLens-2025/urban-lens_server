@@ -67,7 +67,7 @@ export class ReportService implements IReportService {
         });
         break;
       default:
-        throw new BadRequestException(`Invalid entity type: ${entityType}`);
+        throw new BadRequestException(`Invalid entity type`);
     }
 
     if (!exists) {
@@ -111,6 +111,7 @@ export class ReportService implements IReportService {
     const enrichedData = await Promise.all(
       data.map(async (report) => ({
         ...report,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         entity: await this.getEntityInfo(report.entityType, report.entityId),
       })),
     );
@@ -166,6 +167,7 @@ export class ReportService implements IReportService {
     const enrichedData = await Promise.all(
       data.map(async (report) => ({
         ...report,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         entity: await this.getEntityInfo(report.entityType, report.entityId),
       })),
     );
@@ -213,6 +215,7 @@ export class ReportService implements IReportService {
     const enrichedData = await Promise.all(
       data.map(async (report) => ({
         ...report,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         entity: await this.getEntityInfo(report.entityType, report.entityId),
       })),
     );
@@ -267,7 +270,7 @@ export class ReportService implements IReportService {
     try {
       switch (entityType) {
         case ReportEntityType.POST:
-          const post = await this.dataSource.getRepository(PostEntity).findOne({
+          { const post = await this.dataSource.getRepository(PostEntity).findOne({
             where: { postId: entityId },
             relations: ['author'],
             select: {
@@ -286,10 +289,10 @@ export class ReportService implements IReportService {
               },
             },
           });
-          return post;
+          return post; }
 
         case ReportEntityType.EVENT:
-          const event = await this.dataSource
+          { const event = await this.dataSource
             .getRepository(EventEntity)
             .findOne({
               where: { id: entityId },
@@ -313,10 +316,10 @@ export class ReportService implements IReportService {
                 },
               },
             });
-          return event;
+          return event; }
 
         case ReportEntityType.LOCATION:
-          const location = await this.dataSource
+          { const location = await this.dataSource
             .getRepository(LocationEntity)
             .findOne({
               where: { id: entityId },
@@ -325,13 +328,12 @@ export class ReportService implements IReportService {
                 id: true,
                 name: true,
                 description: true,
-                address: true,
-                city: true,
-                state: true,
+                addressLine: true,
+                addressLevel1: true,
+                addressLevel2: true,
                 latitude: true,
                 longitude: true,
                 imageUrl: true,
-                status: true,
                 createdAt: true,
                 businessId: true,
                 business: {
@@ -349,10 +351,10 @@ export class ReportService implements IReportService {
                 },
               },
             });
-          return location;
+          return location; }
 
         case ReportEntityType.BUSINESS:
-          const business = await this.dataSource
+          { const business = await this.dataSource
             .getRepository(BusinessEntity)
             .findOne({
               where: { accountId: entityId },
@@ -378,10 +380,10 @@ export class ReportService implements IReportService {
                 },
               },
             });
-          return business;
+          return business; }
 
         case ReportEntityType.REVIEW:
-          const review = await this.dataSource
+          { const review = await this.dataSource
             .getRepository(ReviewEntity)
             .findOne({
               where: { id: entityId },
@@ -409,7 +411,7 @@ export class ReportService implements IReportService {
               });
             return { ...review, author };
           }
-          return review;
+          return review; }
 
         default:
           return null;
