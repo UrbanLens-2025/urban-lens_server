@@ -82,7 +82,7 @@ export class UpdateLocationRequestDto {
 
   @ApiPropertyOptional({
     isArray: true,
-    type: [LocationValidationDocumentsDto],
+    type: LocationValidationDocumentsDto,
   })
   @IsOptional()
   @ValidateNested({ each: true })

@@ -77,7 +77,7 @@ export class CreateLocationRequestDto {
 
   @ApiProperty({
     isArray: true,
-    type: [LocationValidationDocumentsDto],
+    type: LocationValidationDocumentsDto,
   })
   @ValidateNested({ each: true })
   @IsArray()
