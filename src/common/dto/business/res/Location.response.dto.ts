@@ -20,13 +20,13 @@ export class LocationResponseDto {
   @Expose()
   longitude: number;
 
-  @Expose({ name: 'address_line' })
+  @Expose()
   addressLine: string;
 
-  @Expose({ name: 'address_level_1' })
+  @Expose()
   addressLevel1: string;
 
-  @Expose({ name: 'address_level_2' })
+  @Expose()
   addressLevel2: string;
 
   @Expose()
