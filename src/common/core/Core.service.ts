@@ -102,4 +102,12 @@ export class CoreService {
       return this.dataSource.transaction(fn);
     }
   }
+
+  /**
+   * Not null and not undefined check
+   * @param value Value to check
+   */
+  isDefined<T>(value: T | null | undefined): value is T {
+    return value !== undefined && value !== null;
+  }
 }

@@ -71,6 +71,31 @@ export const LocationRepositoryProvider = (ctx: DataSource | EntityManager) =>
         return entity;
       });
     },
+
+    calculateDistanceTo(
+      this: Repository<LocationEntity>,
+      payload: {
+        locationId: string;
+        dest: {
+          latitude: number;
+          longitude: number;
+        };
+      },
+    ) {
+      return this.createQueryBuilder('l')
+        .addSelect(
+          'ST_Distance(geom, ST_MakePoint(:lon, :lat)::geography) AS "distanceMeters"',
+        )
+        .where('l.id = :locationId', { locationId: payload.locationId })
+        .setParameters({
+          lat: payload.dest.latitude,
+          lon: payload.dest.longitude,
+        })
+        .getRawOne<{ distanceMeters: string | number }>()
+        .then((row) => {
+          return row !== undefined ? Number(row.distanceMeters) : undefined;
+        });
+    },
   });
 
 export type LocationRepositoryProvider = ReturnType<

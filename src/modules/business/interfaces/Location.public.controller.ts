@@ -6,6 +6,7 @@ import {
   ParseFloatPipe,
   ParseIntPipe,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
@@ -50,9 +51,13 @@ export class LocationPublicController {
   @Get('/:locationId')
   getVisibleLocationById(
     @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Query('latitude', ParseFloatPipe) latitude?: number,
+    @Query('longitude', ParseFloatPipe) longitude?: number,
   ) {
     return this.locationQueryService.getVisibleLocationById({
       locationId,
+      currentLatitude: latitude,
+      currentLongitude: longitude,
     });
   }
 }

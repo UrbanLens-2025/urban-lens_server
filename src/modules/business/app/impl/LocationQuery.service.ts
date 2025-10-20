@@ -44,7 +44,7 @@ export class LocationQueryService
 
   getVisibleLocationById(
     dto: GetVisibleLocationByIdDto,
-  ): Promise<LocationResponseDto> {
+  ): Promise<LocationWithDistanceResponseDto> {
     const locationRepository = LocationRepositoryProvider(this.dataSource);
     return locationRepository
       .findOneOrFail({
@@ -59,7 +59,22 @@ export class LocationQueryService
           },
         },
       })
-      .then((e) => this.mapTo(LocationResponseDto, e));
+      .then(async (e) => {
+        const res = this.mapTo(LocationWithDistanceResponseDto, e);
+        if (
+          this.isDefined(dto.currentLatitude) &&
+          this.isDefined(dto.currentLongitude)
+        ) {
+          res.distanceMeters = await locationRepository.calculateDistanceTo({
+            locationId: e.id,
+            dest: {
+              latitude: dto.currentLatitude,
+              longitude: dto.currentLongitude,
+            },
+          });
+        }
+        return res;
+      });
   }
 
   getVisibleLocationsByBusinessId(

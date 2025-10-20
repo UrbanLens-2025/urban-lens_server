@@ -19,7 +19,7 @@ export interface ILocationQueryService {
 
   getVisibleLocationById(
     dto: GetVisibleLocationByIdDto,
-  ): Promise<LocationResponseDto>;
+  ): Promise<LocationWithDistanceResponseDto>;
 
   getVisibleLocationsByBusinessId(
     dto: GetVisibleLocationsByBusinessIdDto,
