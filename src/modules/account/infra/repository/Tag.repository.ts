@@ -17,7 +17,7 @@ export const TagRepositoryProvider = (ctx: DataSource | EntityManager) =>
       tagIds?: number[] | null,
     ) {
       if (!tagIds || tagIds.length === 0) {
-        return Promise.resolve(true);
+        return Promise.resolve(0);
       }
 
       return this.createQueryBuilder('tag')
