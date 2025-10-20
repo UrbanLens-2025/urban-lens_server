@@ -27,13 +27,4 @@ export class UpdateBusinessStatusDto {
   @IsString()
   @IsOptional()
   adminNotes?: string;
-
-  @ApiPropertyOptional({
-    description: 'Optional admin notes for approved status',
-    example: 'All documents verified successfully',
-  })
-  @ValidateIf((o) => o.status === BusinessRequestStatus.APPROVED)
-  @IsOptional()
-  @IsString()
-  adminNotesOptional?: string;
 }

@@ -151,8 +151,7 @@ export class BusinessService implements IBusinessService {
 
     // Update business status and admin info
     business.status = updateStatusDto.status;
-    business.adminNotes =
-      updateStatusDto.adminNotes || updateStatusDto.adminNotesOptional || null;
+    business.adminNotes = updateStatusDto.adminNotes ?? null;
 
     // Save updated business
     const updatedBusiness = await this.businessRepository.repo.save(business);

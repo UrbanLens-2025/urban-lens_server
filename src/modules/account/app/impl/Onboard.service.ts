@@ -3,7 +3,7 @@ import { CoreService } from '@/common/core/Core.service';
 import { IOnboardService } from '@/modules/account/app/IOnboard.service';
 import { OnboardCreatorDto } from '@/common/dto/account/OnboardCreator.dto';
 import { OnboardUserDto } from '@/common/dto/account/OnboardUser.dto';
-import { In, UpdateResult } from 'typeorm';
+import { In, MoreThan, UpdateResult } from 'typeorm';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import { TagEntity } from '@/modules/account/domain/Tag.entity';
@@ -57,10 +57,14 @@ export class OnboardService extends CoreService implements IOnboardService {
         );
       }
 
+      console.log('11111');
       // Get the lowest rank (smallest minPoints)
       const lowestRank = await manager.getRepository(RankEntity).findOne({
+        where: { minPoints: MoreThan(0) },
         order: { minPoints: 'ASC' },
       });
+
+      console.log('22222');
 
       if (!lowestRank) {
         throw new BadRequestException(

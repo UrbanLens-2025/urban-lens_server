@@ -21,6 +21,10 @@ export class PostCreatedListener {
 
   @OnEvent(POST_CREATED_EVENT)
   async handleEvent(event: PostCreatedEvent) {
+    this.logger.debug(
+      `📨 Received POST_CREATED_EVENT - PostId: ${event.postId}, AuthorId: ${event.authorId}, Type: ${event.postType}`,
+    );
+
     try {
       // Determine reward type based on post type
       let rewardType: RewardPointType;
@@ -30,19 +34,26 @@ export class PostCreatedListener {
       } else if (event.postType === PostType.REVIEW) {
         rewardType = RewardPointType.CREATE_REVIEW;
       } else {
-        this.logger.warn(`Unknown post type: ${event.postType}`);
+        this.logger.warn(`❌ Unknown post type: ${event.postType}`);
         return;
       }
 
-      // Get reward points for this action
+      this.logger.debug(`🔍 Looking for reward point type: ${rewardType}`);
+
       const rewardPoint = await this.rewardPointRepository.repo.findOne({
         where: { type: rewardType },
       });
 
       if (!rewardPoint) {
-        this.logger.warn(`No reward point found for type: ${rewardType}`);
+        this.logger.warn(
+          `⚠️ No reward point found for type: ${rewardType}. Please create it via POST /reward-point`,
+        );
         return;
       }
+
+      this.logger.debug(
+        `💰 Found reward point: ${rewardPoint.points} points for ${rewardType}`,
+      );
 
       // Add points to user
       await this.userPointsService.addPoints(
@@ -51,11 +62,11 @@ export class PostCreatedListener {
       );
 
       this.logger.log(
-        `Awarded ${rewardPoint.points} points to user ${event.authorId} for ${rewardType}`,
+        `✅ Awarded ${rewardPoint.points} points to user ${event.authorId} for ${rewardType}`,
       );
     } catch (error) {
       this.logger.error(
-        `Error handling post created event: ${error.message}`,
+        `❌ Error handling post created event: ${error.message}`,
         error.stack,
       );
     }

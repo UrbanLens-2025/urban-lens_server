@@ -1046,6 +1046,58 @@ export class PostService
     }
   }
 
+  async getPostsByLocation(
+    locationId: string,
+    params: PaginationParams = {},
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>> {
+    try {
+      const { page, limit, skip } = this.normalizePaginationParams(params);
+
+      // Build posts query
+      const postsQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin(
+          'analytic',
+          'analytic',
+          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
+          { analyticType: AnalyticEntityType.POST },
+        )
+        .leftJoin('locations', 'location', 'location.id = post.location_id')
+        .where('post.location_id = :locationId', { locationId })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false })
+        .select(this.getPostSelectFields())
+        .orderBy('post.created_at', 'DESC')
+        .offset(skip)
+        .limit(limit);
+
+      // Build count query
+      const countQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .where('post.location_id = :locationId', { locationId })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
+
+      const [posts, total] = await Promise.all([
+        postsQuery.getRawMany(),
+        countQuery.getCount(),
+      ]);
+
+      const processedPosts = await this.processPostsWithReactions(
+        posts,
+        currentUserId,
+      );
+
+      return {
+        data: processedPosts,
+        meta: this.buildPaginationMeta(page, limit, total),
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
   async updatePostVisibility(postId: string, isHidden: boolean): Promise<any> {
     try {
       const post = await this.postRepository.repo.findOne({

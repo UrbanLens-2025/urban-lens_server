@@ -76,6 +76,21 @@ export class PostPublicController {
     );
   }
 
+  @ApiOperation({
+    summary: 'Get all posts related to a location',
+    description:
+      'Get all posts (blogs and reviews) that are associated with a specific location',
+  })
+  @Get('location/:locationId')
+  @WithPagination()
+  getPostsByLocation(
+    @Param('locationId') locationId: string,
+    @Query() query: PaginationParams,
+    @AuthUser() user?: JwtTokenDto,
+  ) {
+    return this.postService.getPostsByLocation(locationId, query, user?.sub);
+  }
+
   @ApiOperation({ summary: 'Get a post by id' })
   @Get(':postId')
   getPostById(@Param('postId') postId: string, @AuthUser() user?: JwtTokenDto) {

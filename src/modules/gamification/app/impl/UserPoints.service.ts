@@ -15,6 +15,10 @@ export class UserPointsService implements IUserPointsService {
   ) {}
 
   async addPoints(userId: string, points: number): Promise<void> {
+    this.logger.debug(
+      `🎯 Attempting to add ${points} points to user ${userId}`,
+    );
+
     await this.dataSource.transaction(async (manager) => {
       const userProfileRepo = manager.getRepository(
         this.userProfileRepository.repo.target,
@@ -25,20 +29,36 @@ export class UserPointsService implements IUserPointsService {
       });
 
       if (!userProfile) {
-        this.logger.warn(`User profile not found for userId: ${userId}`);
+        this.logger.warn(
+          `⚠️ User profile not found for userId: ${userId}. User may not have onboarded yet.`,
+        );
         return;
       }
 
+      this.logger.debug(
+        `✓ Found user profile. Current points: ${userProfile.points}`,
+      );
+
       // Update points
+      const oldPoints = userProfile.points;
       userProfile.points += points;
+
+      this.logger.debug(
+        `💾 Saving user profile with new points: ${oldPoints} + ${points} = ${userProfile.points}`,
+      );
+
       await userProfileRepo.save(userProfile);
 
       this.logger.log(
-        `Added ${points} points to user ${userId}. New total: ${userProfile.points}`,
+        `✅ Added ${points} points to user ${userId}. Total: ${oldPoints} → ${userProfile.points}`,
       );
 
-      // Update rank if necessary
-      await this.updateUserRank(userId);
+      // Update rank if necessary (within same transaction)
+      await this.updateUserRankInTransaction(
+        userId,
+        userProfile.points,
+        manager,
+      );
     });
   }
 
@@ -47,7 +67,6 @@ export class UserPointsService implements IUserPointsService {
       const userProfileRepo = manager.getRepository(
         this.userProfileRepository.repo.target,
       );
-      const rankRepo = manager.getRepository(this.rankRepository.repo.target);
 
       const userProfile = await userProfileRepo.findOne({
         where: { accountId: userId },
@@ -57,33 +76,57 @@ export class UserPointsService implements IUserPointsService {
         throw new NotFoundException('User profile not found');
       }
 
-      // Find appropriate rank based on current points
-      const appropriateRank = await rankRepo
-        .createQueryBuilder('rank')
-        .where('rank.min_points <= :points', { points: userProfile.points })
-        .andWhere('(rank.max_points IS NULL OR rank.max_points >= :points)', {
-          points: userProfile.points,
-        })
-        .orderBy('rank.min_points', 'DESC')
-        .getOne();
-
-      if (!appropriateRank) {
-        this.logger.warn(
-          `No appropriate rank found for ${userProfile.points} points`,
-        );
-        return;
-      }
-
-      // Update rank if changed
-      if (userProfile.rankId !== appropriateRank.id) {
-        const oldRankId = userProfile.rankId;
-        userProfile.rankId = appropriateRank.id;
-        await userProfileRepo.save(userProfile);
-
-        this.logger.log(
-          `Updated rank for user ${userId} from ${oldRankId} to ${appropriateRank.id} (${appropriateRank.name})`,
-        );
-      }
+      await this.updateUserRankInTransaction(
+        userId,
+        userProfile.points,
+        manager,
+      );
     });
+  }
+
+  private async updateUserRankInTransaction(
+    userId: string,
+    currentPoints: number,
+    manager: any,
+  ): Promise<void> {
+    const userProfileRepo = manager.getRepository(
+      this.userProfileRepository.repo.target,
+    );
+    const rankRepo = manager.getRepository(this.rankRepository.repo.target);
+
+    const userProfile = await userProfileRepo.findOne({
+      where: { accountId: userId },
+    });
+
+    if (!userProfile) {
+      this.logger.warn(`User profile not found for userId: ${userId}`);
+      return;
+    }
+
+    // Find appropriate rank based on current points
+    const appropriateRank = await rankRepo
+      .createQueryBuilder('rank')
+      .where('rank.min_points <= :points', { points: currentPoints })
+      .andWhere('(rank.max_points IS NULL OR rank.max_points >= :points)', {
+        points: currentPoints,
+      })
+      .orderBy('rank.min_points', 'DESC')
+      .getOne();
+
+    if (!appropriateRank) {
+      this.logger.warn(`No appropriate rank found for ${currentPoints} points`);
+      return;
+    }
+
+    // Update rank if changed
+    if (userProfile.rankId !== appropriateRank.id) {
+      const oldRankId = userProfile.rankId;
+      userProfile.rankId = appropriateRank.id;
+      await userProfileRepo.save(userProfile);
+
+      this.logger.log(
+        `Updated rank for user ${userId} from ${oldRankId} to ${appropriateRank.id} (${appropriateRank.name})`,
+      );
+    }
   }
 }

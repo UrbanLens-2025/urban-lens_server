@@ -45,5 +45,10 @@ export interface IPostService {
     params: PaginationParams,
     currentUserId?: string,
   ): Promise<PaginationResult<any>>;
+  getPostsByLocation(
+    locationId: string,
+    params: PaginationParams,
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>>;
   updatePostVisibility(postId: string, isHidden: boolean): Promise<any>;
 }

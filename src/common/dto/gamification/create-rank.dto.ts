@@ -1,12 +1,11 @@
 import { RankName } from '@/modules/gamification/domain/Rank.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEnum,
   IsInt,
   IsNotEmpty,
   IsString,
   Min,
-  ValidateIf,
   registerDecorator,
   ValidationOptions,
   ValidationArguments,
