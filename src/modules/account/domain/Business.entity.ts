@@ -22,7 +22,7 @@ export class BusinessEntity {
   @PrimaryColumn({ name: 'account_id', type: 'uuid' })
   accountId: string;
 
-  @OneToOne(() => AccountEntity, (account) => account.business, {
+  @OneToOne(() => AccountEntity, (account) => account.businessProfile, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'account_id' })

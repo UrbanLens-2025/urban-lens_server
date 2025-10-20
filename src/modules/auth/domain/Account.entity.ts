@@ -73,7 +73,7 @@ export class AccountEntity {
   @OneToOne(() => BusinessEntity, (business) => business.account, {
     cascade: true,
   })
-  business: BusinessEntity;
+  businessProfile?: BusinessEntity;
 
   public canCreateEvent(): boolean {
     return this.role === Role.EVENT_CREATOR && this.hasOnboarded;
