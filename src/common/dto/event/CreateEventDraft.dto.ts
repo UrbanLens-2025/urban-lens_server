@@ -1,14 +1,13 @@
 import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
   IsDate,
   IsInt,
+  IsNotEmpty,
+  IsOptional,
   IsPositive,
+  IsString,
   IsUrl,
-  IsObject,
-  MinLength,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -53,9 +52,4 @@ export class CreateEventDraftDto {
   @IsOptional()
   @ApiPropertyOptional()
   coverUrl?: string;
-
-  @IsObject()
-  @IsOptional()
-  @ApiPropertyOptional()
-  customProperties?: Record<string, any>;
 }

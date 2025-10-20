@@ -55,9 +55,6 @@ export class EventEntity {
   @Column({ name: 'cover_url', type: 'varchar', length: 500, nullable: true })
   coverUrl: string;
 
-  @Column({ name: 'custom_properties', type: 'jsonb', default: {} })
-  customProperties: Record<string, any>;
-
   canModifyTickets(): boolean {
     return true;
   }
