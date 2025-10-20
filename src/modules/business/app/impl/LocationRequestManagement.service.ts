@@ -79,7 +79,7 @@ export class LocationRequestManagementService
         ...dto.locationValidationDocuments.flatMap((d) => d.documentImageUrls),
       ]);
 
-      const locationRequest = this.mapTo_Raw(LocationRequestEntity, dto);
+      const locationRequest = this.mapTo_safe(LocationRequestEntity, dto);
       // TODO add automatic location validation process here
       locationRequest.status = LocationRequestStatus.AWAITING_ADMIN_REVIEW;
 
@@ -359,6 +359,7 @@ export class LocationRequestManagementService
     location.imageUrl = locationRequest.locationImageUrls;
     location.businessId = locationRequest.createdById;
     location.sourceLocationRequestId = locationRequest.id;
+    location.radiusMeters = locationRequest.radiusMeters;
     location.isVisibleOnMap = false; // default not visible. User must update to make it visible
 
     return locationRepository.save(location).then(async (savedLocation) => {

@@ -3,7 +3,6 @@ import { LocationResponseDto } from '@/common/dto/business/res/Location.response
 import { GetAnyLocationByIdDto } from '@/common/dto/business/GetAnyLocationById.dto';
 import { GetNearbyVisibleLocationsByCoordinatesDto } from '@/common/dto/business/GetNearbyVisibleLocationsByCoordinates.dto';
 import { GetVisibleLocationByIdDto } from '@/common/dto/business/GetVisibleLocationById.dto';
-import { GetMyCheckedInLocationsDto } from '@/common/dto/business/GetMyCheckedInLocations.dto';
 import { GetMyCreatedLocationsDto } from '@/common/dto/business/GetMyCreatedLocations.dto';
 import { GetVisibleLocationsByBusinessIdDto } from '@/common/dto/business/GetVisibleLocationsByBusinessId.dto';
 import { GetMyCreatedLocationByIdDto } from '@/common/dto/business/GetMyCreatedLocationById.dto';
@@ -27,11 +26,6 @@ export interface ILocationQueryService {
 
   searchVisibleLocations(
     query: PaginateQuery,
-  ): Promise<Paginated<LocationResponseDto>>;
-
-  // my locations
-  getMyCheckedInLocations(
-    dto: GetMyCheckedInLocationsDto,
   ): Promise<Paginated<LocationResponseDto>>;
 
   // business locations

@@ -4,7 +4,9 @@ import {
   IsArray,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
+  IsPositive,
   IsUrl,
   MaxLength,
   ValidateNested,
@@ -53,6 +55,12 @@ export class UpdateLocationRequestDto {
   @ApiPropertyOptional()
   @IsOptional()
   longitude?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  radiusMeters: number;
 
   @ApiPropertyOptional()
   @IsOptional()

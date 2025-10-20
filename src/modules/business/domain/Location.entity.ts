@@ -51,6 +51,9 @@ export class LocationEntity {
   @Column({ name: 'longitude', type: 'decimal', precision: 11, scale: 8 })
   longitude: number;
 
+  @Column({ name: 'radius_meters', type: 'integer', default: 0 })
+  radiusMeters: number;
+
   @Column({ name: 'address_line', type: 'varchar', length: 255 })
   addressLine: string;
 
@@ -121,4 +124,12 @@ export class LocationEntity {
         `ST_SetSRID(ST_MakePoint(${this.longitude}, ${this.latitude}), 4326)::geography`;
     }
   }
+
+  //#region Domain methods
+
+  canBeViewedOnMap(): boolean {
+    return this.isVisibleOnMap;
+  }
+
+  //#endregion
 }

@@ -1,18 +1,16 @@
 import { CoreService } from '@/common/core/Core.service';
 import { GetAnyLocationByIdDto } from '@/common/dto/business/GetAnyLocationById.dto';
-import { GetMyCheckedInLocationsDto } from '@/common/dto/business/GetMyCheckedInLocations.dto';
 import { GetMyCreatedLocationsDto } from '@/common/dto/business/GetMyCreatedLocations.dto';
 import { GetNearbyVisibleLocationsByCoordinatesDto } from '@/common/dto/business/GetNearbyVisibleLocationsByCoordinates.dto';
 import { GetVisibleLocationByIdDto } from '@/common/dto/business/GetVisibleLocationById.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
 import { Injectable } from '@nestjs/common';
-import { PaginateQuery, Paginated, paginate } from 'nestjs-paginate';
+import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { GetVisibleLocationsByBusinessIdDto } from '@/common/dto/business/GetVisibleLocationsByBusinessId.dto';
 import { GetMyCreatedLocationByIdDto } from '@/common/dto/business/GetMyCreatedLocationById.dto';
 import { LocationWithDistanceResponseDto } from '@/common/dto/business/stub/LocationWithDistance.response.dto';
-import { CheckInRepositoryProvider } from '@/modules/business/infra/repository/CheckIn.repository';
 
 @Injectable()
 export class LocationQueryService
@@ -121,31 +119,6 @@ export class LocationQueryService
         },
       },
     }).then((res) => this.mapToPaginated(LocationResponseDto, res));
-  }
-
-  getMyCheckedInLocations(
-    dto: GetMyCheckedInLocationsDto,
-  ): Promise<Paginated<LocationResponseDto>> {
-    const checkInRepository = CheckInRepositoryProvider(this.dataSource);
-    return paginate(dto.query, checkInRepository, {
-      sortableColumns: ['checkInTime'],
-      defaultSortBy: [['checkInTime', 'DESC']],
-      where: {
-        userProfileId: dto.accountId,
-      },
-      relations: {
-        location: true,
-      },
-    }).then(
-      (e) =>
-        ({
-          ...e,
-          data: this.mapToArray(
-            LocationResponseDto,
-            e.data.map((checkIn) => checkIn.location),
-          ),
-        }) as Paginated<LocationResponseDto>,
-    );
   }
 
   getMyCreatedLocations(

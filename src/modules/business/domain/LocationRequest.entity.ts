@@ -48,6 +48,9 @@ export class LocationRequestEntity {
   @Column({ name: 'longitude', type: 'decimal', precision: 11, scale: 8 })
   longitude: number;
 
+  @Column({ name: 'radius_meters', type: 'integer', default: 0 })
+  radiusMeters: number;
+
   @Column({ name: 'address_line', type: 'varchar', length: 255 })
   addressLine: string;
 

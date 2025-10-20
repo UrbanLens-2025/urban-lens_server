@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsPositive,
   IsUrl,
   MaxLength,
   ValidateNested,
@@ -47,11 +48,19 @@ export class CreateLocationRequestDto {
 
   @ApiProperty()
   @IsNotEmpty()
+  @IsNumber()
   latitude: number;
 
   @ApiProperty()
   @IsNotEmpty()
+  @IsNumber()
   longitude: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  radiusMeters: number;
 
   @ApiProperty()
   @IsNotEmpty()

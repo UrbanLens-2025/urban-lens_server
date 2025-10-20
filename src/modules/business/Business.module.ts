@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.module';
 import { LocationUserController } from './interfaces/Location.user.controller';
-import { CheckInService } from './app/impl/CheckIn.service';
-import { ICheckInService } from './app/ICheckIn.service';
 import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
 import { TokenModule } from '@/common/core/token/token.module';
 import { LocationPublicController } from './interfaces/Location.public.controller';
@@ -17,6 +15,8 @@ import { LocationQueryService } from '@/modules/business/app/impl/LocationQuery.
 import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
 import { LocationManagementService } from '@/modules/business/app/impl/LocationManagement.service';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
+import { ICheckInV2Service } from '@/modules/business/app/ICheckInV2.service';
+import { CheckInV2Service } from '@/modules/business/app/impl/CheckInV2.service';
 
 @Module({
   imports: [
@@ -35,8 +35,8 @@ import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
   ],
   providers: [
     {
-      provide: ICheckInService,
-      useClass: CheckInService,
+      provide: ICheckInV2Service,
+      useClass: CheckInV2Service,
     },
     {
       provide: ILocationRequestManagementService,
