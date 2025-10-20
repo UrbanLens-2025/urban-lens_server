@@ -16,6 +16,21 @@ export const LocationTagsRepository = (ctx: DataSource | EntityManager) =>
 
       return this.save(entities);
     },
+
+    findDuplicatesIncludingDeleted(
+      this: Repository<LocationTagsEntity>,
+      payload: { locationId: string; tagIds: number[] },
+    ) {
+      return this.createQueryBuilder('location_tag')
+        .where('location_tag.location_id = :locationId', {
+          locationId: payload.locationId,
+        })
+        .andWhere('location_tag.tag_id IN (:...tagIds)', {
+          tagIds: payload.tagIds,
+        })
+        .withDeleted()
+        .getMany();
+    },
   });
 
 export type LocationTagsRepository = ReturnType<typeof LocationTagsRepository>;

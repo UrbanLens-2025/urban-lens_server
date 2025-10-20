@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
   ParseUUIDPipe,
+  Post,
   Put,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -17,6 +19,8 @@ import { ILocationManagementService } from '@/modules/business/app/ILocationMana
 import { UpdateLocationDto } from '@/common/dto/business/UpdateLocation.dto';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
+import { AddLocationTagDto } from '@/common/dto/business/AddLocationTag.dto';
+import { RemoveLocationTagDto } from '@/common/dto/business/RemoveLocationTag.dto';
 
 @ApiBearerAuth()
 @ApiTags('Location')
@@ -63,6 +67,34 @@ export class LocationOwnerController {
     @Body() dto: UpdateLocationDto,
   ) {
     return this.locationManagementService.updateLocation({
+      ...dto,
+      locationId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Add tag to my location' })
+  @Post('/:locationId/tags')
+  addTagToMyLocationById(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: AddLocationTagDto,
+  ) {
+    return this.locationManagementService.addTag({
+      ...dto,
+      locationId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Delete tag at my location' })
+  @Delete('/:locationId/tags')
+  removeTagFromMyLocationById(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: RemoveLocationTagDto,
+  ) {
+    return this.locationManagementService.softRemoveTag({
       ...dto,
       locationId,
       accountId: userDto.sub,

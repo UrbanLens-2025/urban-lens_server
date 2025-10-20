@@ -8,12 +8,13 @@ import {
   ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { WithPagination } from '@/common/WithPagination.decorator';
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import { IsOptional } from 'class-validator';
 
 @ApiTags('Location')
 @Controller('/public/locations')
@@ -49,15 +50,23 @@ export class LocationPublicController {
 
   @ApiOperation({ summary: 'Get visible location by ID' })
   @Get('/:locationId')
+  @ApiQuery({
+    name: 'latitude',
+    required: false,
+  })
+  @ApiQuery({
+    name: 'longitude',
+    required: false,
+  })
   getVisibleLocationById(
     @Param('locationId', ParseUUIDPipe) locationId: string,
-    @Query('latitude', ParseFloatPipe) latitude?: number,
-    @Query('longitude', ParseFloatPipe) longitude?: number,
+    @Query('latitude') latitude?: number,
+    @Query('longitude') longitude?: number,
   ) {
     return this.locationQueryService.getVisibleLocationById({
       locationId,
-      currentLatitude: latitude,
-      currentLongitude: longitude,
+      currentLatitude: Number(latitude),
+      currentLongitude: Number(longitude),
     });
   }
 }
