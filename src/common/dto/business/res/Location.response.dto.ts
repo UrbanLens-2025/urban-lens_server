@@ -40,6 +40,9 @@ export class LocationResponseDto {
   imageUrl?: string[];
 
   @Expose()
+  totalCheckIns: number;
+
+  @Expose()
   status: LocationRequestStatus;
 
   @Expose()

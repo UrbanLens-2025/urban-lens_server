@@ -118,6 +118,9 @@ export class LocationEntity {
   @OneToMany(() => CheckInEntity, (checkIn) => checkIn.location)
   checkIns: CheckInEntity[];
 
+  @Column({ name: 'total_check_ins', type: 'bigint', default: 0 })
+  totalCheckIns: number;
+
   //#region TRANSIENT FIELDS - Do NOT add @Column to these. These are NOT PERSISTED to the db.
 
   distanceMeters?: number;
