@@ -1,10 +1,14 @@
-import { GetUserAccountDetailsDto } from '@/common/dto/account/GetUserAccountDetails.dto';
-import { UserProfileResponseDto } from '@/common/dto/account/res/UserProfile.response.dto';
-import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
+import { UserAccountResponseDto } from '@/common/dto/auth/res/UserAccountResponse.dto';
+import { UserGetAccountInfo } from '@/common/dto/auth/UserGetAccountInfo.dto';
+import { LeaderboardResponseDto } from '@/common/dto/account/res/Leaderboard.response.dto';
+import { Paginated, PaginateQuery } from 'nestjs-paginate';
+import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
 
 export const IAccountQueryService = Symbol('IAccountQueryService');
 export interface IAccountQueryService {
-  getUserAccountDetails(
-    dto: GetUserAccountDetailsDto,
-  ): Promise<AccountResponseDto>;
+  getAccountInfo(dto: UserGetAccountInfo.Dto): Promise<UserAccountResponseDto>;
+  getLeaderboard(currentUserId?: string): Promise<LeaderboardResponseDto>;
+  searchBusinesses(
+    query: PaginateQuery,
+  ): Promise<Paginated<BusinessResponseDto>>;
 }

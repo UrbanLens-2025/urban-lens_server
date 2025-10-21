@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CoreService } from '@/common/core/Core.service';
-import { AccountRepositoryProvider } from '@/modules/auth/infra/repository/Account.repository';
+import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
 
 @Injectable()
 export class AppService extends CoreService {

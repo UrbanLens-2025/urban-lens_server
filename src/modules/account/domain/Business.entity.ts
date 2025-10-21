@@ -2,7 +2,7 @@ import {
   BusinessCategory,
   BusinessRequestStatus,
 } from '@/common/constants/Business.constant';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import {
   Column,
@@ -93,6 +93,14 @@ export class BusinessEntity {
     cascade: true,
   })
   locations: LocationEntity[];
+
+  canBeUpdated(): boolean {
+    return this.status === BusinessRequestStatus.PENDING;
+  }
+
+  canBeProcessed(): boolean {
+    return this.status === BusinessRequestStatus.PENDING;
+  }
 
   canCreateLocation(): boolean {
     return this.status === BusinessRequestStatus.APPROVED && this.isActive;

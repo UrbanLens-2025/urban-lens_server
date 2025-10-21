@@ -1,6 +1,6 @@
 import { CoreService } from '@/common/core/Core.service';
 import { Injectable, Logger } from '@nestjs/common';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { Role } from '@/common/constants/Role.constant';
 import { UserProfileRepositoryProvider } from '@/modules/account/infra/repository/UserProfile.repository';
 import { BusinessRepositoryProvider } from '@/modules/account/infra/repository/Business.repository';

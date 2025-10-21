@@ -15,7 +15,7 @@ import { PostEntity } from '@/modules/post/domain/Post.entity';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Injectable()
 export class ReportService implements IReportService {

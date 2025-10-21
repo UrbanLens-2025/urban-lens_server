@@ -9,12 +9,15 @@ import { UserProfileEntity } from '../domain/UserProfile.entity';
 import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
 import { FollowRepository } from '@/modules/account/infra/repository/Follow.repository';
 import { FollowEntity } from '@/modules/account/domain/Follow.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
+import { AccountRepository } from '@/modules/account/infra/repository/Account.repository';
 
 const repositories = [
   UserTagsRepository,
   BusinessRepository,
   UserProfileRepository,
   FollowRepository,
+  AccountRepository,
 ];
 
 @Module({
@@ -25,6 +28,7 @@ const repositories = [
       UserProfileEntity,
       CreatorProfileEntity,
       FollowEntity,
+      AccountEntity,
     ]),
   ],
   providers: repositories,
