@@ -1,3 +1,6 @@
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Roles } from '@/common/Roles.decorator';
+import { Role } from '@/common/constants/Role.constant';
 import {
   Body,
   Controller,
@@ -9,26 +12,22 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Roles } from '@/common/Roles.decorator';
-import { Role } from '@/common/constants/Role.constant';
-import { CreateLocationRequestFromBusinessDto } from '@/common/dto/business/CreateLocationRequestFromBusiness.dto';
+import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
+import { CreateLocationRequestFromUserDto } from '@/common/dto/business/CreateLocationRequestFromUser.dto';
 import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
-import { WithPagination } from '@/common/WithPagination.decorator';
 import { AddLocationRequestTagsDto } from '@/common/dto/business/AddLocationRequestTags.dto';
 import { DeleteLocationRequestTagDto } from '@/common/dto/business/DeleteLocationRequestTag.dto';
-import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
+import { WithPagination } from '@/common/WithPagination.decorator';
+import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 import { ILocationRequestQueryService } from '@/modules/business/app/ILocationRequestQuery.service';
 
 @ApiTags('Location Request')
 @ApiBearerAuth()
-@Roles(Role.BUSINESS_OWNER)
-@Controller('/business/location-request')
-export class LocationRequestBusinessController {
+@Roles(Role.USER)
+@Controller('/user/location-request')
+export class LocationRequestUserController {
   constructor(
     @Inject(ILocationRequestManagementService)
     private readonly locationRequestManagementService: ILocationRequestManagementService,
@@ -36,7 +35,7 @@ export class LocationRequestBusinessController {
     private readonly locationRequestQueryService: ILocationRequestQueryService,
   ) {}
 
-  @ApiOperation({ summary: 'Get my location requests' })
+  @ApiOperation({ summary: 'Get my location suggestions' })
   @WithPagination()
   @Get()
   getMyLocationRequests(
@@ -49,7 +48,7 @@ export class LocationRequestBusinessController {
     );
   }
 
-  @ApiOperation({ summary: 'Get my location request by ID' })
+  @ApiOperation({ summary: 'Get my location suggestion by ID' })
   @Get(':locationRequestId')
   getMyLocationRequestById(
     @AuthUser() userDto: JwtTokenDto,
@@ -61,21 +60,19 @@ export class LocationRequestBusinessController {
     });
   }
 
-  @ApiOperation({ summary: 'Create location request' })
+  @ApiOperation({ summary: 'Create location suggestion' })
   @Post()
-  createLocationRequest(
+  createLocationSuggestion(
     @AuthUser() userDto: JwtTokenDto,
-    @Body() dto: CreateLocationRequestFromBusinessDto,
+    @Body() dto: CreateLocationRequestFromUserDto,
   ) {
-    return this.locationRequestManagementService.createLocationRequestFromBusiness(
-      {
-        ...dto,
-        createdById: userDto.sub,
-      },
-    );
+    return this.locationRequestManagementService.createLocationRequestFromUser({
+      ...dto,
+      createdById: userDto.sub,
+    });
   }
 
-  @ApiOperation({ summary: 'Add tags to location request' })
+  @ApiOperation({ summary: 'Add tags to location suggestion' })
   @Post(':locationRequestId/tags')
   addLocationRequestTags(
     @AuthUser() userDto: JwtTokenDto,
@@ -89,7 +86,7 @@ export class LocationRequestBusinessController {
     });
   }
 
-  @ApiOperation({ summary: 'Delete tags in location request' })
+  @ApiOperation({ summary: 'Delete tags in location suggestion' })
   @Delete(':locationRequestId/tags')
   deleteLocationRequestTag(
     @AuthUser() userDto: JwtTokenDto,
@@ -104,7 +101,7 @@ export class LocationRequestBusinessController {
   }
 
   @ApiOperation({
-    summary: 'Update location request',
+    summary: 'Update location suggestion',
     description: 'Can only update if not approved',
   })
   @Put(':locationRequestId')
@@ -121,7 +118,7 @@ export class LocationRequestBusinessController {
   }
 
   @ApiOperation({
-    summary: 'Cancel location request',
+    summary: 'Cancel location suggestion',
   })
   @Put(':locationRequestId/cancel')
   cancelLocationRequest(

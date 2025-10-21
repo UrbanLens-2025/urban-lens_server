@@ -4,6 +4,8 @@ import { LocationValidationDocumentsJson } from '@/common/json/LocationValidatio
 import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/LocationRequestTags.response.dto';
+import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
+import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
 
 @Exclude()
 export class LocationRequestResponseDto {
@@ -20,8 +22,11 @@ export class LocationRequestResponseDto {
   createdById: string;
 
   @Expose()
-  @Type(() => BusinessResponseDto)
-  createdBy: BusinessResponseDto;
+  @Type(() => AccountResponseDto)
+  createdBy: AccountResponseDto;
+
+  @Expose()
+  type: LocationRequestType;
 
   @Expose()
   name: string;
@@ -69,4 +74,8 @@ export class LocationRequestResponseDto {
   @Expose()
   @Type(() => LocationRequestTagsResponseDto)
   tags: LocationRequestTagsResponseDto[];
+
+  @Expose()
+  @Type(() => LocationResponseDto)
+  createdLocation: LocationResponseDto;
 }

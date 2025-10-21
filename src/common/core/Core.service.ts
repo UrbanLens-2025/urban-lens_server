@@ -18,7 +18,7 @@ export class CoreService {
    * @param plain Plain object
    * @param options Class transform options
    */
-  mapTo<T, V>(
+  protected mapTo<T, V>(
     cls: ClassConstructor<T>,
     plain: V,
     options?: ClassTransformOptions,
@@ -29,7 +29,7 @@ export class CoreService {
     });
   }
 
-  mapToList<T, V>(
+  protected mapToList<T, V>(
     cls: ClassConstructor<T>,
     plain: V[],
     options?: ClassTransformOptions,
@@ -43,7 +43,7 @@ export class CoreService {
    * @param plainArray Plain array object
    * @param options Class transform options
    */
-  mapToArray<T, V>(
+  protected mapToArray<T, V>(
     cls: ClassConstructor<T>,
     plainArray: V[],
     options?: ClassTransformOptions,
@@ -54,7 +54,7 @@ export class CoreService {
     return plainArray.map((item) => this.mapTo(cls, item, options));
   }
 
-  mapToPaginated<T, V>(
+  protected mapToPaginated<T, V>(
     cls: ClassConstructor<T>,
     plain: Paginated<V>,
     options?: ClassTransformOptions,
@@ -65,7 +65,10 @@ export class CoreService {
     } as unknown as Paginated<T>;
   }
 
-  mapTo_safe<T extends object, V extends object>(cls: new () => T, plain: V) {
+  protected mapTo_safe<T extends object, V extends object>(
+    cls: new () => T,
+    plain: V,
+  ) {
     const instance = new cls();
     const validKeys = Object.keys(instance);
 
@@ -82,7 +85,7 @@ export class CoreService {
    * @param plain Plain object
    * @param options Class transform options
    */
-  mapTo_Raw<T, V>(
+  protected mapTo_Raw<T, V>(
     cls: ClassConstructor<T>,
     plain: V,
     options?: ClassTransformOptions,
@@ -92,7 +95,7 @@ export class CoreService {
     });
   }
 
-  ensureTransaction<T>(
+  protected ensureTransaction<T>(
     em: EntityManager | null | undefined,
     fn: (em: EntityManager) => Promise<T>,
   ) {
@@ -107,7 +110,7 @@ export class CoreService {
    * Not null and not undefined check
    * @param value Value to check
    */
-  isDefined<T>(value: T | null | undefined): value is T {
+  protected isDefined<T>(value: T | null | undefined): value is T {
     return value !== undefined && value !== null;
   }
 }
