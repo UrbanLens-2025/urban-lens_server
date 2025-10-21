@@ -1,7 +1,6 @@
 import { Exclude, Expose, Type } from 'class-transformer';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { LocationValidationDocumentsJson } from '@/common/json/LocationValidationDocuments.json';
-import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/LocationRequestTags.response.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
@@ -43,13 +42,13 @@ export class LocationRequestResponseDto {
   @Expose()
   radiusMeters: number;
 
-  @Expose({ name: 'address_line' })
+  @Expose()
   addressLine: string;
 
-  @Expose({ name: 'address_level_1' })
+  @Expose()
   addressLevel1: string;
 
-  @Expose({ name: 'address_level_2' })
+  @Expose()
   addressLevel2: string;
 
   @Expose()
