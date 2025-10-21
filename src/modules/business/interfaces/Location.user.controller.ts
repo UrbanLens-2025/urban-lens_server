@@ -43,6 +43,18 @@ export class LocationUserController {
     });
   }
 
+  @ApiOperation({ summary: 'Get my checked in location by ID' })
+  @Get('/check-in/:locationId')
+  getMyCheckedInLocationById(
+    @AuthUser() userDto: JwtTokenDto,
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+  ) {
+    return this.checkInV2Service.getMyCheckInByLocationId({
+      accountId: userDto.sub,
+      locationId,
+    });
+  }
+
   @ApiOperation({ summary: 'Check in at a location' })
   @Post('/:locationId/check-in')
   registerCheckIn(

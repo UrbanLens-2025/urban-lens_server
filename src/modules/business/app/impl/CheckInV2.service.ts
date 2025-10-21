@@ -17,6 +17,7 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { GetMyCheckInsDto } from '@/common/dto/business/GetMyCheckIns.dto';
 import { paginate, Paginated } from 'nestjs-paginate';
+import { GetMyCheckInByLocationIdDto } from '@/common/dto/business/GetMyCheckInByLocationId.dto';
 
 @Injectable()
 export class CheckInV2Service extends CoreService implements ICheckInV2Service {
@@ -102,5 +103,19 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
         location: true,
       },
     });
+  }
+
+  getMyCheckInByLocationId(
+    dto: GetMyCheckInByLocationIdDto,
+  ): Promise<CheckInResponseDto> {
+    const checkInRepository = CheckInRepositoryProvider(this.dataSource);
+    return checkInRepository
+      .findOne({
+        where: {
+          locationId: dto.locationId,
+          userProfileId: dto.accountId,
+        },
+      })
+      .then((e) => this.mapTo(CheckInResponseDto, e));
   }
 }
