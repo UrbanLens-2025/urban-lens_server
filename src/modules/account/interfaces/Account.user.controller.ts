@@ -32,23 +32,11 @@ export class AccountUserController {
     private readonly accountProfileService: IAccountProfileService,
   ) {}
 
-  @ApiOperation({ summary: 'Get user details by id' })
-  @Get('/info/:id')
-  getAccountInfo(@Param('id', ParseUUIDPipe) id: string) {
-    return this.accountUserService.getAccountInfo({ userId: id });
-  }
-
-  @ApiOperation({ summary: 'Get user profile with rank details' })
-  @Get('/profile')
-  getUserProfile(@AuthUser() user: JwtTokenDto) {
-    return this.accountProfileService.getUserProfile(user.sub);
-  }
-
-  @ApiOperation({ summary: 'Get user profile by userId with rank details' })
-  @Get('/profile/:userId')
-  getUserProfileById(@Param('userId', ParseUUIDPipe) userId: string) {
-    return this.accountProfileService.getUserProfile(userId);
-  }
+  // @ApiOperation({ summary: 'Get user details by id' })
+  // @Get('/info/:id')
+  // getAccountInfo(@Param('id', ParseUUIDPipe) id: string) {
+  //   return this.accountUserService.getAccountInfo({ userId: id });
+  // }
 
   @ApiOperation({ summary: 'Onboard a user' })
   @Post('/onboard')

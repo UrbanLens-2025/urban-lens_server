@@ -22,15 +22,9 @@ export class AccountPublicController {
     return this.accountUserService.getAccountInfo({ userId: id });
   }
 
-  @ApiOperation({ summary: 'Get user profile with rank details' })
-  @Get('/profile/:userId')
-  getPublicUserProfile(@Param('userId', ParseUUIDPipe) userId: string) {
-    return this.accountProfileService.getUserProfile(userId);
-  }
-
-  @ApiOperation({ summary: 'Get USER account details by ID' })
-  @Get('/info/user/:id')
-  getUserAccountInfo(@Param('id', ParseUUIDPipe) id: string) {
-    return this.accountQueryService.getUserAccountDetails({ userId: id });
-  }
+  // @ApiOperation({ summary: 'Get USER account details by ID' })
+  // @Get('/info/user/:id')
+  // getUserAccountInfo(@Param('id', ParseUUIDPipe) id: string) {
+  //   return this.accountQueryService.getUserAccountDetails({ userId: id });
+  // }
 }
