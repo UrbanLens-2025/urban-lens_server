@@ -102,7 +102,7 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
       relations: {
         location: true,
       },
-    });
+    }).then((res) => this.mapToPaginated(CheckInResponseDto, res));
   }
 
   getMyCheckInByLocationId(
