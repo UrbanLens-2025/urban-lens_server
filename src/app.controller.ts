@@ -31,4 +31,9 @@ export class AppController {
   getHelloAdmin(): string {
     return this.appService.getHello();
   }
+
+  @Get('/public/test-find-error')
+  async testFindError() {
+    return this.appService.testFindError();
+  }
 }

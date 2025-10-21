@@ -5,6 +5,7 @@ import { globalValidationConfig } from '@/config/validation.config';
 import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerDocumentConfig } from '@/config/swagger.config';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
+import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
 
 async function bootstrap() {
   const logLevelString = process.env.LOG_LEVELS || 'log';
@@ -22,6 +23,7 @@ async function bootstrap() {
   app.enableCors();
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe(globalValidationConfig));
+  app.useGlobalFilters(new GlobalExceptionFilter());
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: ['1'],
