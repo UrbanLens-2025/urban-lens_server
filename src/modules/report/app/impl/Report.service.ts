@@ -15,7 +15,6 @@ import { PostEntity } from '@/modules/post/domain/Post.entity';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
-import { ReviewEntity } from '@/modules/review/domain/Review.entity';
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 
 @Injectable()
@@ -62,8 +61,8 @@ export class ReportService implements IReportService {
         });
         break;
       case ReportEntityType.REVIEW:
-        exists = await this.dataSource.getRepository(ReviewEntity).exists({
-          where: { id: entityId },
+        exists = await this.dataSource.getRepository(PostEntity).exists({
+          where: { postId: entityId },
         });
         break;
       default:
@@ -269,8 +268,8 @@ export class ReportService implements IReportService {
   ): Promise<any> {
     try {
       switch (entityType) {
-        case ReportEntityType.POST:
-          { const post = await this.dataSource.getRepository(PostEntity).findOne({
+        case ReportEntityType.POST: {
+          const post = await this.dataSource.getRepository(PostEntity).findOne({
             where: { postId: entityId },
             relations: ['author'],
             select: {
@@ -289,10 +288,11 @@ export class ReportService implements IReportService {
               },
             },
           });
-          return post; }
+          return post;
+        }
 
-        case ReportEntityType.EVENT:
-          { const event = await this.dataSource
+        case ReportEntityType.EVENT: {
+          const event = await this.dataSource
             .getRepository(EventEntity)
             .findOne({
               where: { id: entityId },
@@ -316,10 +316,11 @@ export class ReportService implements IReportService {
                 },
               },
             });
-          return event; }
+          return event;
+        }
 
-        case ReportEntityType.LOCATION:
-          { const location = await this.dataSource
+        case ReportEntityType.LOCATION: {
+          const location = await this.dataSource
             .getRepository(LocationEntity)
             .findOne({
               where: { id: entityId },
@@ -351,10 +352,11 @@ export class ReportService implements IReportService {
                 },
               },
             });
-          return location; }
+          return location;
+        }
 
-        case ReportEntityType.BUSINESS:
-          { const business = await this.dataSource
+        case ReportEntityType.BUSINESS: {
+          const business = await this.dataSource
             .getRepository(BusinessEntity)
             .findOne({
               where: { accountId: entityId },
@@ -380,18 +382,32 @@ export class ReportService implements IReportService {
                 },
               },
             });
-          return business; }
+          return business;
+        }
 
-        case ReportEntityType.REVIEW:
-          { const review = await this.dataSource
-            .getRepository(ReviewEntity)
+        case ReportEntityType.REVIEW: {
+          const review = await this.dataSource
+            .getRepository(PostEntity)
             .findOne({
-              where: { id: entityId },
+              where: { postId: entityId },
               select: {
-                id: true,
-                review: true,
-                accountId: true,
+                postId: true,
+                content: true,
+                type: true,
+                rating: true,
+                imageUrls: true,
+                authorId: true,
+                locationId: true,
                 eventId: true,
+                createdAt: true,
+                updatedAt: true,
+                author: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  avatarUrl: true,
+                  email: true,
+                },
               },
             });
 
@@ -400,7 +416,7 @@ export class ReportService implements IReportService {
             const author = await this.dataSource
               .getRepository(AccountEntity)
               .findOne({
-                where: { id: review.accountId },
+                where: { id: review.authorId },
                 select: {
                   id: true,
                   firstName: true,
@@ -411,7 +427,8 @@ export class ReportService implements IReportService {
               });
             return { ...review, author };
           }
-          return review; }
+          return review;
+        }
 
         default:
           return null;
