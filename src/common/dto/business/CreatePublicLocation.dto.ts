@@ -2,38 +2,17 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
-  IsEnum,
+  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsPositive,
   IsUrl,
   MaxLength,
-  ValidateNested,
 } from 'class-validator';
-import { AcceptedLocationValidationDocuments } from '@/common/constants/AcceptedLocationValidationDocuments.constant';
-import { Type } from 'class-transformer';
 
-class LocationValidationDocumentsDto {
-  @ApiProperty({
-    enum: AcceptedLocationValidationDocuments,
-    example:
-      AcceptedLocationValidationDocuments.LOCATION_REGISTRATION_CERTIFICATE,
-  })
-  @IsNotEmpty()
-  @IsEnum(AcceptedLocationValidationDocuments)
-  documentType: AcceptedLocationValidationDocuments;
-
-  @ApiProperty({ type: String, isArray: true, example: ['http://google.com'] })
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsNotEmpty({ each: true })
-  @IsUrl({}, { each: true })
-  documentImageUrls: string[];
-}
-
-export class CreateLocationRequestDto {
+export class CreatePublicLocationDto {
   // transient fields
-  createdById: string;
+  accountId: string;
 
   // persistent fields
   @ApiProperty()
@@ -82,17 +61,12 @@ export class CreateLocationRequestDto {
   @ArrayNotEmpty()
   @IsUrl({}, { each: true })
   @IsNotEmpty({ each: true })
-  locationImageUrls: string[];
+  imageUrl: string[];
 
-  @ApiProperty({
-    isArray: true,
-    type: LocationValidationDocumentsDto,
-  })
-  @ValidateNested({ each: true })
-  @IsArray()
-  @ArrayNotEmpty()
-  @Type(() => LocationValidationDocumentsDto)
-  locationValidationDocuments: LocationValidationDocumentsDto[];
+  @ApiProperty()
+  @IsBoolean()
+  @IsNotEmpty()
+  isVisibleOnMap: boolean;
 
   @ApiProperty({ isArray: true, type: Number, example: [1, 2, 3] })
   @IsArray()

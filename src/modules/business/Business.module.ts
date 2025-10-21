@@ -17,6 +17,10 @@ import { LocationManagementService } from '@/modules/business/app/impl/LocationM
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 import { ICheckInV2Service } from '@/modules/business/app/ICheckInV2.service';
 import { CheckInV2Service } from '@/modules/business/app/impl/CheckInV2.service';
+import { LocationRequestQueryService } from '@/modules/business/app/impl/LocationRequestQuery.service';
+import { ILocationRequestQueryService } from '@/modules/business/app/ILocationRequestQuery.service';
+import { AccountModule } from '@/modules/account/Account.module';
+import { LocationSubmissionUserController } from '@/modules/business/interfaces/LocationSubmission.user.controller';
 
 @Module({
   imports: [
@@ -24,10 +28,12 @@ import { CheckInV2Service } from '@/modules/business/app/impl/CheckInV2.service'
     AccountInfraModule,
     TokenModule,
     FileStorageModule,
+    AccountModule,
   ],
   controllers: [
     LocationRequestBusinessController,
     LocationRequestAdminController,
+    LocationSubmissionUserController,
     LocationUserController,
     LocationPublicController,
     LocationOwnerController,
@@ -41,6 +47,10 @@ import { CheckInV2Service } from '@/modules/business/app/impl/CheckInV2.service'
     {
       provide: ILocationRequestManagementService,
       useClass: LocationRequestManagementService,
+    },
+    {
+      provide: ILocationRequestQueryService,
+      useClass: LocationRequestQueryService,
     },
     {
       provide: ILocationQueryService,

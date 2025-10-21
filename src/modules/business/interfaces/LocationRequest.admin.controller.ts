@@ -16,6 +16,7 @@ import { ILocationRequestManagementService } from '@/modules/business/app/ILocat
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ProcessLocationRequestDto } from '@/common/dto/business/ProcessLocationRequest.dto';
+import { ILocationRequestQueryService } from '@/modules/business/app/ILocationRequestQuery.service';
 
 @ApiTags('Location Request')
 @ApiBearerAuth()
@@ -25,15 +26,15 @@ export class LocationRequestAdminController {
   constructor(
     @Inject(ILocationRequestManagementService)
     private readonly locationRequestManagementService: ILocationRequestManagementService,
+    @Inject(ILocationRequestQueryService)
+    private readonly locationRequestQueryService: ILocationRequestQueryService,
   ) {}
 
   @ApiOperation({ summary: 'Search location requests' })
   @Get('/search')
   @WithPagination()
   searchAllLocationRequests(@Paginate() query: PaginateQuery) {
-    return this.locationRequestManagementService.searchAllLocationRequests(
-      query,
-    );
+    return this.locationRequestQueryService.searchAllLocationRequests(query);
   }
 
   @ApiOperation({ summary: 'Get location request by ID' })
@@ -41,7 +42,7 @@ export class LocationRequestAdminController {
   searchLocationRequestById(
     @Param('locationRequestId', ParseUUIDPipe) locationRequestId: string,
   ) {
-    return this.locationRequestManagementService.getAnyLocationRequestById({
+    return this.locationRequestQueryService.getAnyLocationRequestById({
       locationRequestId,
     });
   }

@@ -16,6 +16,8 @@ import {
 import { CheckInEntity } from './CheckIn.entity';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
+import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
+import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 
 @Entity({ name: LocationEntity.TABLE_NAME })
 export class LocationEntity {
@@ -30,14 +32,29 @@ export class LocationEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
+  @ManyToOne(() => AccountEntity, {
+    createForeignKeyConstraints: false,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy: AccountEntity;
+
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedById: string;
+
+  // consider refactoring business to something else
   @ManyToOne(() => BusinessEntity, (business) => business.locations, {
     createForeignKeyConstraints: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'business_id' })
   business: BusinessEntity;
 
-  @Column({ name: 'business_id', type: 'uuid' })
+  @Column({ name: 'business_id', type: 'uuid', nullable: true })
   businessId: string;
+
+  @Column({ name: 'ownership_type', type: 'varchar', length: 50 })
+  ownershipType: LocationOwnershipType;
 
   @Column({ name: 'name', type: 'varchar', length: 255 })
   name: string;
@@ -118,7 +135,12 @@ export class LocationEntity {
   @BeforeInsert()
   @BeforeUpdate()
   setGeom() {
-    if (this.latitude && this.longitude) {
+    if (
+      this.latitude !== null &&
+      this.latitude !== undefined &&
+      this.longitude !== null &&
+      this.longitude !== undefined
+    ) {
       // i have to add the function wrapper so typeorm executes the postgis functions on db side
       this.geom = () =>
         `ST_SetSRID(ST_MakePoint(${this.longitude}, ${this.latitude}), 4326)::geography`;

@@ -32,7 +32,7 @@ export class LocationQueryService
           where: {
             isVisibleOnMap: true,
           },
-          relations: ['business'],
+          relations: ['business'], // DO NOT CHANGE TO OBJECT.
         },
       )
       .then((locations) => {

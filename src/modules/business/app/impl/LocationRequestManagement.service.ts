@@ -1,7 +1,12 @@
 import { CoreService } from '@/common/core/Core.service';
-import { CreateLocationRequestDto } from '@/common/dto/business/CreateLocationRequest.dto';
+import { CreateLocationRequestFromBusinessDto } from '@/common/dto/business/CreateLocationRequestFromBusiness.dto';
 import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { LocationRequestResponseDto } from '@/common/dto/business/res/LocationRequest.response.dto';
 import { LocationRequestRepository } from '@/modules/business/infra/repository/LocationRequest.repository';
 import { BusinessRepositoryProvider } from '@/modules/account/infra/repository/Business.repository';
@@ -10,8 +15,6 @@ import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { DeleteResult, EntityManager, In, UpdateResult } from 'typeorm';
 import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
 import { CancelLocationRequestDto } from '@/common/dto/business/CancelLocationRequest.dto';
-import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
-import { GetAnyLocationRequestByIdDto } from '@/common/dto/business/GetAnyLocationRequestById.dto';
 import { ProcessLocationRequestDto } from '@/common/dto/business/ProcessLocationRequest.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
@@ -25,11 +28,14 @@ import { LocationRequestTagsRepository } from '@/modules/business/infra/reposito
 import { AddLocationRequestTagsDto } from '@/common/dto/business/AddLocationRequestTags.dto';
 import { DeleteLocationRequestTagDto } from '@/common/dto/business/DeleteLocationRequestTag.dto';
 import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/LocationRequestTags.response.dto';
-import { GetMyLocationRequestByIdDto } from '@/common/dto/business/GetMyLocationRequestById.dto';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { LocationTagsRepository } from '@/modules/business/infra/repository/LocationTags.repository';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
+import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
+import { CreateLocationRequestFromUserDto } from '@/common/dto/business/CreateLocationRequestFromUser.dto';
+import { UserProfileRepositoryProvider } from '@/modules/account/infra/repository/UserProfile.repository';
+import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
 
 @Injectable()
 export class LocationRequestManagementService
@@ -43,8 +49,63 @@ export class LocationRequestManagementService
   ) {
     super();
   }
-  createLocationRequest(
-    dto: CreateLocationRequestDto,
+
+  createLocationRequestFromUser(
+    dto: CreateLocationRequestFromUserDto,
+  ): Promise<LocationRequestResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationRequestRepository = LocationRequestRepository(em);
+      const userProfileRepository = UserProfileRepositoryProvider(em);
+      const tagRepository = TagRepositoryProvider(em);
+      const locationRequestTagRepository = LocationRequestTagsRepository(em);
+
+      const userProfile = await userProfileRepository.findOneByOrFail({
+        accountId: dto.createdById,
+      });
+
+      if (!userProfile.canSuggestLocation()) {
+        throw new BadRequestException(
+          'This user is not allowed to suggest a location',
+        );
+      }
+
+      // validate tags
+      const tagCountInDb = await tagRepository.countSelectableTagsById(
+        dto.tagIds,
+      );
+
+      if (tagCountInDb !== dto.tagIds.length) {
+        throw new BadRequestException(
+          'One or more provided tags are invalid/not selectable',
+        );
+      }
+
+      // confirm image uploads
+      await this.fileStorageService.confirmUpload([...dto.locationImageUrls]);
+
+      const locationRequest = this.mapTo_safe(LocationRequestEntity, dto);
+      // TODO add automatic location validation process here
+      locationRequest.status = LocationRequestStatus.AWAITING_ADMIN_REVIEW;
+      locationRequest.type = LocationRequestType.USER_SUGGESTED;
+
+      return (
+        locationRequestRepository
+          .save(locationRequest)
+          // create tags
+          .then(async (e) => {
+            e.tags = await locationRequestTagRepository.persistEntities({
+              tagIds: dto.tagIds,
+              locationRequestId: e.id,
+            });
+
+            return this.mapTo(LocationRequestResponseDto, e);
+          })
+      );
+    });
+  }
+
+  createLocationRequestFromBusiness(
+    dto: CreateLocationRequestFromBusinessDto,
   ): Promise<LocationRequestResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const locationRequestRepository = LocationRequestRepository(em);
@@ -82,15 +143,21 @@ export class LocationRequestManagementService
       const locationRequest = this.mapTo_safe(LocationRequestEntity, dto);
       // TODO add automatic location validation process here
       locationRequest.status = LocationRequestStatus.AWAITING_ADMIN_REVIEW;
+      locationRequest.type = LocationRequestType.BUSINESS_OWNED;
 
-      return locationRequestRepository.save(locationRequest).then(async (e) => {
-        e.tags = await locationRequestTagRepository.persistEntities({
-          tagIds: dto.tagIds,
-          locationRequestId: e.id,
-        });
+      return (
+        locationRequestRepository
+          .save(locationRequest)
+          // create tags
+          .then(async (e) => {
+            e.tags = await locationRequestTagRepository.persistEntities({
+              tagIds: dto.tagIds,
+              locationRequestId: e.id,
+            });
 
-        return this.mapTo(LocationRequestResponseDto, e);
-      });
+            return this.mapTo(LocationRequestResponseDto, e);
+          })
+      );
     });
   }
 
@@ -131,6 +198,7 @@ export class LocationRequestManagementService
         .then((e) => this.mapToArray(LocationRequestTagsResponseDto, e));
     });
   }
+
   deleteLocationRequestTag(
     dto: DeleteLocationRequestTagDto,
   ): Promise<DeleteResult> {
@@ -207,77 +275,6 @@ export class LocationRequestManagementService
     });
   }
 
-  getMyLocationRequests(
-    accountId: string,
-    query: PaginateQuery,
-  ): Promise<Paginated<LocationRequestResponseDto>> {
-    return paginate(query, LocationRequestRepository(this.dataSource), {
-      sortableColumns: ['createdAt'],
-      defaultSortBy: [['createdAt', 'DESC']],
-      where: {
-        createdById: accountId,
-      },
-      relations: ['createdBy', 'processedBy', 'tags'],
-    }).then(
-      (res) =>
-        ({
-          ...res,
-          data: res.data.map((i) => this.mapTo(LocationRequestResponseDto, i)),
-        }) as Paginated<LocationRequestResponseDto>,
-    );
-  }
-
-  getMyLocationRequestById(
-    dto: GetMyLocationRequestByIdDto,
-  ): Promise<LocationRequestResponseDto> {
-    const locationRequestRepository = LocationRequestRepository(
-      this.dataSource,
-    );
-
-    return locationRequestRepository
-      .findOneOrFail({
-        where: {
-          id: dto.locationRequestId,
-          createdById: dto.accountId,
-        },
-        relations: ['createdBy', 'processedBy', 'tags'],
-      })
-      .then((e) => this.mapTo(LocationRequestResponseDto, e));
-  }
-
-  searchAllLocationRequests(
-    query: PaginateQuery,
-  ): Promise<Paginated<LocationRequestResponseDto>> {
-    return paginate(query, LocationRequestRepository(this.dataSource), {
-      sortableColumns: ['createdAt'],
-      defaultSortBy: [['createdAt', 'DESC']],
-      relations: ['createdBy', 'processedBy', 'tags'],
-    }).then(
-      (res) =>
-        ({
-          ...res,
-          data: res.data.map((i) => this.mapTo(LocationRequestResponseDto, i)),
-        }) as Paginated<LocationRequestResponseDto>,
-    );
-  }
-
-  getAnyLocationRequestById(
-    dto: GetAnyLocationRequestByIdDto,
-  ): Promise<LocationRequestResponseDto> {
-    const locationRequestRepository = LocationRequestRepository(
-      this.dataSource,
-    );
-
-    return locationRequestRepository
-      .findOneOrFail({
-        where: {
-          id: dto.locationRequestId,
-        },
-        relations: ['createdBy', 'processedBy', 'tags'],
-      })
-      .then((e) => this.mapTo(LocationRequestResponseDto, e));
-  }
-
   processLocationRequest(
     dto: ProcessLocationRequestDto,
   ): Promise<UpdateResult> {
@@ -349,18 +346,45 @@ export class LocationRequestManagementService
     const locationTagsRepository = LocationTagsRepository(em);
 
     const location = new LocationEntity();
-    location.name = locationRequest.name;
-    location.description = locationRequest.description;
-    location.addressLine = locationRequest.addressLine;
-    location.addressLevel1 = locationRequest.addressLevel1;
-    location.addressLevel2 = locationRequest.addressLevel2;
-    location.latitude = locationRequest.latitude;
-    location.longitude = locationRequest.longitude;
-    location.imageUrl = locationRequest.locationImageUrls;
-    location.businessId = locationRequest.createdById;
-    location.sourceLocationRequestId = locationRequest.id;
-    location.radiusMeters = locationRequest.radiusMeters;
-    location.isVisibleOnMap = false; // default not visible. User must update to make it visible
+
+    switch (locationRequest.type) {
+      case LocationRequestType.BUSINESS_OWNED: {
+        location.ownershipType = LocationOwnershipType.OWNED_BY_BUSINESS;
+        location.name = locationRequest.name;
+        location.description = locationRequest.description;
+        location.addressLine = locationRequest.addressLine;
+        location.addressLevel1 = locationRequest.addressLevel1;
+        location.addressLevel2 = locationRequest.addressLevel2;
+        location.latitude = locationRequest.latitude;
+        location.longitude = locationRequest.longitude;
+        location.imageUrl = locationRequest.locationImageUrls;
+        location.businessId = locationRequest.createdById;
+        location.sourceLocationRequestId = locationRequest.id;
+        location.radiusMeters = locationRequest.radiusMeters;
+        location.isVisibleOnMap = false; // default not visible. User must update to make it visible
+        break;
+      }
+      case LocationRequestType.USER_SUGGESTED: {
+        location.ownershipType = LocationOwnershipType.PUBLIC_PLACE;
+        location.name = locationRequest.name;
+        location.description = locationRequest.description;
+        location.addressLine = locationRequest.addressLine;
+        location.addressLevel1 = locationRequest.addressLevel1;
+        location.addressLevel2 = locationRequest.addressLevel2;
+        location.latitude = locationRequest.latitude;
+        location.longitude = locationRequest.longitude;
+        location.imageUrl = locationRequest.locationImageUrls;
+        location.sourceLocationRequestId = locationRequest.id;
+        location.radiusMeters = locationRequest.radiusMeters;
+        location.isVisibleOnMap = false; // default not visible. User must update to make it visible
+        break;
+      }
+      default: {
+        throw new InternalServerErrorException(
+          'Location Request Type not supported for mapping to Location',
+        );
+      }
+    }
 
     return locationRepository.save(location).then(async (savedLocation) => {
       const locationRequestTags = await locationRequestTagsRepository.find({
