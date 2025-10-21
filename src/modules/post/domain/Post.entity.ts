@@ -1,4 +1,4 @@
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import {
   Column,
   CreateDateColumn,

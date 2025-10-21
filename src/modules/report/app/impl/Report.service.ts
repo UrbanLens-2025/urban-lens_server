@@ -15,7 +15,7 @@ import { PostEntity } from '@/modules/post/domain/Post.entity';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Injectable()
 export class ReportService implements IReportService {
@@ -296,7 +296,9 @@ export class ReportService implements IReportService {
             .getRepository(EventEntity)
             .findOne({
               where: { id: entityId },
-              relations: ['createdBy'],
+              relations: {
+                createdBy: true,
+              },
               select: {
                 id: true,
                 displayName: true,
@@ -324,7 +326,11 @@ export class ReportService implements IReportService {
             .getRepository(LocationEntity)
             .findOne({
               where: { id: entityId },
-              relations: ['business', 'business.account'],
+              relations: {
+                business: {
+                  account: true,
+                },
+              },
               select: {
                 id: true,
                 name: true,
@@ -360,7 +366,9 @@ export class ReportService implements IReportService {
             .getRepository(BusinessEntity)
             .findOne({
               where: { accountId: entityId },
-              relations: ['account'],
+              relations: {
+                account: true,
+              },
               select: {
                 accountId: true,
                 name: true,

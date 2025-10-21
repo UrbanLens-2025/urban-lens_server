@@ -1,7 +1,7 @@
 import { Column, Entity, OneToOne, PrimaryColumn } from 'typeorm';
 import { CreatorTypes } from '@/common/constants/CreatorType.constant';
 import { SocialLink } from '@/common/json/SocialLink.json';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Entity('creator-profile')
 export class CreatorProfileEntity {

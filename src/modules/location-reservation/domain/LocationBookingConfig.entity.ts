@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Entity({ name: LocationBookingConfigEntity.TABLE_NAME })
 export class LocationBookingConfigEntity {

@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { AccountRepository } from '@/modules/auth/infra/repository/Account.repository';
+import { AccountRepository } from '@/modules/account/infra/repository/Account.repository';
 import { Role } from '@/common/constants/Role.constant';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';

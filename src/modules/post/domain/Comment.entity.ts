@@ -1,5 +1,5 @@
 // Comment.entity.ts
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { PostEntity } from './Post.entity';
 import { ReactEntity } from './React.entity';
 import {

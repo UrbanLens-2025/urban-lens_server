@@ -10,10 +10,9 @@ import { IAuthService } from '@/modules/auth/app/IAuth.service';
 import { IUserAuthService } from '@/modules/auth/app/IUser.auth.service';
 import { AuthInfraModule } from '@/modules/auth/infra/auth.infra.module';
 import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
-import { IBusinessService } from '@/modules/account/app/IBusiness.service';
-import { BusinessService } from '@/modules/account/app/impl/Business.service';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 import { AuthController } from '@/modules/auth/interfaces/auth.controller';
+import { AccountModule } from '@/modules/account/Account.module';
 
 @Module({
   imports: [
@@ -22,6 +21,7 @@ import { AuthController } from '@/modules/auth/interfaces/auth.controller';
     TokenModule,
     AccountInfraModule,
     FileStorageModule,
+    AccountModule,
   ],
   controllers: [AuthPublicController, AuthDevOnlyController, AuthController],
   providers: [
@@ -32,10 +32,6 @@ import { AuthController } from '@/modules/auth/interfaces/auth.controller';
     {
       provide: IUserAuthService,
       useClass: UserAuthService,
-    },
-    {
-      provide: IBusinessService,
-      useClass: BusinessService,
     },
     AccountSeederHelper,
   ],

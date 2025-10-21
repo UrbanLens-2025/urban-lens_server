@@ -4,7 +4,7 @@ import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { globalValidationConfig } from '@/config/validation.config';
 import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerDocumentConfig } from '@/config/swagger.config';
-import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
+import { SwaggerTheme } from 'swagger-themes';
 import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
 
 async function bootstrap() {
@@ -29,8 +29,6 @@ async function bootstrap() {
     defaultVersion: ['1'],
   });
 
-  const theme = new SwaggerTheme();
-
   SwaggerModule.setup(
     'swagger',
     app,
@@ -41,6 +39,7 @@ async function bootstrap() {
         persistAuthorization: true,
         tagsSorter: 'alpha',
         operationsSorter: 'alpha',
+        docExpansion: 'none',
       },
       customJs: '/swagger-custom.js',
       // customCss: theme.getBuffer(SwaggerThemeNameEnum),

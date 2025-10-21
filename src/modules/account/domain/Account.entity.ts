@@ -41,9 +41,6 @@ export class AccountEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
-  @Column({ name: 'is_verified', type: 'boolean', default: false })
-  isVerified: boolean;
-
   @Column({ name: 'avatar_url', type: 'varchar', nullable: true })
   avatarUrl: string | null;
 
