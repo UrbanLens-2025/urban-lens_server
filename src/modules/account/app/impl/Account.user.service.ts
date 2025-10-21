@@ -24,7 +24,7 @@ export class AccountUserService
         id: dto.userId,
         role: In([Role.USER, Role.BUSINESS_OWNER, Role.EVENT_CREATOR]),
       },
-      relations: ['userProfile', 'userProfile.rank'],
+      relations: ['userProfile'],
     });
     if (res == null) {
       throw new NotFoundException('User not found');

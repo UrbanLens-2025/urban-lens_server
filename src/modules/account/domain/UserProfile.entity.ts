@@ -1,6 +1,9 @@
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import { CheckInEntity } from '@/modules/business/domain/CheckIn.entity';
-import { RankEntity } from '@/modules/gamification/domain/Rank.entity';
+import {
+  RankEntity,
+  RankName,
+} from '@/modules/gamification/domain/Rank.entity';
 import {
   Entity,
   JoinColumn,
@@ -30,10 +33,13 @@ export class UserProfileEntity {
     createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'rank_id' })
-  rank: RankEntity;
+  rankEntity: RankEntity;
 
   @Column({ name: 'rank_id', type: 'uuid', nullable: true })
   rankId: string;
+
+  @Column({ name: 'rank', type: 'enum', enum: RankName, nullable: true })
+  rank: RankName;
 
   @Column({ name: 'points', type: 'integer', default: 0 })
   points: number;

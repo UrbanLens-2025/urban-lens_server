@@ -34,7 +34,6 @@ export class AccountProfileService
   async getUserProfile(userId: string): Promise<UserProfileResponseDto> {
     const userProfile = await this.userProfileRepository.repo.findOne({
       where: { accountId: userId },
-      relations: ['rank'],
     });
 
     if (!userProfile) {

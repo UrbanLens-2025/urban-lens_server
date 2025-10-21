@@ -1,5 +1,5 @@
-import { Exclude, Expose, Type } from 'class-transformer';
-import { RankResponseDto } from '@/common/dto/gamification/res/Rank.response.dto';
+import { Exclude, Expose } from 'class-transformer';
+import { RankName } from '@/modules/gamification/domain/Rank.entity';
 
 @Exclude()
 export class UserProfileResponseDto {
@@ -7,8 +7,7 @@ export class UserProfileResponseDto {
   accountId: string;
 
   @Expose()
-  @Type(() => RankResponseDto)
-  rank: RankResponseDto;
+  rank: RankName;
 
   @Expose()
   points: number;

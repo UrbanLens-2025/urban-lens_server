@@ -123,11 +123,13 @@ export class UserPointsService implements IUserPointsService {
     // Update rank if changed
     if (userProfile.rankId !== appropriateRank.id) {
       const oldRankId = userProfile.rankId;
+      const oldRank = userProfile.rank;
       userProfile.rankId = appropriateRank.id;
+      userProfile.rank = appropriateRank.name;
       await userProfileRepo.save(userProfile);
 
       this.logger.log(
-        `Updated rank for user ${userId} from ${oldRankId} to ${appropriateRank.id} (${appropriateRank.name})`,
+        `Updated rank for user ${userId} from ${oldRank} to ${appropriateRank.name} (${appropriateRank.id})`,
       );
     }
   }
