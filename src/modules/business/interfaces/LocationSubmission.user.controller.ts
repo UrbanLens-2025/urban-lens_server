@@ -1,6 +1,3 @@
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Roles } from '@/common/Roles.decorator';
-import { Role } from '@/common/constants/Role.constant';
 import {
   Body,
   Controller,
@@ -12,22 +9,25 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Roles } from '@/common/Roles.decorator';
+import { Role } from '@/common/constants/Role.constant';
+import { WithPagination } from '@/common/WithPagination.decorator';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 import { CreateLocationRequestFromUserDto } from '@/common/dto/business/CreateLocationRequestFromUser.dto';
-import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
 import { AddLocationRequestTagsDto } from '@/common/dto/business/AddLocationRequestTags.dto';
 import { DeleteLocationRequestTagDto } from '@/common/dto/business/DeleteLocationRequestTag.dto';
-import { WithPagination } from '@/common/WithPagination.decorator';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
+import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
 import { ILocationRequestQueryService } from '@/modules/business/app/ILocationRequestQuery.service';
 
-@ApiTags('Location Request')
+@ApiTags('Location Submissions')
 @ApiBearerAuth()
 @Roles(Role.USER)
-@Controller('/user/location-request')
-export class LocationRequestUserController {
+@Controller('/user/location-submission')
+export class LocationSubmissionUserController {
   constructor(
     @Inject(ILocationRequestManagementService)
     private readonly locationRequestManagementService: ILocationRequestManagementService,

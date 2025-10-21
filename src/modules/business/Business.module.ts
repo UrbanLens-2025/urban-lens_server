@@ -19,8 +19,8 @@ import { ICheckInV2Service } from '@/modules/business/app/ICheckInV2.service';
 import { CheckInV2Service } from '@/modules/business/app/impl/CheckInV2.service';
 import { LocationRequestQueryService } from '@/modules/business/app/impl/LocationRequestQuery.service';
 import { ILocationRequestQueryService } from '@/modules/business/app/ILocationRequestQuery.service';
-import { LocationRequestUserController } from '@/modules/business/interfaces/LocationRequest.user.controller';
 import { AccountModule } from '@/modules/account/Account.module';
+import { LocationSubmissionUserController } from '@/modules/business/interfaces/LocationSubmission.user.controller';
 
 @Module({
   imports: [
@@ -33,7 +33,7 @@ import { AccountModule } from '@/modules/account/Account.module';
   controllers: [
     LocationRequestBusinessController,
     LocationRequestAdminController,
-    LocationRequestUserController,
+    LocationSubmissionUserController,
     LocationUserController,
     LocationPublicController,
     LocationOwnerController,

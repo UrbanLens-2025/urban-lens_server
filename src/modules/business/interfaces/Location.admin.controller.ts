@@ -5,6 +5,7 @@ import {
   Inject,
   Param,
   ParseUUIDPipe,
+  Post,
   Put,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -17,6 +18,7 @@ import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { UpdateLocationDto } from '@/common/dto/business/UpdateLocation.dto';
 import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
+import { CreatePublicLocationDto } from '@/common/dto/business/CreatePublicLocation.dto';
 
 @ApiTags('Location')
 @Controller('/admin/locations')
@@ -59,6 +61,18 @@ export class LocationAdminController {
     return this.locationManagementService.forceUpdateLocation({
       ...dto,
       locationId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Create a public location' })
+  @Post('/public')
+  createPublicLocation(
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: CreatePublicLocationDto,
+  ) {
+    return this.locationManagementService.createPublicLocation({
+      ...dto,
       accountId: userDto.sub,
     });
   }

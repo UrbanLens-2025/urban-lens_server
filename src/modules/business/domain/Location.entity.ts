@@ -135,7 +135,12 @@ export class LocationEntity {
   @BeforeInsert()
   @BeforeUpdate()
   setGeom() {
-    if (this.latitude && this.longitude) {
+    if (
+      this.latitude !== null &&
+      this.latitude !== undefined &&
+      this.longitude !== null &&
+      this.longitude !== undefined
+    ) {
       // i have to add the function wrapper so typeorm executes the postgis functions on db side
       this.geom = () =>
         `ST_SetSRID(ST_MakePoint(${this.longitude}, ${this.latitude}), 4326)::geography`;

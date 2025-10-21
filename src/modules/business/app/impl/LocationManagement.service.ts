@@ -14,6 +14,7 @@ import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entit
 import { ForceUpdateLocationDto } from '@/common/dto/business/ForceUpdateLocation.dto';
 import { CreatePublicLocationDto } from '@/common/dto/business/CreatePublicLocation.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
+import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
 
 @Injectable()
 export class LocationManagementService
@@ -154,11 +155,33 @@ export class LocationManagementService
   ): Promise<LocationResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const locationRepository = LocationRepositoryProvider(em);
+      const locationTagRepository = LocationTagsRepository(em);
+      const tagRepository = TagRepositoryProvider(em);
+
+      // validate tags
+      const countTags = await tagRepository.countSelectableTagsById(dto.tagIds);
+      if (countTags !== dto.tagIds.length) {
+        throw new BadRequestException(
+          'One or more tags are invalid or not selectable',
+        );
+      }
 
       const newLocation = this.mapTo_safe(LocationEntity, dto);
-      return locationRepository
-        .save(newLocation)
-        .then((res) => this.mapTo(LocationResponseDto, res));
+      newLocation.ownershipType = LocationOwnershipType.PUBLIC_PLACE;
+
+      return (
+        locationRepository
+          .save(newLocation)
+          // save tags
+          .then(async (res) => {
+            res.tags = await locationTagRepository.persistEntities({
+              locationId: res.id,
+              tagIds: dto.tagIds,
+            });
+            return res;
+          })
+          .then((res) => this.mapTo(LocationResponseDto, res))
+      );
     });
   }
 }
