@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { UserAccountResponse } from '@/common/dto/auth/UserAccountResponse.dto';
+import { UserAccountResponseDto } from '@/common/dto/auth/res/UserAccountResponse.dto';
 import { AccountRepository } from '@/modules/auth/infra/repository/Account.repository';
 import { CoreService } from '@/common/core/Core.service';
 import { UserGetAccountInfo } from '@/common/dto/auth/UserGetAccountInfo.dto';
@@ -18,7 +18,7 @@ export class AccountUserService
 
   public async getAccountInfo(
     dto: UserGetAccountInfo.Dto,
-  ): Promise<UserAccountResponse.Dto> {
+  ): Promise<UserAccountResponseDto> {
     const res = await this.accountRepository.repo.findOne({
       where: {
         id: dto.userId,
@@ -29,6 +29,6 @@ export class AccountUserService
     if (res == null) {
       throw new NotFoundException('User not found');
     }
-    return this.mapTo(UserAccountResponse.Dto, res);
+    return this.mapTo(UserAccountResponseDto, res);
   }
 }

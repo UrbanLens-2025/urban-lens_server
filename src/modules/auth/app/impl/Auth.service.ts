@@ -11,9 +11,9 @@ import { TokenService } from '@/common/core/token/token.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from '@/common/dto/auth/Login.dto';
 import { AccountRepository } from '@/modules/auth/infra/repository/Account.repository';
-import { UserLoginResponseDto } from '@/common/dto/auth/UserLoginResponse.dto';
+import { UserLoginResponseDto } from '@/common/dto/auth/res/UserLoginResponse.dto';
 import { CoreService } from '@/common/core/Core.service';
-import { RegisterResponseDto } from '@/common/dto/auth/RegisterResponse.dto';
+import { RegisterResponseDto } from '@/common/dto/auth/res/RegisterResponse.dto';
 import { randomUUID } from 'crypto';
 import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
 import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
@@ -23,7 +23,7 @@ import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
 import { Role } from '@/common/constants/Role.constant';
-import { UserAccountResponse } from '@/common/dto/auth/UserAccountResponse.dto';
+import { UserAccountResponseDto } from '@/common/dto/auth/res/UserAccountResponse.dto';
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
 import { IEmailNotificationService } from '@/modules/notification/app/IEmailNotification.service';
 
@@ -125,7 +125,7 @@ export class AuthService extends CoreService implements IAuthService {
     });
 
     const response = new UserLoginResponseDto();
-    response.user = this.mapTo(UserAccountResponse.Dto, user);
+    response.user = this.mapTo(UserAccountResponseDto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }
@@ -179,7 +179,7 @@ export class AuthService extends CoreService implements IAuthService {
     }
 
     const response = new UserLoginResponseDto();
-    response.user = this.mapTo(UserAccountResponse.Dto, user);
+    response.user = this.mapTo(UserAccountResponseDto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }

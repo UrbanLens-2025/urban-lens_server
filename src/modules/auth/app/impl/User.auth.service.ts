@@ -3,7 +3,7 @@ import { AccountRepository } from '@/modules/auth/infra/repository/Account.repos
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { CoreService } from '@/common/core/Core.service';
 import { UpdateUserAccountDto } from '@/common/dto/auth/UpdateUserAccount.dto';
-import { UserAccountResponse } from '@/common/dto/auth/UserAccountResponse.dto';
+import { UserAccountResponseDto } from '@/common/dto/auth/res/UserAccountResponse.dto';
 import { IUserAuthService } from '@/modules/auth/app/IUser.auth.service';
 
 @Injectable()
@@ -12,11 +12,11 @@ export class UserAuthService extends CoreService implements IUserAuthService {
     super();
   }
 
-  async getUser(dto: JwtTokenDto): Promise<UserAccountResponse.Dto> {
+  async getUser(dto: JwtTokenDto): Promise<UserAccountResponseDto> {
     const account = await this.accountRepository.repo.findOneBy({
       id: dto.sub,
     });
-    return this.mapTo(UserAccountResponse.Dto, account);
+    return this.mapTo(UserAccountResponseDto, account);
   }
 
   async updateUser(userDto: JwtTokenDto, dto: UpdateUserAccountDto) {
