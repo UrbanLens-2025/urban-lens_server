@@ -13,6 +13,7 @@ import { FollowEntityType } from '@/modules/account/domain/Follow.entity';
 import { DataSource } from 'typeorm';
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
+import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 
 @Injectable()
 export class FollowService implements IFollowService {
@@ -43,13 +44,37 @@ export class FollowService implements IFollowService {
       throw new BadRequestException('Already following this entity');
     }
 
-    const follow = this.followRepository.repo.create({
-      followerId,
-      entityId: dto.entityId,
-      entityType: dto.entityType,
-    });
+    await this.dataSource.transaction(async (manager) => {
+      const followRepo = manager.getRepository(
+        this.followRepository.repo.target,
+      );
+      const follow = followRepo.create({
+        followerId,
+        entityId: dto.entityId,
+        entityType: dto.entityType,
+      });
 
-    await this.followRepository.repo.save(follow);
+      await followRepo.save(follow);
+
+      // Update counters only if following a user
+      if (dto.entityType === FollowEntityType.USER) {
+        const userProfileRepo = manager.getRepository(UserProfileEntity);
+
+        // Increment follower's totalFollowing
+        await userProfileRepo.increment(
+          { accountId: followerId },
+          'totalFollowing',
+          1,
+        );
+
+        // Increment followed user's totalFollowers
+        await userProfileRepo.increment(
+          { accountId: dto.entityId },
+          'totalFollowers',
+          1,
+        );
+      }
+    });
 
     return { message: 'Followed successfully' };
   }
@@ -92,7 +117,31 @@ export class FollowService implements IFollowService {
       throw new NotFoundException('Follow relationship not found');
     }
 
-    await this.followRepository.repo.remove(follow);
+    await this.dataSource.transaction(async (manager) => {
+      const followRepo = manager.getRepository(
+        this.followRepository.repo.target,
+      );
+      await followRepo.remove(follow);
+
+      // Update counters only if unfollowing a user
+      if (dto.entityType === FollowEntityType.USER) {
+        const userProfileRepo = manager.getRepository(UserProfileEntity);
+
+        // Decrement follower's totalFollowing
+        await userProfileRepo.decrement(
+          { accountId: followerId },
+          'totalFollowing',
+          1,
+        );
+
+        // Decrement unfollowed user's totalFollowers
+        await userProfileRepo.decrement(
+          { accountId: dto.entityId },
+          'totalFollowers',
+          1,
+        );
+      }
+    });
 
     return { message: 'Unfollowed successfully' };
   }

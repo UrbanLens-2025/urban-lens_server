@@ -47,6 +47,21 @@ export class UserProfileEntity {
   @OneToMany(() => CheckInEntity, (checkIn) => checkIn.userProfile)
   checkIns: CheckInEntity[];
 
+  @Column({ name: 'total_check_ins', type: 'integer', default: 0 })
+  totalCheckIns: number;
+
+  @Column({ name: 'total_blogs', type: 'integer', default: 0 })
+  totalBlogs: number;
+
+  @Column({ name: 'total_reviews', type: 'integer', default: 0 })
+  totalReviews: number;
+
+  @Column({ name: 'total_followers', type: 'integer', default: 0 })
+  totalFollowers: number;
+
+  @Column({ name: 'total_following', type: 'integer', default: 0 })
+  totalFollowing: number;
+
   canSuggestLocation() {
     return true;
   }

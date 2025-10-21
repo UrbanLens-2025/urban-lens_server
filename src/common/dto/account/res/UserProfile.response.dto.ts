@@ -20,5 +20,20 @@ export class UserProfileResponseDto {
   totalAchievements: number;
 
   @Expose()
+  totalCheckIns: number;
+
+  @Expose()
+  totalBlogs: number;
+
+  @Expose()
+  totalReviews: number;
+
+  @Expose()
+  totalFollowers: number;
+
+  @Expose()
+  totalFollowing: number;
+
+  @Expose()
   dob: Date;
 }

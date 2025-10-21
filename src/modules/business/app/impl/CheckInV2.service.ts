@@ -18,6 +18,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { GetMyCheckInsDto } from '@/common/dto/business/GetMyCheckIns.dto';
 import { paginate, Paginated } from 'nestjs-paginate';
 import { GetMyCheckInByLocationIdDto } from '@/common/dto/business/GetMyCheckInByLocationId.dto';
+import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 
 @Injectable()
 export class CheckInV2Service extends CoreService implements ICheckInV2Service {
@@ -80,6 +81,16 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
       return (
         checkInRepository
           .save(checkInEntity)
+          // Update user profile totalCheckIns
+          .then(async (e) => {
+            const userProfileRepo = manager.getRepository(UserProfileEntity);
+            await userProfileRepo.increment(
+              { accountId: e.userProfileId },
+              'totalCheckIns',
+              1,
+            );
+            return e;
+          })
           // Emit events
           .then((e) => {
             const checkInCreatedEvent = new CheckInCreatedEvent();

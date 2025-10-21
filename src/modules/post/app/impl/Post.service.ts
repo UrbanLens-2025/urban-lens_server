@@ -39,6 +39,7 @@ import {
   POST_CREATED_EVENT,
   PostCreatedEvent,
 } from '@/modules/gamification/domain/events/PostCreated.event';
+import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 
 interface RawPost {
   post_postid: string;
@@ -485,6 +486,25 @@ export class PostService
             }
           }
 
+          // Update user profile total counters
+          if (dto.authorId) {
+            const userProfileRepo =
+              transactionalEntityManager.getRepository(UserProfileEntity);
+            if (dto.type === PostType.BLOG) {
+              await userProfileRepo.increment(
+                { accountId: dto.authorId },
+                'totalBlogs',
+                1,
+              );
+            } else if (dto.type === PostType.REVIEW) {
+              await userProfileRepo.increment(
+                { accountId: dto.authorId },
+                'totalReviews',
+                1,
+              );
+            }
+          }
+
           return savedPost;
         },
       );
@@ -726,6 +746,22 @@ export class PostService
               tx,
             );
           }
+        }
+
+        // Decrement user profile counters
+        const userProfileRepo = tx.getRepository(UserProfileEntity);
+        if (post.type === PostType.BLOG) {
+          await userProfileRepo.decrement(
+            { accountId: post.authorId },
+            'totalBlogs',
+            1,
+          );
+        } else if (post.type === PostType.REVIEW) {
+          await userProfileRepo.decrement(
+            { accountId: post.authorId },
+            'totalReviews',
+            1,
+          );
         }
       });
 
