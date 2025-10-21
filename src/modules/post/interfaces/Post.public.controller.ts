@@ -17,6 +17,7 @@ import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { GetReviewsQueryDto } from '@/common/dto/post/GetReviewsQuery.dto';
 import { UpdatePostVisibilityDto } from '@/common/dto/post/UpdatePostVisibility.dto';
+import { OptionalAuth } from '@/common/decorators/OptionalAuth.decorator';
 
 @ApiTags('Post')
 @ApiBearerAuth()
@@ -36,6 +37,7 @@ export class PostPublicController {
 
   @ApiOperation({ summary: 'Get feed of all public posts' })
   @Get('feed')
+  @OptionalAuth()
   getBasicFeed(
     @Query() query: PaginationParams,
     @AuthUser() user?: JwtTokenDto,
@@ -62,6 +64,7 @@ export class PostPublicController {
       'Get all review posts filtered by locationId and/or eventId. At least one filter is required.',
   })
   @Get('reviews')
+  @OptionalAuth()
   @WithPagination()
   getReviews(
     @Query() filterQuery: GetReviewsQueryDto,
@@ -82,6 +85,7 @@ export class PostPublicController {
       'Get all posts (blogs and reviews) that are associated with a specific location',
   })
   @Get('location/:locationId')
+  @OptionalAuth()
   @WithPagination()
   getPostsByLocation(
     @Param('locationId') locationId: string,
@@ -93,12 +97,14 @@ export class PostPublicController {
 
   @ApiOperation({ summary: 'Get a post by id' })
   @Get(':postId')
+  @OptionalAuth()
   getPostById(@Param('postId') postId: string, @AuthUser() user?: JwtTokenDto) {
     return this.postService.getPostById(postId, user?.sub);
   }
 
   @ApiOperation({ summary: 'Get upvotes of a post' })
   @Get(':postId/upvotes')
+  @OptionalAuth()
   getUpvotesOfPost(
     @Param('postId') postId: string,
     @Query() query: PaginationParams,
@@ -108,36 +114,40 @@ export class PostPublicController {
 
   @ApiOperation({ summary: 'Get posts by author id' })
   @Get('author/:authorId')
+  @OptionalAuth()
   getPostByAuthorId(
     @Param('authorId') authorId: string,
     @Query() query: PaginationParams,
-    @AuthUser() user: JwtTokenDto,
+    @AuthUser() user?: JwtTokenDto,
   ) {
-    return this.postService.getPostByAuthorId(authorId, query, user.sub);
+    return this.postService.getPostByAuthorId(authorId, query, user?.sub);
   }
 
   @ApiOperation({ summary: 'Get review posts by author id' })
   @Get('author/:authorId/reviews')
+  @OptionalAuth()
   getReviewsByAuthorId(
     @Param('authorId') authorId: string,
     @Query() query: PaginationParams,
-    @AuthUser() user: JwtTokenDto,
+    @AuthUser() user?: JwtTokenDto,
   ) {
-    return this.postService.getReviewsByAuthorId(authorId, query, user.sub);
+    return this.postService.getReviewsByAuthorId(authorId, query, user?.sub);
   }
 
   @ApiOperation({ summary: 'Get blog posts by author id' })
   @Get('author/:authorId/blogs')
+  @OptionalAuth()
   getBlogsByAuthorId(
     @Param('authorId') authorId: string,
     @Query() query: PaginationParams,
-    @AuthUser() user: JwtTokenDto,
+    @AuthUser() user?: JwtTokenDto,
   ) {
-    return this.postService.getBlogsByAuthorId(authorId, query, user.sub);
+    return this.postService.getBlogsByAuthorId(authorId, query, user?.sub);
   }
 
   @ApiOperation({ summary: 'Get downvotes of a post' })
   @Get(':postId/downvotes')
+  @OptionalAuth()
   getDownvotesOfPost(
     @Param('postId') postId: string,
     @Query() query: PaginationParams,

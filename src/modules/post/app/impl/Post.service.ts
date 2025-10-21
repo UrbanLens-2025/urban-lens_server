@@ -278,7 +278,7 @@ export class PostService
       // Build query to get public posts
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',
@@ -352,7 +352,7 @@ export class PostService
       // Build query to get posts from followed users
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',
@@ -558,7 +558,7 @@ export class PostService
     try {
       const post = await this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',
@@ -824,7 +824,7 @@ export class PostService
 
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',
@@ -967,7 +967,7 @@ export class PostService
       // Build posts query
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',
@@ -1044,7 +1044,7 @@ export class PostService
       // Build posts query
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',
