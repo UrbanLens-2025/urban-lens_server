@@ -38,6 +38,9 @@ export class UserProfileEntity {
   @Column({ name: 'points', type: 'integer', default: 0 })
   points: number;
 
+  @Column({ name: 'ranking_point', type: 'integer', default: 0 })
+  rankingPoint: number;
+
   @Column({ name: 'total_achievements', type: 'integer', default: 0 })
   totalAchievements: number;
 

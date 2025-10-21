@@ -36,27 +36,29 @@ export class UserPointsService implements IUserPointsService {
       }
 
       this.logger.debug(
-        `✓ Found user profile. Current points: ${userProfile.points}`,
+        `✓ Found user profile. Current points: ${userProfile.points}, Ranking points: ${userProfile.rankingPoint}`,
       );
 
-      // Update points
+      // Update both points (for redeeming) and ranking points (for ranking)
       const oldPoints = userProfile.points;
+      const oldRankingPoint = userProfile.rankingPoint;
       userProfile.points += points;
+      userProfile.rankingPoint += points;
 
       this.logger.debug(
-        `💾 Saving user profile with new points: ${oldPoints} + ${points} = ${userProfile.points}`,
+        `💾 Saving user profile with new points: ${oldPoints} + ${points} = ${userProfile.points}, Ranking: ${oldRankingPoint} + ${points} = ${userProfile.rankingPoint}`,
       );
 
       await userProfileRepo.save(userProfile);
 
       this.logger.log(
-        `✅ Added ${points} points to user ${userId}. Total: ${oldPoints} → ${userProfile.points}`,
+        `✅ Added ${points} points to user ${userId}. Points: ${oldPoints} → ${userProfile.points}, Ranking: ${oldRankingPoint} → ${userProfile.rankingPoint}`,
       );
 
-      // Update rank if necessary (within same transaction)
+      // Update rank based on ranking points (within same transaction)
       await this.updateUserRankInTransaction(
         userId,
-        userProfile.points,
+        userProfile.rankingPoint,
         manager,
       );
     });
@@ -78,7 +80,7 @@ export class UserPointsService implements IUserPointsService {
 
       await this.updateUserRankInTransaction(
         userId,
-        userProfile.points,
+        userProfile.rankingPoint,
         manager,
       );
     });

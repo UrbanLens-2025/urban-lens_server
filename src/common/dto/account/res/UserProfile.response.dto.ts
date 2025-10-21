@@ -14,6 +14,9 @@ export class UserProfileResponseDto {
   points: number;
 
   @Expose()
+  rankingPoint: number;
+
+  @Expose()
   totalAchievements: number;
 
   @Expose()

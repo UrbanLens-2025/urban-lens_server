@@ -39,10 +39,6 @@ import {
   POST_CREATED_EVENT,
   PostCreatedEvent,
 } from '@/modules/gamification/domain/events/PostCreated.event';
-import {
-  POST_REACTED_EVENT,
-  PostReactedEvent,
-} from '@/modules/gamification/domain/events/PostReacted.event';
 
 interface RawPost {
   post_postid: string;
@@ -678,15 +674,6 @@ export class PostService
         'totalDownvotes',
         downvotesDelta,
       );
-
-      // Emit post reacted event for gamification (only on new reaction, not toggle off)
-      if (upvotesDelta > 0 || downvotesDelta > 0) {
-        const postReactedEvent = new PostReactedEvent();
-        postReactedEvent.postId = dto.postId;
-        postReactedEvent.userId = dto.userId;
-        postReactedEvent.reactType = dto.type;
-        this.eventEmitter.emit(POST_REACTED_EVENT, postReactedEvent);
-      }
 
       return 'React post successfully';
     } catch (error) {
