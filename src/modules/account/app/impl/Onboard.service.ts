@@ -11,19 +11,21 @@ import { UserTagsEntity } from '@/modules/account/domain/UserTags.entity';
 import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
 import { Role } from '@/common/constants/Role.constant';
 import { CreatorProfileRepository } from '@/modules/account/infra/repository/CreatorProfile.repository';
-import { RankRepository } from '@/modules/gamification/infra/repository/Rank.repository';
 import { RankEntity } from '@/modules/gamification/domain/Rank.entity';
+import { UserLoginResponseDto } from '@/common/dto/auth/UserLoginResponse.dto';
+import { UserAccountResponse } from '@/common/dto/auth/UserAccountResponse.dto';
+import { TokenService } from '@/common/core/token/token.service';
 
 @Injectable()
 export class OnboardService extends CoreService implements IOnboardService {
-  constructor(private readonly rankRepository: RankRepository) {
+  constructor(private readonly tokenService: TokenService) {
     super();
   }
 
   async onboardUser(
     accountId: string,
     dto: OnboardUserDto,
-  ): Promise<UpdateResult> {
+  ): Promise<UserLoginResponseDto> {
     return this.dataSource.transaction(async (manager) => {
       const accountRepository = manager.getRepository(AccountEntity);
       const tagRepository = manager.getRepository(TagEntity);
@@ -57,14 +59,11 @@ export class OnboardService extends CoreService implements IOnboardService {
         );
       }
 
-      console.log('11111');
       // Get the lowest rank (smallest minPoints)
       const lowestRank = await manager.getRepository(RankEntity).findOne({
         where: { minPoints: MoreThan(0) },
         order: { minPoints: 'ASC' },
       });
-
-      console.log('22222');
 
       if (!lowestRank) {
         throw new BadRequestException(
@@ -83,7 +82,15 @@ export class OnboardService extends CoreService implements IOnboardService {
       account.avatarUrl = dto.avatarUrl ?? null;
       account.coverUrl = dto.coverUrl ?? null;
 
-      return await accountRepository.update({ id: account.id }, account);
+      return await accountRepository
+        .update({ id: account.id }, account)
+        // return account details with new token
+        .then(async () => {
+          const response = new UserLoginResponseDto();
+          response.user = this.mapTo(UserAccountResponse.Dto, account);
+          response.token = await this.tokenService.generateToken(account);
+          return response;
+        });
     });
   }
 

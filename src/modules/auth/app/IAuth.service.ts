@@ -1,6 +1,6 @@
 import { RegisterDto } from '@/common/dto/auth/Register.dto';
 import { LoginDto } from '@/common/dto/auth/Login.dto';
-import { UserLoginResponse } from '@/common/dto/auth/UserLoginResponse.dto';
+import { UserLoginResponseDto } from '@/common/dto/auth/UserLoginResponse.dto';
 import { RegisterResponseDto } from '@/common/dto/auth/RegisterResponse.dto';
 import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
@@ -14,9 +14,9 @@ export interface IAuthService {
 
   register(dto: RegisterDto): Promise<RegisterResponseDto>;
 
-  registerUserConfirm(dto: RegisterConfirmDto): Promise<UserLoginResponse.Dto>;
+  registerUserConfirm(dto: RegisterConfirmDto): Promise<UserLoginResponseDto>;
 
-  loginUser(dto: LoginDto): Promise<UserLoginResponse.Dto>;
+  loginUser(dto: LoginDto): Promise<UserLoginResponseDto>;
 
   changePassword(
     userDto: JwtTokenDto,

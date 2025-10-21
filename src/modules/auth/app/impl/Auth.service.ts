@@ -11,7 +11,7 @@ import { TokenService } from '@/common/core/token/token.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from '@/common/dto/auth/Login.dto';
 import { AccountRepository } from '@/modules/auth/infra/repository/Account.repository';
-import { UserLoginResponse } from '@/common/dto/auth/UserLoginResponse.dto';
+import { UserLoginResponseDto } from '@/common/dto/auth/UserLoginResponse.dto';
 import { CoreService } from '@/common/core/Core.service';
 import { RegisterResponseDto } from '@/common/dto/auth/RegisterResponse.dto';
 import { randomUUID } from 'crypto';
@@ -94,7 +94,7 @@ export class AuthService extends CoreService implements IAuthService {
 
   async registerUserConfirm(
     dto: RegisterConfirmDto,
-  ): Promise<UserLoginResponse.Dto> {
+  ): Promise<UserLoginResponseDto> {
     const createAuthDto =
       await this.redisRegisterConfirmRepository.getAndValidate(
         dto.email,
@@ -124,13 +124,13 @@ export class AuthService extends CoreService implements IAuthService {
       },
     });
 
-    const response = new UserLoginResponse.Dto();
+    const response = new UserLoginResponseDto();
     response.user = this.mapTo(UserAccountResponse.Dto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }
 
-  async loginUser(loginDto: LoginDto): Promise<UserLoginResponse.Dto> {
+  async loginUser(loginDto: LoginDto): Promise<UserLoginResponseDto> {
     const user = await this.accountRepository.repo.findOneBy({
       email: loginDto.email,
     });
@@ -164,7 +164,7 @@ export class AuthService extends CoreService implements IAuthService {
   private async validateLogin(
     loginDto: LoginDto,
     user: AccountEntity | null,
-  ): Promise<UserLoginResponse.Dto> {
+  ): Promise<UserLoginResponseDto> {
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -178,7 +178,7 @@ export class AuthService extends CoreService implements IAuthService {
       throw new BadRequestException('Invalid password');
     }
 
-    const response = new UserLoginResponse.Dto();
+    const response = new UserLoginResponseDto();
     response.user = this.mapTo(UserAccountResponse.Dto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
