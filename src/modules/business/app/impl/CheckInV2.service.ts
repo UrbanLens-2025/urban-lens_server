@@ -60,9 +60,11 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
         },
       });
 
-      if ((distanceToLocation || 0) > location.radiusMeters) {
+      if (
+        (distanceToLocation || Number.MAX_SAFE_INTEGER) > location.radiusMeters
+      ) {
         throw new BadRequestException(
-          'You are not in the acceptable check-in range of the location',
+          `You are not in the acceptable check-in range of the location. Current distance to location: ${distanceToLocation}. Location Radus: ${location.radiusMeters}`,
         );
       }
 
