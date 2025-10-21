@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { UserAccountResponseDto } from '@/common/dto/auth/res/UserAccountResponse.dto';
 import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
 import { CoreService } from '@/common/core/Core.service';
-import { UserGetAccountInfo } from '@/common/dto/auth/UserGetAccountInfo.dto';
+import { UserGetAccountInfoDto } from '@/common/dto/auth/UserGetAccountInfo.dto';
 import { Role } from '@/common/constants/Role.constant';
 import { In } from 'typeorm';
 import { IAccountQueryService } from '@/modules/account/app/IAccountQuery.service';
@@ -21,7 +21,7 @@ export class AccountQueryService
   implements IAccountQueryService
 {
   async getAccountInfo(
-    dto: UserGetAccountInfo.Dto,
+    dto: UserGetAccountInfoDto,
   ): Promise<UserAccountResponseDto> {
     const accountRepository = AccountRepositoryProvider(this.dataSource);
     return await accountRepository

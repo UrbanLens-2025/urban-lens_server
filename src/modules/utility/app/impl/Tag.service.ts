@@ -1,6 +1,6 @@
 import { CoreService } from '@/common/core/Core.service';
 import { CreateTagDto } from '@/common/dto/account/CreateTag.dto';
-import { TagResponseDto } from '@/common/dto/account/TagResponse.dto';
+import { TagResponseDto } from '@/common/dto/account/res/TagResponse.dto';
 import { ITagService } from '@/modules/utility/app/ITag.service';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';

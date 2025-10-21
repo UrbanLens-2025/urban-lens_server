@@ -1,5 +1,4 @@
-import { LocationRequestResponseDto } from '@/common/dto/business/res/LocationRequest.response.dto';
-import { TagResponseDto } from '@/common/dto/account/TagResponse.dto';
+import { TagResponseDto } from '@/common/dto/account/res/TagResponse.dto';
 import { Exclude, Expose, Type } from 'class-transformer';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 
