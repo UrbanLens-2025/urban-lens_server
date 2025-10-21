@@ -30,6 +30,9 @@ export class LocationResponseDto {
   addressLevel2: string;
 
   @Expose()
+  radiusMeters: number;
+
+  @Expose()
   imageUrl?: string[];
 
   @Expose()
