@@ -1,5 +1,5 @@
 import { DataSource, EntityManager } from 'typeorm';
-import { WardEntity } from '@/modules/address/domain/Ward.entity';
+import { WardEntity } from '@/modules/utility/domain/Ward.entity';
 
 export const WardRepository = (ctx: DataSource | EntityManager) =>
   ctx.getRepository(WardEntity).extend({});

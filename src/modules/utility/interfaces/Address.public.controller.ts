@@ -5,8 +5,8 @@ import {
   Param,
   UseInterceptors,
 } from '@nestjs/common';
-import { IProvinceService } from '@/modules/address/app/IProvince.service';
-import { IWardService } from '@/modules/address/app/IWard.service';
+import { IProvinceService } from '@/modules/utility/app/IProvince.service';
+import { IWardService } from '@/modules/utility/app/IWard.service';
 import { WithPagination } from '@/common/WithPagination.decorator';
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 import { ApiParam, ApiTags } from '@nestjs/swagger';

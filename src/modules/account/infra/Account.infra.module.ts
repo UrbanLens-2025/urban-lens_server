@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TagRepository } from '@/modules/account/infra/repository/Tag.repository';
-import { TagEntity } from '@/modules/account/domain/Tag.entity';
 import { UserTagsEntity } from '@/modules/account/domain/UserTags.entity';
 import { UserTagsRepository } from '@/modules/account/infra/repository/UserTags.repository';
 import { BusinessRepository } from '@/modules/account/infra/repository/Business.repository';
@@ -13,7 +11,6 @@ import { FollowRepository } from '@/modules/account/infra/repository/Follow.repo
 import { FollowEntity } from '@/modules/account/domain/Follow.entity';
 
 const repositories = [
-  TagRepository,
   UserTagsRepository,
   BusinessRepository,
   UserProfileRepository,
@@ -23,7 +20,6 @@ const repositories = [
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      TagEntity,
       UserTagsEntity,
       BusinessEntity,
       UserProfileEntity,

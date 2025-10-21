@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
-import { ProvinceEntity } from '@/modules/address/domain/Province.entity';
+import { ProvinceEntity } from '@/modules/utility/domain/Province.entity';
 
 @Entity({ name: 'address_ward' })
 export class WardEntity {

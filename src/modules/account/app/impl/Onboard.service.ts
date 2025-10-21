@@ -6,7 +6,7 @@ import { OnboardUserDto } from '@/common/dto/account/OnboardUser.dto';
 import { In, MoreThan, UpdateResult } from 'typeorm';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
-import { TagEntity } from '@/modules/account/domain/Tag.entity';
+import { TagEntity } from '@/modules/utility/domain/Tag.entity';
 import { UserTagsEntity } from '@/modules/account/domain/UserTags.entity';
 import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
 import { Role } from '@/common/constants/Role.constant';

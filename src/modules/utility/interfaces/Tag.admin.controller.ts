@@ -5,7 +5,7 @@ import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 import { WithPagination } from '@/common/WithPagination.decorator';
-import { ITagService } from '@/modules/account/app/ITag.service';
+import { ITagService } from '@/modules/utility/app/ITag.service';
 
 @ApiBearerAuth()
 @Roles(Role.ADMIN)

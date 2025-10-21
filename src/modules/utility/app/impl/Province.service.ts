@@ -1,4 +1,4 @@
-import { IProvinceService } from '@/modules/address/app/IProvince.service';
+import { IProvinceService } from '@/modules/utility/app/IProvince.service';
 import { CoreService } from '@/common/core/Core.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { CreateProvinceDto } from '@/common/dto/address/CreateProvince.dto';
@@ -6,7 +6,7 @@ import { ProvinceResponseDto } from '@/common/dto/address/res/Province.response.
 import { UpdateProvinceDto } from '@/common/dto/address/UpdateProvince.dto';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { In, UpdateResult } from 'typeorm';
-import { ProvinceRepository } from '@/modules/address/infra/repository/Province.repository';
+import { ProvinceRepository } from '@/modules/utility/infra/repository/Province.repository';
 
 @Injectable()
 export class ProvinceService extends CoreService implements IProvinceService {

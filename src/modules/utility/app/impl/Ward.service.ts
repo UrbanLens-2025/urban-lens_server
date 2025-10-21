@@ -1,4 +1,4 @@
-import { IWardService } from '@/modules/address/app/IWard.service';
+import { IWardService } from '@/modules/utility/app/IWard.service';
 import { CoreService } from '@/common/core/Core.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { CreateWardDto } from '@/common/dto/address/CreateWard.dto';
@@ -6,7 +6,7 @@ import { WardResponseDto } from '@/common/dto/address/res/Ward.response.dto';
 import { UpdateWardDto } from '@/common/dto/address/UpdateWard.dto';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { In, UpdateResult } from 'typeorm';
-import { WardRepository } from '@/modules/address/infra/repository/Ward.repository';
+import { WardRepository } from '@/modules/utility/infra/repository/Ward.repository';
 
 @Injectable()
 export class WardService extends CoreService implements IWardService {

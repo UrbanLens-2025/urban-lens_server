@@ -2,10 +2,10 @@ import { Body, Controller, Inject, Param, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateProvinceDto } from '@/common/dto/address/CreateProvince.dto';
 import { UpdateProvinceDto } from '@/common/dto/address/UpdateProvince.dto';
-import { IProvinceService } from '@/modules/address/app/IProvince.service';
+import { IProvinceService } from '@/modules/utility/app/IProvince.service';
 import { CreateWardDto } from '@/common/dto/address/CreateWard.dto';
 import { UpdateWardDto } from '@/common/dto/address/UpdateWard.dto';
-import { IWardService } from '@/modules/address/app/IWard.service';
+import { IWardService } from '@/modules/utility/app/IWard.service';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 

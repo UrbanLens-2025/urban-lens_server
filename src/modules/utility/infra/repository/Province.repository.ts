@@ -1,5 +1,5 @@
 import { DataSource, EntityManager } from 'typeorm';
-import { ProvinceEntity } from '@/modules/address/domain/Province.entity';
+import { ProvinceEntity } from '@/modules/utility/domain/Province.entity';
 
 export const ProvinceRepository = (ctx: DataSource | EntityManager) =>
   ctx.getRepository(ProvinceEntity).extend({});

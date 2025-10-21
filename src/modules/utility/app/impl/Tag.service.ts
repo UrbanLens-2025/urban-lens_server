@@ -1,11 +1,11 @@
 import { CoreService } from '@/common/core/Core.service';
 import { CreateTagDto } from '@/common/dto/account/CreateTag.dto';
 import { TagResponseDto } from '@/common/dto/account/TagResponse.dto';
-import { ITagService } from '@/modules/account/app/ITag.service';
+import { ITagService } from '@/modules/utility/app/ITag.service';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
-import { TagEntity } from '@/modules/account/domain/Tag.entity';
-import { TagRepositoryProvider } from '@/modules/account/infra/repository/Tag.repository';
+import { TagEntity } from '@/modules/utility/domain/Tag.entity';
+import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.repository';
 
 @Injectable()
 export class TagService extends CoreService implements ITagService {
