@@ -12,6 +12,8 @@ import { TagRepositoryProvider } from '@/modules/account/infra/repository/Tag.re
 import { LocationTagsRepository } from '@/modules/business/infra/repository/LocationTags.repository';
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
 import { ForceUpdateLocationDto } from '@/common/dto/business/ForceUpdateLocation.dto';
+import { CreatePublicLocationDto } from '@/common/dto/business/CreatePublicLocation.dto';
+import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 
 @Injectable()
 export class LocationManagementService
@@ -144,6 +146,19 @@ export class LocationManagementService
       const updatedLocation = this.mapTo_safe(LocationEntity, dto);
       updatedLocation.updatedById = dto.accountId;
       return locationRepository.update({ id: dto.locationId }, updatedLocation);
+    });
+  }
+
+  createPublicLocation(
+    dto: CreatePublicLocationDto,
+  ): Promise<LocationResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationRepository = LocationRepositoryProvider(em);
+
+      const newLocation = this.mapTo_safe(LocationEntity, dto);
+      return locationRepository
+        .save(newLocation)
+        .then((res) => this.mapTo(LocationResponseDto, res));
     });
   }
 }

@@ -4,6 +4,8 @@ import { LocationTagsResponseDto } from '@/common/dto/business/res/LocationTags.
 import { AddLocationTagDto } from '@/common/dto/business/AddLocationTag.dto';
 import { RemoveLocationTagDto } from '@/common/dto/business/RemoveLocationTag.dto';
 import { ForceUpdateLocationDto } from '@/common/dto/business/ForceUpdateLocation.dto';
+import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
+import { CreatePublicLocationDto } from '@/common/dto/business/CreatePublicLocation.dto';
 
 export const ILocationManagementService = Symbol('ILocationManagementService');
 export interface ILocationManagementService {
@@ -11,4 +13,7 @@ export interface ILocationManagementService {
   addTag(dto: AddLocationTagDto): Promise<LocationTagsResponseDto[]>;
   softRemoveTag(dto: RemoveLocationTagDto): Promise<UpdateResult>;
   forceUpdateLocation(dto: ForceUpdateLocationDto): Promise<UpdateResult>;
+  createPublicLocation(
+    dto: CreatePublicLocationDto,
+  ): Promise<LocationResponseDto>;
 }
