@@ -22,7 +22,7 @@ export class UserProfileEntity {
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;
 
-  @Column({ name: 'dob', type: 'timestamp with time zone' })
+  @Column({ name: 'dob', type: 'timestamp with time zone', nullable: true })
   dob: Date;
 
   @ManyToOne(() => RankEntity, {
