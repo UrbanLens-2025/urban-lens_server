@@ -66,7 +66,7 @@ export class LocationOwnerController {
     @AuthUser() userDto: JwtTokenDto,
     @Body() dto: UpdateLocationDto,
   ) {
-    return this.locationManagementService.updateLocation({
+    return this.locationManagementService.updateOwnedLocation({
       ...dto,
       locationId,
       accountId: userDto.sub,

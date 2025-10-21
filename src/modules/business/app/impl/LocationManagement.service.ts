@@ -11,6 +11,10 @@ import { LocationTagsResponseDto } from '@/common/dto/business/res/LocationTags.
 import { TagRepositoryProvider } from '@/modules/account/infra/repository/Tag.repository';
 import { LocationTagsRepository } from '@/modules/business/infra/repository/LocationTags.repository';
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
+import { ForceUpdateLocationDto } from '@/common/dto/business/ForceUpdateLocation.dto';
+import { CreatePublicLocationDto } from '@/common/dto/business/CreatePublicLocation.dto';
+import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
+import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
 
 @Injectable()
 export class LocationManagementService
@@ -115,7 +119,7 @@ export class LocationManagementService
     });
   }
 
-  updateLocation(dto: UpdateLocationDto): Promise<UpdateResult> {
+  updateOwnedLocation(dto: UpdateLocationDto): Promise<UpdateResult> {
     return this.ensureTransaction(null, async (em) => {
       const locationRepository = LocationRepositoryProvider(em);
       await locationRepository.findOneOrFail({
@@ -126,7 +130,58 @@ export class LocationManagementService
       });
 
       const updatedLocation = this.mapTo_safe(LocationEntity, dto);
+      updatedLocation.updatedById = dto.accountId;
       return locationRepository.update({ id: dto.locationId }, updatedLocation);
+    });
+  }
+
+  forceUpdateLocation(dto: ForceUpdateLocationDto): Promise<UpdateResult> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationRepository = LocationRepositoryProvider(em);
+      await locationRepository.findOneOrFail({
+        where: {
+          id: dto.locationId,
+        },
+      });
+
+      const updatedLocation = this.mapTo_safe(LocationEntity, dto);
+      updatedLocation.updatedById = dto.accountId;
+      return locationRepository.update({ id: dto.locationId }, updatedLocation);
+    });
+  }
+
+  createPublicLocation(
+    dto: CreatePublicLocationDto,
+  ): Promise<LocationResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationRepository = LocationRepositoryProvider(em);
+      const locationTagRepository = LocationTagsRepository(em);
+      const tagRepository = TagRepositoryProvider(em);
+
+      // validate tags
+      const countTags = await tagRepository.countSelectableTagsById(dto.tagIds);
+      if (countTags !== dto.tagIds.length) {
+        throw new BadRequestException(
+          'One or more tags are invalid or not selectable',
+        );
+      }
+
+      const newLocation = this.mapTo_safe(LocationEntity, dto);
+      newLocation.ownershipType = LocationOwnershipType.PUBLIC_PLACE;
+
+      return (
+        locationRepository
+          .save(newLocation)
+          // save tags
+          .then(async (res) => {
+            res.tags = await locationTagRepository.persistEntities({
+              locationId: res.id,
+              tagIds: dto.tagIds,
+            });
+            return res;
+          })
+          .then((res) => this.mapTo(LocationResponseDto, res))
+      );
     });
   }
 }

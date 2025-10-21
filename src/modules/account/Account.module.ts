@@ -27,6 +27,7 @@ import { AccountProfileService } from '@/modules/account/app/impl/AccountProfile
 import { GamificationInfraModule } from '@/modules/gamification/infra/Gamification.infra.module';
 import { IAccountQueryService } from '@/modules/account/app/IAccountQuery.service';
 import { AccountQueryService } from '@/modules/account/app/impl/AccountQuery.service';
+import { AccountHelper } from '@/modules/account/app/helper/Account.helper';
 
 @Module({
   imports: [
@@ -76,6 +77,8 @@ import { AccountQueryService } from '@/modules/account/app/impl/AccountQuery.ser
       provide: IFollowService,
       useClass: FollowService,
     },
+    AccountHelper,
   ],
+  exports: [AccountHelper],
 })
 export class AccountModule {}

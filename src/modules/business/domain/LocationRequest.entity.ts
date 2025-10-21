@@ -5,14 +5,16 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
-import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 import { LocationValidationDocumentsJson } from '@/common/json/LocationValidationDocuments.json';
 import { AccountEntity } from '@/modules/auth/domain/Account.entity';
 import { LocationRequestTagsEntity } from '@/modules/business/domain/LocationRequestTags.entity';
+import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
+import { LocationEntity } from '@/modules/business/domain/Location.entity';
 
 @Entity({ name: LocationRequestEntity.TABLE_NAME })
 export class LocationRequestEntity {
@@ -27,14 +29,22 @@ export class LocationRequestEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
-  @ManyToOne(() => BusinessEntity, (business) => business.locations, {
+  @ManyToOne(() => AccountEntity, (account) => account.id, {
     createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'created_by' })
-  createdBy: BusinessEntity;
+  createdBy: AccountEntity;
 
   @Column({ name: 'created_by', type: 'uuid' })
   createdById: string;
+
+  @Column({
+    name: 'type',
+    type: 'varchar',
+    length: 50,
+    default: LocationRequestType.BUSINESS_OWNED,
+  })
+  type: LocationRequestType;
 
   @Column({ name: 'name', type: 'varchar', length: 255 })
   name: string;
@@ -99,6 +109,15 @@ export class LocationRequestEntity {
     createForeignKeyConstraints: false,
   })
   tags: LocationRequestTagsEntity[];
+
+  @OneToOne(
+    () => LocationEntity,
+    (location) => location.sourceLocationRequest,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
+  createdLocation: LocationEntity;
 
   canBeUpdated(): boolean {
     const updatableStatuses = [

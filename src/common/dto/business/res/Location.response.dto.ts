@@ -2,11 +2,15 @@ import { Exclude, Expose, Type } from 'class-transformer';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
 import { LocationTagsResponseDto } from '@/common/dto/business/res/LocationTags.response.dto';
+import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
 
 @Exclude()
 export class LocationResponseDto {
   @Expose()
   id: string;
+
+  @Expose()
+  ownershipType: LocationOwnershipType;
 
   @Expose()
   name: string;

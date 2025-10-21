@@ -46,4 +46,8 @@ export class UserProfileEntity {
 
   @OneToMany(() => CheckInEntity, (checkIn) => checkIn.userProfile)
   checkIns: CheckInEntity[];
+
+  canSuggestLocation() {
+    return true;
+  }
 }
