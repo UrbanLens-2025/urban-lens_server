@@ -53,7 +53,12 @@ export class LocationEntity {
   @Column({ name: 'business_id', type: 'uuid', nullable: true })
   businessId: string;
 
-  @Column({ name: 'ownership_type', type: 'varchar', length: 50 })
+  @Column({
+    name: 'ownership_type',
+    type: 'varchar',
+    length: 50,
+    default: LocationOwnershipType.OWNED_BY_BUSINESS,
+  })
   ownershipType: LocationOwnershipType;
 
   @Column({ name: 'name', type: 'varchar', length: 255 })

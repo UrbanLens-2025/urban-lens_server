@@ -38,7 +38,12 @@ export class LocationRequestEntity {
   @Column({ name: 'created_by', type: 'uuid' })
   createdById: string;
 
-  @Column({ name: 'type', type: 'varchar', length: 50 })
+  @Column({
+    name: 'type',
+    type: 'varchar',
+    length: 50,
+    default: LocationRequestType.BUSINESS_OWNED,
+  })
   type: LocationRequestType;
 
   @Column({ name: 'name', type: 'varchar', length: 255 })
