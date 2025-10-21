@@ -35,6 +35,9 @@ export class LocationRequestResponseDto {
   @Expose()
   longitude: number;
 
+  @Expose()
+  radiusMeters: number;
+
   @Expose({ name: 'address_line' })
   addressLine: string;
 
