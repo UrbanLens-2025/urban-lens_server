@@ -30,6 +30,7 @@ import { EventEmitterConfig } from '@/config/event-emitter.config';
 import { LocationReservationModule } from '@/modules/location-reservation/LocationReservation.module';
 import { ReportModule } from '@/modules/report/Report.module';
 import { GamificationModule } from './modules/gamification/Gamification.module';
+import { UtilityModule } from '@/modules/utility/Utility.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { GamificationModule } from './modules/gamification/Gamification.module';
     LocationReservationModule,
     ReportModule,
     GamificationModule,
+    UtilityModule,
   ],
   controllers: [AppController],
   providers: [
