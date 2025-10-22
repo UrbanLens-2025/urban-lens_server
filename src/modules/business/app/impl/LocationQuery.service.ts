@@ -9,17 +9,11 @@ import {
   ILocationQueryService_QueryConfig,
 } from '@/modules/business/app/ILocationQuery.service';
 import { Injectable } from '@nestjs/common';
-import {
-  paginate,
-  PaginateConfig,
-  Paginated,
-  PaginateQuery,
-} from 'nestjs-paginate';
+import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { GetVisibleLocationsByBusinessIdDto } from '@/common/dto/business/GetVisibleLocationsByBusinessId.dto';
 import { GetMyCreatedLocationByIdDto } from '@/common/dto/business/GetMyCreatedLocationById.dto';
 import { LocationWithDistanceResponseDto } from '@/common/dto/business/stub/LocationWithDistance.response.dto';
-import { LocationEntity } from '@/modules/business/domain/Location.entity';
 
 @Injectable()
 export class LocationQueryService

@@ -21,7 +21,6 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
-import { WithPagination } from '@/common/WithPagination.decorator';
 import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
 import { UpdateLocationDto } from '@/common/dto/business/UpdateLocation.dto';
 import { Roles } from '@/common/Roles.decorator';

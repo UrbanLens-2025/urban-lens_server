@@ -12,7 +12,7 @@ import {
   NotificationsConstant,
   NotificationTypes,
 } from '@/common/constants/Notifications.constant';
-import { FilterOperator, paginate, PaginateQuery } from 'nestjs-paginate';
+import { paginate, PaginateQuery } from 'nestjs-paginate';
 import { PushNotificationRepository } from '@/modules/notification/infra/repository/PushNotification.repository';
 import {
   IFirebaseNotificationService,

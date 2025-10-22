@@ -18,7 +18,6 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
-import { WithPagination } from '@/common/WithPagination.decorator';
 import {
   ICheckInV2Service,
   ICheckInV2Service_QueryConfig,

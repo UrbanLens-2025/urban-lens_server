@@ -9,7 +9,6 @@ import { LocationRequestResponseDto } from '@/common/dto/business/res/LocationRe
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { GetAnyLocationRequestByIdDto } from '@/common/dto/business/GetAnyLocationRequestById.dto';
 import { GetMyLocationRequestByIdDto } from '@/common/dto/business/GetMyLocationRequestById.dto';
-import { AccountHelper } from '@/modules/account/app/helper/Account.helper';
 
 @Injectable()
 export class LocationRequestQueryService

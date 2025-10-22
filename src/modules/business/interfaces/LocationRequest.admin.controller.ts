@@ -10,7 +10,6 @@ import {
   ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
-import { WithPagination } from '@/common/WithPagination.decorator';
 import {
   ApiPaginationQuery,
   Paginate,
