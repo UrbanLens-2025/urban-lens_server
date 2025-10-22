@@ -13,10 +13,17 @@ import { Role } from '@/common/constants/Role.constant';
 import { UpdateBusinessStatusDto } from '@/common/dto/business/UpdateBusinessStatus.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import { IAccountQueryService } from '@/modules/account/app/IAccountQuery.service';
+import {
+  IAccountQueryService,
+  IAccountQueryService_QueryConfig,
+} from '@/modules/account/app/IAccountQuery.service';
 import { IAccountProfileManagementService } from '@/modules/account/app/IAccountProfileManagement.service';
 import { WithPagination } from '@/common/WithPagination.decorator';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 
 @ApiTags('Account')
 @ApiBearerAuth()
@@ -36,7 +43,7 @@ export class AccountAdminController {
       'Filter by status (PENDING, APPROVED, REJECTED) and search by name',
   })
   @Get('/business')
-  @WithPagination()
+  @ApiPaginationQuery(IAccountQueryService_QueryConfig.searchBusinesses())
   getBusinessesWithPagination(@Paginate() query: PaginateQuery) {
     return this.accountQueryService.searchBusinesses(query);
   }

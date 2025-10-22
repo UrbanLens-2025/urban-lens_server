@@ -1,7 +1,10 @@
 import { CoreService } from '@/common/core/Core.service';
 import { CreateTagDto } from '@/common/dto/account/CreateTag.dto';
 import { TagResponseDto } from '@/common/dto/account/res/TagResponse.dto';
-import { ITagService } from '@/modules/utility/app/ITag.service';
+import {
+  ITagService,
+  ITagService_QueryConfig,
+} from '@/modules/utility/app/ITag.service';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { TagEntity } from '@/modules/utility/domain/Tag.entity';
@@ -12,7 +15,6 @@ export class TagService extends CoreService implements ITagService {
   constructor() {
     super();
   }
-
   async create(dto: CreateTagDto): Promise<TagResponseDto> {
     return this.dataSource.transaction(async (manager) => {
       const tagRepository = TagRepositoryProvider(manager);
@@ -40,10 +42,17 @@ export class TagService extends CoreService implements ITagService {
   async search(query: PaginateQuery): Promise<Paginated<TagResponseDto>> {
     const tagRepository = this.dataSource.getRepository(TagEntity);
     return paginate(query, tagRepository, {
-      sortableColumns: ['displayName', 'createdAt', 'updatedAt'],
-      defaultSortBy: [['displayName', 'DESC']],
-      searchableColumns: ['displayName'],
-      nullSort: 'last',
+      ...ITagService_QueryConfig.search(),
+    });
+  }
+
+  searchSelectable(query: PaginateQuery): Promise<Paginated<TagResponseDto>> {
+    const tagRepository = this.dataSource.getRepository(TagEntity);
+    return paginate(query, tagRepository, {
+      ...ITagService_QueryConfig.search(),
+      where: {
+        isSelectable: true,
+      },
     });
   }
 }

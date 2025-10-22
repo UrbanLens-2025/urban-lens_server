@@ -13,10 +13,16 @@ import { RegisterDeviceDto } from '@/common/dto/notification/RegisterDevice.dto'
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
-import { IFirebaseNotificationService } from '@/modules/notification/app/IFirebaseNotification.service';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
+import {
+  IFirebaseNotificationService,
+  IFirebaseNotificationService_QueryConfig,
+} from '@/modules/notification/app/IFirebaseNotification.service';
 import { SeenPushNotificationDto } from '@/common/dto/notification/SeenPushNotification.dto';
-import { WithPagination } from '@/common/WithPagination.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Push Notifications')
@@ -41,7 +47,9 @@ export class PushNotificationUserController {
   }
 
   @ApiOperation({ summary: 'Fetch my notifications' })
-  @WithPagination()
+  @ApiPaginationQuery(
+    IFirebaseNotificationService_QueryConfig.searchNotifications(),
+  )
   @Get()
   searchNotifications(
     @AuthUser() userDto: JwtTokenDto,

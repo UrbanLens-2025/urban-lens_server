@@ -11,4 +11,6 @@ export class TagResponseDto {
   color: string;
   @Expose()
   icon: string;
+  @Expose()
+  isSelectable: boolean;
 }

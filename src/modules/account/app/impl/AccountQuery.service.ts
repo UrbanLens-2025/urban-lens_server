@@ -5,7 +5,10 @@ import { CoreService } from '@/common/core/Core.service';
 import { UserGetAccountInfoDto } from '@/common/dto/auth/UserGetAccountInfo.dto';
 import { Role } from '@/common/constants/Role.constant';
 import { In } from 'typeorm';
-import { IAccountQueryService } from '@/modules/account/app/IAccountQuery.service';
+import {
+  IAccountQueryService,
+  IAccountQueryService_QueryConfig,
+} from '@/modules/account/app/IAccountQuery.service';
 import {
   LeaderboardResponseDto,
   LeaderboardUserDto,
@@ -47,11 +50,7 @@ export class AccountQueryService
     query: PaginateQuery,
   ): Promise<Paginated<BusinessResponseDto>> {
     return paginate(query, BusinessRepositoryProvider(this.dataSource), {
-      sortableColumns: ['createdAt', 'name'],
-      defaultSortBy: [['createdAt', 'DESC']],
-      relations: {
-        account: true,
-      },
+      ...IAccountQueryService_QueryConfig.searchBusinesses(),
     }).then((res) => this.mapToPaginated(BusinessResponseDto, res));
   }
 

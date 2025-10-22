@@ -1,11 +1,18 @@
 import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateTagDto } from '@/common/dto/account/CreateTag.dto';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 import { WithPagination } from '@/common/WithPagination.decorator';
-import { ITagService } from '@/modules/utility/app/ITag.service';
+import {
+  ITagService,
+  ITagService_QueryConfig,
+} from '@/modules/utility/app/ITag.service';
 
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
@@ -17,13 +24,15 @@ export class TagAdminController {
     private readonly tagService: ITagService,
   ) {}
 
+  @ApiOperation({ summary: 'Create a new tag' })
   @Post()
   create(@Body() dto: CreateTagDto) {
     return this.tagService.create(dto);
   }
 
+  @ApiOperation({ summary: 'Get all tags' })
   @Get()
-  @WithPagination()
+  @ApiPaginationQuery(ITagService_QueryConfig.search())
   findAll(@Paginate() query: PaginateQuery) {
     return this.tagService.search(query);
   }
