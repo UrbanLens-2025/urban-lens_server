@@ -19,6 +19,7 @@ import { GamificationInfraModule } from '@/modules/gamification/infra/Gamificati
 import { AccountHelper } from '@/modules/account/app/helper/Account.helper';
 import { AccountAdminController } from '@/modules/account/interfaces/Account.admin.controller';
 import { AccountQueryService } from '@/modules/account/app/impl/AccountQuery.service';
+import { AccountPrivateController } from '@/modules/account/interfaces/Account.private.controller';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AccountQueryService } from '@/modules/account/app/impl/AccountQuery.ser
     AccountPublicController,
     AccountCreatorController,
     AccountOwnerController,
+    AccountPrivateController,
     FollowUserController,
   ],
   providers: [
