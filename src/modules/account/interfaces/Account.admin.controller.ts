@@ -48,12 +48,12 @@ export class AccountAdminController {
   }
 
   @ApiOperation({
-    summary: 'Update business status (Admin only)',
+    summary: 'Process (Approve/Reject) Business',
     description:
       'Admin can approve, reject, or change status. Admin notes required for rejection.',
   })
-  @Put('/business/:id/status')
-  updateBusinessStatus(
+  @Put('/business/:id/process')
+  processBusiness(
     @Param('id', ParseUUIDPipe) businessId: string,
     @Body() updateStatusDto: UpdateBusinessStatusDto,
     @AuthUser() admin: JwtTokenDto,
