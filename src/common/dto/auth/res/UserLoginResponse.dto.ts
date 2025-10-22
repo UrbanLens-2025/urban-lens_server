@@ -1,10 +1,10 @@
 import { Expose } from 'class-transformer';
-import { UserAccountResponseDto } from '@/common/dto/auth/res/UserAccountResponse.dto';
+import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 
 export class UserLoginResponseDto {
   @Expose()
   token: string;
 
   @Expose()
-  user: UserAccountResponseDto;
+  user: AccountResponseDto;
 }

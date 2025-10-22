@@ -13,7 +13,7 @@ import { Role } from '@/common/constants/Role.constant';
 import { CreatorProfileRepository } from '@/modules/account/infra/repository/CreatorProfile.repository';
 import { RankEntity } from '@/modules/gamification/domain/Rank.entity';
 import { UserLoginResponseDto } from '@/common/dto/auth/res/UserLoginResponse.dto';
-import { UserAccountResponseDto } from '@/common/dto/auth/res/UserAccountResponse.dto';
+import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { TokenService } from '@/common/core/token/token.service';
 import { CreateBusinessDto } from '@/common/dto/business/CreateBusiness.dto';
 import { BusinessRepositoryProvider } from '@/modules/account/infra/repository/Business.repository';
@@ -97,7 +97,7 @@ export class OnboardService extends CoreService implements IOnboardService {
         // return account details with new token
         .then(async () => {
           const response = new UserLoginResponseDto();
-          response.user = this.mapTo(UserAccountResponseDto, account);
+          response.user = this.mapTo(AccountResponseDto, account);
           response.token = await this.tokenService.generateToken(account);
           return response;
         });

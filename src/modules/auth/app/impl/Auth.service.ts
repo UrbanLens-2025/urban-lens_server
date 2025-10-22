@@ -23,7 +23,7 @@ import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
 import { Role } from '@/common/constants/Role.constant';
-import { UserAccountResponseDto } from '@/common/dto/auth/res/UserAccountResponse.dto';
+import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
 import { IEmailNotificationService } from '@/modules/notification/app/IEmailNotification.service';
 
@@ -125,7 +125,7 @@ export class AuthService extends CoreService implements IAuthService {
     });
 
     const response = new UserLoginResponseDto();
-    response.user = this.mapTo(UserAccountResponseDto, user);
+    response.user = this.mapTo(AccountResponseDto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }
@@ -179,7 +179,7 @@ export class AuthService extends CoreService implements IAuthService {
     }
 
     const response = new UserLoginResponseDto();
-    response.user = this.mapTo(UserAccountResponseDto, user);
+    response.user = this.mapTo(AccountResponseDto, user);
     response.token = await this.tokenService.generateToken(user);
     return response;
   }

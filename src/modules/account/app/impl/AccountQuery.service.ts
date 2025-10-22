@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UserAccountResponseDto } from '@/common/dto/auth/res/UserAccountResponse.dto';
+import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
 import { CoreService } from '@/common/core/Core.service';
 import { UserGetAccountInfoDto } from '@/common/dto/auth/UserGetAccountInfo.dto';
@@ -22,7 +22,7 @@ export class AccountQueryService
 {
   async getAccountInfo(
     dto: UserGetAccountInfoDto,
-  ): Promise<UserAccountResponseDto> {
+  ): Promise<AccountResponseDto> {
     const accountRepository = AccountRepositoryProvider(this.dataSource);
     return await accountRepository
       .findOneOrFail({
@@ -35,7 +35,7 @@ export class AccountQueryService
           businessProfile: true,
         },
       })
-      .then((res) => this.mapTo(UserAccountResponseDto, res));
+      .then((res) => this.mapTo(AccountResponseDto, res));
   }
 
   searchBusinesses(
