@@ -35,18 +35,11 @@ export class LocationBookingConfigEntity {
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     createForeignKeyConstraints: false,
   })
-  @JoinColumn({ name: 'account_id' })
+  @JoinColumn({ name: 'created_by' })
   createdBy: AccountEntity;
 
-  @Column({ name: 'account_id', type: 'uuid' })
+  @Column({ name: 'created_by', type: 'uuid' })
   createdById: string;
-
-  @DeleteDateColumn({
-    name: 'deleted_at',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  deletedAt: Date | null;
 
   @Column({ name: 'allow_booking', type: 'boolean', default: false })
   allowBooking: boolean;
