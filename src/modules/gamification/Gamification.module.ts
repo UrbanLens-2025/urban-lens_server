@@ -11,7 +11,6 @@ import { PointsRecalculationService } from './app/impl/PointsRecalculation.servi
 import { GamificationInfraModule } from './infra/Gamification.infra.module';
 import { PostCreatedListener } from './app/event-listeners/PostCreated.listener';
 import { CommentCreatedListener } from './app/event-listeners/CommentCreated.listener';
-import { PostReactedListener } from './app/event-listeners/PostReacted.listener';
 import { CheckInCreatedListener } from './app/event-listeners/CheckInCreated.listener';
 import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
 import { PostInfraModule } from '@/modules/post/infra/Post.infra.module';
@@ -41,7 +40,6 @@ import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.mod
     PointsRecalculationService,
     PostCreatedListener,
     CommentCreatedListener,
-    PostReactedListener,
     CheckInCreatedListener,
   ],
   exports: [IRankService, IUserPointsService],

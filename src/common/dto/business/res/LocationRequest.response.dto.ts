@@ -1,10 +1,10 @@
 import { Exclude, Expose, Type } from 'class-transformer';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { LocationValidationDocumentsJson } from '@/common/json/LocationValidationDocuments.json';
-import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/LocationRequestTags.response.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
+import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 
 @Exclude()
 export class LocationRequestResponseDto {

@@ -7,10 +7,15 @@ import {
 } from '@nestjs/common';
 import { TokenService } from '@/common/core/token/token.service';
 import { Request } from 'express';
+import { Reflector } from '@nestjs/core';
+import { OPTIONAL_AUTH_KEY } from '@/common/decorators/OptionalAuth.decorator';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private readonly jwtService: TokenService) {}
+  constructor(
+    private readonly jwtService: TokenService,
+    private readonly reflector: Reflector,
+  ) {}
 
   private readonly LOGGER = new Logger(JwtAuthGuard.name);
 
@@ -19,7 +24,13 @@ export class JwtAuthGuard implements CanActivate {
     const isPublicPath = /^\/api(?:\/v\d+)?\/public\//.test(request.path);
     const isDevOnlyPath = request.path.split('/').includes('dev-only');
 
-    const shouldIgnoreAuth = isPublicPath || isDevOnlyPath;
+    // Check if the endpoint has @OptionalAuth() decorator
+    const isOptionalAuth = this.reflector.getAllAndOverride<boolean>(
+      OPTIONAL_AUTH_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    const shouldIgnoreAuth = isPublicPath || isDevOnlyPath || isOptionalAuth;
 
     const authHeader = request.headers.authorization;
 

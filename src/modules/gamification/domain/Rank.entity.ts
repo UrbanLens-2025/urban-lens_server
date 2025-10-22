@@ -39,7 +39,7 @@ export class RankEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
-  @OneToMany(() => UserProfileEntity, (userProfile) => userProfile.rank, {
+  @OneToMany(() => UserProfileEntity, (userProfile) => userProfile.rankEntity, {
     createForeignKeyConstraints: false,
   })
   userProfiles: UserProfileEntity[];

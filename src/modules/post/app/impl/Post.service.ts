@@ -39,10 +39,7 @@ import {
   POST_CREATED_EVENT,
   PostCreatedEvent,
 } from '@/modules/gamification/domain/events/PostCreated.event';
-import {
-  POST_REACTED_EVENT,
-  PostReactedEvent,
-} from '@/modules/gamification/domain/events/PostReacted.event';
+import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 
 interface RawPost {
   post_postid: string;
@@ -282,7 +279,7 @@ export class PostService
       // Build query to get public posts
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',
@@ -356,7 +353,7 @@ export class PostService
       // Build query to get posts from followed users
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',
@@ -489,6 +486,25 @@ export class PostService
             }
           }
 
+          // Update user profile total counters
+          if (dto.authorId) {
+            const userProfileRepo =
+              transactionalEntityManager.getRepository(UserProfileEntity);
+            if (dto.type === PostType.BLOG) {
+              await userProfileRepo.increment(
+                { accountId: dto.authorId },
+                'totalBlogs',
+                1,
+              );
+            } else if (dto.type === PostType.REVIEW) {
+              await userProfileRepo.increment(
+                { accountId: dto.authorId },
+                'totalReviews',
+                1,
+              );
+            }
+          }
+
           return savedPost;
         },
       );
@@ -562,7 +578,7 @@ export class PostService
     try {
       const post = await this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',
@@ -679,15 +695,6 @@ export class PostService
         downvotesDelta,
       );
 
-      // Emit post reacted event for gamification (only on new reaction, not toggle off)
-      if (upvotesDelta > 0 || downvotesDelta > 0) {
-        const postReactedEvent = new PostReactedEvent();
-        postReactedEvent.postId = dto.postId;
-        postReactedEvent.userId = dto.userId;
-        postReactedEvent.reactType = dto.type;
-        this.eventEmitter.emit(POST_REACTED_EVENT, postReactedEvent);
-      }
-
       return 'React post successfully';
     } catch (error) {
       console.error(error);
@@ -739,6 +746,22 @@ export class PostService
               tx,
             );
           }
+        }
+
+        // Decrement user profile counters
+        const userProfileRepo = tx.getRepository(UserProfileEntity);
+        if (post.type === PostType.BLOG) {
+          await userProfileRepo.decrement(
+            { accountId: post.authorId },
+            'totalBlogs',
+            1,
+          );
+        } else if (post.type === PostType.REVIEW) {
+          await userProfileRepo.decrement(
+            { accountId: post.authorId },
+            'totalReviews',
+            1,
+          );
         }
       });
 
@@ -837,7 +860,7 @@ export class PostService
 
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',
@@ -980,7 +1003,7 @@ export class PostService
       // Build posts query
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',
@@ -1057,7 +1080,7 @@ export class PostService
       // Build posts query
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoinAndSelect('post.author', 'author')
+        .leftJoin('post.author', 'author')
         .leftJoin(
           'analytic',
           'analytic',

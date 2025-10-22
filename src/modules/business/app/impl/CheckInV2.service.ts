@@ -1,7 +1,10 @@
 import { CoreService } from '@/common/core/Core.service';
 import { CheckInResponseDto } from '@/common/dto/business/res/CheckIn.response.dto';
 import { RegisterCheckInDto } from '@/common/dto/RegisterCheckIn.dto';
-import { ICheckInV2Service } from '@/modules/business/app/ICheckInV2.service';
+import {
+  ICheckInV2Service,
+  ICheckInV2Service_QueryConfig,
+} from '@/modules/business/app/ICheckInV2.service';
 import {
   BadRequestException,
   Injectable,
@@ -18,6 +21,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { GetMyCheckInsDto } from '@/common/dto/business/GetMyCheckIns.dto';
 import { paginate, Paginated } from 'nestjs-paginate';
 import { GetMyCheckInByLocationIdDto } from '@/common/dto/business/GetMyCheckInByLocationId.dto';
+import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 
 @Injectable()
 export class CheckInV2Service extends CoreService implements ICheckInV2Service {
@@ -80,6 +84,16 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
       return (
         checkInRepository
           .save(checkInEntity)
+          // Update user profile totalCheckIns
+          .then(async (e) => {
+            const userProfileRepo = manager.getRepository(UserProfileEntity);
+            await userProfileRepo.increment(
+              { accountId: e.userProfileId },
+              'totalCheckIns',
+              1,
+            );
+            return e;
+          })
           // Emit events
           .then((e) => {
             const checkInCreatedEvent = new CheckInCreatedEvent();
@@ -98,13 +112,9 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
   getMyCheckIns(dto: GetMyCheckInsDto): Promise<Paginated<CheckInResponseDto>> {
     const checkInRepository = CheckInRepositoryProvider(this.dataSource);
     return paginate(dto.query, checkInRepository, {
-      sortableColumns: ['createdAt'],
-      defaultSortBy: [['createdAt', 'DESC']],
+      ...ICheckInV2Service_QueryConfig.getMyCheckIns(),
       where: {
         userProfileId: dto.accountId,
-      },
-      relations: {
-        location: true,
       },
     }).then((res) => this.mapToPaginated(CheckInResponseDto, res));
   }

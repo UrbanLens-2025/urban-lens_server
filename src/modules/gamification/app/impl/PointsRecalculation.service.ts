@@ -5,10 +5,8 @@ import { RewardPointRepository } from '@/modules/gamification/infra/repository/R
 import { RewardPointType } from '@/modules/gamification/domain/RewardPoint.entity';
 import { PostRepository } from '@/modules/post/infra/repository/Post.repository';
 import { CommentRepository } from '@/modules/post/infra/repository/Comment.repository';
-import { ReactRepository } from '@/modules/post/infra/repository/React.repository';
 import { CheckInRepository } from '@/modules/business/infra/repository/CheckIn.repository';
 import { PostType } from '@/modules/post/domain/Post.entity';
-import { ReactEntityType } from '@/modules/post/domain/React.entity';
 import { IUserPointsService } from '../IUserPoints.service';
 import { Inject } from '@nestjs/common';
 
@@ -22,7 +20,6 @@ export class PointsRecalculationService {
     private readonly rewardPointRepository: RewardPointRepository,
     private readonly postRepository: PostRepository,
     private readonly commentRepository: CommentRepository,
-    private readonly reactRepository: ReactRepository,
     private readonly checkInRepository: CheckInRepository,
     @Inject(IUserPointsService)
     private readonly userPointsService: IUserPointsService,
@@ -44,7 +41,6 @@ export class PointsRecalculationService {
       const commentRepo = manager.getRepository(
         this.commentRepository.repo.target,
       );
-      const reactRepo = manager.getRepository(this.reactRepository.repo.target);
       const checkInRepo = manager.getRepository(
         this.checkInRepository.repo.target,
       );
@@ -67,7 +63,7 @@ export class PointsRecalculationService {
       );
 
       // Count user's activities
-      const [blogCount, reviewCount, commentCount, reactCount, checkInCount] =
+      const [blogCount, reviewCount, commentCount, checkInCount] =
         await Promise.all([
           // Count blogs
           postRepo.count({
@@ -82,10 +78,6 @@ export class PointsRecalculationService {
             .createQueryBuilder('comment')
             .where('comment.author_id = :userId', { userId })
             .getCount(),
-          // Count reactions (upvotes/downvotes on posts)
-          reactRepo.count({
-            where: { authorId: userId, entityType: ReactEntityType.POST },
-          }),
           // Count check-ins
           checkInRepo.count({
             where: { userProfileId: userId },
@@ -102,9 +94,6 @@ export class PointsRecalculationService {
         comments:
           commentCount *
           (rewardPointsMap.get(RewardPointType.CREATE_COMMENT) || 0),
-        reactions:
-          reactCount *
-          (rewardPointsMap.get(RewardPointType.UPVOTE_DOWNVOTE) || 0),
         checkIns:
           checkInCount * (rewardPointsMap.get(RewardPointType.CHECK_IN) || 0),
       };
@@ -115,15 +104,16 @@ export class PointsRecalculationService {
         0,
       );
 
-      // Update user points
+      // Update both points and ranking points
       userProfile.points = newPoints;
+      userProfile.rankingPoint = newPoints;
       await userProfileRepo.save(userProfile);
 
       this.logger.log(
-        `Recalculated points for user ${userId}: ${oldPoints} → ${newPoints}`,
+        `Recalculated points for user ${userId}: ${oldPoints} → ${newPoints} (both points and ranking_point updated)`,
       );
 
-      // Update rank
+      // Update rank based on ranking points
       await this.userPointsService.updateUserRank(userId);
 
       return {

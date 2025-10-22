@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { LocationValidationDocumentsJson } from '@/common/json/LocationValidationDocuments.json';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationRequestTagsEntity } from '@/modules/business/domain/LocationRequestTags.entity';
 import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';

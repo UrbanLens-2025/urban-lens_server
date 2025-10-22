@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Patch } from '@nestjs/common';
+import { Body, Controller, Inject, Patch } from '@nestjs/common';
 import { IUserAuthService } from '@/modules/auth/app/IUser.auth.service';
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -16,15 +16,6 @@ export class AuthController {
     private readonly authUserService: IUserAuthService,
     @Inject(IAuthService) private readonly authService: IAuthService,
   ) {}
-
-  @ApiOperation({
-    summary: 'Get current auth profile',
-    description: 'MUST send jwt token in HTTP headers',
-  })
-  @Get('/profile')
-  getProfile(@AuthUser() user: JwtTokenDto) {
-    return this.authUserService.getUser(user);
-  }
 
   @ApiOperation({
     summary: 'Update current auth profile',

@@ -23,7 +23,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { PostModule } from '@/modules/post/Post.module';
 import { BusinessModule } from '@/modules/business/Business.module';
 import { EventModule } from '@/modules/event/event.module';
-import { AddressModule } from '@/modules/address/Address.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -31,6 +30,7 @@ import { EventEmitterConfig } from '@/config/event-emitter.config';
 import { LocationReservationModule } from '@/modules/location-reservation/LocationReservation.module';
 import { ReportModule } from '@/modules/report/Report.module';
 import { GamificationModule } from './modules/gamification/Gamification.module';
+import { UtilityModule } from '@/modules/utility/Utility.module';
 
 @Module({
   imports: [
@@ -79,10 +79,10 @@ import { GamificationModule } from './modules/gamification/Gamification.module';
     FileStorageModule,
     PostModule,
     EventModule,
-    AddressModule,
     LocationReservationModule,
     ReportModule,
     GamificationModule,
+    UtilityModule,
   ],
   controllers: [AppController],
   providers: [

@@ -2,7 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CoreService } from '@/common/core/Core.service';
 import { ICreateEventService } from '@/modules/event/app/ICreateEvent.service';
 import { CreateEventDraftDto } from '@/common/dto/event/CreateEventDraft.dto';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';

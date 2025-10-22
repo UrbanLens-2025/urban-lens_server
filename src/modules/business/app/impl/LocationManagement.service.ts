@@ -8,7 +8,7 @@ import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { AddLocationTagDto } from '@/common/dto/business/AddLocationTag.dto';
 import { RemoveLocationTagDto } from '@/common/dto/business/RemoveLocationTag.dto';
 import { LocationTagsResponseDto } from '@/common/dto/business/res/LocationTags.response.dto';
-import { TagRepositoryProvider } from '@/modules/account/infra/repository/Tag.repository';
+import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.repository';
 import { LocationTagsRepository } from '@/modules/business/infra/repository/LocationTags.repository';
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
 import { ForceUpdateLocationDto } from '@/common/dto/business/ForceUpdateLocation.dto';

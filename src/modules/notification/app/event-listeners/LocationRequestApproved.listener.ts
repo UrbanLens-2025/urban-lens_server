@@ -6,7 +6,7 @@ import {
 } from '@/modules/business/domain/events/LocationRequestApproved.event';
 import { CoreService } from '@/common/core/Core.service';
 import { IEmailNotificationService } from '@/modules/notification/app/IEmailNotification.service';
-import { AccountRepositoryProvider } from '@/modules/auth/infra/repository/Account.repository';
+import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
 import { EmailTemplates } from '@/common/constants/EmailTemplates.constant';
 import { IFirebaseNotificationService } from '@/modules/notification/app/IFirebaseNotification.service';
 import { NotificationTypes } from '@/common/constants/Notifications.constant';

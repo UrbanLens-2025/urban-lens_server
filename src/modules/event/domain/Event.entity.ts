@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Entity({ name: EventEntity.TABLE_NAME })
 export class EventEntity {

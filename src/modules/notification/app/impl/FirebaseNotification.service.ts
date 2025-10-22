@@ -12,9 +12,12 @@ import {
   NotificationsConstant,
   NotificationTypes,
 } from '@/common/constants/Notifications.constant';
-import { FilterOperator, paginate, PaginateQuery } from 'nestjs-paginate';
+import { paginate, PaginateQuery } from 'nestjs-paginate';
 import { PushNotificationRepository } from '@/modules/notification/infra/repository/PushNotification.repository';
-import { IFirebaseNotificationService } from '@/modules/notification/app/IFirebaseNotification.service';
+import {
+  IFirebaseNotificationService,
+  IFirebaseNotificationService_QueryConfig,
+} from '@/modules/notification/app/IFirebaseNotification.service';
 import { PushNotificationEntity } from '@/modules/notification/domain/PushNotification.entity';
 import { PushNotificationStatus } from '@/common/constants/PushNotificationStatus.constant';
 import { In, UpdateResult } from 'typeorm';
@@ -109,18 +112,10 @@ export class FirebaseNotificationService
 
   public async searchNotifications(userDto: JwtTokenDto, query: PaginateQuery) {
     return paginate(query, this.pushNotificationRepository.repo, {
+      ...IFirebaseNotificationService_QueryConfig.searchNotifications(),
       where: {
         toUserId: userDto.sub,
       },
-      sortableColumns: ['createdAt'],
-      defaultSortBy: [['createdAt', 'DESC']],
-      nullSort: 'last',
-      select: ['*'],
-      filterableColumns: {
-        type: [FilterOperator.EQ, FilterOperator.IN],
-        status: [FilterOperator.EQ, FilterOperator.IN],
-      },
-      withDeleted: false,
     });
   }
 

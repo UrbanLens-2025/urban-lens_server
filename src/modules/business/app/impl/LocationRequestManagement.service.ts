@@ -23,7 +23,7 @@ import {
 } from '@/modules/business/domain/events/LocationRequestApproved.event';
 import { LOCATION_REQUEST_REJECTED_EVENT } from '@/modules/business/domain/events/LocationRequestRejected.event';
 import { LOCATION_REQUEST_NEEDS_MORE_INFO_EVENT } from '@/modules/business/domain/events/LocationRequestNeedsMoreInfo.event';
-import { TagRepositoryProvider } from '@/modules/account/infra/repository/Tag.repository';
+import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.repository';
 import { LocationRequestTagsRepository } from '@/modules/business/infra/repository/LocationRequestTags.repository';
 import { AddLocationRequestTagsDto } from '@/common/dto/business/AddLocationRequestTags.dto';
 import { DeleteLocationRequestTagDto } from '@/common/dto/business/DeleteLocationRequestTag.dto';

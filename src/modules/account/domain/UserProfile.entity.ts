@@ -1,6 +1,9 @@
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { CheckInEntity } from '@/modules/business/domain/CheckIn.entity';
-import { RankEntity } from '@/modules/gamification/domain/Rank.entity';
+import {
+  RankEntity,
+  RankName,
+} from '@/modules/gamification/domain/Rank.entity';
 import {
   Entity,
   JoinColumn,
@@ -30,19 +33,40 @@ export class UserProfileEntity {
     createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'rank_id' })
-  rank: RankEntity;
+  rankEntity: RankEntity;
 
   @Column({ name: 'rank_id', type: 'uuid', nullable: true })
   rankId: string;
 
+  @Column({ name: 'rank', type: 'enum', enum: RankName, nullable: true })
+  rank: RankName;
+
   @Column({ name: 'points', type: 'integer', default: 0 })
   points: number;
+
+  @Column({ name: 'ranking_point', type: 'integer', default: 0 })
+  rankingPoint: number;
 
   @Column({ name: 'total_achievements', type: 'integer', default: 0 })
   totalAchievements: number;
 
   @OneToMany(() => CheckInEntity, (checkIn) => checkIn.userProfile)
   checkIns: CheckInEntity[];
+
+  @Column({ name: 'total_check_ins', type: 'integer', default: 0 })
+  totalCheckIns: number;
+
+  @Column({ name: 'total_blogs', type: 'integer', default: 0 })
+  totalBlogs: number;
+
+  @Column({ name: 'total_reviews', type: 'integer', default: 0 })
+  totalReviews: number;
+
+  @Column({ name: 'total_followers', type: 'integer', default: 0 })
+  totalFollowers: number;
+
+  @Column({ name: 'total_following', type: 'integer', default: 0 })
+  totalFollowing: number;
 
   canSuggestLocation() {
     return true;

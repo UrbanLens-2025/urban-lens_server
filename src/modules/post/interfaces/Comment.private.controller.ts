@@ -15,6 +15,7 @@ import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import type { PaginationParams } from '@/common/services/base.service';
 import { ReactCommentRequestDto } from '@/common/dto/post/ReactComment.dto';
+import { OptionalAuth } from '@/common/decorators/OptionalAuth.decorator';
 
 @ApiTags('Comment')
 @ApiBearerAuth()
@@ -36,8 +37,8 @@ export class CommentPrivateController {
   }
 
   @ApiOperation({ summary: 'Get comments by post id' })
-  @ApiBearerAuth()
   @Get('post/:postId')
+  @OptionalAuth()
   getCommentsByPostId(
     @Param('postId') postId: string,
     @Query() params: PaginationParams,
@@ -67,8 +68,8 @@ export class CommentPrivateController {
   }
 
   @ApiOperation({ summary: 'Get upvotes of a comment' })
-  @ApiBearerAuth()
   @Get(':commentId/upvotes')
+  @OptionalAuth()
   getUpvotesOfComment(
     @Param('commentId') commentId: string,
     @Query() query: PaginationParams,
@@ -77,8 +78,8 @@ export class CommentPrivateController {
   }
 
   @ApiOperation({ summary: 'Get downvotes of a comment' })
-  @ApiBearerAuth()
   @Get(':commentId/downvotes')
+  @OptionalAuth()
   getDownvotesOfComment(
     @Param('commentId') commentId: string,
     @Query() query: PaginationParams,

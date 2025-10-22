@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
-import { TagEntity } from '@/modules/account/domain/Tag.entity';
+import { TagEntity } from '@/modules/utility/domain/Tag.entity';
 
 @Entity({ name: LocationRequestTagsEntity.TABLE_NAME })
 export class LocationRequestTagsEntity {

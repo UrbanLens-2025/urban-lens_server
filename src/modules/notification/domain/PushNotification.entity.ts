@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import type { Notification } from 'firebase-admin/messaging';
 import { PushNotificationStatus } from '@/common/constants/PushNotificationStatus.constant';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Entity({ name: 'push-notification' })
 export class PushNotificationEntity {

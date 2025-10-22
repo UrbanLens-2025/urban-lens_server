@@ -93,7 +93,7 @@ export class CommentService
 
     const queryBuilder = this.repository
       .createQueryBuilder('comment')
-      .leftJoinAndSelect('comment.author', 'author')
+      .leftJoin('comment.author', 'author')
       .leftJoin(
         'analytic',
         'analytic',

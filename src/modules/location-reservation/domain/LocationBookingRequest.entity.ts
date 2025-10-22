@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { LocationBookingRequestStatus } from '@/common/constants/LocationBookingRequestStatus.constant';
