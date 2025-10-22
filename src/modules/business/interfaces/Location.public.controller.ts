@@ -9,12 +9,19 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
+import {
+  ILocationQueryService,
+  ILocationQueryService_QueryConfig,
+} from '@/modules/business/app/ILocationQuery.service';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { WithPagination } from '@/common/WithPagination.decorator';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
-import { IsOptional } from 'class-validator';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
+import { LocationQueryService } from '@/modules/business/app/impl/LocationQuery.service';
 
 @ApiTags('Location')
 @Controller('/public/locations')
@@ -42,7 +49,9 @@ export class LocationPublicController {
   }
 
   @ApiOperation({ summary: 'Search all visible locations' })
-  @WithPagination()
+  @ApiPaginationQuery(
+    ILocationQueryService_QueryConfig.searchVisibleLocations(),
+  )
   @Get('/search')
   searchVisibleLocations(@Paginate() query: PaginateQuery) {
     return this.locationQueryService.searchVisibleLocations(query);

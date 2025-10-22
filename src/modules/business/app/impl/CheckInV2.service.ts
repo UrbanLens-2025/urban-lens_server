@@ -1,7 +1,10 @@
 import { CoreService } from '@/common/core/Core.service';
 import { CheckInResponseDto } from '@/common/dto/business/res/CheckIn.response.dto';
 import { RegisterCheckInDto } from '@/common/dto/RegisterCheckIn.dto';
-import { ICheckInV2Service } from '@/modules/business/app/ICheckInV2.service';
+import {
+  ICheckInV2Service,
+  ICheckInV2Service_QueryConfig,
+} from '@/modules/business/app/ICheckInV2.service';
 import {
   BadRequestException,
   Injectable,
@@ -109,13 +112,9 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
   getMyCheckIns(dto: GetMyCheckInsDto): Promise<Paginated<CheckInResponseDto>> {
     const checkInRepository = CheckInRepositoryProvider(this.dataSource);
     return paginate(dto.query, checkInRepository, {
-      sortableColumns: ['createdAt'],
-      defaultSortBy: [['createdAt', 'DESC']],
+      ...ICheckInV2Service_QueryConfig.getMyCheckIns(),
       where: {
         userProfileId: dto.accountId,
-      },
-      relations: {
-        location: true,
       },
     }).then((res) => this.mapToPaginated(CheckInResponseDto, res));
   }

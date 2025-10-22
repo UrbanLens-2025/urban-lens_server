@@ -11,12 +11,19 @@ import {
   Post,
 } from '@nestjs/common';
 import { WithPagination } from '@/common/WithPagination.decorator';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ProcessLocationRequestDto } from '@/common/dto/business/ProcessLocationRequest.dto';
-import { ILocationRequestQueryService } from '@/modules/business/app/ILocationRequestQuery.service';
+import {
+  ILocationRequestQueryService,
+  ILocationRequestQueryService_QueryConfig,
+} from '@/modules/business/app/ILocationRequestQuery.service';
 
 @ApiTags('Location Request')
 @ApiBearerAuth()
@@ -31,8 +38,10 @@ export class LocationRequestAdminController {
   ) {}
 
   @ApiOperation({ summary: 'Search location requests' })
+  @ApiPaginationQuery(
+    ILocationRequestQueryService_QueryConfig.getMyLocationRequests(),
+  )
   @Get('/search')
-  @WithPagination()
   searchAllLocationRequests(@Paginate() query: PaginateQuery) {
     return this.locationRequestQueryService.searchAllLocationRequests(query);
   }

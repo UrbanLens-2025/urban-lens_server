@@ -10,10 +10,17 @@ import {
   Put,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
+import {
+  ILocationQueryService,
+  ILocationQueryService_QueryConfig,
+} from '@/modules/business/app/ILocationQuery.service';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 import { WithPagination } from '@/common/WithPagination.decorator';
 import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
 import { UpdateLocationDto } from '@/common/dto/business/UpdateLocation.dto';
@@ -35,7 +42,7 @@ export class LocationOwnerController {
   ) {}
 
   @ApiOperation({ summary: 'Get my created locations' })
-  @WithPagination()
+  @ApiPaginationQuery(ILocationQueryService_QueryConfig.getMyCreatedLocations())
   @Get()
   getMyLocations(
     @AuthUser() userDto: JwtTokenDto,

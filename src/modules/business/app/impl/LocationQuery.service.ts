@@ -4,13 +4,22 @@ import { GetMyCreatedLocationsDto } from '@/common/dto/business/GetMyCreatedLoca
 import { GetNearbyVisibleLocationsByCoordinatesDto } from '@/common/dto/business/GetNearbyVisibleLocationsByCoordinates.dto';
 import { GetVisibleLocationByIdDto } from '@/common/dto/business/GetVisibleLocationById.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
-import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
+import {
+  ILocationQueryService,
+  ILocationQueryService_QueryConfig,
+} from '@/modules/business/app/ILocationQuery.service';
 import { Injectable } from '@nestjs/common';
-import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
+import {
+  paginate,
+  PaginateConfig,
+  Paginated,
+  PaginateQuery,
+} from 'nestjs-paginate';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { GetVisibleLocationsByBusinessIdDto } from '@/common/dto/business/GetVisibleLocationsByBusinessId.dto';
 import { GetMyCreatedLocationByIdDto } from '@/common/dto/business/GetMyCreatedLocationById.dto';
 import { LocationWithDistanceResponseDto } from '@/common/dto/business/stub/LocationWithDistance.response.dto';
+import { LocationEntity } from '@/modules/business/domain/Location.entity';
 
 @Injectable()
 export class LocationQueryService
@@ -100,23 +109,9 @@ export class LocationQueryService
   ): Promise<Paginated<LocationResponseDto>> {
     const locationRepository = LocationRepositoryProvider(this.dataSource);
     return paginate(query, locationRepository, {
-      sortableColumns: ['name', 'createdAt', 'updatedAt'],
-      defaultSortBy: [['createdAt', 'DESC']],
-      searchableColumns: [
-        'name',
-        'description',
-        'addressLine',
-        'addressLevel1',
-        'addressLevel2',
-      ],
+      ...ILocationQueryService_QueryConfig.searchVisibleLocations(),
       where: {
         isVisibleOnMap: true,
-      },
-      relations: {
-        business: true,
-        tags: {
-          tag: true,
-        },
       },
     }).then((res) => this.mapToPaginated(LocationResponseDto, res));
   }
@@ -127,25 +122,9 @@ export class LocationQueryService
     const locationRepository = LocationRepositoryProvider(this.dataSource);
 
     return paginate(dto.query, locationRepository, {
-      sortableColumns: ['createdAt', 'updatedAt', 'name'],
-      defaultSortBy: [['createdAt', 'DESC']],
-      searchableColumns: [
-        'name',
-        'description',
-        'latitude',
-        'longitude',
-        'addressLine',
-        'addressLevel1',
-        'addressLevel2',
-      ],
+      ...ILocationQueryService_QueryConfig.getMyCreatedLocations(),
       where: {
         businessId: dto.businessId,
-      },
-      relations: {
-        business: true,
-        tags: {
-          tag: true,
-        },
       },
     }).then((e) => this.mapToPaginated(LocationResponseDto, e));
   }
@@ -176,23 +155,7 @@ export class LocationQueryService
     query: PaginateQuery,
   ): Promise<Paginated<LocationResponseDto>> {
     return paginate(query, LocationRepositoryProvider(this.dataSource), {
-      sortableColumns: ['name', 'createdAt', 'updatedAt'],
-      defaultSortBy: [['createdAt', 'DESC']],
-      searchableColumns: [
-        'name',
-        'description',
-        'latitude',
-        'longitude',
-        'addressLine',
-        'addressLevel1',
-        'addressLevel2',
-      ],
-      relations: {
-        business: true,
-        tags: {
-          tag: true,
-        },
-      },
+      ...ILocationQueryService_QueryConfig.searchAnyLocation(),
     }).then((res) => this.mapToPaginated(LocationResponseDto, res));
   }
 

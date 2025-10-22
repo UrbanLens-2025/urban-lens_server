@@ -11,8 +11,15 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
-import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import {
+  ILocationQueryService,
+  ILocationQueryService_QueryConfig,
+} from '@/modules/business/app/ILocationQuery.service';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 import { WithPagination } from '@/common/WithPagination.decorator';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
@@ -33,7 +40,7 @@ export class LocationAdminController {
   ) {}
 
   @ApiOperation({ summary: 'Get all locations in database for management' })
-  @WithPagination()
+  @ApiPaginationQuery(ILocationQueryService_QueryConfig.searchAnyLocation())
   @Get('/search')
   async searchLocations(@Paginate() query: PaginateQuery) {
     return this.locationQueryService.searchAnyLocation(query);

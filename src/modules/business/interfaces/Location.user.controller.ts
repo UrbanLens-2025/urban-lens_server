@@ -13,9 +13,16 @@ import { Role } from '@/common/constants/Role.constant';
 import { ILocationQueryService } from '@/modules/business/app/ILocationQuery.service';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 import { WithPagination } from '@/common/WithPagination.decorator';
-import { ICheckInV2Service } from '@/modules/business/app/ICheckInV2.service';
+import {
+  ICheckInV2Service,
+  ICheckInV2Service_QueryConfig,
+} from '@/modules/business/app/ICheckInV2.service';
 import { RegisterCheckInDto } from '@/common/dto/RegisterCheckIn.dto';
 
 @ApiTags('Location')
@@ -31,7 +38,7 @@ export class LocationUserController {
   ) {}
 
   @ApiOperation({ summary: 'Get my checked in locations' })
-  @WithPagination()
+  @ApiPaginationQuery(ICheckInV2Service_QueryConfig.getMyCheckIns())
   @Get('/check-in')
   getMyCheckedInLocations(
     @AuthUser() userDto: JwtTokenDto,
