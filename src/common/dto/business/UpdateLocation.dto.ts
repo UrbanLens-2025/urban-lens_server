@@ -7,6 +7,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
 } from 'class-validator';
 
@@ -36,7 +37,7 @@ export class UpdateLocationDto {
   @IsOptional()
   @IsArray()
   @ArrayNotEmpty()
-  @IsNumber({}, { each: true })
+  @IsUrl({}, { each: true })
   @IsNotEmpty({ each: true })
   imageUrl?: string[];
 
