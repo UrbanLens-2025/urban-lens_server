@@ -28,7 +28,12 @@ export class AccountQueryService
       .findOneOrFail({
         where: {
           id: dto.userId,
-          role: In([Role.USER, Role.BUSINESS_OWNER, Role.EVENT_CREATOR]),
+          role: In([
+            Role.USER,
+            Role.BUSINESS_OWNER,
+            Role.EVENT_CREATOR,
+            ...(dto.allowAdmin ? [Role.ADMIN] : []),
+          ]),
         },
         relations: {
           userProfile: true,

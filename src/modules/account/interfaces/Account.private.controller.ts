@@ -20,6 +20,7 @@ export class AccountPrivateController {
   getCurrentUser(@AuthUser() dto: JwtTokenDto) {
     return this.accountQueryService.getAccountInfo({
       userId: dto.sub,
+      allowAdmin: true,
     });
   }
 }
