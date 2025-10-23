@@ -17,12 +17,17 @@ import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ILocationRequestManagementService } from '@/modules/business/app/ILocationRequestManagement.service';
 import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
-import { WithPagination } from '@/common/WithPagination.decorator';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 import { AddLocationRequestTagsDto } from '@/common/dto/business/AddLocationRequestTags.dto';
 import { DeleteLocationRequestTagDto } from '@/common/dto/business/DeleteLocationRequestTag.dto';
-import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
-import { ILocationRequestQueryService } from '@/modules/business/app/ILocationRequestQuery.service';
+import {
+  ILocationRequestQueryService,
+  ILocationRequestQueryService_QueryConfig,
+} from '@/modules/business/app/ILocationRequestQuery.service';
 
 @ApiTags('Location Request')
 @ApiBearerAuth()
@@ -37,7 +42,9 @@ export class LocationRequestBusinessController {
   ) {}
 
   @ApiOperation({ summary: 'Get my location requests' })
-  @WithPagination()
+  @ApiPaginationQuery(
+    ILocationRequestQueryService_QueryConfig.getMyLocationRequests(),
+  )
   @Get()
   getMyLocationRequests(
     @AuthUser() userDto: JwtTokenDto,

@@ -5,6 +5,11 @@ import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 
 @ApiTags('_App')
 @ApiBearerAuth()
@@ -35,5 +40,11 @@ export class AppController {
   @Get('/public/test-find-error')
   async testFindError() {
     return this.appService.testFindError();
+  }
+
+  @ApiPaginationQuery(AppService.testSearchAndFilter)
+  @Get('/public/test-search-and-filter')
+  async testSearchAndFilter(@Paginate() query: PaginateQuery) {
+    return this.appService.testSearchAndFilter(query);
   }
 }

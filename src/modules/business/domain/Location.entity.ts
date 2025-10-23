@@ -17,7 +17,7 @@ import { CheckInEntity } from './CheckIn.entity';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
 import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Entity({ name: LocationEntity.TABLE_NAME })
 export class LocationEntity {
@@ -117,6 +117,9 @@ export class LocationEntity {
 
   @OneToMany(() => CheckInEntity, (checkIn) => checkIn.location)
   checkIns: CheckInEntity[];
+
+  @Column({ name: 'total_check_ins', type: 'bigint', default: 0 })
+  totalCheckIns: number;
 
   //#region TRANSIENT FIELDS - Do NOT add @Column to these. These are NOT PERSISTED to the db.
 

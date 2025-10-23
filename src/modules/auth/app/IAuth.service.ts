@@ -1,7 +1,7 @@
 import { RegisterDto } from '@/common/dto/auth/Register.dto';
 import { LoginDto } from '@/common/dto/auth/Login.dto';
-import { UserLoginResponseDto } from '@/common/dto/auth/UserLoginResponse.dto';
-import { RegisterResponseDto } from '@/common/dto/auth/RegisterResponse.dto';
+import { UserLoginResponseDto } from '@/common/dto/auth/res/UserLoginResponse.dto';
+import { RegisterResponseDto } from '@/common/dto/auth/res/RegisterResponse.dto';
 import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';

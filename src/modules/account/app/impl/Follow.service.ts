@@ -11,7 +11,7 @@ import { GetFollowersQueryDto } from '@/common/dto/account/GetFollowersQuery.dto
 import { PaginationResult } from '@/common/services/base.service';
 import { FollowEntityType } from '@/modules/account/domain/Follow.entity';
 import { DataSource } from 'typeorm';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 

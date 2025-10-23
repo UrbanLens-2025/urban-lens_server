@@ -1,6 +1,9 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiQuery } from '@nestjs/swagger';
 
+/**
+ * @deprecated Use `findByEmail()` instead.
+ */
 export function WithPagination() {
   return applyDecorators(
     ApiQuery({

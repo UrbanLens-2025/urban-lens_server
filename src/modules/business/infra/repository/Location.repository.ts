@@ -96,6 +96,19 @@ export const LocationRepositoryProvider = (ctx: DataSource | EntityManager) =>
           return row !== undefined ? Number(row.distanceMeters) : undefined;
         });
     },
+
+    incrementCheckInCount(
+      this: Repository<LocationEntity>,
+      payload: { locationId: string },
+    ) {
+      return this.createQueryBuilder('location')
+        .update()
+        .set({
+          totalCheckIns: () => '"total_check_ins" + 1',
+        })
+        .where('id = :locationId', { locationId: payload.locationId })
+        .execute();
+    },
   });
 
 export type LocationRepositoryProvider = ReturnType<

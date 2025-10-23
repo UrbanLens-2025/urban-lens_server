@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
-import { AccountEntity } from '@/modules/auth/domain/Account.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Entity({ name: LocationBookingConfigEntity.TABLE_NAME })
 export class LocationBookingConfigEntity {
@@ -35,18 +35,11 @@ export class LocationBookingConfigEntity {
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     createForeignKeyConstraints: false,
   })
-  @JoinColumn({ name: 'account_id' })
+  @JoinColumn({ name: 'created_by' })
   createdBy: AccountEntity;
 
-  @Column({ name: 'account_id', type: 'uuid' })
+  @Column({ name: 'created_by', type: 'uuid' })
   createdById: string;
-
-  @DeleteDateColumn({
-    name: 'deleted_at',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  deletedAt: Date | null;
 
   @Column({ name: 'allow_booking', type: 'boolean', default: false })
   allowBooking: boolean;

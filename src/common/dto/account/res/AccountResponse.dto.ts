@@ -8,10 +8,19 @@ export class AccountResponseDto {
   id: string;
 
   @Expose()
+  email: string;
+
+  @Expose()
   firstName: string;
 
   @Expose()
   lastName: string;
+
+  @Expose()
+  phoneNumber: string;
+
+  @Expose()
+  role: Role;
 
   @Expose()
   avatarUrl: string | null;
@@ -20,7 +29,7 @@ export class AccountResponseDto {
   coverUrl: string | null;
 
   @Expose()
-  role: Role;
+  hasOnboarded: boolean;
 
   @Expose()
   @Type(() => UserProfileResponseDto)

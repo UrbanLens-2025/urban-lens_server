@@ -1,9 +1,11 @@
-import { IsNotEmpty, IsUUID } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 
-export namespace UserGetAccountInfo {
-  export class Dto {
-    @IsNotEmpty()
-    @IsUUID()
-    userId: string;
-  }
+export class UserGetAccountInfoDto {
+  @IsNotEmpty()
+  @IsUUID()
+  userId: string;
+
+  @IsOptional()
+  @IsBoolean()
+  allowAdmin?: boolean = false;
 }

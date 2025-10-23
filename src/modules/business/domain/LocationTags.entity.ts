@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { TagEntity } from '@/modules/account/domain/Tag.entity';
+import { TagEntity } from '@/modules/utility/domain/Tag.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 
 @Entity({ name: LocationTagsEntity.TABLE_NAME })

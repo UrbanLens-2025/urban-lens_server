@@ -1,26 +1,13 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Inject,
-  Get,
-  Param,
-  Patch,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Body, Controller, Inject, Post, Put } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { CreateBusinessDto } from '@/common/dto/business/CreateBusiness.dto';
-import { IBusinessService } from '../app/IBusiness.service';
-import { SuccessResponseDto } from '@/common/dto/SuccessResponse.dto';
-import { UpdateBusinessStatusDto } from '@/common/dto/business/UpdateBusinessStatus.dto';
+import { UpdateBusinessDto } from '@/common/dto/business/UpdateBusiness.dto';
+import { IOnboardService } from '@/modules/account/app/IOnboard.service';
+import { IAccountProfileManagementService } from '@/modules/account/app/IAccountProfileManagement.service';
 
 @ApiBearerAuth()
 @Roles(Role.BUSINESS_OWNER)
@@ -28,8 +15,10 @@ import { UpdateBusinessStatusDto } from '@/common/dto/business/UpdateBusinessSta
 @Controller('/owner/account')
 export class AccountOwnerController {
   constructor(
-    @Inject(IBusinessService)
-    private readonly businessService: IBusinessService,
+    @Inject(IAccountProfileManagementService)
+    private readonly accountProfileManagementService: IAccountProfileManagementService,
+    @Inject(IOnboardService)
+    private readonly onboardService: IOnboardService,
   ) {}
 
   @Post('/onboard')
@@ -38,27 +27,22 @@ export class AccountOwnerController {
     @AuthUser() user: JwtTokenDto,
     @Body() createBusinessDto: CreateBusinessDto,
   ) {
-    const business = await this.businessService.createBusiness(
-      user.sub,
-      createBusinessDto,
-    );
-
-    return business;
+    return await this.onboardService.onboardOwner(user.sub, createBusinessDto);
   }
 
-  @Patch('onboard/:businessId')
-  @Roles(Role.ADMIN)
+  @Put('/profile/pre-approval')
+  @ApiBearerAuth()
+  @Roles(Role.BUSINESS_OWNER)
   @ApiOperation({
-    summary: 'Update business onboarding status (Only Admin)',
-    description: 'Update business onboarding status',
+    summary: 'Update business profile information',
+    description:
+      'Business owner can update their business info, especially after rejection with admin notes',
   })
-  async updateOnboardingStatus(
+  updateBusiness(
+    @Body() updateBusinessDto: UpdateBusinessDto,
     @AuthUser() user: JwtTokenDto,
-    @Body() updateBusinessDto: UpdateBusinessStatusDto,
-    @Param('businessId') businessId: string,
   ) {
-    return this.businessService.updateBusinessStatus(
-      businessId,
+    return this.accountProfileManagementService.updateBusinessBeforeApproval(
       updateBusinessDto,
       user.sub,
     );
