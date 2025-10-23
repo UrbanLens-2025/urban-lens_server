@@ -31,6 +31,7 @@ import { LocationReservationModule } from '@/modules/location-reservation/Locati
 import { ReportModule } from '@/modules/report/Report.module';
 import { GamificationModule } from './modules/gamification/Gamification.module';
 import { UtilityModule } from '@/modules/utility/Utility.module';
+import { WalletModule } from './modules/wallet/Wallet.module';
 import { TestController } from '@/Test.controller';
 
 @Module({
@@ -84,6 +85,7 @@ import { TestController } from '@/Test.controller';
     ReportModule,
     GamificationModule,
     UtilityModule,
+    WalletModule,
   ],
   controllers: [AppController, TestController],
   providers: [
