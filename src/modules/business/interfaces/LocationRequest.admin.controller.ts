@@ -38,7 +38,7 @@ export class LocationRequestAdminController {
 
   @ApiOperation({ summary: 'Search location requests' })
   @ApiPaginationQuery(
-    ILocationRequestQueryService_QueryConfig.getMyLocationRequests(),
+    ILocationRequestQueryService_QueryConfig.searchAllLocationRequests(),
   )
   @Get('/search')
   searchAllLocationRequests(@Paginate() query: PaginateQuery) {

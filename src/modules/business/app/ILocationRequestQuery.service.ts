@@ -50,6 +50,10 @@ export namespace ILocationRequestQueryService_QueryConfig {
     return {
       sortableColumns: ['createdAt'],
       defaultSortBy: [['createdAt', 'DESC']],
+      filterableColumns: {
+        status: true,
+      },
+      searchableColumns: ['name'],
       relations: {
         createdBy: {
           businessProfile: true,

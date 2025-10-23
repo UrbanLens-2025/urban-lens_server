@@ -40,6 +40,7 @@ import {
   PostCreatedEvent,
 } from '@/modules/gamification/domain/events/PostCreated.event';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
+import { EntityManager } from 'typeorm';
 
 interface RawPost {
   post_postid: string;
@@ -529,7 +530,7 @@ export class PostService
   private async updateEntityRating(
     entityId: string,
     entityType: AnalyticEntityType,
-    transactionalEntityManager: any,
+    transactionalEntityManager: EntityManager,
   ): Promise<void> {
     const analyticRepo =
       transactionalEntityManager.getRepository(AnalyticEntity);
