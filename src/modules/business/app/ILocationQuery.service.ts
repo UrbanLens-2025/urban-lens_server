@@ -58,6 +58,7 @@ export namespace ILocationQueryService_QueryConfig {
         'addressLevel1',
         'addressLevel2',
       ],
+      select: ['*', 'business.*', 'tags.tag.*', 'tags.*'],
       relations: {
         business: true,
         tags: {
