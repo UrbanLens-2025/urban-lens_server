@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Inject,
-  Param,
-  ParseUUIDPipe,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
@@ -31,12 +23,6 @@ export class AccountUserController {
     @Inject(IAccountProfileService)
     private readonly accountProfileService: IAccountProfileService,
   ) {}
-
-  // @ApiOperation({ summary: 'Get user details by id' })
-  // @Get('/info/:id')
-  // getAccountInfo(@Param('id', ParseUUIDPipe) id: string) {
-  //   return this.accountUserService.getAccountInfo({ userId: id });
-  // }
 
   @ApiOperation({ summary: 'Onboard a user' })
   @Post('/onboard')

@@ -7,6 +7,7 @@ import {
 import { IUserPointsService } from '../IUserPoints.service';
 import { RewardPointRepository } from '@/modules/gamification/infra/repository/RewardPoint.repository';
 import { RewardPointType } from '@/modules/gamification/domain/RewardPoint.entity';
+import { PointsTransactionType } from '@/modules/gamification/domain/PointsHistory.entity';
 
 @Injectable()
 export class CommentCreatedListener {
@@ -37,6 +38,9 @@ export class CommentCreatedListener {
       await this.userPointsService.addPoints(
         event.authorId,
         rewardPoint.points,
+        PointsTransactionType.CREATE_COMMENT,
+        `Created comment on post ${event.postId}`,
+        event.commentId,
       );
 
       this.logger.log(

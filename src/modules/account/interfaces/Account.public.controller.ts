@@ -21,10 +21,4 @@ export class AccountPublicController {
   getPublicAccountInfo(@Param('id', ParseUUIDPipe) id: string) {
     return this.accountUserService.getAccountInfo({ userId: id });
   }
-
-  // @ApiOperation({ summary: 'Get USER account details by ID' })
-  // @Get('/info/user/:id')
-  // getUserAccountInfo(@Param('id', ParseUUIDPipe) id: string) {
-  //   return this.accountQueryService.getUserAccountDetails({ userId: id });
-  // }
 }
