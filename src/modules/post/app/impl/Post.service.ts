@@ -9,6 +9,7 @@ import {
 import { IPostService } from '../IPost.service';
 import { PostRepository } from '@/modules/post/infra/repository/Post.repository';
 import { CreatePostDto } from '@/common/dto/post/CreatePost.dto';
+import { GetMyPostsQueryDto } from '@/common/dto/post/GetMyPostsQuery.dto';
 import { AnalyticRepository } from '../../../analytic/infra/repository/Analytic.repository';
 import {
   AnalyticEntity,
@@ -888,6 +889,95 @@ export class PostService
 
       if (postType) {
         countQuery.andWhere('post.type = :postType', { postType });
+      }
+
+      const [posts, total] = await Promise.all([
+        postsQuery.getRawMany(),
+        countQuery.getCount(),
+      ]);
+
+      const processedPosts = await this.processPostsWithReactions(
+        posts,
+        currentUserId,
+      );
+
+      return {
+        data: processedPosts,
+        meta: this.buildPaginationMeta(page, limit, total),
+      };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async getMyPosts(
+    authorId: string,
+    filterQuery: GetMyPostsQueryDto,
+    params: PaginationParams = {},
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>> {
+    try {
+      const { page, limit, skip } = this.normalizePaginationParams(params);
+
+      const postsQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .leftJoin('post.author', 'author')
+        .leftJoin(
+          'analytic',
+          'analytic',
+          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
+          { analyticType: AnalyticEntityType.POST },
+        )
+        .leftJoin('locations', 'location', 'location.id = post.location_id')
+        .where('post.author_id = :authorId', { authorId });
+
+      // Apply filters
+      if (filterQuery.type) {
+        postsQuery.andWhere('post.type = :postType', {
+          postType: filterQuery.type,
+        });
+      }
+
+      if (filterQuery.visibility) {
+        postsQuery.andWhere('post.visibility = :visibility', {
+          visibility: filterQuery.visibility,
+        });
+      }
+
+      if (filterQuery.isVerified !== undefined) {
+        postsQuery.andWhere('post.is_verified = :isVerified', {
+          isVerified: filterQuery.isVerified,
+        });
+      }
+
+      postsQuery
+        .select(this.getPostSelectFields())
+        .orderBy('post.created_at', 'DESC')
+        .offset(skip)
+        .limit(limit);
+
+      const countQuery = this.postRepository.repo
+        .createQueryBuilder('post')
+        .where('post.author_id = :authorId', { authorId });
+
+      // Apply same filters to count query
+      if (filterQuery.type) {
+        countQuery.andWhere('post.type = :postType', {
+          postType: filterQuery.type,
+        });
+      }
+
+      if (filterQuery.visibility) {
+        countQuery.andWhere('post.visibility = :visibility', {
+          visibility: filterQuery.visibility,
+        });
+      }
+
+      if (filterQuery.isVerified !== undefined) {
+        countQuery.andWhere('post.is_verified = :isVerified', {
+          isVerified: filterQuery.isVerified,
+        });
       }
 
       const [posts, total] = await Promise.all([
