@@ -1,6 +1,7 @@
 import { CreatePostDto } from '@/common/dto/post/CreatePost.dto';
 import { DeletePostDto } from '@/common/dto/post/DeletePost.dto';
 import { ReactPostDto } from '@/common/dto/post/ReactPost.dto';
+import { GetMyPostsQueryDto } from '@/common/dto/post/GetMyPostsQuery.dto';
 import {
   PaginationParams,
   PaginationResult,
@@ -23,6 +24,12 @@ export interface IPostService {
   getUpvotesOfPost(postId: string, params?: PaginationParams): Promise<any>;
   getDownvotesOfPost(postId: string, params?: PaginationParams): Promise<any>;
   getAllReactionsOfPost(postId: string): Promise<any>;
+  getMyPosts(
+    authorId: string,
+    filterQuery: GetMyPostsQueryDto,
+    params: PaginationParams,
+    currentUserId?: string,
+  ): Promise<PaginationResult<any>>;
   getPostByAuthorId(
     authorId: string,
     params: PaginationParams,

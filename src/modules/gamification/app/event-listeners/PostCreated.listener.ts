@@ -7,6 +7,7 @@ import {
 import { IUserPointsService } from '../IUserPoints.service';
 import { RewardPointRepository } from '@/modules/gamification/infra/repository/RewardPoint.repository';
 import { RewardPointType } from '@/modules/gamification/domain/RewardPoint.entity';
+import { PointsTransactionType } from '@/modules/gamification/domain/PointsHistory.entity';
 import { PostType } from '@/modules/post/domain/Post.entity';
 
 @Injectable()
@@ -55,10 +56,19 @@ export class PostCreatedListener {
         `💰 Found reward point: ${rewardPoint.points} points for ${rewardType}`,
       );
 
+      // Determine transaction type
+      const transactionType =
+        event.postType === PostType.BLOG
+          ? PointsTransactionType.CREATE_BLOG
+          : PointsTransactionType.CREATE_REVIEW;
+
       // Add points to user
       await this.userPointsService.addPoints(
         event.authorId,
         rewardPoint.points,
+        transactionType,
+        `Created ${event.postType}`,
+        event.postId,
       );
 
       this.logger.log(
