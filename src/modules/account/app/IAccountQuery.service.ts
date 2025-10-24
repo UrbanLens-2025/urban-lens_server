@@ -19,6 +19,10 @@ export namespace IAccountQueryService_QueryConfig {
     return {
       sortableColumns: ['createdAt', 'name'],
       defaultSortBy: [['createdAt', 'DESC']],
+      searchableColumns: ['name'],
+      filterableColumns: {
+        status: true,
+      },
       relations: {
         account: true,
       },
