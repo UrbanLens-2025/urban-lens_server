@@ -4,16 +4,21 @@ import { ApproveWithdrawTransactionDto } from '@/common/dto/wallet/ApproveWithdr
 import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
 import { CompleteWithdrawTransactionDto } from '@/common/dto/wallet/CompleteWithdrawTransaction.dto';
 import { WalletExternalTransactionResponseDto } from '@/common/dto/wallet/res/WalletExternalTransaction.response.dto';
+import { UpdateResult } from 'typeorm';
+import { ConfirmDepositTransactionDto } from '@/common/dto/wallet/ConfirmDepositTransaction.dto';
 
 export const IWalletExternalTransactionManagementService = Symbol(
   'IWalletExternalTransactionManagementService',
 );
 
 export interface IWalletExternalTransactionManagementService {
-  // Deposit transactions - automatically add to escrow, no verification needed
+  // Deposit transactions
   createDepositTransaction(
     dto: CreateDepositTransactionDto,
   ): Promise<WalletExternalTransactionResponseDto>;
+  confirmDepositTransaction(
+    dto: ConfirmDepositTransactionDto,
+  ): Promise<UpdateResult>;
 
   // Withdraw transactions - require admin verification
   createWithdrawTransaction(

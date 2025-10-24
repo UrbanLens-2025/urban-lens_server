@@ -39,8 +39,13 @@ export class WalletExternalTransactionEntity {
   @Column({ name: 'provider', type: 'varchar', length: 50 })
   provider: string;
 
-  @Column({ name: 'provider_transaction_id', type: 'varchar', length: 255 })
-  providerTransactionId: string;
+  @Column({
+    name: 'provider_transaction_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  providerTransactionId: string | null;
 
   @Column({ name: 'direction', type: 'varchar', length: 10 })
   direction: WalletExternalTransactionDirection;
@@ -50,6 +55,9 @@ export class WalletExternalTransactionEntity {
 
   @Column({ name: 'currency', type: 'varchar', length: 3 })
   currency: string;
+
+  @Column({ name: 'payment_url', type: 'text', nullable: true })
+  paymentUrl: string | null;
 
   @Column({ name: 'provider_response', type: 'jsonb', nullable: true })
   providerResponse: Record<string, any> | null;
