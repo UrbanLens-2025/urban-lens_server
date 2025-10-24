@@ -1,28 +1,24 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsEnum,
   IsNotEmpty,
   IsNumber,
-  IsOptional,
   IsString,
+  IsUrl,
   IsUUID,
   Min,
 } from 'class-validator';
+import { SupportedPaymentProviders } from '@/common/constants/SupportedPaymentProviders.constant';
+import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 
 export class CreateDepositTransactionDto {
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiProperty({
+    enum: SupportedPaymentProviders,
+    example: SupportedPaymentProviders.VNPAY,
+  })
   @IsNotEmpty()
-  @IsUUID()
-  walletId: string;
-
-  @ApiProperty({ example: 'stripe' })
-  @IsNotEmpty()
-  @IsString()
-  provider: string;
-
-  @ApiProperty({ example: 'pi_1234567890' })
-  @IsNotEmpty()
-  @IsString()
-  providerTransactionId: string;
+  @IsEnum(SupportedPaymentProviders)
+  provider: SupportedPaymentProviders;
 
   @ApiProperty({ example: 100.5 })
   @IsNotEmpty()
@@ -30,16 +26,18 @@ export class CreateDepositTransactionDto {
   @Min(0.01)
   amount: number;
 
-  @ApiProperty({ example: 'USD' })
+  @ApiProperty({ enum: SupportedCurrency, example: SupportedCurrency.VND })
   @IsNotEmpty()
-  @IsString()
-  currency: string;
+  @IsEnum(SupportedCurrency)
+  currency: SupportedCurrency;
 
-  @ApiPropertyOptional({ example: 'REF-123456' })
-  @IsOptional()
+  @ApiProperty()
   @IsString()
-  referenceCode?: string;
+  @IsUrl()
+  @IsNotEmpty()
+  returnUrl: string;
 
-  // Transient field - populated from JWT token
-  createdById: string;
+  // Transient field
+  accountId: string;
+  ipAddress: string;
 }

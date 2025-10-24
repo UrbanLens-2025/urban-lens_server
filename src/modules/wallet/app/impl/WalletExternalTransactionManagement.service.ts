@@ -8,6 +8,12 @@ import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdraw
 import { CompleteWithdrawTransactionDto } from '@/common/dto/wallet/CompleteWithdrawTransaction.dto';
 import { WalletExternalTransactionResponseDto } from '@/common/dto/wallet/res/WalletExternalTransaction.response.dto';
 import { IPaymentGatewayPort } from '@/modules/wallet/app/ports/IPaymentGateway.port';
+import { WalletExternalTransactionEntity } from '@/modules/wallet/domain/WalletExternalTransaction.entity';
+import { WalletExternalTransactionDirection } from '@/common/constants/WalletExternalTransactionDirection.constant';
+import { WalletExternalTransactionRepository } from '@/modules/wallet/infra/repository/WalletExternalTransaction.repository';
+import { WalletExternalTransactionStatus } from '@/common/constants/WalletExternalTransactionStatus.constant';
+import { ConfirmDepositTransactionDto } from '@/common/dto/wallet/ConfirmDepositTransaction.dto';
+import { UpdateResult } from 'typeorm';
 
 @Injectable()
 export class WalletExternalTransactionManagementService
@@ -20,10 +26,51 @@ export class WalletExternalTransactionManagementService
   ) {
     super();
   }
-
   createDepositTransaction(
     dto: CreateDepositTransactionDto,
   ): Promise<WalletExternalTransactionResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const externalTransactionRepository =
+        WalletExternalTransactionRepository(em);
+
+      // create transaction record
+      const externalTransaction = new WalletExternalTransactionEntity();
+      externalTransaction.amount = dto.amount;
+      externalTransaction.walletId = dto.accountId;
+      externalTransaction.createdById = dto.accountId;
+      externalTransaction.currency = dto.currency;
+      externalTransaction.direction =
+        WalletExternalTransactionDirection.DEPOSIT;
+      externalTransaction.provider = dto.provider;
+      externalTransaction.status = WalletExternalTransactionStatus.PENDING;
+
+      const savedTransaction =
+        await externalTransactionRepository.save(externalTransaction);
+
+      // generate payment url
+      const paymentDetails = await this.paymentGatewayPort.createPaymentUrl({
+        currency: dto.currency,
+        amount: dto.amount,
+        ipAddress: dto.ipAddress,
+        returnUrl: dto.returnUrl,
+      });
+
+      // update transaction with payment details
+      savedTransaction.paymentUrl = paymentDetails.paymentUrl;
+      await externalTransactionRepository.update(
+        {
+          id: savedTransaction.id,
+        },
+        savedTransaction,
+      );
+
+      return this.mapTo(WalletExternalTransactionResponseDto, savedTransaction);
+    });
+  }
+
+  confirmDepositTransaction(
+    dto: ConfirmDepositTransactionDto,
+  ): Promise<UpdateResult> {
     throw new Error('Method not implemented.');
   }
 
