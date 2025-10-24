@@ -30,7 +30,12 @@ export class WalletTransactionEntity {
   @Column({ name: 'wallet_id', type: 'uuid' })
   walletId: string;
 
-  @Column({ name: 'transaction_code', type: 'varchar', length: 50, unique: true })
+  @Column({
+    name: 'transaction_code',
+    type: 'varchar',
+    length: 50,
+    unique: true,
+  })
   transactionCode: string;
 
   @Column({ name: 'amount', type: 'numeric', precision: 12, scale: 2 })
@@ -45,6 +50,11 @@ export class WalletTransactionEntity {
   @Column({ name: 'type', type: 'varchar', length: 20 })
   type: WalletTransactionType;
 
-  @Column({ name: 'status', type: 'varchar', length: 20, default: WalletTransactionStatus.PENDING })
+  @Column({
+    name: 'status',
+    type: 'varchar',
+    length: 20,
+    default: WalletTransactionStatus.PENDING,
+  })
   status: WalletTransactionStatus;
 }

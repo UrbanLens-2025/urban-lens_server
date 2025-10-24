@@ -20,9 +20,13 @@ export class WalletExternalTransactionTimelineEntity {
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 
-  @ManyToOne(() => WalletExternalTransactionEntity, (transaction) => transaction.timeline, {
-    createForeignKeyConstraints: false,
-  })
+  @ManyToOne(
+    () => WalletExternalTransactionEntity,
+    (transaction) => transaction.timeline,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
   @JoinColumn({ name: 'transaction_id' })
   transaction: WalletExternalTransactionEntity;
 
@@ -48,4 +52,3 @@ export class WalletExternalTransactionTimelineEntity {
   @Column({ name: 'created_by', type: 'uuid' })
   createdById: string;
 }
-

@@ -13,6 +13,10 @@ export class WalletExternalTransactionManagementService
   extends CoreService
   implements IWalletExternalTransactionManagementService
 {
+  constructor() {
+    super();
+  }
+
   createDepositTransaction(
     dto: CreateDepositTransactionDto,
   ): Promise<WalletExternalTransactionResponseDto> {

@@ -54,10 +54,20 @@ export class WalletExternalTransactionEntity {
   @Column({ name: 'provider_response', type: 'jsonb', nullable: true })
   providerResponse: Record<string, any> | null;
 
-  @Column({ name: 'reference_code', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'reference_code',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   referenceCode: string | null;
 
-  @Column({ name: 'status', type: 'varchar', length: 20, default: WalletExternalTransactionStatus.PENDING })
+  @Column({
+    name: 'status',
+    type: 'varchar',
+    length: 20,
+    default: WalletExternalTransactionStatus.PENDING,
+  })
   status: WalletExternalTransactionStatus;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
@@ -70,7 +80,11 @@ export class WalletExternalTransactionEntity {
   @Column({ name: 'approved_by', type: 'uuid', nullable: true })
   approvedById: string | null;
 
-  @Column({ name: 'approved_at', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'approved_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   approvedAt: Date | null;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
@@ -83,10 +97,18 @@ export class WalletExternalTransactionEntity {
   @Column({ name: 'rejected_by', type: 'uuid', nullable: true })
   rejectedById: string | null;
 
-  @Column({ name: 'rejected_at', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'rejected_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   rejectedAt: Date | null;
 
-  @Column({ name: 'completed_at', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'completed_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   completedAt: Date | null;
 
   @Column({ name: 'failure_reason', type: 'text', nullable: true })
@@ -101,8 +123,12 @@ export class WalletExternalTransactionEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedById: string | null;
 
-  @OneToMany(() => WalletExternalTransactionTimelineEntity, (timeline) => timeline.transaction, {
-    createForeignKeyConstraints: false,
-  })
+  @OneToMany(
+    () => WalletExternalTransactionTimelineEntity,
+    (timeline) => timeline.transaction,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
   timeline: WalletExternalTransactionTimelineEntity[];
 }

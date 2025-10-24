@@ -15,7 +15,8 @@ export class WalletPrivateController {
 
   @ApiOperation({
     summary: 'Get my wallet',
-    description: 'Fetch the wallet belonging to the authenticated account (any role)',
+    description:
+      'Fetch the wallet belonging to the authenticated account (any role)',
   })
   @Get()
   getMyWallet(@AuthUser() user: JwtTokenDto) {

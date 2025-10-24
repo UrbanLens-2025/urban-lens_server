@@ -12,6 +12,8 @@ import { IWalletExternalTransactionManagementService } from '@/modules/wallet/ap
 import { WalletExternalTransactionManagementService } from '@/modules/wallet/app/impl/WalletExternalTransactionManagement.service';
 import { WalletCreationListener } from '@/modules/wallet/app/listeners/WalletCreation.listener';
 import { WalletPrivateController } from '@/modules/wallet/interfaces/Wallet.private.controller';
+import { IPaymentGatewayPort } from '@/modules/wallet/app/ports/IPaymentGateway.port';
+import { VNPayPaymentGatewayAdapter } from '@/modules/wallet/infra/adapter/VNPayPaymentGateway.adapter';
 
 @Module({
   imports: [WalletInfraModule],
@@ -37,9 +39,12 @@ import { WalletPrivateController } from '@/modules/wallet/interfaces/Wallet.priv
       provide: IWalletExternalTransactionManagementService,
       useClass: WalletExternalTransactionManagementService,
     },
+    {
+      provide: IPaymentGatewayPort,
+      useClass: VNPayPaymentGatewayAdapter,
+    },
     WalletCreationListener,
   ],
   exports: [WalletInfraModule],
 })
 export class WalletModule {}
-

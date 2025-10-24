@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { UserRegistrationConfirmedEvent, USER_REGISTRATION_CONFIRMED } from '@/modules/auth/app/events/UserRegistrationConfirmed.event';
+import {
+  USER_REGISTRATION_CONFIRMED,
+  UserRegistrationConfirmedEvent,
+} from '@/modules/auth/app/events/UserRegistrationConfirmed.event';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
 import { WalletEntity } from '@/modules/wallet/domain/Wallet.entity';
 import { CoreService } from '@/common/core/Core.service';
