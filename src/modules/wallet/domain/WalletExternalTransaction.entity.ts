@@ -78,53 +78,6 @@ export class WalletExternalTransactionEntity {
   })
   status: WalletExternalTransactionStatus;
 
-  @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
-    nullable: true,
-  })
-  @JoinColumn({ name: 'approved_by' })
-  approvedBy: AccountEntity | null;
-
-  @Column({ name: 'approved_by', type: 'uuid', nullable: true })
-  approvedById: string | null;
-
-  @Column({
-    name: 'approved_at',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  approvedAt: Date | null;
-
-  @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
-    nullable: true,
-  })
-  @JoinColumn({ name: 'rejected_by' })
-  rejectedBy: AccountEntity | null;
-
-  @Column({ name: 'rejected_by', type: 'uuid', nullable: true })
-  rejectedById: string | null;
-
-  @Column({
-    name: 'rejected_at',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  rejectedAt: Date | null;
-
-  @Column({
-    name: 'completed_at',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  completedAt: Date | null;
-
-  @Column({ name: 'failure_reason', type: 'text', nullable: true })
-  failureReason: string | null;
-
-  @Column({ name: 'rejection_reason', type: 'text', nullable: true })
-  rejectionReason: string | null;
-
   @Column({ name: 'created_by', type: 'uuid' })
   createdById: string;
 
