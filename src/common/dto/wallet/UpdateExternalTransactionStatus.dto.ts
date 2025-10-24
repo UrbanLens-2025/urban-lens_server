@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsUUID, IsEnum } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsUUID } from 'class-validator';
 import { WalletExternalTransactionStatus } from '@/common/constants/WalletExternalTransactionStatus.constant';
 
 export class UpdateExternalTransactionStatusDto {
@@ -8,7 +8,10 @@ export class UpdateExternalTransactionStatusDto {
   @IsUUID()
   transactionId: string;
 
-  @ApiProperty({ enum: WalletExternalTransactionStatus, example: WalletExternalTransactionStatus.APPROVED })
+  @ApiProperty({
+    enum: WalletExternalTransactionStatus,
+    example: WalletExternalTransactionStatus.APPROVED,
+  })
   @IsNotEmpty()
   @IsEnum(WalletExternalTransactionStatus)
   status: WalletExternalTransactionStatus;
@@ -16,4 +19,3 @@ export class UpdateExternalTransactionStatusDto {
   // Transient field - populated from JWT token
   updatedById?: string;
 }
-

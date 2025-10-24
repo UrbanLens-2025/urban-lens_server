@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString, IsUUID, IsOptional, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
 
 export class CreateDepositTransactionDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
@@ -17,7 +24,7 @@ export class CreateDepositTransactionDto {
   @IsString()
   providerTransactionId: string;
 
-  @ApiProperty({ example: 100.50 })
+  @ApiProperty({ example: 100.5 })
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
@@ -36,4 +43,3 @@ export class CreateDepositTransactionDto {
   // Transient field - populated from JWT token
   createdById: string;
 }
-

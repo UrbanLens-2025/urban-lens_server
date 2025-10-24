@@ -36,4 +36,3 @@ export class WalletTransactionResponseDto {
   @Type(() => WalletResponseDto)
   wallet?: WalletResponseDto;
 }
-

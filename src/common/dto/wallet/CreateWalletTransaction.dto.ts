@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString, IsUUID, IsEnum, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
 import { WalletTransactionDirection } from '@/common/constants/WalletTransactionDirection.constant';
 import { WalletTransactionType } from '@/common/constants/WalletTransactionType.constant';
 
@@ -9,7 +16,7 @@ export class CreateWalletTransactionDto {
   @IsUUID()
   walletId: string;
 
-  @ApiProperty({ example: 100.50 })
+  @ApiProperty({ example: 100.5 })
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
@@ -20,12 +27,18 @@ export class CreateWalletTransactionDto {
   @IsString()
   currency: string;
 
-  @ApiProperty({ enum: WalletTransactionDirection, example: WalletTransactionDirection.DEBIT })
+  @ApiProperty({
+    enum: WalletTransactionDirection,
+    example: WalletTransactionDirection.DEBIT,
+  })
   @IsNotEmpty()
   @IsEnum(WalletTransactionDirection)
   direction: WalletTransactionDirection;
 
-  @ApiProperty({ enum: WalletTransactionType, example: WalletTransactionType.PAYMENT })
+  @ApiProperty({
+    enum: WalletTransactionType,
+    example: WalletTransactionType.PAYMENT,
+  })
   @IsNotEmpty()
   @IsEnum(WalletTransactionType)
   type: WalletTransactionType;
@@ -35,4 +48,3 @@ export class CreateWalletTransactionDto {
   @IsString()
   transactionCode: string;
 }
-

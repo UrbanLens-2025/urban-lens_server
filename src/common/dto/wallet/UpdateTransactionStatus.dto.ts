@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsUUID, IsEnum } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsUUID } from 'class-validator';
 import { WalletTransactionStatus } from '@/common/constants/WalletTransactionStatus.constant';
 
 export class UpdateTransactionStatusDto {
@@ -8,9 +8,11 @@ export class UpdateTransactionStatusDto {
   @IsUUID()
   transactionId: string;
 
-  @ApiProperty({ enum: WalletTransactionStatus, example: WalletTransactionStatus.COMPLETED })
+  @ApiProperty({
+    enum: WalletTransactionStatus,
+    example: WalletTransactionStatus.COMPLETED,
+  })
   @IsNotEmpty()
   @IsEnum(WalletTransactionStatus)
   status: WalletTransactionStatus;
 }
-

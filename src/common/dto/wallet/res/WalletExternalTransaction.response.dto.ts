@@ -79,4 +79,3 @@ export class WalletExternalTransactionResponseDto {
   @Type(() => WalletExternalTransactionTimelineResponseDto)
   timeline?: WalletExternalTransactionTimelineResponseDto[];
 }
-

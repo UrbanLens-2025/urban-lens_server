@@ -1,4 +1,3 @@
-import { UpdateWalletBalanceDto } from '@/common/dto/wallet/UpdateWalletBalance.dto';
 import { GetWalletsByAccountIdDto } from '@/common/dto/wallet/GetWalletsByAccountId.dto';
 import { WalletResponseDto } from '@/common/dto/wallet/res/Wallet.response.dto';
 import { GetTransactionHistoryByWalletIdDto } from '@/common/dto/wallet/GetTransactionHistoryByWalletId.dto';
@@ -15,7 +14,6 @@ export interface IWalletManagementService {
   getTransactionHistoryByWalletId(
     dto: GetTransactionHistoryByWalletIdDto,
   ): Promise<Paginated<WalletTransactionResponseDto>>;
-  updateWalletBalance(dto: UpdateWalletBalanceDto): Promise<WalletResponseDto>;
 }
 
 export namespace IWalletManagementService_QueryConfig {

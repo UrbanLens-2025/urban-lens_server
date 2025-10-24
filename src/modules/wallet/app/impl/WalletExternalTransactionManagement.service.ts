@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CoreService } from '@/common/core/Core.service';
 import { IWalletExternalTransactionManagementService } from '@/modules/wallet/app/IWalletExternalTransactionManagement.service';
 import { CreateDepositTransactionDto } from '@/common/dto/wallet/CreateDepositTransaction.dto';
@@ -7,13 +7,17 @@ import { ApproveWithdrawTransactionDto } from '@/common/dto/wallet/ApproveWithdr
 import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
 import { CompleteWithdrawTransactionDto } from '@/common/dto/wallet/CompleteWithdrawTransaction.dto';
 import { WalletExternalTransactionResponseDto } from '@/common/dto/wallet/res/WalletExternalTransaction.response.dto';
+import { IPaymentGatewayPort } from '@/modules/wallet/app/ports/IPaymentGateway.port';
 
 @Injectable()
 export class WalletExternalTransactionManagementService
   extends CoreService
   implements IWalletExternalTransactionManagementService
 {
-  constructor() {
+  constructor(
+    @Inject(IPaymentGatewayPort)
+    private readonly paymentGatewayPort: IPaymentGatewayPort,
+  ) {
     super();
   }
 
