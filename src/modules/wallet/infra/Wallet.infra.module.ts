@@ -16,4 +16,3 @@ import { WalletExternalTransactionTimelineEntity } from '@/modules/wallet/domain
   ],
 })
 export class WalletInfraModule {}
-

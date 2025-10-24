@@ -9,8 +9,12 @@ import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransacti
 export const IWalletManagementService = Symbol('IWalletManagementService');
 
 export interface IWalletManagementService {
-  getWalletByAccountId(dto: GetWalletsByAccountIdDto): Promise<WalletResponseDto | null>;
-  getTransactionHistoryByWalletId(dto: GetTransactionHistoryByWalletIdDto): Promise<Paginated<WalletTransactionResponseDto>>;
+  getWalletByAccountId(
+    dto: GetWalletsByAccountIdDto,
+  ): Promise<WalletResponseDto | null>;
+  getTransactionHistoryByWalletId(
+    dto: GetTransactionHistoryByWalletIdDto,
+  ): Promise<Paginated<WalletTransactionResponseDto>>;
   updateWalletBalance(dto: UpdateWalletBalanceDto): Promise<WalletResponseDto>;
 }
 

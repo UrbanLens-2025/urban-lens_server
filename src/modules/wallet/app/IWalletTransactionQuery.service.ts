@@ -5,12 +5,20 @@ import { GetTransactionByIdDto } from '@/common/dto/wallet/GetTransactionById.dt
 import { GetTransactionByCodeDto } from '@/common/dto/wallet/GetTransactionByCode.dto';
 import { GetTransactionsByWalletIdDto } from '@/common/dto/wallet/GetTransactionsByWalletId.dto';
 
-export const IWalletTransactionQueryService = Symbol('IWalletTransactionQueryService');
+export const IWalletTransactionQueryService = Symbol(
+  'IWalletTransactionQueryService',
+);
 
 export interface IWalletTransactionQueryService {
-  getTransactionById(dto: GetTransactionByIdDto): Promise<WalletTransactionResponseDto | null>;
-  getTransactionByCode(dto: GetTransactionByCodeDto): Promise<WalletTransactionResponseDto | null>;
-  getTransactionsByWalletId(dto: GetTransactionsByWalletIdDto): Promise<Paginated<WalletTransactionResponseDto>>;
+  getTransactionById(
+    dto: GetTransactionByIdDto,
+  ): Promise<WalletTransactionResponseDto | null>;
+  getTransactionByCode(
+    dto: GetTransactionByCodeDto,
+  ): Promise<WalletTransactionResponseDto | null>;
+  getTransactionsByWalletId(
+    dto: GetTransactionsByWalletIdDto,
+  ): Promise<Paginated<WalletTransactionResponseDto>>;
 }
 
 export namespace IWalletTransactionQueryService_QueryConfig {

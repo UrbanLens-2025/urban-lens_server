@@ -32,7 +32,13 @@ export class WalletEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
-  @Column({ name: 'balance', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'balance',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   balance: number;
 
   @Column({ name: 'currency', type: 'varchar', length: 3 })
@@ -50,13 +56,21 @@ export class WalletEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedById: string | null;
 
-  @OneToMany(() => WalletTransactionEntity, (transaction) => transaction.wallet, {
-    createForeignKeyConstraints: false,
-  })
+  @OneToMany(
+    () => WalletTransactionEntity,
+    (transaction) => transaction.wallet,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
   transactions: WalletTransactionEntity[];
 
-  @OneToMany(() => WalletExternalTransactionEntity, (transaction) => transaction.wallet, {
-    createForeignKeyConstraints: false,
-  })
+  @OneToMany(
+    () => WalletExternalTransactionEntity,
+    (transaction) => transaction.wallet,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
   externalTransactions: WalletExternalTransactionEntity[];
 }

@@ -44,6 +44,8 @@ export class WalletExternalTransactionQueryService
       where: {
         walletId: dto.accountId, // accountId is the wallet primary key
       },
-    }).then((res) => this.mapToPaginated(WalletExternalTransactionResponseDto, res));
+    }).then((res) =>
+      this.mapToPaginated(WalletExternalTransactionResponseDto, res),
+    );
   }
 }

@@ -1,4 +1,4 @@
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { WalletExternalTransactionTimelineEntity } from '@/modules/wallet/domain/WalletExternalTransactionTimeline.entity';
 
 export const WalletExternalTransactionTimelineRepository = (
@@ -8,4 +8,3 @@ export const WalletExternalTransactionTimelineRepository = (
 export type WalletExternalTransactionTimelineRepository = ReturnType<
   typeof WalletExternalTransactionTimelineRepository
 >;
-
