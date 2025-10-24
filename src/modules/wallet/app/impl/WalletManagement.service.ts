@@ -4,7 +4,6 @@ import {
   IWalletManagementService,
   IWalletManagementService_QueryConfig,
 } from '@/modules/wallet/app/IWalletManagement.service';
-import { UpdateWalletBalanceDto } from '@/common/dto/wallet/UpdateWalletBalance.dto';
 import { GetWalletsByAccountIdDto } from '@/common/dto/wallet/GetWalletsByAccountId.dto';
 import { WalletResponseDto } from '@/common/dto/wallet/res/Wallet.response.dto';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
@@ -31,15 +30,11 @@ export class WalletManagementService
       .then((res) => this.mapTo(WalletResponseDto, res));
   }
 
-  getTransactionHistoryByWalletId(
+  async getTransactionHistoryByWalletId(
     dto: GetTransactionHistoryByWalletIdDto,
   ): Promise<Paginated<WalletTransactionResponseDto>> {
     return paginate(dto.query, WalletTransactionRepository(this.dataSource), {
       ...IWalletManagementService_QueryConfig.getTransactionHistoryByWalletId(),
     }).then((res) => this.mapToPaginated(WalletTransactionResponseDto, res));
-  }
-
-  updateWalletBalance(dto: UpdateWalletBalanceDto): Promise<WalletResponseDto> {
-    throw new Error('Method not implemented.');
   }
 }

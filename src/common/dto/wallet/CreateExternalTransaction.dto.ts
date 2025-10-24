@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString, IsUUID, IsEnum, IsOptional, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
 import { WalletExternalTransactionDirection } from '@/common/constants/WalletExternalTransactionDirection.constant';
 
 export class CreateExternalTransactionDto {
@@ -18,12 +26,15 @@ export class CreateExternalTransactionDto {
   @IsString()
   providerTransactionId: string;
 
-  @ApiProperty({ enum: WalletExternalTransactionDirection, example: WalletExternalTransactionDirection.DEPOSIT })
+  @ApiProperty({
+    enum: WalletExternalTransactionDirection,
+    example: WalletExternalTransactionDirection.DEPOSIT,
+  })
   @IsNotEmpty()
   @IsEnum(WalletExternalTransactionDirection)
   direction: WalletExternalTransactionDirection;
 
-  @ApiProperty({ example: 100.50 })
+  @ApiProperty({ example: 100.5 })
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
@@ -42,4 +53,3 @@ export class CreateExternalTransactionDto {
   // Transient field - populated from JWT token
   createdById: string;
 }
-

@@ -15,4 +15,3 @@ export class CreateWalletDto {
   // Transient field - populated from JWT token
   createdById: string;
 }
-

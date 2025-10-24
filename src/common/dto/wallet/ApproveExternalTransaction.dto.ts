@@ -10,4 +10,3 @@ export class ApproveExternalTransactionDto {
   // Transient field - populated from JWT token
   approvedById: string;
 }
-

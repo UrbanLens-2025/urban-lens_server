@@ -25,4 +25,3 @@ export class WalletExternalTransactionTimelineResponseDto {
   @Type(() => AccountResponseDto)
   createdBy?: AccountResponseDto;
 }
-

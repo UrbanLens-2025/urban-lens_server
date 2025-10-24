@@ -7,4 +7,3 @@ export class CompleteWithdrawTransactionDto {
   @IsUUID()
   transactionId: string;
 }
-

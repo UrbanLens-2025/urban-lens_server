@@ -7,4 +7,3 @@ export class CompleteExternalTransactionDto {
   @IsUUID()
   transactionId: string;
 }
-

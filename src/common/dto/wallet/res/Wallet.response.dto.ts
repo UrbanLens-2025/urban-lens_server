@@ -37,4 +37,3 @@ export class WalletResponseDto {
   @Type(() => WalletExternalTransactionResponseDto)
   externalTransactions?: WalletExternalTransactionResponseDto[];
 }
-

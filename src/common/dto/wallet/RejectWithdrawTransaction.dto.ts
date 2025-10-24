@@ -15,4 +15,3 @@ export class RejectWithdrawTransactionDto {
   // Transient field - populated from JWT token
   rejectedById: string;
 }
-
