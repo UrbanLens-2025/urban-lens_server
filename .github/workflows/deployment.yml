@@ -96,7 +96,7 @@ jobs:
           sudo cp -r ./new-deployment/* /var/www/urbanlens/
 
       - name: Restart application using PM2
-        run: pm2 reload start-urbanlens
-
+        run:
+          cd /var/www/urbanlens/dist && pm2 start main.js
       - name: Console
         run: echo "Application has been deployed and restarted successfully via PM2!"
