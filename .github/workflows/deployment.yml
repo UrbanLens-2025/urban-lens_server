@@ -105,12 +105,11 @@ jobs:
           path: ./new-deployment/
       - name: List output directory
         run: ls -la ./new-deployment/
-      - name: Prepare Deployment Directory
-        run: |
-          mkdir -p /var/www/urbanlens/
+
       - name: Deploy new code to production path
         run: |
-          sudo rm -rf /var/www/urbanlens/*
+          sudo rm -rf /var/www/urbanlens
+          sudo mkdir -p /var/www/urbanlens
           sudo cp -r ./new-deployment/* /var/www/urbanlens/
 
       - name: Fix directory permissions
@@ -121,6 +120,7 @@ jobs:
         run: |
           cd /var/www/urbanlens/
           pnpm install --prod
+
       - name: Restart application using PM2
         run: |
           cd /var/www/urbanlens/
