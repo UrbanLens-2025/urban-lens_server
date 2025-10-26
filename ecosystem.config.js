@@ -3,6 +3,7 @@ module.exports = {
     {
       name: 'urbanlens-api', // This name is used by PM2 to identify and manage the process.
       script: 'dist/main.js', // Path to your main entry file, relative to the config file location.
+      version: process.env.RUNTIME_VERSION,
       watch: false,
       autorestart: true,
       max_memory_restart: '2G',
