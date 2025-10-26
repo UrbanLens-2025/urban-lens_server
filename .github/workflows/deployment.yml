@@ -14,8 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{github.ref}}
+          ref: ${{ github.ref }}
           fetch-depth: 0
+
       - name: Allow only tags from main
         run: |
           git fetch origin main --depth=1
@@ -24,12 +25,16 @@ jobs:
             exit 0
           fi
           echo "✅ Tag verified: commit is from main."
+
       - name: Install dependencies
         run: pnpm install
+
       - name: Build project
         run: pnpm build
+
       - name: List output directory
         run: ls -la ./
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -42,95 +47,124 @@ jobs:
             pnpm-lock.yaml
           retention-days: 1
 
-  #  test:
-  #    runs-on: [self-hosted, Linux, X64]
-  #    needs: build
-  #    steps:
-  #      - uses: actions/checkout@v4
-  #      - name: Install dependencies
-  #        run: pnpm install
-  #      - name: Download build artifacts
-  #        uses: actions/download-artifact@v4
-  #        with:
-  #          name: dist-and-config
-  #          path: ./ # Download to the root
-  #      - name: Run tests
-  #        run: pnpm test --passWithNoTests
-
   deploy:
     runs-on: [ self-hosted, Linux, X64 ]
     needs: [ build ]
     environment: Prod
     env:
-      #      PRIVATE VARIABLES
-      DATABASE_HOST: ${{secrets.DATABASE_HOST}}
-      DATABASE_NAME: ${{secrets.DATABASE_NAME}}
-      DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
-      DATABASE_PORT: ${{secrets.DATABASE_PORT}}
-      DATABASE_USER: ${{secrets.DATABASE_USER}}
-      FIREBASE_PRIVATE_KEY: ${{secrets.FIREBASE_PRIVATE_KEY}}
-      JWT_SECRET: ${{secrets.JWT_SECRET}}
-      MAILER_HOST: ${{secrets.MAILER_HOST}}
-      MAILER_PASSWORD: ${{secrets.MAILER_PASSWORD}}
-      MAILER_PORT: ${{secrets.MAILER_PORT}}
-      MAILER_SECURE: ${{secrets.MAILER_SECURE}}
-      MAILER_USERNAME: ${{secrets.MAILER_USERNAME}}
-      R2_ACCESS_KEY_ID: ${{secrets.R2_ACCESS_KEY_ID}}
-      R2_ENDPOINT: ${{secrets.R2_ENDPOINT}}
-      R2_PUBLIC_BUCKET_NAME: ${{secrets.R2_PUBLIC_BUCKET_NAME}}
-      R2_PUBLIC_DEVELOPMENT_URL: ${{secrets.R2_PUBLIC_DEVELOPMENT_URL}}
-      R2_SECRET_ACCESS_KEY: ${{secrets.R2_SECRET_ACCESS_KEY}}
-      REDIS_HOST: ${{secrets.REDIS_HOST}}
-      REDIS_PASSWORD: ${{secrets.REDIS_PASSWORD}}
-      REDIS_PORT: ${{secrets.REDIS_PORT}}
-      REDIS_URL: ${{secrets.REDIS_URL}}
-      VNPAY_HASH_SECRET: ${{secrets.VNPAY_HASH_SECRET}}
-      VNPAY_TMN_CODE: ${{secrets.VNPAY_TMN_CODE}}
-      VNPAY_URL: ${{vars.VNPAY_URL}}
-      #      PUBLIC VARIABLES
-      DATABASE_ENABLE_SYNC: ${{vars.DATABASE_ENABLE_SYNC}}
-      DATABASE_SCHEMA: ${{vars.DATABASE_SCHEMA}}
-      ENABLE_ACCOUNT_SEEDING: ${{vars.ENABLE_ACCOUNT_SEEDING}}
-      FIREBASE_CLIENT_EMAIL: ${{vars.FIREBASE_CLIENT_EMAIL}}
-      FIREBASE_PROJECT_ID: ${{vars.FIREBASE_PROJECT_ID}}
-      JWT_EXPIRES_IN: ${{vars.JWT_EXPIRES_IN}}
-      LOG_LEVELS: ${{vars.LOG_LEVELS}}
-      MAX_PENDING_DEPOSIT_TRANSACTIONS: ${{vars.MAX_PENDING_DEPOSIT_TRANSACTIONS}}
-      NODE_ENV: ${{vars.NODE_ENV}}
-      PORT: ${{vars.PORT}}
+      # PRIVATE VARIABLES
+      DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+      DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+      DATABASE_USER: ${{ secrets.DATABASE_USER }}
+      FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      MAILER_HOST: ${{ secrets.MAILER_HOST }}
+      MAILER_PASSWORD: ${{ secrets.MAILER_PASSWORD }}
+      MAILER_PORT: ${{ secrets.MAILER_PORT }}
+      MAILER_SECURE: ${{ secrets.MAILER_SECURE }}
+      MAILER_USERNAME: ${{ secrets.MAILER_USERNAME }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      R2_PUBLIC_BUCKET_NAME: ${{ secrets.R2_PUBLIC_BUCKET_NAME }}
+      R2_PUBLIC_DEVELOPMENT_URL: ${{ secrets.R2_PUBLIC_DEVELOPMENT_URL }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      REDIS_HOST: ${{ secrets.REDIS_HOST }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      REDIS_PORT: ${{ secrets.REDIS_PORT }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      VNPAY_HASH_SECRET: ${{ secrets.VNPAY_HASH_SECRET }}
+      VNPAY_TMN_CODE: ${{ secrets.VNPAY_TMN_CODE }}
+      VNPAY_URL: ${{ vars.VNPAY_URL }}
+
+      # PUBLIC VARIABLES
+      DATABASE_ENABLE_SYNC: ${{ vars.DATABASE_ENABLE_SYNC }}
+      DATABASE_SCHEMA: ${{ vars.DATABASE_SCHEMA }}
+      ENABLE_ACCOUNT_SEEDING: ${{ vars.ENABLE_ACCOUNT_SEEDING }}
+      FIREBASE_CLIENT_EMAIL: ${{ vars.FIREBASE_CLIENT_EMAIL }}
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      JWT_EXPIRES_IN: ${{ vars.JWT_EXPIRES_IN }}
+      LOG_LEVELS: ${{ vars.LOG_LEVELS }}
+      MAX_PENDING_DEPOSIT_TRANSACTIONS: ${{ vars.MAX_PENDING_DEPOSIT_TRANSACTIONS }}
+      NODE_ENV: ${{ vars.NODE_ENV }}
+      PORT: ${{ vars.PORT }}
+
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: dist-and-config
           path: ./new-deployment/
+
       - name: List output directory
         run: ls -la ./new-deployment/
 
-      - name: Deploy new code to production path
+      - name: Determine active slot (blue/green)
+        id: slot
         run: |
-          sudo rm -rf /var/www/urbanlens
-          sudo mkdir -p /var/www/urbanlens
-          sudo cp -r ./new-deployment/* /var/www/urbanlens/
+          if [ -L /var/www/urbanlens ]; then
+            CURRENT=$(readlink /var/www/urbanlens | grep -oE 'blue|green')
+          else
+            CURRENT="none"
+          fi
 
-      - name: Fix directory permissions
-        run: |
-          sudo chown -R $USER:$USER /var/www/urbanlens/
+          if [ "$CURRENT" = "blue" ]; then
+            echo "TARGET=green" >> $GITHUB_ENV
+            echo "PORT=8081" >> $GITHUB_ENV
+            echo "CURRENT=blue" >> $GITHUB_ENV
+          else
+            echo "TARGET=blue" >> $GITHUB_ENV
+            echo "PORT=8080" >> $GITHUB_ENV
+            echo "CURRENT=green" >> $GITHUB_ENV
+          fi
 
-      - name: Install production dependencies
+          echo "🔵 Current: $CURRENT"
+          echo "🟢 Deploying to: $TARGET on port $PORT"
+
+      - name: Deploy to standby slot
         run: |
-          cd /var/www/urbanlens/
+          sudo rm -rf /var/www/urbanlens-${{ env.TARGET }}
+          sudo mkdir -p /var/www/urbanlens-${{ env.TARGET }}
+          sudo cp -r ./new-deployment/* /var/www/urbanlens-${{ env.TARGET }}/
+          sudo chown -R $USER:$USER /var/www/urbanlens-${{ env.TARGET }}/
+
+          cd /var/www/urbanlens-${{ env.TARGET }}/
           pnpm install --prod
 
-      - name: Restart application using PM2
+      - name: Start standby instance with PM2
         run: |
-          cd /var/www/urbanlens/
-          export RUNTIME_VERSION=${{github.ref_name}}
+          cd /var/www/urbanlens-${{ env.TARGET }}/
+          export RUNTIME_VERSION=${{ github.ref_name }}
           export DEPLOYED_AT=$(TZ='Asia/Ho_Chi_Minh' date +"%Y-%m-%dT%H:%M:%S%z")
-          pm2 delete urbanlens-api || true
-          sleep 3
-          pm2 start ecosystem.config.js --update-env
+          pm2 delete urbanlens-${{ env.TARGET }} || true
+          PORT=${{ env.PORT }} pm2 start ecosystem.config.js --name urbanlens-${{ env.TARGET }} --update-env
           pm2 save
 
+      - name: Health check for standby instance
+        run: |
+          echo "Waiting for health check..."
+          for i in {1..10}; do
+            if curl -fs http://localhost:${{ env.PORT }}/swagger/json > /dev/null; then
+              echo "✅ Health check passed."
+              exit 0
+            fi
+            echo "⏳ Still waiting..."
+            sleep 5
+          done
+          echo "❌ Health check failed!"
+          exit 1
+
+      - name: Switch symlink to new version
+        run: |
+          sudo ln -sfn /var/www/urbanlens-${{ env.TARGET }} /var/www/urbanlens
+          echo "🔁 Switched live symlink to $TARGET"
+
+      - name: Stop old instance gracefully
+        run: |
+          pm2 delete urbanlens-${{ env.CURRENT }} || true
+          pm2 save
+          echo "💤 Old instance stopped."
+
       - name: Console
-        run: echo "Application has been deployed and restarted successfully via PM2!"
+        run: echo "✅ Zero-downtime deployment completed successfully!"

@@ -10,6 +10,7 @@ module.exports = {
       env: {
         RUNTIME_VERSION: process.env.RUNTIME_VERSION,
         DEPLOYED_AT: process.env.DEPLOYED_AT,
+        PORT: process.env.PORT || 8080,
       },
       // By omitting the 'env' block here, PM2 automatically picks up
       // all the secrets and variables defined in your GitHub Actions 'deploy' job.

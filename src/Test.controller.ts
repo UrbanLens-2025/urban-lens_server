@@ -17,6 +17,11 @@ import { AppService } from '@/app.service';
 export class TestController {
   constructor(private readonly appService: AppService) {}
 
+  @Get('/public/hello-world')
+  getHelloWorld() {
+    return 'Hello, World!';
+  }
+
   @ApiBearerAuth()
   @Get('/public/get-hello')
   getHello(@AuthUser() dto: JwtTokenDto) {
