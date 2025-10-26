@@ -50,15 +50,7 @@ jobs:
     strategy:
       matrix:
         node-version: [ 22 ]
-    env:
-      # Pull in all repository variables
-      ${{
-      toJson(vars)
-      }}
-      # Pull in all secrets as well
-      ${{
-      toJson(secrets)
-      }}
+    environment: production
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
