@@ -130,5 +130,6 @@ jobs:
           sleep 3
           pm2 start ecosystem.config.js --update-env
           pm2 save
+
       - name: Console
         run: echo "Application has been deployed and restarted successfully via PM2!"
