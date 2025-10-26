@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: [ self-hosted,Linux,X64 ]
+    runs-on: [ self-hosted, Linux, X64 ]
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -22,25 +22,31 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dist
-          path: dist/
-  #  test:
-  #    runs-on: [ self-hosted,Linux,X64 ]
-  #    needs: build
-  #    steps:
-  #      - uses: actions/checkout@v4
-  #      - name: Install dependencies
-  #        run: pnpm install
-  #      - name: Download build artifacts
-  #        uses: actions/download-artifact@v4
-  #        with:
-  #          name: dist
-  #          path: dist/
-  #      - name: Run tests
-  #        run: pnpm test --passWithNoTests
-  deploy:
-    runs-on: [ self-hosted,Linux,X64 ]
+          name: dist-and-config
+          path: |
+            dist/
+            ecosystem.config.js
+          retention-days: 1
+
+  test:
+    runs-on: [ self-hosted, Linux, X64 ]
     needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: pnpm install
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-and-config
+          path: ./ # Download to the root
+      - name: Run tests
+        run: pnpm test --passWithNoTests
+
+  deploy:
+    runs-on: [ self-hosted, Linux, X64 ]
+    needs: [ build, test ] # <-- Let's make sure tests pass before deploying
+    if: github.ref == 'refs/heads/sandbox/dev' # <-- Only deploy on push to the branch, not PRs
     environment: Prod
     env:
       #      PRIVATE VARIABLES
@@ -83,7 +89,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          name: dist-and-config
           path: ./new-deployment/
       - name: List output directory
         run: ls -la ./new-deployment/
@@ -96,7 +102,8 @@ jobs:
           sudo cp -r ./new-deployment/* /var/www/urbanlens/
 
       - name: Restart application using PM2
-        run:
-          cd /var/www/urbanlens/dist && pm2 start main.js
+        run: |
+          cd /var/www/urbanlens/
+          pm2 startOrRestart ecosystem.config.js
       - name: Console
         run: echo "Application has been deployed and restarted successfully via PM2!"
