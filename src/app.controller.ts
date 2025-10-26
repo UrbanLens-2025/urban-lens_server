@@ -1,50 +1,20 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from '@/common/Roles.decorator';
-import { Role } from '@/common/constants/Role.constant';
-import { AuthUser } from '@/common/AuthUser.decorator';
-import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import {
-  ApiPaginationQuery,
-  Paginate,
-  type PaginateQuery,
-} from 'nestjs-paginate';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
+import { Environment } from '@/config/env.config';
 
-@ApiTags('_App')
+@ApiTags('_System')
 @ApiBearerAuth()
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly configService: ConfigService<Environment>) {}
 
-  @ApiBearerAuth()
-  @Get('/public/get-hello')
-  getHello(@AuthUser() dto: JwtTokenDto) {
-    if (dto.sub) {
-      return dto;
-    }
-    return 'Hello world!';
-  }
-
-  @Get('/get-hello')
-  getHelloPublic(): string {
-    return this.appService.getHello();
-  }
-
-  @Roles(Role.ADMIN)
-  @Get('/admin')
-  getHelloAdmin(): string {
-    return this.appService.getHello();
-  }
-
-  @Get('/public/test-find-error')
-  async testFindError() {
-    return this.appService.testFindError();
-  }
-
-  @ApiPaginationQuery(AppService.testSearchAndFilter)
-  @Get('/public/test-search-and-filter')
-  async testSearchAndFilter(@Paginate() query: PaginateQuery) {
-    return this.appService.testSearchAndFilter(query);
+  @ApiOperation({
+    summary: 'Get running version of the service',
+  })
+  @Get('')
+  root(): string {
+    return `Server has been running on deployment version (${this.configService.get<string>('RUNTIME_VERSION')}) since ${this.configService.get('DEPLOYED_AT')}`;
   }
 }

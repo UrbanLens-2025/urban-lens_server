@@ -124,8 +124,10 @@ jobs:
       - name: Restart application using PM2
         run: |
           cd /var/www/urbanlens/
+          export RUNTIME_VERSION=${{github.ref_name}}
+          export DEPLOYED_AT=$(TZ='Asia/Ho_Chi_Minh' date +"%Y-%m-%dT%H:%M:%S%z")
           pm2 delete urbanlens-api || true
           sleep 3
-          pm2 start ecosystem.config.js
+          pm2 start ecosystem.config.js --update-env
       - name: Console
         run: echo "Application has been deployed and restarted successfully via PM2!"

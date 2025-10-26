@@ -1,6 +1,9 @@
 import * as joi from 'joi';
 
 export interface Environment {
+  RUNTIME_VERSION: string;
+  DEPLOYED_AT: string;
+
   NODE_ENV: 'development' | 'production' | 'test';
   PORT: number;
   ENABLE_ACCOUNT_SEEDING: boolean;
@@ -39,6 +42,9 @@ export interface Environment {
 }
 
 export const envConfig = joi.object<Environment>({
+  RUNTIME_VERSION: joi.string().default('dev-local'),
+  DEPLOYED_AT: joi.string().default('N/A'),
+
   NODE_ENV: joi
     .string()
     .valid('development', 'production', 'test')
