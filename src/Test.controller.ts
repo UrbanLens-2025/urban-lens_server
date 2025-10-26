@@ -27,6 +27,11 @@ export class TestController {
     return 'Hello, World! VERSION 2';
   }
 
+  @Get('/public/hello-world-3')
+  getHelloWorld3() {
+    return 'Hello, World! VERSION 3';
+  }
+
   @ApiBearerAuth()
   @Get('/public/get-hello')
   getHello(@AuthUser() dto: JwtTokenDto) {
