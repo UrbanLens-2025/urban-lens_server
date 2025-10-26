@@ -88,8 +88,10 @@ jobs:
       - name: List output directory
         run: ls -la ./dist/
       - name: Run application
-        run: pnpm start
-      - name: Confirm application is running
-        run: curl -f http://localhost:8080/swagger || exit 1
+        run:
+          node dist/main.js &
+          sleep 5
+          curl -f http://localhost:8080/swagger
+          kill %1
       - name: Console
         run: echo "Application is running successfully!"
