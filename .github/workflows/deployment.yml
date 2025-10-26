@@ -99,6 +99,9 @@ jobs:
         run: |
           sudo rm -rf /var/www/urbanlens/*
           sudo cp -r ./new-deployment/* /var/www/urbanlens/
+      - name: Fix directory permissions
+        run: |
+          sudo chown -R $USER:$USER /var/www/urbanlens/
       - name: Install production dependencies
         run: |
           cd /var/www/urbanlens/
