@@ -26,8 +26,8 @@ jobs:
           path: |
             dist/
             ecosystem.config.js
-            package.json # <-- ADDED: Needed for pnpm install
-            pnpm-lock.yaml # <-- ADDED: Ensures reproducible production dependencies
+            package.json
+            pnpm-lock.yaml
           retention-days: 1
 
   #  test:
@@ -104,8 +104,6 @@ jobs:
 
       - name: Fix directory permissions
         run: |
-          # The $USER variable holds the current runner user (e.g., 'github').
-          # This gives the runner user permission to write during pnpm install.
           sudo chown -R $USER:$USER /var/www/urbanlens/
 
       - name: Install production dependencies
