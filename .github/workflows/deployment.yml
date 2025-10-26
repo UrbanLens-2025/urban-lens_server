@@ -113,6 +113,8 @@ jobs:
       - name: Restart application using PM2
         run: |
           cd /var/www/urbanlens/
+          pm2 stop all || true
+          pm2 delete all || true
           pm2 startOrRestart ecosystem.config.js
       - name: Console
         run: echo "Application has been deployed and restarted successfully via PM2!"
