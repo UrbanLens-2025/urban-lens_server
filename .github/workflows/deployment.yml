@@ -36,6 +36,7 @@ jobs:
           name: dist-and-config
           path: |
             dist/
+            public/
             ecosystem.config.js
             package.json
             pnpm-lock.yaml
