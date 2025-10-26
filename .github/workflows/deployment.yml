@@ -84,12 +84,24 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist
-          path: dist/
+          path: ./new-deployment/
       - name: List output directory
         run: ls -la ./dist/
-      - name: Run application
+      - name: Prepare Deployment Directory
         run: |
-          pnpm start &
-          sleep 5
+          mkdir -p /var/www/urbanlens/
+      - name: Deploy new code to production path
+        run: |
+          rm -rf /var/www/urbanlens/*
+          cp -r ./new-deployment/* /var/www/urbanlens/
+
+      - name: Run Install/Update dependencies (if needed)
+        run: |
+          cd /var/www/urbanlens/
+          pnpm install --prod
+
+      - name: Restart application using PM2
+        run: pm2 reload start-urbanlens
+
       - name: Console
-        run: echo "Application is has been deployed successfully!"
+        run: echo "Application has been deployed and restarted successfully via PM2!"
