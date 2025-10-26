@@ -95,11 +95,6 @@ jobs:
           sudo rm -rf /var/www/urbanlens/*
           sudo cp -r ./new-deployment/* /var/www/urbanlens/
 
-      - name: Run Install/Update dependencies (if needed)
-        run: |
-          cd /var/www/urbanlens/
-          pnpm install --prod
-
       - name: Restart application using PM2
         run: pm2 reload start-urbanlens
 
