@@ -50,6 +50,8 @@ async function bootstrap() {
         tagsSorter: 'alpha',
         operationsSorter: 'alpha',
         docExpansion: 'none',
+        url: '/swagger/json?v=' + Date.now(),
+        cacheControl: false,
       },
       customJs: '/swagger-custom.js',
       // customCss: theme.getBuffer(SwaggerThemeNameEnum),
