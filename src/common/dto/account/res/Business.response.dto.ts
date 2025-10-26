@@ -19,10 +19,13 @@ export class BusinessResponseDto {
   name: string;
 
   @Expose()
-  address: string;
+  addressLine: string;
 
   @Expose()
-  wardCode: string;
+  addressLevel1: string;
+
+  @Expose()
+  addressLevel2: string;
 
   @Expose()
   description: string;
@@ -59,7 +62,4 @@ export class BusinessResponseDto {
 
   @Expose()
   category: BusinessCategory;
-
-  @Expose()
-  canCreateLocation: boolean;
 }
