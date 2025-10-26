@@ -7,6 +7,7 @@ import {
 import { IUserPointsService } from '../IUserPoints.service';
 import { RewardPointRepository } from '@/modules/gamification/infra/repository/RewardPoint.repository';
 import { RewardPointType } from '@/modules/gamification/domain/RewardPoint.entity';
+import { PointsTransactionType } from '@/modules/gamification/domain/PointsHistory.entity';
 
 @Injectable()
 export class CheckInCreatedListener {
@@ -34,7 +35,13 @@ export class CheckInCreatedListener {
       }
 
       // Add points to user
-      await this.userPointsService.addPoints(event.userId, rewardPoint.points);
+      await this.userPointsService.addPoints(
+        event.userId,
+        rewardPoint.points,
+        PointsTransactionType.CHECK_IN,
+        `Check-in at location ${event.locationId}`,
+        event.checkInId,
+      );
 
       this.logger.log(
         `Awarded ${rewardPoint.points} points to user ${event.userId} for check-in at location ${event.locationId}`,

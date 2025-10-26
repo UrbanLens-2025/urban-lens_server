@@ -17,6 +17,8 @@ import type { PaginationParams } from '@/common/services/base.service';
 import { ReactPostDto } from '@/common/dto/post/ReactPost.dto';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
+import { GetMyPostsQueryDto } from '@/common/dto/post/GetMyPostsQuery.dto';
+import { WithPagination } from '@/common/WithPagination.decorator';
 
 @ApiTags('Post')
 @ApiBearerAuth()
@@ -34,10 +36,24 @@ export class PostUserController {
     return this.postService.createPost(dto);
   }
 
-  @ApiOperation({ summary: 'Get my posts' })
+  @ApiOperation({
+    summary: 'Get my posts',
+    description:
+      'Get posts created by current user with optional filters (type, visibility, verification)',
+  })
   @Get('my-posts')
-  getMyPosts(@Query() query: PaginationParams, @AuthUser() user: JwtTokenDto) {
-    return this.postService.getPostByAuthorId(user.sub, query, user.sub);
+  @WithPagination()
+  getMyPosts(
+    @Query() filterQuery: GetMyPostsQueryDto,
+    @Query() paginationQuery: PaginationParams,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.postService.getMyPosts(
+      user.sub,
+      filterQuery,
+      paginationQuery,
+      user.sub,
+    );
   }
 
   @ApiOperation({ summary: 'React a post' })

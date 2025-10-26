@@ -2,6 +2,8 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { IUserPointsService } from '../IUserPoints.service';
 import { UserProfileRepository } from '@/modules/account/infra/repository/UserProfile.repository';
 import { RankRepository } from '@/modules/gamification/infra/repository/Rank.repository';
+import { PointsHistoryRepository } from '@/modules/gamification/infra/repository/PointsHistory.repository';
+import { PointsTransactionType } from '@/modules/gamification/domain/PointsHistory.entity';
 import { DataSource } from 'typeorm';
 
 @Injectable()
@@ -11,10 +13,17 @@ export class UserPointsService implements IUserPointsService {
   constructor(
     private readonly userProfileRepository: UserProfileRepository,
     private readonly rankRepository: RankRepository,
+    private readonly pointsHistoryRepository: PointsHistoryRepository,
     private readonly dataSource: DataSource,
   ) {}
 
-  async addPoints(userId: string, points: number): Promise<void> {
+  async addPoints(
+    userId: string,
+    points: number,
+    transactionType: PointsTransactionType = PointsTransactionType.ADMIN_ADJUSTMENT,
+    description?: string,
+    referenceId?: string,
+  ): Promise<void> {
     this.logger.debug(
       `🎯 Attempting to add ${points} points to user ${userId}`,
     );
@@ -22,6 +31,9 @@ export class UserPointsService implements IUserPointsService {
     await this.dataSource.transaction(async (manager) => {
       const userProfileRepo = manager.getRepository(
         this.userProfileRepository.repo.target,
+      );
+      const pointsHistoryRepo = manager.getRepository(
+        this.pointsHistoryRepository.repo.target,
       );
 
       const userProfile = await userProfileRepo.findOne({
@@ -39,6 +51,9 @@ export class UserPointsService implements IUserPointsService {
         `✓ Found user profile. Current points: ${userProfile.points}, Ranking points: ${userProfile.rankingPoint}`,
       );
 
+      // Record balance before transaction
+      const balanceBefore = userProfile.points;
+
       // Update both points (for redeeming) and ranking points (for ranking)
       const oldPoints = userProfile.points;
       const oldRankingPoint = userProfile.rankingPoint;
@@ -50,6 +65,18 @@ export class UserPointsService implements IUserPointsService {
       );
 
       await userProfileRepo.save(userProfile);
+
+      // Log points history
+      const pointsHistory = pointsHistoryRepo.create({
+        userId,
+        points,
+        transactionType,
+        description,
+        referenceId,
+        balanceBefore,
+        balanceAfter: userProfile.points,
+      });
+      await pointsHistoryRepo.save(pointsHistory);
 
       this.logger.log(
         `✅ Added ${points} points to user ${userId}. Points: ${oldPoints} → ${userProfile.points}, Ranking: ${oldRankingPoint} → ${userProfile.rankingPoint}`,

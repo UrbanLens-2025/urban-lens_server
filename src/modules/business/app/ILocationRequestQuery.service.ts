@@ -34,6 +34,7 @@ export namespace ILocationRequestQueryService_QueryConfig {
       filterableColumns: {
         status: true,
       },
+      searchableColumns: ['name'],
       relations: {
         createdBy: {
           businessProfile: true,
