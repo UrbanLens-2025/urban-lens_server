@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CoreService } from '@/common/core/Core.service';
 import { IWalletExternalTransactionManagementService } from '@/modules/wallet/app/IWalletExternalTransactionManagement.service';
 import { CreateDepositTransactionDto } from '@/common/dto/wallet/CreateDepositTransaction.dto';
@@ -14,24 +14,47 @@ import { WalletExternalTransactionRepository } from '@/modules/wallet/infra/repo
 import { WalletExternalTransactionStatus } from '@/common/constants/WalletExternalTransactionStatus.constant';
 import { ConfirmDepositTransactionDto } from '@/common/dto/wallet/ConfirmDepositTransaction.dto';
 import { UpdateResult } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import { Environment } from '@/config/env.config';
 
 @Injectable()
 export class WalletExternalTransactionManagementService
   extends CoreService
   implements IWalletExternalTransactionManagementService
 {
+  private readonly MAX_PENDING_DEPOSIT_TRANSACTIONS;
+
   constructor(
+    private readonly configService: ConfigService<Environment>,
     @Inject(IPaymentGatewayPort)
     private readonly paymentGatewayPort: IPaymentGatewayPort,
   ) {
     super();
+    this.MAX_PENDING_DEPOSIT_TRANSACTIONS = configService.getOrThrow<number>(
+      'MAX_PENDING_DEPOSIT_TRANSACTIONS',
+    );
   }
+
   createDepositTransaction(
     dto: CreateDepositTransactionDto,
   ): Promise<WalletExternalTransactionResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const externalTransactionRepository =
         WalletExternalTransactionRepository(em);
+
+      // check if user has exceeded max pending deposit transactions
+      const pendingCount = await externalTransactionRepository.count({
+        where: {
+          walletId: dto.accountId,
+          direction: WalletExternalTransactionDirection.DEPOSIT,
+          status: WalletExternalTransactionStatus.PENDING,
+        },
+      });
+      if (pendingCount > this.MAX_PENDING_DEPOSIT_TRANSACTIONS) {
+        throw new BadRequestException(
+          'Exceeded maximum pending deposit transactions',
+        );
+      }
 
       // create transaction record
       const externalTransaction = new WalletExternalTransactionEntity();

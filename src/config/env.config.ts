@@ -43,6 +43,8 @@ export interface Environment {
   VNPAY_TMN_CODE: string;
   VNPAY_HASH_SECRET: string;
   VNPAY_URL: string;
+
+  MAX_PENDING_DEPOSIT_TRANSACTIONS: number;
 }
 
 export const envConfig = joi.object<Environment>({
@@ -91,4 +93,6 @@ export const envConfig = joi.object<Environment>({
   VNPAY_TMN_CODE: joi.string().required(),
   VNPAY_HASH_SECRET: joi.string().required(),
   VNPAY_URL: joi.string().required(),
+
+  MAX_PENDING_DEPOSIT_TRANSACTIONS: joi.number().default(5),
 });
