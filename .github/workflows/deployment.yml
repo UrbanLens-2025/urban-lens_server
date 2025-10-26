@@ -86,7 +86,7 @@ jobs:
           name: dist
           path: ./new-deployment/
       - name: List output directory
-        run: ls -la ./dist/
+        run: ls -la ./new-deployment/
       - name: Prepare Deployment Directory
         run: |
           mkdir -p /var/www/urbanlens/
