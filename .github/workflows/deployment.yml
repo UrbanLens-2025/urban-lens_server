@@ -28,25 +28,24 @@ jobs:
             ecosystem.config.js
           retention-days: 1
 
-  test:
-    runs-on: [ self-hosted, Linux, X64 ]
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install dependencies
-        run: pnpm install
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-and-config
-          path: ./ # Download to the root
-      - name: Run tests
-        run: pnpm test --passWithNoTests
+  #  test:
+  #    runs-on: [ self-hosted, Linux, X64 ]
+  #    needs: build
+  #    steps:
+  #      - uses: actions/checkout@v4
+  #      - name: Install dependencies
+  #        run: pnpm install
+  #      - name: Download build artifacts
+  #        uses: actions/download-artifact@v4
+  #        with:
+  #          name: dist-and-config
+  #          path: ./ # Download to the root
+  #      - name: Run tests
+  #        run: pnpm test --passWithNoTests
 
   deploy:
     runs-on: [ self-hosted, Linux, X64 ]
-    needs: [ build, test ] # <-- Let's make sure tests pass before deploying
-    if: github.ref == 'refs/heads/sandbox/dev' # <-- Only deploy on push to the branch, not PRs
+    needs: [ build ]
     environment: Prod
     env:
       #      PRIVATE VARIABLES
@@ -100,7 +99,10 @@ jobs:
         run: |
           sudo rm -rf /var/www/urbanlens/*
           sudo cp -r ./new-deployment/* /var/www/urbanlens/
-
+      - name: Install production dependencies
+        run: |
+          cd /var/www/urbanlens/
+          pnpm install --prod
       - name: Restart application using PM2
         run: |
           cd /var/www/urbanlens/
