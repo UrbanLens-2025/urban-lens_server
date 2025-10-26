@@ -12,7 +12,7 @@ export class AppController {
   @ApiOperation({
     summary: 'Get running version of the service',
   })
-  @Get('/public')
+  @Get('/public/version')
   root(): string {
     return `Server has been running on deployment version (${this.configService.get<string>('RUNTIME_VERSION')}) since ${this.configService.get('DEPLOYED_AT')}`;
   }
