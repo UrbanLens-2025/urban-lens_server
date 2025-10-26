@@ -44,7 +44,7 @@ jobs:
           path: dist/
       - name: Run tests
         run: pnpm test --passWithNoTests
-  run:
+  deploy:
     runs-on: [ self-hosted,Linux,X64 ]
     needs: build
     strategy:
