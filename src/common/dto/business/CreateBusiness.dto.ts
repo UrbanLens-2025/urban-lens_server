@@ -1,6 +1,12 @@
 import { BusinessCategory } from '@/common/constants/Business.constant';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateBusinessDto {
   @IsString()
@@ -20,20 +26,22 @@ export class CreateBusinessDto {
   description: string;
 
   @IsString()
-  @ApiProperty({
-    description: 'The address of the business',
-    example: '123 Main St',
-  })
   @IsNotEmpty()
-  address: string;
+  @MaxLength(255)
+  @ApiProperty({ description: 'Địa chỉ văn phòng công ty' })
+  addressLine: string;
 
   @IsString()
-  @ApiProperty({
-    description: 'The ward code of the business',
-    example: '123456',
-  })
   @IsNotEmpty()
-  wardCode: string;
+  @MaxLength(255)
+  @ApiProperty({ description: 'Địa chỉ văn phòng công ty' })
+  addressLevel1: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  @ApiProperty({ description: 'Địa chỉ văn phòng công ty' })
+  addressLevel2: string;
 
   @IsString()
   @ApiProperty({
