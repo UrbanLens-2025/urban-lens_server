@@ -103,24 +103,31 @@ jobs:
       - name: Determine active slot (blue/green)
         id: slot
         run: |
+          # Default when first deploy: treat none as blue being the target
           if [ -L /var/www/urbanlens ]; then
-            CURRENT=$(readlink /var/www/urbanlens | grep -oE 'blue|green')
+            CURRENT=$(readlink /var/www/urbanlens | grep -oE 'blue|green' || echo "none")
           else
             CURRENT="none"
           fi
-
+          
           if [ "$CURRENT" = "blue" ]; then
             echo "TARGET=green" >> $GITHUB_ENV
-            echo "PORT=8081" >> $GITHUB_ENV
+            echo "STANDBY_PORT=8081" >> $GITHUB_ENV
             echo "CURRENT=blue" >> $GITHUB_ENV
           else
+            # current is green or none -> deploy to blue by default
             echo "TARGET=blue" >> $GITHUB_ENV
-            echo "PORT=8080" >> $GITHUB_ENV
-            echo "CURRENT=green" >> $GITHUB_ENV
+            echo "STANDBY_PORT=8081" >> $GITHUB_ENV
+            # if CURRENT was none, set CURRENT to none (guard later)
+            if [ "$CURRENT" = "none" ]; then
+              echo "CURRENT=none" >> $GITHUB_ENV
+            else
+              echo "CURRENT=green" >> $GITHUB_ENV
+            fi
           fi
-
-          echo "🔵 Current: $CURRENT"
-          echo "🟢 Deploying to: $TARGET on port $PORT"
+          
+          echo "Current: $CURRENT"
+          echo "Target: $TARGET (standby port: $STANDBY_PORT)"
 
       - name: Deploy to standby slot
         run: |
@@ -128,43 +135,72 @@ jobs:
           sudo mkdir -p /var/www/urbanlens-${{ env.TARGET }}
           sudo cp -r ./new-deployment/* /var/www/urbanlens-${{ env.TARGET }}/
           sudo chown -R $USER:$USER /var/www/urbanlens-${{ env.TARGET }}/
-
           cd /var/www/urbanlens-${{ env.TARGET }}/
           pnpm install --prod
 
-      - name: Start standby instance with PM2
+      - name: Start standby instance (on standby port)
         run: |
           cd /var/www/urbanlens-${{ env.TARGET }}/
           export RUNTIME_VERSION=${{ github.ref_name }}
           export DEPLOYED_AT=$(TZ='Asia/Ho_Chi_Minh' date +"%Y-%m-%dT%H:%M:%S%z")
           pm2 delete urbanlens-${{ env.TARGET }} || true
-          PORT=${{ env.PORT }} pm2 start ecosystem.config.js --name urbanlens-${{ env.TARGET }} --update-env
+          PORT=${{ env.STANDBY_PORT }} pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
           pm2 save
 
-      - name: Health check for standby instance
+      - name: Health check standby (on standby port)
         run: |
-          echo "Waiting for health check..."
-          for i in {1..10}; do
-            if curl -fs http://localhost:${{ env.PORT }}/swagger/json > /dev/null; then
-              echo "✅ Health check passed."
+          echo "Waiting for standby health check..."
+          for i in {1..15}; do
+            if curl -fsS http://localhost:${{ env.STANDBY_PORT }}/swagger/json > /dev/null; then
+              echo "Standby healthy."
               exit 0
             fi
-            echo "⏳ Still waiting..."
-            sleep 5
+            sleep 2
           done
-          echo "❌ Health check failed!"
+          echo "Standby health check failed." >&2
+          exit 1
+
+      - name: Promote standby to live (stop old, start new on 8080)
+        run: |
+          # stop old process to free 8080 (if exists)
+          if [ "${{ env.CURRENT }}" != "none" ]; then
+            pm2 stop urbanlens-${{ env.CURRENT }} || true
+          fi
+          
+          # start new on 8080
+          cd /var/www/urbanlens-${{ env.TARGET }}/
+          pm2 delete urbanlens-${{ env.TARGET }} || true
+          PORT=8080 pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
+          pm2 save
+
+      - name: Health check promoted instance (on 8080)
+        run: |
+          echo "Waiting for promoted health check on 8080..."
+          for i in {1..15}; do
+            if curl -fsS http://localhost:8080/swagger/json > /dev/null; then
+              echo "Promoted instance healthy on 8080."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Promoted health check failed." >&2
+          # rollback: attempt to restart previous instance if it existed
+          if [ "${{ env.CURRENT }}" != "none" ]; then
+            pm2 start dist/main.js --name urbanlens-${{ env.CURRENT }} --update-env || true
+          fi
           exit 1
 
       - name: Switch symlink to new version
         run: |
           sudo ln -sfn /var/www/urbanlens-${{ env.TARGET }} /var/www/urbanlens
-          echo "🔁 Switched live symlink to $TARGET"
+          echo "Switched /var/www/urbanlens -> /var/www/urbanlens-${{ env.TARGET }}"
 
-      - name: Stop old instance gracefully
+      - name: Remove old instance
         run: |
-          pm2 delete urbanlens-${{ env.CURRENT }} || true
-          pm2 save
-          echo "💤 Old instance stopped."
+          if [ "${{ env.CURRENT }}" != "none" ]; then
+            pm2 delete urbanlens-${{ env.CURRENT }} || true
+            pm2 save
+          fi
 
       - name: Console
-        run: echo "✅ Zero-downtime deployment completed successfully!"
+        run: echo "✅ Deployment completed (blue/green)."
