@@ -174,7 +174,7 @@ export class VNPayPaymentGatewayAdapter
   ): Record<string, unknown> {
     return {
       vnp_TmnCode: this.configService.getOrThrow<string>('VNPAY_TMN_CODE'),
-      vnp_Amount: dto.amount,
+      vnp_Amount: dto.amount * 100,
       vnp_TransactionNo: dto.transactionNo,
       vnp_ResponseCode: 0,
       vnp_TransactionStatus: 0,

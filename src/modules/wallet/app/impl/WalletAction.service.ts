@@ -1,8 +1,9 @@
 import { CoreService } from '@/common/core/Core.service';
 import { DepositFundsDto } from '@/common/dto/wallet/DepositFunds.dto';
 import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
+import { WalletResponseDto } from '@/common/dto/wallet/res/Wallet.response.dto';
 
 @Injectable()
 export class WalletActionService
@@ -11,7 +12,7 @@ export class WalletActionService
 {
   private readonly logger = super.getLogger(WalletActionService.name);
 
-  depositFunds(dto: DepositFundsDto): Promise<void> {
+  depositFunds(dto: DepositFundsDto): Promise<WalletResponseDto> {
     return this.ensureTransaction(dto.entityManager, async (em) => {
       this.logger.verbose(
         `Depositing ${dto.amount} ${dto.currency} to wallet ${dto.walletId}`,
@@ -26,40 +27,27 @@ export class WalletActionService
       });
 
       if (!wallet) {
-        this.logger.error('Wallet not found: ' + dto.walletId);
-        return;
+        throw new BadRequestException('Wallet not found: ' + dto.walletId);
       }
 
       if (!wallet.canUpdateBalance()) {
-        this.logger.error('Wallet balance cannot be updated: ' + dto.walletId);
-        return;
+        throw new BadRequestException('Wallet cannot update balance');
       }
 
       if (dto.currency !== wallet.currency) {
-        this.logger.warn(
-          `Currency mismatch for wallet ${dto.walletId}: expected ${String(wallet.currency)}, got ${String(dto.currency)}`,
+        throw new BadRequestException(
+          `Currency mismatch: wallet currency is ${String(wallet.currency)}, but deposit currency is ${String(dto.currency)}`,
         );
-        return;
       }
 
-      const updatedBalance = Number(wallet.balance) + Number(dto.amount);
-      const updateResult = await walletRepository.update(
-        {
-          accountId: wallet.accountId,
-        },
-        {
-          balance: updatedBalance,
-        },
-      );
-
-      if (updateResult.affected === 0) {
-        this.logger.error('Failed to update wallet balance: ' + dto.walletId);
-        return;
-      }
+      wallet.balance = await walletRepository.incrementBalance({
+        accountId: wallet.accountId,
+        amount: dto.amount,
+      });
 
       this.logger.verbose('Deposit successful to wallet: ' + dto.walletId);
 
-      return Promise.resolve();
+      return this.mapTo(WalletResponseDto, wallet);
     });
   }
 }

@@ -5,6 +5,7 @@ import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdraw
 import { CompleteWithdrawTransactionDto } from '@/common/dto/wallet/CompleteWithdrawTransaction.dto';
 import { WalletExternalTransactionResponseDto } from '@/common/dto/wallet/res/WalletExternalTransaction.response.dto';
 import { ConfirmDepositTransactionDto } from '@/common/dto/wallet/ConfirmDepositTransaction.dto';
+import { UpdateResult } from 'typeorm';
 
 export const IWalletExternalTransactionManagementService = Symbol(
   'IWalletExternalTransactionManagementService',
@@ -15,7 +16,9 @@ export interface IWalletExternalTransactionManagementService {
   createDepositTransaction(
     dto: CreateDepositTransactionDto,
   ): Promise<WalletExternalTransactionResponseDto>;
-  confirmDepositTransaction(dto: ConfirmDepositTransactionDto): Promise<void>;
+  confirmDepositTransaction(
+    dto: ConfirmDepositTransactionDto,
+  ): Promise<UpdateResult>;
 
   // Withdraw transactions - require admin verification
   createWithdrawTransaction(

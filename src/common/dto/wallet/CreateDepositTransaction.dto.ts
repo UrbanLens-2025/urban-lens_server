@@ -30,4 +30,5 @@ export class CreateDepositTransactionDto {
   // Transient field
   accountId: string;
   ipAddress: string;
+  accountName: string;
 }

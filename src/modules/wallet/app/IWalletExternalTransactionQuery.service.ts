@@ -11,7 +11,7 @@ export const IWalletExternalTransactionQueryService = Symbol(
 );
 
 export interface IWalletExternalTransactionQueryService {
-  getExternalTransactionById(
+  getExternalTransactionByWalletIdAndId(
     dto: GetExternalTransactionByIdDto,
   ): Promise<WalletExternalTransactionResponseDto | null>;
   getExternalTransactionByProviderId(
@@ -35,10 +35,6 @@ export namespace IWalletExternalTransactionQueryService_QueryConfig {
         status: true,
         direction: true,
         provider: true,
-      },
-      relations: {
-        wallet: true,
-        timeline: true,
       },
     };
   }

@@ -7,8 +7,10 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { WalletExternalTransactionEntity } from '@/modules/wallet/domain/WalletExternalTransaction.entity';
-import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { WalletExternalTransactionStatus } from '@/common/constants/WalletExternalTransactionStatus.constant';
+import { WalletExternalTransactionAction } from '@/common/constants/WalletExternalTransactionAction.constant';
+import { WalletExternalTransactionActor } from '@/common/constants/WalletExternalTransactionActor.constant';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Entity({ name: WalletExternalTransactionTimelineEntity.TABLE_NAME })
 export class WalletExternalTransactionTimelineEntity {
@@ -34,21 +36,37 @@ export class WalletExternalTransactionTimelineEntity {
   transactionId: string;
 
   @Column({
-    name: 'status',
+    name: 'status_changed_to',
     type: 'varchar',
     length: 20,
+    nullable: true,
   })
-  status: WalletExternalTransactionStatus;
+  statusChangedTo: WalletExternalTransactionStatus;
+
+  @Column({ name: 'action', type: 'varchar', length: 100 })
+  action: WalletExternalTransactionAction;
+
+  @Column({
+    name: 'actor_type',
+    type: 'varchar',
+    length: 20,
+    default: WalletExternalTransactionActor.SYSTEM,
+  })
+  actorType: WalletExternalTransactionActor;
+
+  @Column({ name: 'actor_id', type: 'uuid', nullable: true })
+  actorId: string | null;
+
+  @ManyToOne(() => AccountEntity, { createForeignKeyConstraints: false })
+  @JoinColumn({ name: 'actor_id' })
+  actor?: AccountEntity | null;
+
+  @Column({ name: 'actor_name', type: 'varchar', length: 255 })
+  actorName: string;
 
   @Column({ name: 'note', type: 'text', nullable: true })
-  note: string | null;
+  note?: string | null;
 
-  @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
-  })
-  @JoinColumn({ name: 'created_by' })
-  createdBy: AccountEntity;
-
-  @Column({ name: 'created_by', type: 'uuid' })
-  createdById: string;
+  @Column({ name: 'metadata', type: 'jsonb', nullable: true })
+  metadata: Record<string, any> | null;
 }

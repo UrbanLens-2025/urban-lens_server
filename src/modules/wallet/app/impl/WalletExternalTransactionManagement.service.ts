@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { CoreService } from '@/common/core/Core.service';
@@ -18,10 +19,13 @@ import { WalletExternalTransactionDirection } from '@/common/constants/WalletExt
 import { WalletExternalTransactionRepository } from '@/modules/wallet/infra/repository/WalletExternalTransaction.repository';
 import { WalletExternalTransactionStatus } from '@/common/constants/WalletExternalTransactionStatus.constant';
 import { ConfirmDepositTransactionDto } from '@/common/dto/wallet/ConfirmDepositTransaction.dto';
-import { In } from 'typeorm';
+import { In, UpdateResult } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service';
+import { WalletExternalTransactionTimelineRepository } from '@/modules/wallet/infra/repository/WalletExternalTransactionTimeline.repository';
+import { WalletExternalTransactionAction } from '@/common/constants/WalletExternalTransactionAction.constant';
+import { WalletExternalTransactionActor } from '@/common/constants/WalletExternalTransactionActor.constant';
 
 @Injectable()
 export class WalletExternalTransactionManagementService
@@ -56,6 +60,8 @@ export class WalletExternalTransactionManagementService
     return this.ensureTransaction(null, async (em) => {
       const externalTransactionRepository =
         WalletExternalTransactionRepository(em);
+      const externalTransactionTimelineRepository =
+        WalletExternalTransactionTimelineRepository(em);
 
       // check if user has exceeded max pending deposit transactions
       const pendingCount = await externalTransactionRepository.count({
@@ -93,53 +99,81 @@ export class WalletExternalTransactionManagementService
             now.getTime() + this.PAYMENT_EXPIRATION_MINUTES * 60000,
           );
 
-          const paymentDetails = await this.paymentGatewayPort.createPaymentUrl(
-            {
-              transactionId: transaction.id,
-              currency: dto.currency,
-              amount: dto.amount,
-              ipAddress: dto.ipAddress,
-              returnUrl: dto.returnUrl,
-              expiresAt: expiresAt,
-            },
-          );
+          try {
+            const paymentDetails =
+              await this.paymentGatewayPort.createPaymentUrl({
+                transactionId: transaction.id,
+                currency: dto.currency,
+                amount: dto.amount,
+                ipAddress: dto.ipAddress,
+                returnUrl: dto.returnUrl,
+                expiresAt: expiresAt,
+              });
 
-          transaction.addPayment({
-            paymentUrl: paymentDetails.paymentUrl,
-            expiresAt,
-            provider: paymentDetails.provider,
-          });
+            transaction.addPayment({
+              paymentUrl: paymentDetails.paymentUrl,
+              expiresAt,
+              provider: paymentDetails.provider,
+            });
 
-          await externalTransactionRepository.update(
-            {
-              id: transaction.id,
-            },
-            transaction,
-          );
+            await externalTransactionRepository.update(
+              {
+                id: transaction.id,
+              },
+              transaction,
+            );
+          } catch (error) {
+            throw new InternalServerErrorException(
+              'Failed to create payment',
+              error as Error,
+            );
+          }
 
           return transaction;
         })
+        // record auditing timeline
+        .then(async (transaction) => {
+          await externalTransactionTimelineRepository.save(
+            externalTransactionTimelineRepository.create({
+              transactionId: transaction.id,
+              action:
+                WalletExternalTransactionAction.CREATE_DEPOSIT_TRANSACTION,
+              actorType: WalletExternalTransactionActor.PRIVATE_USER,
+              actorId: dto.accountId,
+              actorName: dto.accountName,
+              statusChangedTo:
+                WalletExternalTransactionStatus.READY_FOR_PAYMENT,
+              note: `Created deposit transaction and initiated payment with ${transaction.provider}`,
+            }),
+          );
+          return transaction;
+        })
+        // map to dto
         .then((transaction) =>
           this.mapTo(WalletExternalTransactionResponseDto, transaction),
         );
     });
   }
 
-  confirmDepositTransaction(dto: ConfirmDepositTransactionDto): Promise<void> {
+  confirmDepositTransaction(
+    dto: ConfirmDepositTransactionDto,
+  ): Promise<UpdateResult> {
     return this.ensureTransaction(null, async (em) => {
       const confirmationResponse =
         this.paymentGatewayPort.processPaymentConfirmation(dto.queryParams);
+      const externalTransactionTimelineRepository =
+        WalletExternalTransactionTimelineRepository(em);
 
-      if (
-        !confirmationResponse.success ||
-        !confirmationResponse.transactionId
-      ) {
-        this.logger.error(
-          'Payment confirmation failed' + (!confirmationResponse.transactionId
-            ? ' - Missing transaction ID'
-            : ''),
+      if (!confirmationResponse.transactionId) {
+        throw new BadRequestException(
+          'Missing transaction ID in payment confirmation',
         );
-        return;
+      }
+
+      if (!confirmationResponse.success) {
+        this.logger.error('Payment confirmation failed');
+        // TODO handle failure case
+        throw new InternalServerErrorException('Payment confirmation failed');
       }
 
       const externalTransactionRepository =
@@ -155,17 +189,13 @@ export class WalletExternalTransactionManagementService
 
       // validate: transaction exists
       if (!transaction) {
-        this.logger.error(
-          `Transaction not found: ${confirmationResponse.transactionId}`,
-        );
-        return;
+        throw new BadRequestException('Deposit transaction not found');
       }
 
       // validate: not expired
       const now = new Date();
       if (transaction.expiresAt && transaction.expiresAt < now) {
-        this.logger.error(`Transaction expired: ${transaction.id}`);
-        return;
+        throw new BadRequestException('Deposit transaction has expired');
       }
 
       transaction.confirmPayment({
@@ -173,21 +203,53 @@ export class WalletExternalTransactionManagementService
         providerResponse: confirmationResponse.rawResponse,
       });
 
-      await externalTransactionRepository.update(
+      const updateResult = await externalTransactionRepository.update(
         {
           id: transaction.id,
         },
         transaction,
       );
 
-      await this.walletActionService.depositFunds({
+      if (updateResult.affected === 0) {
+        throw new InternalServerErrorException(
+          'Failed to update deposit transaction status',
+        );
+      }
+
+      await externalTransactionTimelineRepository.save(
+        externalTransactionTimelineRepository.create({
+          transactionId: transaction.id,
+          action: WalletExternalTransactionAction.CONFIRM_DEPOSIT_TRANSACTION,
+          actorType: WalletExternalTransactionActor.EXTERNAL_SYSTEM,
+          actorName: transaction.provider ?? 'Unknown',
+          statusChangedTo: WalletExternalTransactionStatus.COMPLETED,
+          note: `Received payment notification from ${transaction.provider}`,
+          metadata: confirmationResponse.rawResponse,
+        }),
+      );
+
+      const updatedWallet = await this.walletActionService.depositFunds({
         entityManager: em,
         walletId: transaction.walletId,
         amount: confirmationResponse.amount,
         currency: transaction.currency,
       });
 
+      await externalTransactionTimelineRepository.save(
+        externalTransactionTimelineRepository.create({
+          transactionId: transaction.id,
+          action: WalletExternalTransactionAction.ADD_BALANCE_AFTER_DEPOSIT,
+          actorType: WalletExternalTransactionActor.SYSTEM,
+          actorName: 'SYSTEM',
+          statusChangedTo: WalletExternalTransactionStatus.COMPLETED,
+          note: `Balance updated after deposit transaction`,
+          metadata: updatedWallet,
+        }),
+      );
+
       this.logger.log(`Deposit transaction confirmed: ${transaction.id}`);
+
+      return updateResult;
     });
   }
 
