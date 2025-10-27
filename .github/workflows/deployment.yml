@@ -76,7 +76,7 @@ jobs:
       REDIS_URL: ${{ secrets.REDIS_URL }}
       VNPAY_HASH_SECRET: ${{ secrets.VNPAY_HASH_SECRET }}
       VNPAY_TMN_CODE: ${{ secrets.VNPAY_TMN_CODE }}
-      VNPAY_URL: ${{ vars.VNPAY_URL }}
+      VNPAY_URL: ${{ secrets.VNPAY_URL }}
 
       # PUBLIC VARIABLES
       DATABASE_ENABLE_SYNC: ${{ vars.DATABASE_ENABLE_SYNC }}
@@ -87,6 +87,9 @@ jobs:
       JWT_EXPIRES_IN: ${{ vars.JWT_EXPIRES_IN }}
       LOG_LEVELS: ${{ vars.LOG_LEVELS }}
       MAX_PENDING_DEPOSIT_TRANSACTIONS: ${{ vars.MAX_PENDING_DEPOSIT_TRANSACTIONS }}
+      PAYMENT_EXPIRATION_MINUTES: ${{vars.PAYMENT_EXPIRATION_MINUTES}}
+      PAYMENT_ALLOW_MOCK_HASH: ${{vars.PAYMENT_ALLOW_MOCK_HASH}}
+      PAYMENT_MOCK_HASH: ${{vars.PAYMENT_MOCK_HASH}}
       NODE_ENV: ${{ vars.NODE_ENV }}
       PORT: ${{ vars.PORT }}
 
