@@ -137,8 +137,8 @@ jobs:
           sudo cp -r ./new-deployment/* /var/www/urbanlens-${{ env.TARGET }}/
           sudo chown -R $USER:$USER /var/www/urbanlens-${{ env.TARGET }}/
           cd /var/www/urbanlens-${{ env.TARGET }}/
-          pnpm install --prod --no-progress --silent
-
+          pnpm install --prod --silent      
+      
       - name: Start standby instance (on standby port)
         run: |
           cd /var/www/urbanlens-${{ env.TARGET }}/
