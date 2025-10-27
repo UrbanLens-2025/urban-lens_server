@@ -179,7 +179,7 @@ export class WalletExternalTransactionManagementService
             actorType: WalletExternalTransactionActor.EXTERNAL_SYSTEM,
             actorName: 'PaymentGateway',
             statusChangedTo: WalletExternalTransactionStatus.FAILED,
-            note: `Payment confirmation failed: ${confirmationResponse.errorMessage ?? 'Unknown error'}`,
+            note: `Payment gateway reported failure during payment confirmation`,
             metadata: confirmationResponse.rawResponse,
           }),
         );
