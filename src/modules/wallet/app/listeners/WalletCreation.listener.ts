@@ -24,7 +24,7 @@ export class WalletCreationListener extends CoreService {
     try {
       const walletRepository = WalletRepository(this.dataSource);
 
-      // Create default wallet with USD currency
+      // Create default wallet with VND currency
       const wallet = new WalletEntity();
       wallet.accountId = event.user.id;
       wallet.currency = SupportedCurrency.VND;
