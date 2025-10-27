@@ -68,7 +68,7 @@ export class WalletExternalTransactionManagementService
           ]),
         },
       });
-      if (pendingCount > this.MAX_PENDING_DEPOSIT_TRANSACTIONS) {
+      if (pendingCount >= this.MAX_PENDING_DEPOSIT_TRANSACTIONS) {
         throw new BadRequestException(
           'Exceeded maximum pending deposit transactions',
         );
