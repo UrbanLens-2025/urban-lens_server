@@ -13,8 +13,9 @@ export const WalletRepository = (ctx: DataSource | EntityManager) =>
       const query = this.createQueryBuilder('wallet')
         .update()
         .set({
-          balance: () => `"balance" + ${payload.amount}`,
+          balance: () => `"balance" + :amount`,
         })
+        .setParameter('amount', payload.amount)
         .whereInIds(payload.accountId)
         .returning(['balance'])
         .execute();
