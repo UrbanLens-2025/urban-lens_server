@@ -1,0 +1,206 @@
+name: deployment.yml
+
+on:
+  push:
+    tags:
+      - 'dev-*'
+    branches-ignore:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: [ self-hosted, Linux, X64 ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Allow only tags from main
+        run: |
+          git fetch origin main --depth=1
+          if ! git merge-base --is-ancestor origin/main ${{ github.sha }}; then
+            echo "❌ Tag ${{ github.ref_name }} is not based on main. Skipping workflow."
+            exit 0
+          fi
+          echo "✅ Tag verified: commit is from main."
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build project
+        run: pnpm build
+
+      - name: List output directory
+        run: ls -la ./
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-and-config
+          path: |
+            dist/
+            public/
+            ecosystem.config.js
+            package.json
+            pnpm-lock.yaml
+          retention-days: 1
+
+  deploy:
+    runs-on: [ self-hosted, Linux, X64 ]
+    needs: [ build ]
+    environment: Prod
+    env:
+      # PRIVATE VARIABLES
+      DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+      DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+      DATABASE_USER: ${{ secrets.DATABASE_USER }}
+      FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      MAILER_HOST: ${{ secrets.MAILER_HOST }}
+      MAILER_PASSWORD: ${{ secrets.MAILER_PASSWORD }}
+      MAILER_PORT: ${{ secrets.MAILER_PORT }}
+      MAILER_SECURE: ${{ secrets.MAILER_SECURE }}
+      MAILER_USERNAME: ${{ secrets.MAILER_USERNAME }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      R2_PUBLIC_BUCKET_NAME: ${{ secrets.R2_PUBLIC_BUCKET_NAME }}
+      R2_PUBLIC_DEVELOPMENT_URL: ${{ secrets.R2_PUBLIC_DEVELOPMENT_URL }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      REDIS_HOST: ${{ secrets.REDIS_HOST }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      REDIS_PORT: ${{ secrets.REDIS_PORT }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      VNPAY_HASH_SECRET: ${{ secrets.VNPAY_HASH_SECRET }}
+      VNPAY_TMN_CODE: ${{ secrets.VNPAY_TMN_CODE }}
+      VNPAY_URL: ${{ vars.VNPAY_URL }}
+
+      # PUBLIC VARIABLES
+      DATABASE_ENABLE_SYNC: ${{ vars.DATABASE_ENABLE_SYNC }}
+      DATABASE_SCHEMA: ${{ vars.DATABASE_SCHEMA }}
+      ENABLE_ACCOUNT_SEEDING: ${{ vars.ENABLE_ACCOUNT_SEEDING }}
+      FIREBASE_CLIENT_EMAIL: ${{ vars.FIREBASE_CLIENT_EMAIL }}
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      JWT_EXPIRES_IN: ${{ vars.JWT_EXPIRES_IN }}
+      LOG_LEVELS: ${{ vars.LOG_LEVELS }}
+      MAX_PENDING_DEPOSIT_TRANSACTIONS: ${{ vars.MAX_PENDING_DEPOSIT_TRANSACTIONS }}
+      NODE_ENV: ${{ vars.NODE_ENV }}
+      PORT: ${{ vars.PORT }}
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-and-config
+          path: ./new-deployment/
+
+      - name: List output directory
+        run: ls -la ./new-deployment/
+
+      - name: Determine active slot (blue/green)
+        id: slot
+        run: |
+          # Default when first deploy: treat none as blue being the target
+          if [ -L /var/www/urbanlens ]; then
+            CURRENT=$(readlink /var/www/urbanlens | grep -oE 'blue|green' || echo "none")
+          else
+            CURRENT="none"
+          fi
+          
+          if [ "$CURRENT" = "blue" ]; then
+            echo "TARGET=green" >> $GITHUB_ENV
+            echo "STANDBY_PORT=8081" >> $GITHUB_ENV
+            echo "CURRENT=blue" >> $GITHUB_ENV
+          else
+            # current is green or none -> deploy to blue by default
+            echo "TARGET=blue" >> $GITHUB_ENV
+            echo "STANDBY_PORT=8081" >> $GITHUB_ENV
+            # if CURRENT was none, set CURRENT to none (guard later)
+            if [ "$CURRENT" = "none" ]; then
+              echo "CURRENT=none" >> $GITHUB_ENV
+            else
+              echo "CURRENT=green" >> $GITHUB_ENV
+            fi
+          fi
+          
+          echo "Current: $CURRENT"
+          echo "Target: $TARGET (standby port: $STANDBY_PORT)"
+
+      - name: Deploy to standby slot
+        run: |
+          sudo rm -rf /var/www/urbanlens-${{ env.TARGET }}
+          sudo mkdir -p /var/www/urbanlens-${{ env.TARGET }}
+          sudo cp -r ./new-deployment/* /var/www/urbanlens-${{ env.TARGET }}/
+          sudo chown -R $USER:$USER /var/www/urbanlens-${{ env.TARGET }}/
+          cd /var/www/urbanlens-${{ env.TARGET }}/
+          pnpm install --prod
+
+      - name: Start standby instance (on standby port)
+        run: |
+          cd /var/www/urbanlens-${{ env.TARGET }}/
+          export RUNTIME_VERSION=${{ github.ref_name }}
+          export DEPLOYED_AT=$(TZ='Asia/Ho_Chi_Minh' date +"%Y-%m-%dT%H:%M:%S%z")
+          pm2 delete urbanlens-${{ env.TARGET }} || true
+          PORT=${{ env.STANDBY_PORT }} pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
+          pm2 save
+
+      - name: Health check standby (on standby port)
+        run: |
+          echo "Waiting for standby health check..."
+          for i in {1..15}; do
+            if curl -fsS http://localhost:${{ env.STANDBY_PORT }}/swagger/json > /dev/null; then
+              echo "Standby healthy."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Standby health check failed." >&2
+          exit 1
+
+      - name: Promote standby to live (stop old, start new on 8080)
+        run: |
+          # stop old process to free 8080 (if exists)
+          if [ "${{ env.CURRENT }}" != "none" ]; then
+            pm2 stop urbanlens-${{ env.CURRENT }} || true
+          fi
+          
+          # start new on 8080
+          cd /var/www/urbanlens-${{ env.TARGET }}/
+          pm2 delete urbanlens-${{ env.TARGET }} || true
+          PORT=8080 pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
+          pm2 save
+
+      - name: Health check promoted instance (on 8080)
+        run: |
+          echo "Waiting for promoted health check on 8080..."
+          for i in {1..15}; do
+            if curl -fsS http://localhost:8080/swagger/json > /dev/null; then
+              echo "Promoted instance healthy on 8080."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Promoted health check failed." >&2
+          # rollback: attempt to restart previous instance if it existed
+          if [ "${{ env.CURRENT }}" != "none" ]; then
+            pm2 start dist/main.js --name urbanlens-${{ env.CURRENT }} --update-env || true
+          fi
+          exit 1
+
+      - name: Switch symlink to new version
+        run: |
+          sudo ln -sfn /var/www/urbanlens-${{ env.TARGET }} /var/www/urbanlens
+          echo "Switched /var/www/urbanlens -> /var/www/urbanlens-${{ env.TARGET }}"
+
+      - name: Remove old instance
+        run: |
+          if [ "${{ env.CURRENT }}" != "none" ]; then
+            pm2 delete urbanlens-${{ env.CURRENT }} || true
+            pm2 save
+          fi
+
+      - name: Console
+        run: echo "✅ Deployment completed (blue/green)."

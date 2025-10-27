@@ -4,8 +4,8 @@ import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { globalValidationConfig } from '@/config/validation.config';
 import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerDocumentConfig } from '@/config/swagger.config';
-import { SwaggerTheme } from 'swagger-themes';
 import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
+import { NextFunction, Request, Response } from 'express';
 
 async function bootstrap() {
   const logLevelString = process.env.LOG_LEVELS || 'log';
@@ -29,6 +29,16 @@ async function bootstrap() {
     defaultVersion: ['1'],
   });
 
+  app.use(
+    ['/swagger', '/swagger/json'],
+    (_: Request, res: Response, next: NextFunction) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      next();
+    },
+  );
+
   SwaggerModule.setup(
     'swagger',
     app,
@@ -40,6 +50,8 @@ async function bootstrap() {
         tagsSorter: 'alpha',
         operationsSorter: 'alpha',
         docExpansion: 'none',
+        url: '/swagger/json?v=' + Date.now(),
+        cacheControl: false,
       },
       customJs: '/swagger-custom.js',
       // customCss: theme.getBuffer(SwaggerThemeNameEnum),

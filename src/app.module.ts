@@ -31,6 +31,7 @@ import { LocationReservationModule } from '@/modules/location-reservation/Locati
 import { ReportModule } from '@/modules/report/Report.module';
 import { GamificationModule } from './modules/gamification/Gamification.module';
 import { UtilityModule } from '@/modules/utility/Utility.module';
+import { TestController } from '@/Test.controller';
 
 @Module({
   imports: [
@@ -84,7 +85,7 @@ import { UtilityModule } from '@/modules/utility/Utility.module';
     GamificationModule,
     UtilityModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, TestController],
   providers: [
     {
       provide: APP_GUARD,

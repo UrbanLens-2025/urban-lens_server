@@ -158,9 +158,22 @@ export class OnboardService extends CoreService implements IOnboardService {
       );
 
       const business = this.mapTo_safe(BusinessEntity, createBusinessDto);
+      business.accountId = account.id;
 
       return businessRepository
         .save(business)
+        .then(async (res) => {
+          await accountRepository.update(
+            {
+              id: account.id,
+            },
+            {
+              hasOnboarded: true,
+            },
+          );
+
+          return res;
+        })
         .then((res) => this.mapTo(BusinessResponseDto, res));
     });
   }
