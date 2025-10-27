@@ -5,22 +5,12 @@ import {
   IsNumber,
   IsString,
   IsUrl,
-  IsUUID,
   Min,
 } from 'class-validator';
-import { SupportedPaymentProviders } from '@/common/constants/SupportedPaymentProviders.constant';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 
 export class CreateDepositTransactionDto {
-  @ApiProperty({
-    enum: SupportedPaymentProviders,
-    example: SupportedPaymentProviders.VNPAY,
-  })
-  @IsNotEmpty()
-  @IsEnum(SupportedPaymentProviders)
-  provider: SupportedPaymentProviders;
-
-  @ApiProperty({ example: 100.5 })
+  @ApiProperty({ example: 100000 })
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
@@ -31,7 +21,7 @@ export class CreateDepositTransactionDto {
   @IsEnum(SupportedCurrency)
   currency: SupportedCurrency;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'http://google.com' })
   @IsString()
   @IsUrl()
   @IsNotEmpty()

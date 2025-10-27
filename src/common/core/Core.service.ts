@@ -18,6 +18,10 @@ export class CoreService {
   @Inject(DataSource)
   protected readonly dataSource: DataSource;
 
+  protected getLogger(ctx: string): Logger {
+    return new Logger(ctx);
+  }
+
   /**
    * Map plain object to class instance. Requires @Expose() decorator on class properties.
    * @param cls Target class

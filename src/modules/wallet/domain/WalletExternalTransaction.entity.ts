@@ -9,10 +9,11 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { WalletEntity } from '@/modules/wallet/domain/Wallet.entity';
-import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { WalletExternalTransactionDirection } from '@/common/constants/WalletExternalTransactionDirection.constant';
 import { WalletExternalTransactionStatus } from '@/common/constants/WalletExternalTransactionStatus.constant';
 import { WalletExternalTransactionTimelineEntity } from '@/modules/wallet/domain/WalletExternalTransactionTimeline.entity';
+import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
+import { SupportedPaymentProviders } from '@/common/constants/SupportedPaymentProviders.constant';
 
 @Entity({ name: WalletExternalTransactionEntity.TABLE_NAME })
 export class WalletExternalTransactionEntity {
@@ -36,8 +37,8 @@ export class WalletExternalTransactionEntity {
   @Column({ name: 'wallet_id', type: 'uuid' })
   walletId: string;
 
-  @Column({ name: 'provider', type: 'varchar', length: 50 })
-  provider: string;
+  @Column({ name: 'provider', type: 'varchar', length: 50, nullable: true })
+  provider: string | null;
 
   @Column({
     name: 'provider_transaction_id',
@@ -54,21 +55,20 @@ export class WalletExternalTransactionEntity {
   amount: number;
 
   @Column({ name: 'currency', type: 'varchar', length: 3 })
-  currency: string;
+  currency: SupportedCurrency;
 
   @Column({ name: 'payment_url', type: 'text', nullable: true })
   paymentUrl: string | null;
 
-  @Column({ name: 'provider_response', type: 'jsonb', nullable: true })
-  providerResponse: Record<string, any> | null;
-
   @Column({
-    name: 'reference_code',
-    type: 'varchar',
-    length: 100,
+    name: 'expires_at',
+    type: 'timestamp with time zone',
     nullable: true,
   })
-  referenceCode: string | null;
+  expiresAt: Date | null;
+
+  @Column({ name: 'provider_response', type: 'jsonb', nullable: true })
+  providerResponse: Record<string, any> | null;
 
   @Column({
     name: 'status',
@@ -81,9 +81,6 @@ export class WalletExternalTransactionEntity {
   @Column({ name: 'created_by', type: 'uuid' })
   createdById: string;
 
-  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
-  updatedById: string | null;
-
   @OneToMany(
     () => WalletExternalTransactionTimelineEntity,
     (timeline) => timeline.transaction,
@@ -92,4 +89,45 @@ export class WalletExternalTransactionEntity {
     },
   )
   timeline: WalletExternalTransactionTimelineEntity[];
+
+  public static createDepositTransaction(dto: {
+    amount: number;
+    walletId: string;
+    createdById: string;
+    currency: SupportedCurrency;
+  }): WalletExternalTransactionEntity {
+    const externalTransaction = new WalletExternalTransactionEntity();
+    externalTransaction.amount = dto.amount;
+    externalTransaction.walletId = dto.walletId;
+    externalTransaction.createdById = dto.createdById;
+    externalTransaction.currency = dto.currency;
+
+    externalTransaction.direction = WalletExternalTransactionDirection.DEPOSIT;
+    externalTransaction.status = WalletExternalTransactionStatus.PENDING;
+
+    return externalTransaction;
+  }
+
+  public addPayment(dto: {
+    paymentUrl: string;
+    expiresAt: Date;
+    provider: SupportedPaymentProviders;
+  }) {
+    this.paymentUrl = dto.paymentUrl;
+    this.expiresAt = dto.expiresAt;
+    this.provider = dto.provider;
+    this.status = WalletExternalTransactionStatus.READY_FOR_PAYMENT;
+    return this;
+  }
+
+  public confirmPayment(dto: {
+    providerTransactionId: string;
+    providerResponse: Record<string, any>;
+  }) {
+    this.providerTransactionId = dto.providerTransactionId;
+    this.providerResponse = dto.providerResponse;
+
+    this.status = WalletExternalTransactionStatus.COMPLETED;
+    return this;
+  }
 }

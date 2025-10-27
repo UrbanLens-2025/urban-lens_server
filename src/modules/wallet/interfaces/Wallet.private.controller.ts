@@ -2,7 +2,7 @@ import { Body, Controller, Get, Inject, Ip, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import { IWalletManagementService } from '@/modules/wallet/app/IWalletManagement.service';
+import { IWalletQueryService } from '@/modules/wallet/app/IWalletQuery.service';
 import { CreateDepositTransactionDto } from '@/common/dto/wallet/CreateDepositTransaction.dto';
 import { IWalletExternalTransactionManagementService } from '@/modules/wallet/app/IWalletExternalTransactionManagement.service';
 
@@ -11,8 +11,8 @@ import { IWalletExternalTransactionManagementService } from '@/modules/wallet/ap
 @Controller('/private/wallet')
 export class WalletPrivateController {
   constructor(
-    @Inject(IWalletManagementService)
-    private readonly walletManagementService: IWalletManagementService,
+    @Inject(IWalletQueryService)
+    private readonly walletManagementService: IWalletQueryService,
     @Inject(IWalletExternalTransactionManagementService)
     private readonly externalTransactionManagementService: IWalletExternalTransactionManagementService,
   ) {}

@@ -36,6 +36,9 @@ export class WalletExternalTransactionResponseDto {
   paymentUrl: string | null;
 
   @Expose()
+  expiresAt: Date | null;
+
+  @Expose()
   providerResponse: Record<string, any> | null;
 
   @Expose()

@@ -4,7 +4,6 @@ import { ApproveWithdrawTransactionDto } from '@/common/dto/wallet/ApproveWithdr
 import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
 import { CompleteWithdrawTransactionDto } from '@/common/dto/wallet/CompleteWithdrawTransaction.dto';
 import { WalletExternalTransactionResponseDto } from '@/common/dto/wallet/res/WalletExternalTransaction.response.dto';
-import { UpdateResult } from 'typeorm';
 import { ConfirmDepositTransactionDto } from '@/common/dto/wallet/ConfirmDepositTransaction.dto';
 
 export const IWalletExternalTransactionManagementService = Symbol(
@@ -16,9 +15,7 @@ export interface IWalletExternalTransactionManagementService {
   createDepositTransaction(
     dto: CreateDepositTransactionDto,
   ): Promise<WalletExternalTransactionResponseDto>;
-  confirmDepositTransaction(
-    dto: ConfirmDepositTransactionDto,
-  ): Promise<UpdateResult>;
+  confirmDepositTransaction(dto: ConfirmDepositTransactionDto): Promise<void>;
 
   // Withdraw transactions - require admin verification
   createWithdrawTransaction(

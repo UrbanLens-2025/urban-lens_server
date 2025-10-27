@@ -30,7 +30,7 @@ export namespace IWalletExternalTransactionQueryService_QueryConfig {
     return {
       sortableColumns: ['createdAt', 'amount'],
       defaultSortBy: [['createdAt', 'DESC']],
-      searchableColumns: ['provider', 'providerTransactionId', 'referenceCode'],
+      searchableColumns: ['provider', 'providerTransactionId'],
       filterableColumns: {
         status: true,
         direction: true,

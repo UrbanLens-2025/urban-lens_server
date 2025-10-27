@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { CoreService } from '@/common/core/Core.service';
 import {
-  IWalletManagementService,
-  IWalletManagementService_QueryConfig,
-} from '@/modules/wallet/app/IWalletManagement.service';
+  IWalletQueryService,
+  IWalletQueryService_QueryConfig,
+} from '@/modules/wallet/app/IWalletQuery.service';
 import { GetWalletsByAccountIdDto } from '@/common/dto/wallet/GetWalletsByAccountId.dto';
 import { WalletResponseDto } from '@/common/dto/wallet/res/Wallet.response.dto';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
@@ -13,9 +13,9 @@ import { paginate, Paginated } from 'nestjs-paginate';
 import { WalletTransactionRepository } from '@/modules/wallet/infra/repository/WalletTransaction.repository';
 
 @Injectable()
-export class WalletManagementService
+export class WalletQueryService
   extends CoreService
-  implements IWalletManagementService
+  implements IWalletQueryService
 {
   async getWalletByAccountId(
     dto: GetWalletsByAccountIdDto,
@@ -34,7 +34,7 @@ export class WalletManagementService
     dto: GetTransactionHistoryByWalletIdDto,
   ): Promise<Paginated<WalletTransactionResponseDto>> {
     return paginate(dto.query, WalletTransactionRepository(this.dataSource), {
-      ...IWalletManagementService_QueryConfig.getTransactionHistoryByWalletId(),
+      ...IWalletQueryService_QueryConfig.getTransactionHistoryByWalletId(),
     }).then((res) => this.mapToPaginated(WalletTransactionResponseDto, res));
   }
 }

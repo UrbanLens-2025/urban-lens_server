@@ -45,6 +45,10 @@ export interface Environment {
   VNPAY_URL: string;
 
   MAX_PENDING_DEPOSIT_TRANSACTIONS: number;
+  PAYMENT_EXPIRATION_MINUTES: number;
+
+  PAYMENT_MOCK_HASH: string;
+  PAYMENT_ALLOW_MOCK_HASH: boolean;
 }
 
 export const envConfig = joi.object<Environment>({
@@ -95,4 +99,9 @@ export const envConfig = joi.object<Environment>({
   VNPAY_URL: joi.string().required(),
 
   MAX_PENDING_DEPOSIT_TRANSACTIONS: joi.number().default(5),
+  PAYMENT_EXPIRATION_MINUTES: joi.number().default(10),
+  PAYMENT_MOCK_HASH: joi
+    .string()
+    .default('MOCK_SECURE_HASH_FOR_TESTING_PURPOSES'),
+  PAYMENT_ALLOW_MOCK_HASH: joi.boolean().default(false),
 });

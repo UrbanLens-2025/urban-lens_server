@@ -73,4 +73,8 @@ export class WalletEntity {
     },
   )
   externalTransactions: WalletExternalTransactionEntity[];
+
+  public canUpdateBalance(): boolean {
+    return !this.isLocked;
+  }
 }

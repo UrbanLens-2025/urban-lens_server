@@ -5,9 +5,9 @@ import { PaginateConfig, Paginated } from 'nestjs-paginate';
 import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTransaction.response.dto';
 import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransaction.entity';
 
-export const IWalletManagementService = Symbol('IWalletManagementService');
+export const IWalletQueryService = Symbol('IWalletQueryService');
 
-export interface IWalletManagementService {
+export interface IWalletQueryService {
   getWalletByAccountId(
     dto: GetWalletsByAccountIdDto,
   ): Promise<WalletResponseDto | null>;
@@ -16,7 +16,7 @@ export interface IWalletManagementService {
   ): Promise<Paginated<WalletTransactionResponseDto>>;
 }
 
-export namespace IWalletManagementService_QueryConfig {
+export namespace IWalletQueryService_QueryConfig {
   export function getTransactionHistoryByWalletId(): PaginateConfig<WalletTransactionEntity> {
     return {
       sortableColumns: ['createdAt'],

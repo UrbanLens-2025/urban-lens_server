@@ -1,5 +1,7 @@
 export enum WalletExternalTransactionStatus {
   PENDING = 'PENDING',
+  READY_FOR_PAYMENT = 'READY_FOR_PAYMENT',
+  EXPIRED = 'EXPIRED',
   APPROVED = 'APPROVED',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',

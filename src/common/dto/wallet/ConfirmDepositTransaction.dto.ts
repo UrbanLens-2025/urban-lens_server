@@ -1,1 +1,3 @@
-export class ConfirmDepositTransactionDto {}
+export class ConfirmDepositTransactionDto {
+  queryParams: Record<string, unknown>;
+}
