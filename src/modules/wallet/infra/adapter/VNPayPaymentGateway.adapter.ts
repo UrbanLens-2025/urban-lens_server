@@ -20,10 +20,6 @@ export class VNPayPaymentGatewayAdapter
   }
 
   private readonly providerName = SupportedPaymentProviders.VNPAY;
-  // private readonly tmnCode = '8AM6RT5K';
-  // private readonly hashSecret = '1MP3O9ZG8A24NF1Q300HEC7SPU9MXOQM';
-  // private readonly vnpayUrl =
-  //   'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
 
   async createPaymentUrl(
     dtoRaw: CreatePaymentLinkDto,
@@ -68,14 +64,11 @@ export class VNPayPaymentGatewayAdapter
 
     vnp_Params = this.sortObject(vnp_Params);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
     const signData = qs.stringify(vnp_Params, { encode: false });
     const hmac = crypto.createHmac('sha512', secretKey);
     vnp_Params['vnp_SecureHash'] = hmac
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       .update(new Buffer(signData, 'utf-8'))
       .digest('hex');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
     vnpUrl += '?' + qs.stringify(vnp_Params, { encode: false });
 
     const response = new PaymentProviderResponseDto();

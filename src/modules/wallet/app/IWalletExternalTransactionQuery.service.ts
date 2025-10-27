@@ -28,13 +28,7 @@ export interface IWalletExternalTransactionQueryService {
 export namespace IWalletExternalTransactionQueryService_QueryConfig {
   export function getExternalTransactionsByWalletId(): PaginateConfig<WalletExternalTransactionEntity> {
     return {
-      sortableColumns: [
-        'createdAt',
-        'amount',
-        'approvedAt',
-        'completedAt',
-        'rejectedAt',
-      ],
+      sortableColumns: ['createdAt', 'amount'],
       defaultSortBy: [['createdAt', 'DESC']],
       searchableColumns: ['provider', 'providerTransactionId', 'referenceCode'],
       filterableColumns: {
@@ -44,8 +38,6 @@ export namespace IWalletExternalTransactionQueryService_QueryConfig {
       },
       relations: {
         wallet: true,
-        approvedBy: true,
-        rejectedBy: true,
         timeline: true,
       },
     };

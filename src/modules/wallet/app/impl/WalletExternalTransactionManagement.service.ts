@@ -22,7 +22,7 @@ export class WalletExternalTransactionManagementService
   extends CoreService
   implements IWalletExternalTransactionManagementService
 {
-  private readonly MAX_PENDING_DEPOSIT_TRANSACTIONS;
+  private readonly MAX_PENDING_DEPOSIT_TRANSACTIONS: number;
 
   constructor(
     private readonly configService: ConfigService<Environment>,
@@ -30,9 +30,8 @@ export class WalletExternalTransactionManagementService
     private readonly paymentGatewayPort: IPaymentGatewayPort,
   ) {
     super();
-    this.MAX_PENDING_DEPOSIT_TRANSACTIONS = configService.getOrThrow<number>(
-      'MAX_PENDING_DEPOSIT_TRANSACTIONS',
-    );
+    this.MAX_PENDING_DEPOSIT_TRANSACTIONS =
+      this.configService.getOrThrow<number>('MAX_PENDING_DEPOSIT_TRANSACTIONS');
   }
 
   createDepositTransaction(
@@ -86,6 +85,8 @@ export class WalletExternalTransactionManagementService
         },
         savedTransaction,
       );
+
+      // TODO: emit event and send delayed message for expired transactions
 
       return this.mapTo(WalletExternalTransactionResponseDto, savedTransaction);
     });
