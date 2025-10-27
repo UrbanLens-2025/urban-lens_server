@@ -144,7 +144,7 @@ export class VNPayPaymentGatewayAdapter
 
     const response = new PaymentProviderConfirmationResponseDto();
     response.success = vnp_ResponseCode === 0;
-    response.amount = vnp_Amount;
+    response.amount = vnp_Amount / 100;
     response.bankCode = vnp_BankCode;
     response.bankTransactionNo = vnp_BankTranNo;
     response.cardType = vnp_CardType;
