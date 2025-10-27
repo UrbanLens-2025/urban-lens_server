@@ -172,7 +172,17 @@ export class WalletExternalTransactionManagementService
 
       if (!confirmationResponse.success) {
         this.logger.error('Payment confirmation failed');
-        // TODO handle failure case
+        await externalTransactionTimelineRepository.save(
+          externalTransactionTimelineRepository.create({
+            transactionId: confirmationResponse.transactionId,
+            action: WalletExternalTransactionAction.CONFIRM_DEPOSIT_TRANSACTION,
+            actorType: WalletExternalTransactionActor.EXTERNAL_SYSTEM,
+            actorName: 'PaymentGateway',
+            statusChangedTo: WalletExternalTransactionStatus.FAILED,
+            note: `Payment confirmation failed: ${confirmationResponse.errorMessage ?? 'Unknown error'}`,
+            metadata: confirmationResponse.rawResponse,
+          }),
+        );
         throw new InternalServerErrorException('Payment confirmation failed');
       }
 
