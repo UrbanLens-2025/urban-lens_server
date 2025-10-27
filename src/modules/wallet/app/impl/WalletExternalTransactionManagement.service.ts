@@ -135,9 +135,9 @@ export class WalletExternalTransactionManagementService
         !confirmationResponse.transactionId
       ) {
         this.logger.error(
-          'Payment confirmation failed' + !confirmationResponse.transactionId
+          'Payment confirmation failed' + (!confirmationResponse.transactionId
             ? ' - Missing transaction ID'
-            : '',
+            : ''),
         );
         return;
       }
