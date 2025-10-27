@@ -4,8 +4,8 @@ on:
   push:
     tags:
       - 'dev-*'
-    branches-ignore:
-      - '*'
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:

@@ -17,10 +17,22 @@ export class WalletExternalTransactionQueryService
   extends CoreService
   implements IWalletExternalTransactionQueryService
 {
-  getExternalTransactionById(
+  getExternalTransactionByWalletIdAndId(
     dto: GetExternalTransactionByIdDto,
   ): Promise<WalletExternalTransactionResponseDto | null> {
-    throw new Error('Method not implemented.');
+    const walletExternalTransactionRepository =
+      WalletExternalTransactionRepository(this.dataSource);
+    return walletExternalTransactionRepository
+      .findOne({
+        where: {
+          id: dto.transactionId,
+          walletId: dto.walletId,
+        },
+        relations: {
+          timeline: true,
+        },
+      })
+      .then((res) => this.mapTo(WalletExternalTransactionResponseDto, res));
   }
 
   getExternalTransactionByProviderId(
