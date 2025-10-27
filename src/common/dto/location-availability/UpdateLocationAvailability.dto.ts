@@ -29,6 +29,6 @@ export class UpdateLocationAvailabilityDto {
   status: LocationAvailabilityStatus;
 
   @MaxLength(555)
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: '' })
   note?: string | null;
 }
