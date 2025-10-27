@@ -137,15 +137,16 @@ jobs:
           sudo cp -r ./new-deployment/* /var/www/urbanlens-${{ env.TARGET }}/
           sudo chown -R $USER:$USER /var/www/urbanlens-${{ env.TARGET }}/
           cd /var/www/urbanlens-${{ env.TARGET }}/
-          pnpm install --prod
+          pnpm install --prod --no-progress --silent
 
       - name: Start standby instance (on standby port)
         run: |
           cd /var/www/urbanlens-${{ env.TARGET }}/
-          export RUNTIME_VERSION=${{ github.ref_name }}
-          export DEPLOYED_AT=$(TZ='Asia/Ho_Chi_Minh' date +"%Y-%m-%dT%H:%M:%S%z")
           pm2 delete urbanlens-${{ env.TARGET }} || true
-          PORT=${{ env.STANDBY_PORT }} pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
+          DEPLOYED_AT=$(TZ='Asia/Ho_Chi_Minh' date +"%Y-%m-%dT%H:%M:%S%z") \
+          RUNTIME_VERSION=${{ github.ref_name }} \
+          PORT=${{ env.STANDBY_PORT }} \
+          pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
           pm2 save
 
       - name: Health check standby (on standby port)
@@ -171,7 +172,10 @@ jobs:
           # start new on 8080
           cd /var/www/urbanlens-${{ env.TARGET }}/
           pm2 delete urbanlens-${{ env.TARGET }} || true
-          PORT=8080 pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
+          DEPLOYED_AT=$(TZ='Asia/Ho_Chi_Minh' date +"%Y-%m-%dT%H:%M:%S%z") \
+          RUNTIME_VERSION=${{ github.ref_name }} \
+          PORT=8080 \
+          pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
           pm2 save
 
       - name: Health check promoted instance (on 8080)
