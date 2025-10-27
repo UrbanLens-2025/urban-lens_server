@@ -26,6 +26,8 @@ import { Role } from '@/common/constants/Role.constant';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
 import { IEmailNotificationService } from '@/modules/notification/app/IEmailNotification.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UserRegistrationConfirmedEvent, USER_REGISTRATION_CONFIRMED } from '@/modules/auth/app/events/UserRegistrationConfirmed.event';
 
 @Injectable()
 export class AuthService extends CoreService implements IAuthService {
@@ -37,6 +39,7 @@ export class AuthService extends CoreService implements IAuthService {
     private readonly tokenService: TokenService,
     @Inject(IEmailNotificationService)
     private readonly emailNotificationService: IEmailNotificationService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     super();
   }
@@ -127,7 +130,13 @@ export class AuthService extends CoreService implements IAuthService {
     const response = new UserLoginResponseDto();
     response.user = this.mapTo(AccountResponseDto, user);
     response.token = await this.tokenService.generateToken(user);
-    return response;
+    return Promise.resolve(response).then((res) => {
+      this.eventEmitter.emit(
+        USER_REGISTRATION_CONFIRMED,
+        new UserRegistrationConfirmedEvent(user),
+      );
+      return res;
+    });
   }
 
   async loginUser(loginDto: LoginDto): Promise<UserLoginResponseDto> {
