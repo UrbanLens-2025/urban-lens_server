@@ -17,14 +17,14 @@ jobs:
           ref: ${{ github.ref }}
           fetch-depth: 0
 
-      - name: Allow only tags from main
+      - name: Allow only tags that point to commits in main
         run: |
           git fetch origin main --depth=1
-          if ! git merge-base --is-ancestor origin/main ${{ github.sha }}; then
-            echo "❌ Tag ${{ github.ref_name }} is not based on main. Skipping workflow."
+          if ! git branch --contains ${{ github.sha }} origin/main | grep -q 'origin/main'; then
+            echo "❌ Tag ${{ github.ref_name }} does not point to a commit in main. Skipping workflow."
             exit 0
           fi
-          echo "✅ Tag verified: commit is from main."
+          echo "✅ Tag verified: commit exists in main."
 
       - name: Install dependencies
         run: pnpm install
@@ -103,29 +103,27 @@ jobs:
       - name: Determine active slot (blue/green)
         id: slot
         run: |
-          # Default when first deploy: treat none as blue being the target
           if [ -L /var/www/urbanlens ]; then
             CURRENT=$(readlink /var/www/urbanlens | grep -oE 'blue|green' || echo "none")
           else
             CURRENT="none"
           fi
-          
+
           if [ "$CURRENT" = "blue" ]; then
-            echo "TARGET=green" >> $GITHUB_ENV
-            echo "STANDBY_PORT=8081" >> $GITHUB_ENV
-            echo "CURRENT=blue" >> $GITHUB_ENV
+            TARGET="green"
+            STANDBY_PORT=8081
           else
-            # current is green or none -> deploy to blue by default
-            echo "TARGET=blue" >> $GITHUB_ENV
-            echo "STANDBY_PORT=8081" >> $GITHUB_ENV
-            # if CURRENT was none, set CURRENT to none (guard later)
-            if [ "$CURRENT" = "none" ]; then
-              echo "CURRENT=none" >> $GITHUB_ENV
-            else
-              echo "CURRENT=green" >> $GITHUB_ENV
-            fi
+            TARGET="blue"
+            STANDBY_PORT=8081
           fi
-          
+
+          # persist to later steps
+          {
+            echo "TARGET=$TARGET"
+            echo "STANDBY_PORT=$STANDBY_PORT"
+            echo "CURRENT=$CURRENT"
+          } >> "$GITHUB_ENV"
+
           echo "Current: $CURRENT"
           echo "Target: $TARGET (standby port: $STANDBY_PORT)"
 
