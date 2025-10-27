@@ -14,6 +14,7 @@ import {
 import { Role } from '@/common/constants/Role.constant';
 import { DataSource, In } from 'typeorm';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @ApiTags('_Development')
 @Controller('/dev-only/wallet')
@@ -108,7 +109,7 @@ export class WalletDevOnlyController {
     for (const account of accountsWithoutWallets) {
       this.eventEmitter.emit(
         USER_REGISTRATION_CONFIRMED,
-        new UserRegistrationConfirmedEvent(account as any),
+        new UserRegistrationConfirmedEvent(account as unknown as AccountEntity),
       );
       results.eventsEmitted++;
       results.accounts.push({

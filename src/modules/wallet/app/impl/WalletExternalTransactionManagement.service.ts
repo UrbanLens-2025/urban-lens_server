@@ -23,6 +23,11 @@ import { WalletExternalTransactionTimelineRepository } from '@/modules/wallet/in
 import { WalletExternalTransactionAction } from '@/common/constants/WalletExternalTransactionAction.constant';
 import { WalletExternalTransactionActor } from '@/common/constants/WalletExternalTransactionActor.constant';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  WALLET_DEPOSIT_CONFIRMED,
+  WalletDepositConfirmedEvent,
+} from '@/modules/wallet/domain/events/WalletDepositConfirmed.event';
 
 @Injectable()
 export class WalletExternalTransactionManagementService
@@ -42,6 +47,7 @@ export class WalletExternalTransactionManagementService
     private readonly paymentGatewayPort: IPaymentGatewayPort,
     @Inject(IWalletActionService)
     private readonly walletActionService: IWalletActionService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     super();
     this.MAX_PENDING_DEPOSIT_TRANSACTIONS =
@@ -264,6 +270,21 @@ export class WalletExternalTransactionManagementService
       );
 
       this.logger.log(`Deposit transaction confirmed: ${transaction.id}`);
+
+      // Fetch wallet entity for event
+      const walletRepository = WalletRepository(em);
+      const walletEntity = await walletRepository.findOne({
+        where: { id: transaction.walletId },
+      });
+
+      // Emit deposit confirmed event
+      if (walletEntity) {
+        const depositConfirmedEvent = new WalletDepositConfirmedEvent();
+        depositConfirmedEvent.transaction = transaction;
+        depositConfirmedEvent.wallet = walletEntity;
+        depositConfirmedEvent.accountId = transaction.createdById;
+        this.eventEmitter.emit(WALLET_DEPOSIT_CONFIRMED, depositConfirmedEvent);
+      }
 
       return updateResult;
     });
