@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CoreService } from '@/common/core/Core.service';
 import {
   IWalletQueryService,
@@ -22,10 +22,8 @@ export class WalletQueryService
   ): Promise<WalletResponseDto | null> {
     const walletRepository = WalletRepository(this.dataSource);
     return await walletRepository
-      .findOne({
-        where: {
-          accountId: dto.accountId,
-        },
+      .findByOwnedBy({
+        ownedBy: dto.accountId,
       })
       .then((res) => this.mapTo(WalletResponseDto, res));
   }
@@ -33,8 +31,20 @@ export class WalletQueryService
   async getTransactionHistoryByWalletId(
     dto: GetTransactionHistoryByWalletIdDto,
   ): Promise<Paginated<WalletTransactionResponseDto>> {
+    const walletRepository = WalletRepository(this.dataSource);
+    const wallet = await walletRepository.findByOwnedBy({
+      ownedBy: dto.accountId,
+    });
+
+    if (!wallet) {
+      throw new BadRequestException('Wallet not found for account');
+    }
+
     return paginate(dto.query, WalletTransactionRepository(this.dataSource), {
       ...IWalletQueryService_QueryConfig.getTransactionHistoryByWalletId(),
+      where: {
+        walletId: wallet.id,
+      },
     }).then((res) => this.mapToPaginated(WalletTransactionResponseDto, res));
   }
 }

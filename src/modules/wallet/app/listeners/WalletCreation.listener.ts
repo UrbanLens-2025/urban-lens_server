@@ -8,6 +8,7 @@ import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repos
 import { WalletEntity } from '@/modules/wallet/domain/Wallet.entity';
 import { CoreService } from '@/common/core/Core.service';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
+import { WalletType } from '@/common/constants/WalletType.constant';
 
 @Injectable()
 export class WalletCreationListener extends CoreService {
@@ -26,7 +27,8 @@ export class WalletCreationListener extends CoreService {
 
       // Create default wallet with VND currency
       const wallet = new WalletEntity();
-      wallet.accountId = event.user.id;
+      wallet.ownedBy = event.user.id;
+      wallet.walletType = WalletType.USER;
       wallet.currency = SupportedCurrency.VND;
       wallet.balance = 0;
       wallet.totalTransactions = 0;

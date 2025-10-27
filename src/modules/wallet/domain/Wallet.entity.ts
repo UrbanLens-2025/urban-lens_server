@@ -5,26 +5,38 @@ import {
   JoinColumn,
   OneToMany,
   OneToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransaction.entity';
 import { WalletExternalTransactionEntity } from '@/modules/wallet/domain/WalletExternalTransaction.entity';
+import { WalletType } from '@/common/constants/WalletType.constant';
 
 @Entity({ name: WalletEntity.TABLE_NAME })
 export class WalletEntity {
   public static readonly TABLE_NAME = 'wallets';
 
-  @PrimaryColumn({ name: 'account_id', type: 'uuid' })
-  accountId: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ name: 'owned_by', type: 'uuid', nullable: true })
+  ownedBy: string | null;
 
   @OneToOne(() => AccountEntity, (account) => account.id, {
     createForeignKeyConstraints: false,
   })
-  @JoinColumn({ name: 'account_id' })
-  account: AccountEntity;
+  @JoinColumn({ name: 'owned_by' })
+  owner: AccountEntity;
+
+  @Column({
+    name: 'wallet_type',
+    type: 'varchar',
+    length: 20,
+    default: WalletType.USER,
+  })
+  walletType: WalletType;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;

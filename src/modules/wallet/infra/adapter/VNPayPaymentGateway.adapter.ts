@@ -17,11 +17,11 @@ export class VNPayPaymentGatewayAdapter
   extends CoreService
   implements IPaymentGatewayPort
 {
+  private readonly providerName = SupportedPaymentProviders.VNPAY;
+
   constructor(private readonly configService: ConfigService<Environment>) {
     super();
   }
-
-  private readonly providerName = SupportedPaymentProviders.VNPAY;
 
   async createPaymentUrl(
     dtoRaw: CreatePaymentLinkDto,
@@ -79,22 +79,6 @@ export class VNPayPaymentGatewayAdapter
     response.provider = this.providerName;
     response.paymentUrl = vnpUrl;
     return response;
-  }
-
-  private sortObject(obj: any) {
-    const sorted = {};
-    const str: any[] = [];
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        str.push(encodeURIComponent(key));
-      }
-    }
-    str.sort();
-    for (let key = 0; key < str.length; key++) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-argument
-      sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, '+');
-    }
-    return sorted;
   }
 
   processPaymentConfirmation(
@@ -187,5 +171,21 @@ export class VNPayPaymentGatewayAdapter
       vnp_SecureHash:
         this.configService.getOrThrow<string>('PAYMENT_MOCK_HASH'),
     };
+  }
+
+  private sortObject(obj: any) {
+    const sorted = {};
+    const str: any[] = [];
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        str.push(encodeURIComponent(key));
+      }
+    }
+    str.sort();
+    for (let key = 0; key < str.length; key++) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-argument
+      sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, '+');
+    }
+    return sorted;
   }
 }

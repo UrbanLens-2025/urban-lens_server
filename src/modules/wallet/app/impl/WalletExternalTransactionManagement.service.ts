@@ -8,10 +8,6 @@ import {
 import { CoreService } from '@/common/core/Core.service';
 import { IWalletExternalTransactionManagementService } from '@/modules/wallet/app/IWalletExternalTransactionManagement.service';
 import { CreateDepositTransactionDto } from '@/common/dto/wallet/CreateDepositTransaction.dto';
-import { CreateWithdrawTransactionDto } from '@/common/dto/wallet/CreateWithdrawTransaction.dto';
-import { ApproveWithdrawTransactionDto } from '@/common/dto/wallet/ApproveWithdrawTransaction.dto';
-import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
-import { CompleteWithdrawTransactionDto } from '@/common/dto/wallet/CompleteWithdrawTransaction.dto';
 import { WalletExternalTransactionResponseDto } from '@/common/dto/wallet/res/WalletExternalTransaction.response.dto';
 import { IPaymentGatewayPort } from '@/modules/wallet/app/ports/IPaymentGateway.port';
 import { WalletExternalTransactionEntity } from '@/modules/wallet/domain/WalletExternalTransaction.entity';
@@ -26,6 +22,12 @@ import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service
 import { WalletExternalTransactionTimelineRepository } from '@/modules/wallet/infra/repository/WalletExternalTransactionTimeline.repository';
 import { WalletExternalTransactionAction } from '@/common/constants/WalletExternalTransactionAction.constant';
 import { WalletExternalTransactionActor } from '@/common/constants/WalletExternalTransactionActor.constant';
+import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  WALLET_DEPOSIT_CONFIRMED,
+  WalletDepositConfirmedEvent,
+} from '@/modules/wallet/domain/events/WalletDepositConfirmed.event';
 
 @Injectable()
 export class WalletExternalTransactionManagementService
@@ -45,6 +47,7 @@ export class WalletExternalTransactionManagementService
     private readonly paymentGatewayPort: IPaymentGatewayPort,
     @Inject(IWalletActionService)
     private readonly walletActionService: IWalletActionService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     super();
     this.MAX_PENDING_DEPOSIT_TRANSACTIONS =
@@ -58,15 +61,24 @@ export class WalletExternalTransactionManagementService
     dto: CreateDepositTransactionDto,
   ): Promise<WalletExternalTransactionResponseDto> {
     return this.ensureTransaction(null, async (em) => {
+      const walletRepository = WalletRepository(em);
       const externalTransactionRepository =
         WalletExternalTransactionRepository(em);
       const externalTransactionTimelineRepository =
         WalletExternalTransactionTimelineRepository(em);
 
+      // Fetch wallet by ownedBy (account ID)
+      const wallet = await walletRepository.findByOwnedBy({
+        ownedBy: dto.accountId,
+      });
+      if (!wallet) {
+        throw new BadRequestException('Wallet not found for account');
+      }
+
       // check if user has exceeded max pending deposit transactions
       const pendingCount = await externalTransactionRepository.count({
         where: {
-          walletId: dto.accountId,
+          walletId: wallet.id,
           direction: WalletExternalTransactionDirection.DEPOSIT,
           status: In([
             WalletExternalTransactionStatus.PENDING,
@@ -83,7 +95,7 @@ export class WalletExternalTransactionManagementService
       // create transaction record
       const externalTransaction =
         WalletExternalTransactionEntity.createDepositTransaction({
-          walletId: dto.accountId,
+          walletId: wallet.id,
           amount: dto.amount,
           currency: dto.currency,
           createdById: dto.accountId,
@@ -259,31 +271,22 @@ export class WalletExternalTransactionManagementService
 
       this.logger.log(`Deposit transaction confirmed: ${transaction.id}`);
 
+      // Fetch wallet entity for event
+      const walletRepository = WalletRepository(em);
+      const walletEntity = await walletRepository.findOne({
+        where: { id: transaction.walletId },
+      });
+
+      // Emit deposit confirmed event
+      if (walletEntity) {
+        const depositConfirmedEvent = new WalletDepositConfirmedEvent();
+        depositConfirmedEvent.transaction = transaction;
+        depositConfirmedEvent.wallet = walletEntity;
+        depositConfirmedEvent.accountId = transaction.createdById;
+        this.eventEmitter.emit(WALLET_DEPOSIT_CONFIRMED, depositConfirmedEvent);
+      }
+
       return updateResult;
     });
-  }
-
-  createWithdrawTransaction(
-    dto: CreateWithdrawTransactionDto,
-  ): Promise<WalletExternalTransactionResponseDto> {
-    throw new Error('Method not implemented.');
-  }
-
-  approveWithdrawTransaction(
-    dto: ApproveWithdrawTransactionDto,
-  ): Promise<WalletExternalTransactionResponseDto> {
-    throw new Error('Method not implemented.');
-  }
-
-  rejectWithdrawTransaction(
-    dto: RejectWithdrawTransactionDto,
-  ): Promise<WalletExternalTransactionResponseDto> {
-    throw new Error('Method not implemented.');
-  }
-
-  completeWithdrawTransaction(
-    dto: CompleteWithdrawTransactionDto,
-  ): Promise<WalletExternalTransactionResponseDto> {
-    throw new Error('Method not implemented.');
   }
 }

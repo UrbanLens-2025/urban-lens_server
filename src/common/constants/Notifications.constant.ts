@@ -6,6 +6,7 @@ export enum NotificationTypes {
   LOCATION_REQUEST_APPROVED = 'LOCATION_REQUEST_APPROVED',
   LOCATION_REQUEST_REJECTED = 'LOCATION_REQUEST_REJECTED',
   LOCATION_REQUEST_NEEDS_MORE_INFO = 'LOCATION_REQUEST_NEEDS_MORE_INFO',
+  WALLET_DEPOSIT_CONFIRMED = 'WALLET_DEPOSIT_CONFIRMED',
 }
 
 export const NotificationsConstant: {
@@ -41,6 +42,12 @@ export const NotificationsConstant: {
     payload: {
       title: 'More information needed for your location request',
       body: 'Your requested location: {name} requires additional information. Please check your email for details.',
+    },
+  },
+  [NotificationTypes.WALLET_DEPOSIT_CONFIRMED]: {
+    payload: {
+      title: 'Deposit confirmed!',
+      body: 'Your deposit of {amount} {currency} has been successfully added to your wallet.',
     },
   },
 };

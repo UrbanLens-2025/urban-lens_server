@@ -2,10 +2,6 @@ import { Module } from '@nestjs/common';
 import { WalletInfraModule } from '@/modules/wallet/infra/Wallet.infra.module';
 import { IWalletQueryService } from '@/modules/wallet/app/IWalletQuery.service';
 import { WalletQueryService } from '@/modules/wallet/app/impl/WalletQuery.service';
-import { IWalletTransactionQueryService } from '@/modules/wallet/app/IWalletTransactionQuery.service';
-import { WalletTransactionQueryService } from '@/modules/wallet/app/impl/WalletTransactionQuery.service';
-import { IWalletTransactionManagementService } from '@/modules/wallet/app/IWalletTransactionManagement.service';
-import { WalletTransactionManagementService } from '@/modules/wallet/app/impl/WalletTransactionManagement.service';
 import { IWalletExternalTransactionQueryService } from '@/modules/wallet/app/IWalletExternalTransactionQuery.service';
 import { WalletExternalTransactionQueryService } from '@/modules/wallet/app/impl/WalletExternalTransactionQuery.service';
 import { IWalletExternalTransactionManagementService } from '@/modules/wallet/app/IWalletExternalTransactionManagement.service';
@@ -18,6 +14,7 @@ import { WalletDevOnlyController } from '@/modules/wallet/interfaces/Wallet.dev-
 import { WalletExternalTransactionWebhook } from '@/modules/wallet/interfaces/webhooks/WalletExternalTransaction.webhook';
 import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service';
 import { WalletActionService } from '@/modules/wallet/app/impl/WalletAction.service';
+import { WalletSeederHelper } from '@/modules/wallet/app/helper/WalletSeeder.helper';
 
 @Module({
   imports: [WalletInfraModule],
@@ -36,14 +33,6 @@ import { WalletActionService } from '@/modules/wallet/app/impl/WalletAction.serv
       useClass: WalletActionService,
     },
     {
-      provide: IWalletTransactionQueryService,
-      useClass: WalletTransactionQueryService,
-    },
-    {
-      provide: IWalletTransactionManagementService,
-      useClass: WalletTransactionManagementService,
-    },
-    {
       provide: IWalletExternalTransactionQueryService,
       useClass: WalletExternalTransactionQueryService,
     },
@@ -56,6 +45,7 @@ import { WalletActionService } from '@/modules/wallet/app/impl/WalletAction.serv
       useClass: VNPayPaymentGatewayAdapter,
     },
     WalletCreationListener,
+    WalletSeederHelper,
   ],
   exports: [WalletInfraModule],
 })
