@@ -2,8 +2,6 @@ import { PaginateConfig, Paginated } from 'nestjs-paginate';
 import { WalletExternalTransactionResponseDto } from '@/common/dto/wallet/res/WalletExternalTransaction.response.dto';
 import { WalletExternalTransactionEntity } from '@/modules/wallet/domain/WalletExternalTransaction.entity';
 import { GetExternalTransactionByIdDto } from '@/common/dto/wallet/GetExternalTransactionById.dto';
-import { GetExternalTransactionByProviderIdDto } from '@/common/dto/wallet/GetExternalTransactionByProviderId.dto';
-import { GetExternalTransactionByReferenceCodeDto } from '@/common/dto/wallet/GetExternalTransactionByReferenceCode.dto';
 import { GetExternalTransactionsByWalletIdDto } from '@/common/dto/wallet/GetExternalTransactionsByWalletId.dto';
 
 export const IWalletExternalTransactionQueryService = Symbol(
@@ -13,12 +11,6 @@ export const IWalletExternalTransactionQueryService = Symbol(
 export interface IWalletExternalTransactionQueryService {
   getExternalTransactionByWalletIdAndId(
     dto: GetExternalTransactionByIdDto,
-  ): Promise<WalletExternalTransactionResponseDto | null>;
-  getExternalTransactionByProviderId(
-    dto: GetExternalTransactionByProviderIdDto,
-  ): Promise<WalletExternalTransactionResponseDto | null>;
-  getExternalTransactionByReferenceCode(
-    dto: GetExternalTransactionByReferenceCodeDto,
   ): Promise<WalletExternalTransactionResponseDto | null>;
   getExternalTransactionsByWalletId(
     dto: GetExternalTransactionsByWalletIdDto,

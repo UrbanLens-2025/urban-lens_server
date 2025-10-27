@@ -6,9 +6,9 @@ export class GetTransactionHistoryByWalletIdDto {
   // transient fields
   query: PaginateQuery;
 
-  // required fields
+  // required fields - accountId is passed, service resolves to walletId
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @IsNotEmpty()
   @IsUUID()
-  walletId: string;
+  accountId: string;
 }

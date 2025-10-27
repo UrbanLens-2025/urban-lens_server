@@ -22,7 +22,7 @@ export class WalletActionService
 
       const wallet = await walletRepository.findOne({
         where: {
-          accountId: dto.walletId,
+          id: dto.walletId,
         },
       });
 
@@ -41,7 +41,7 @@ export class WalletActionService
       }
 
       wallet.balance = await walletRepository.incrementBalance({
-        accountId: wallet.accountId,
+        walletId: wallet.id,
         amount: dto.amount,
       });
 
