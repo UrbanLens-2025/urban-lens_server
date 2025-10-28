@@ -12,7 +12,6 @@ import { LocationAvailabilityEntity } from '@/modules/location-reservation/domai
 import { LocationAvailabilityResponseDto } from '@/common/dto/location-availability/res/LocationAvailability.response.dto';
 import { UpdateLocationAvailabilityDto } from '@/common/dto/location-availability/UpdateLocationAvailability.dto';
 import { UpdateResult } from 'typeorm';
-import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { RemoveLocationAvailabilityDto } from '@/common/dto/location-availability/RemoveLocationAvailability.dto';
 import { LocationAvailabilitySource } from '@/common/constants/LocationAvailabilitySource.constant';
 import { GetLocationAvailabilityByMonthYearDto } from '@/common/dto/location-availability/GetLocationAvailabilityByMonthYear.dto';
@@ -53,7 +52,9 @@ export class LocationAvailabilityManagementService
             id: dto.locationAvailabilityId,
             createdById: dto.createdById,
           },
-          relations: [LocationEntity.TABLE_NAME],
+          relations: {
+            location: true,
+          },
           take: 1,
         })
       )?.[0];
@@ -64,7 +65,7 @@ export class LocationAvailabilityManagementService
 
       if (!locationAvailability.canBeUpdated()) {
         throw new BadRequestException(
-          'Location availability cannot be updated',
+          'You can only update future location availability records',
         );
       }
 
@@ -81,7 +82,7 @@ export class LocationAvailabilityManagementService
         }
       }
 
-      const updated = Object.assign(locationAvailability, dto);
+      const updated = this.mapTo_safe(LocationAvailabilityEntity, dto);
 
       return locationAvailabilityRepository.update(
         { id: dto.locationAvailabilityId },
@@ -103,7 +104,7 @@ export class LocationAvailabilityManagementService
 
       if (!locationAvailability.canBeRemoved()) {
         throw new BadRequestException(
-          'Location availability cannot be removed',
+          'You can only remove future location availability records',
         );
       }
 
