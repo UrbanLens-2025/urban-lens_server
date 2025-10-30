@@ -22,7 +22,11 @@ export class UpdateProvinceDto {
   @Length(1, 128)
   administrativeLevel: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional({
+    description: 'Whether the province is visible',
+    example: true,
+  })
+  @IsOptional()
   @IsBoolean()
   isVisible: boolean;
 }
