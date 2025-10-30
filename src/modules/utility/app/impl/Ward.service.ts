@@ -62,6 +62,7 @@ export class WardService extends CoreService implements IWardService {
       ...IWardService_QueryConfig.searchWardVisible(),
       where: {
         provinceCode,
+        isVisible: true,
       },
     }).then((res) => this.mapToPaginated(WardResponseDto, res));
   }
