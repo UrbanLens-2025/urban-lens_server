@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateTagDto } from '@/common/dto/account/CreateTag.dto';
 import { Roles } from '@/common/Roles.decorator';
@@ -12,6 +21,7 @@ import {
   ITagService,
   ITagService_QueryConfig,
 } from '@/modules/utility/app/ITag.service';
+import { UpdateTagDto } from '@/common/dto/account/UpdateTag.dto';
 
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
@@ -34,5 +44,17 @@ export class TagAdminController {
   @ApiPaginationQuery(ITagService_QueryConfig.search())
   findAll(@Paginate() query: PaginateQuery) {
     return this.tagService.search(query);
+  }
+
+  @ApiOperation({ summary: 'Update a tag' })
+  @Put('/:tagId')
+  update(
+    @Body() dto: UpdateTagDto,
+    @Param('tagId', ParseIntPipe) tagId: number,
+  ) {
+    return this.tagService.update({
+      ...dto,
+      tagId,
+    });
   }
 }

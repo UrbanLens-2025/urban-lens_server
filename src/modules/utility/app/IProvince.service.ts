@@ -2,7 +2,8 @@ import { CreateProvinceDto } from '@/common/dto/address/CreateProvince.dto';
 import { ProvinceResponseDto } from '@/common/dto/address/res/Province.response.dto';
 import { UpdateProvinceDto } from '@/common/dto/address/UpdateProvince.dto';
 import { UpdateResult } from 'typeorm';
-import { Paginated, PaginateQuery } from 'nestjs-paginate';
+import { PaginateConfig, Paginated, PaginateQuery } from 'nestjs-paginate';
+import { ProvinceEntity } from '@/modules/utility/domain/Province.entity';
 
 export const IProvinceService = Symbol('IProvinceService');
 export interface IProvinceService {
@@ -11,4 +12,25 @@ export interface IProvinceService {
   searchProvinces(
     query: PaginateQuery,
   ): Promise<Paginated<ProvinceResponseDto>>;
+  searchProvincesVisible(
+    query: PaginateQuery,
+  ): Promise<Paginated<ProvinceResponseDto>>;
+}
+
+export namespace IProvinceService_QueryConfig {
+  export function searchProvinces(): PaginateConfig<ProvinceEntity> {
+    return {
+      sortableColumns: ['code', 'name'],
+      searchableColumns: ['name'],
+      defaultSortBy: [['name', 'DESC']],
+    };
+  }
+
+  export function searchProvincesVisible(): PaginateConfig<ProvinceEntity> {
+    return {
+      sortableColumns: ['code', 'name'],
+      searchableColumns: ['name'],
+      defaultSortBy: [['name', 'DESC']],
+    };
+  }
 }

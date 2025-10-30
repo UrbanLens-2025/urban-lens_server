@@ -10,4 +10,7 @@ export class ProvinceEntity {
 
   @Column({ name: 'administrative_level', type: 'varchar', length: 128 })
   administrativeLevel: string;
+
+  @Column({ name: 'is_visible', type: 'boolean', default: true })
+  isVisible: boolean;
 }

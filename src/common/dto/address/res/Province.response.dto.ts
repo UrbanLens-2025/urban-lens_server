@@ -10,4 +10,7 @@ export class ProvinceResponseDto {
 
   @Expose()
   administrativeLevel: string;
+
+  @Expose()
+  isVisible: boolean;
 }

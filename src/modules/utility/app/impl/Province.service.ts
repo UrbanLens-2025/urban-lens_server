@@ -1,4 +1,7 @@
-import { IProvinceService } from '@/modules/utility/app/IProvince.service';
+import {
+  IProvinceService,
+  IProvinceService_QueryConfig,
+} from '@/modules/utility/app/IProvince.service';
 import { CoreService } from '@/common/core/Core.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { CreateProvinceDto } from '@/common/dto/address/CreateProvince.dto';
@@ -50,12 +53,19 @@ export class ProvinceService extends CoreService implements IProvinceService {
   ): Promise<Paginated<ProvinceResponseDto>> {
     const provinceRepository = ProvinceRepository(this.dataSource);
     return paginate(query, provinceRepository, {
-      sortableColumns: ['code', 'name'],
-      searchableColumns: ['name'],
-      defaultSortBy: [['name', 'DESC']],
-    }).then((e) => ({
-      ...e,
-      data: e.data.map((p) => this.mapTo(ProvinceResponseDto, p)),
-    }));
+      ...IProvinceService_QueryConfig.searchProvinces(),
+    }).then((res) => this.mapToPaginated(ProvinceResponseDto, res));
+  }
+
+  async searchProvincesVisible(
+    query: PaginateQuery,
+  ): Promise<Paginated<ProvinceResponseDto>> {
+    const provinceRepository = ProvinceRepository(this.dataSource);
+    return paginate(query, provinceRepository, {
+      ...IProvinceService_QueryConfig.searchProvincesVisible(),
+      where: {
+        isVisible: true,
+      },
+    }).then((res) => this.mapToPaginated(ProvinceResponseDto, res));
   }
 }

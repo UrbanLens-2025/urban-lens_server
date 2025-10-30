@@ -1,5 +1,5 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Length } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
 
 export class UpdateProvinceDto {
   @ApiPropertyOptional({
@@ -7,8 +7,8 @@ export class UpdateProvinceDto {
     example: 'Vientiane Capital',
     maxLength: 248,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @Length(1, 248)
   name: string;
 
@@ -17,8 +17,12 @@ export class UpdateProvinceDto {
     example: 'Province',
     maxLength: 128,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @Length(1, 128)
   administrativeLevel: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  isVisible: boolean;
 }
