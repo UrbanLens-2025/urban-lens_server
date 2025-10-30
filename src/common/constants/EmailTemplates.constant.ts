@@ -6,6 +6,7 @@ export enum EmailTemplates {
   LOCATION_APPROVED = './location-approved',
   LOCATION_REJECTED = './location-rejected',
   LOCATION_NEEDS_MORE_INFO = './location-needs-more-info',
+  DEPOSIT_CONFIRMED = './deposit-confirmed',
 }
 
 export const EmailSubjects = {
@@ -16,4 +17,5 @@ export const EmailSubjects = {
   [EmailTemplates.LOCATION_APPROVED]: 'Location Request Approved!',
   [EmailTemplates.LOCATION_REJECTED]: 'Location Request Rejected',
   [EmailTemplates.LOCATION_NEEDS_MORE_INFO]: 'Location Request Needs More Info',
+  [EmailTemplates.DEPOSIT_CONFIRMED]: 'Deposit Confirmed',
 };

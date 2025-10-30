@@ -4,13 +4,23 @@ import {
 } from 'class-transformer/types/interfaces';
 import { plainToInstance } from 'class-transformer';
 import { DataSource, EntityManager } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { Paginated } from 'nestjs-paginate';
+import { validate, ValidationError } from 'class-validator';
 
 @Injectable()
 export class CoreService {
   @Inject(DataSource)
   protected readonly dataSource: DataSource;
+
+  protected getLogger(ctx: string): Logger {
+    return new Logger(ctx);
+  }
 
   /**
    * Map plain object to class instance. Requires @Expose() decorator on class properties.
@@ -93,6 +103,30 @@ export class CoreService {
     return plainToInstance(cls, plain, {
       ...options,
     });
+  }
+
+  protected async validate<T extends object>(
+    clazz: new () => T,
+    plainObject: object,
+    onError?: (errors: ValidationError[]) => Error,
+  ): Promise<T> {
+    const dto = this.mapTo_Raw(clazz, plainObject);
+    const errors = await validate(dto);
+    if (errors.length > 0) {
+      if (onError) throw onError(errors);
+      else {
+        console.error(
+          'Validation failed and uncaught: ' + JSON.stringify(errors),
+          new Error().stack,
+        );
+        throw new InternalServerErrorException(
+          'Validation failed and uncaught. Error details: ' +
+            JSON.stringify(errors),
+        );
+      }
+    }
+
+    return dto;
   }
 
   protected ensureTransaction<T>(

@@ -68,14 +68,15 @@ export class LocationAvailabilityOwnerController {
   })
   @Put('/:locationAvailabilityId')
   updateLocationAvailability(
-    @Param('id', ParseIntPipe) locationAvailabilityId: number,
+    @Param('locationAvailabilityId', ParseIntPipe)
+    locationAvailabilityId: number,
     @Body() dto: UpdateLocationAvailabilityDto,
     @AuthUser() userDto: JwtTokenDto,
   ) {
     return this.manualLocationAvailabilityManagement.updateLocationAvailability(
       {
         ...dto,
-        locationAvailabilityId,
+        locationAvailabilityId: locationAvailabilityId,
         createdById: userDto.sub,
       },
     );
