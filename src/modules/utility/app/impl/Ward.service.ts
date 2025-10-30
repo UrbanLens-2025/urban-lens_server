@@ -1,4 +1,7 @@
-import { IWardService } from '@/modules/utility/app/IWard.service';
+import {
+  IWardService,
+  IWardService_QueryConfig,
+} from '@/modules/utility/app/IWard.service';
 import { CoreService } from '@/common/core/Core.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { CreateWardDto } from '@/common/dto/address/CreateWard.dto';
@@ -43,24 +46,24 @@ export class WardService extends CoreService implements IWardService {
     });
   }
 
-  async searchWard(
+  async searchWard(query: PaginateQuery): Promise<Paginated<WardResponseDto>> {
+    const wardRepository = WardRepository(this.dataSource);
+    return paginate(query, wardRepository, {
+      ...IWardService_QueryConfig.searchWard(),
+    }).then((res) => this.mapToPaginated(WardResponseDto, res));
+  }
+
+  async searchWardVisible(
     query: PaginateQuery,
     provinceCode: string,
   ): Promise<Paginated<WardResponseDto>> {
     const wardRepository = WardRepository(this.dataSource);
     return paginate(query, wardRepository, {
-      sortableColumns: ['code', 'name'],
-      searchableColumns: ['name'],
-      defaultSortBy: [['name', 'DESC']],
+      ...IWardService_QueryConfig.searchWardVisible(),
       where: {
         provinceCode,
+        isVisible: true,
       },
-    }).then(
-      (e) =>
-        ({
-          ...e,
-          data: e.data.map((w) => this.mapTo(WardResponseDto, w)),
-        }) as Paginated<WardResponseDto>,
-    );
+    }).then((res) => this.mapToPaginated(WardResponseDto, res));
   }
 }

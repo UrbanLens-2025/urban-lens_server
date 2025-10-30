@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsHexColor,
   IsNotEmpty,
   ValidateNested,
@@ -24,6 +25,10 @@ class CreateTagItemDto {
   @ApiProperty({ example: '🍔' })
   @IsNotEmpty()
   icon: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  isSelectable: boolean;
 }
 
 export class CreateTagDto {

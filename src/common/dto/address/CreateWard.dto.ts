@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
+  IsBoolean,
   IsNotEmpty,
   IsString,
   Length,
@@ -48,6 +49,10 @@ class CreateWardDtoItem {
   @IsNotEmpty()
   @Length(1, 16)
   provinceCode: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  isVisible: boolean;
 }
 
 export class CreateWardDto {

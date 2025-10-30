@@ -9,6 +9,8 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { TagEntity } from '@/modules/utility/domain/Tag.entity';
 import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.repository';
+import { UpdateTagDto } from '@/common/dto/account/UpdateTag.dto';
+import { UpdateResult } from 'typeorm';
 
 @Injectable()
 export class TagService extends CoreService implements ITagService {
@@ -53,6 +55,39 @@ export class TagService extends CoreService implements ITagService {
       where: {
         isSelectable: true,
       },
+    });
+  }
+
+  update(dto: UpdateTagDto): Promise<UpdateResult> {
+    return this.ensureTransaction(null, async (em) => {
+      const tagRepository = TagRepositoryProvider(em);
+
+      const tag = await tagRepository.findOneOrFail({
+        where: { id: dto.tagId },
+      });
+
+      // map to tag
+      this.assignTo_safe(tag, dto);
+
+      // checks
+      if (dto.displayName || dto.groupName) {
+        const existsDuplicate = await tagRepository.existsDuplicate({
+          items: [
+            {
+              displayName: tag.displayName,
+              groupName: tag.groupName,
+            },
+          ],
+        });
+
+        if (existsDuplicate) {
+          throw new ConflictException(
+            'Another tag with the same display name and group name already exists',
+          );
+        }
+      }
+
+      return tagRepository.update({ id: dto.tagId }, tag);
     });
   }
 }

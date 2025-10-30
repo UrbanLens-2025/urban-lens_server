@@ -20,4 +20,7 @@ export class WardEntity {
 
   @Column({ name: 'province_code', type: 'varchar', length: 16 })
   provinceCode: string;
+
+  @Column({ name: 'is_visible', type: 'boolean', default: true })
+  isVisible: boolean;
 }
