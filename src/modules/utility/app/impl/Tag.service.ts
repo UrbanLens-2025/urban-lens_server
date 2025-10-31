@@ -68,11 +68,11 @@ export class TagService extends CoreService implements ITagService {
         where: { id: dto.tagId },
       });
 
-      // map to tag
-      this.assignTo_safe(tag, dto);
-
       // checks
-      if (dto.displayName || dto.groupName) {
+      if (
+        (dto.displayName || dto.groupName) &&
+        (dto.displayName !== tag.displayName || dto.groupName !== tag.groupName)
+      ) {
         const existsDuplicate = await tagRepository.findDuplicates({
           items: [
             {
@@ -88,6 +88,9 @@ export class TagService extends CoreService implements ITagService {
           );
         }
       }
+
+      // map to tag
+      this.assignTo_safe(tag, dto);
 
       return tagRepository.update({ id: dto.tagId }, tag);
     });
