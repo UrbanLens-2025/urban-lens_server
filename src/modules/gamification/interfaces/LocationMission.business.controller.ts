@@ -15,7 +15,6 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateLocationMissionDto } from '@/common/dto/gamification/CreateLocationMission.dto';
 import { UpdateLocationMissionDto } from '@/common/dto/gamification/UpdateLocationMission.dto';
 import { GenerateQRCodeDto } from '@/common/dto/gamification/GenerateQRCode.dto';
-import { GenerateOneTimeQRCodeDto } from '@/common/dto/gamification/GenerateOneTimeQRCode.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { Roles } from '@/common/Roles.decorator';
@@ -140,13 +139,17 @@ export class LocationMissionBusinessController {
   @Post('/:locationId/generate-one-time-qr')
   generateOneTimeQRCode(
     @Param('locationId') locationId: string,
-    @Body() dto: GenerateOneTimeQRCodeDto,
     @AuthUser() user: JwtTokenDto,
   ) {
+    const defaultDto = {
+      referenceId: `order-${Date.now()}`,
+      expiresInMinutes: 30,
+    };
+
     return this.qrCodeScanService.generateOneTimeQRCode(
       locationId,
       user.sub,
-      dto,
+      defaultDto,
     );
   }
 }

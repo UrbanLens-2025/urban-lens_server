@@ -18,7 +18,7 @@ export class OneTimeQRCodeRepository {
         qrCodeData,
         isUsed: false,
       },
-      relations: ['mission', 'scannedByUser', 'businessOwner'],
+      relations: ['scannedByUser', 'businessOwner'],
     });
   }
 

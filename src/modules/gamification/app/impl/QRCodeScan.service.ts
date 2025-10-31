@@ -25,6 +25,7 @@ import { OneTimeQRCodeResponseDto } from '@/common/dto/gamification/OneTimeQRCod
 import { Inject } from '@nestjs/common';
 import * as QRCode from 'qrcode';
 import { plainToClass } from 'class-transformer';
+import type { IUserLocationProfileService } from '../IUserLocationProfile.service';
 
 @Injectable()
 export class QRCodeScanService implements IQRCodeScanService {
@@ -38,6 +39,8 @@ export class QRCodeScanService implements IQRCodeScanService {
     private readonly userPointsService: IUserPointsService,
     @Inject(ICheckInMissionService)
     private readonly checkInMissionService: ICheckInMissionService,
+    @Inject('IUserLocationProfileService')
+    private readonly userLocationProfileService: IUserLocationProfileService,
   ) {}
 
   async scanQRCode(
@@ -159,20 +162,27 @@ export class QRCodeScanService implements IQRCodeScanService {
       // Award points if mission completed
       if (isCompleted) {
         pointsEarned = mission.reward;
-        await this.userPointsService.addPoints(
-          userId,
-          mission.reward,
-          PointsTransactionType.CHECK_IN, // Using CHECK_IN as default for mission completion
-          `Completed mission: ${mission.title}`,
-          mission.id,
-        );
 
-        // Get updated user profile for total points
-        const userProfile = await this.userProfileRepository.repo.findOne({
-          where: { accountId: userId },
-        });
-        totalPoints = userProfile?.points || 0;
+        // Add points to UserLocationProfile (for voucher redemption) - no global points
+        await this.userLocationProfileService.addPointsToLocation(
+          userId,
+          mission.locationId,
+          mission.reward,
+        );
       }
+
+      const userLocationProfile =
+        await this.userLocationProfileService.getUserLocationProfile(
+          userId,
+          mission.locationId,
+        );
+      totalPoints = userLocationProfile?.totalPoints || 0;
+
+      // Get updated user profile for global points (for ranking)
+      const userProfile = await this.userProfileRepository.repo.findOne({
+        where: { accountId: userId },
+      });
+      const globalPoints = userProfile?.points || 0;
 
       return {
         success: true,
@@ -249,7 +259,6 @@ export class QRCodeScanService implements IQRCodeScanService {
           userProfileId: userId,
           missionId,
         },
-        relations: ['mission'],
       });
 
       if (!progress) {
@@ -269,11 +278,13 @@ export class QRCodeScanService implements IQRCodeScanService {
     try {
       const query = this.userMissionProgressRepository.repo
         .createQueryBuilder('progress')
-        .leftJoinAndSelect('progress.mission', 'mission')
         .where('progress.userProfileId = :userId', { userId });
 
       if (locationId) {
-        query.andWhere('mission.locationId = :locationId', { locationId });
+        query.andWhere(
+          'progress.missionId IN (SELECT id FROM location_missions WHERE locationId = :locationId)',
+          { locationId },
+        );
       }
 
       const missions = await query
@@ -476,12 +487,11 @@ export class QRCodeScanService implements IQRCodeScanService {
       if (isCompleted) {
         pointsEarned = mission.reward;
         totalPointsEarned += pointsEarned;
-        await this.userPointsService.addPoints(
+
+        await this.userLocationProfileService.addPointsToLocation(
           userId,
+          oneTimeQR.locationId,
           mission.reward,
-          PointsTransactionType.CHECK_IN,
-          `Completed mission: ${mission.title}`,
-          mission.id,
         );
       }
 
@@ -501,11 +511,19 @@ export class QRCodeScanService implements IQRCodeScanService {
     // Mark QR code as used
     await this.oneTimeQRCodeRepository.markAsUsed(oneTimeQR.id, userId);
 
-    // Get updated user profile for total points
+    // Get updated UserLocationProfile for total points at this location
+    const userLocationProfile =
+      await this.userLocationProfileService.getUserLocationProfile(
+        userId,
+        oneTimeQR.locationId,
+      );
+    const totalPoints = userLocationProfile?.totalPoints || 0;
+
+    // Get updated user profile for global points (for ranking)
     const userProfile = await this.userProfileRepository.repo.findOne({
       where: { accountId: userId },
     });
-    const totalPoints = userProfile?.points || 0;
+    const globalPoints = userProfile?.points || 0;
 
     const completedMissions = results.filter((r) => r.isCompleted);
     const message =

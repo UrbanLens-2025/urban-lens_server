@@ -28,6 +28,14 @@ export class CreateLocationVoucherDto {
   })
   description: string;
 
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({
+    description: 'Voucher code (unique code for redeeming this voucher)',
+    example: 'SUMMER2024',
+  })
+  voucherCode: string;
+
   @IsOptional()
   @IsString()
   @ApiProperty({
@@ -37,14 +45,16 @@ export class CreateLocationVoucherDto {
   })
   imageUrl?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  @Min(1)
+  @Min(0)
   @ApiProperty({
-    description: 'Points required to redeem this voucher',
+    description:
+      'Points required to redeem this voucher (default 0 for public vouchers)',
     example: 500,
+    required: false,
   })
-  pricePoint: number;
+  pricePoint?: number;
 
   @IsNotEmpty()
   @IsNumber()
