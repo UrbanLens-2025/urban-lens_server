@@ -4,13 +4,15 @@ import { PaginateConfig, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { TagEntity } from '@/modules/utility/domain/Tag.entity';
 import { UpdateResult } from 'typeorm';
 import { UpdateTagDto } from '@/common/dto/account/UpdateTag.dto';
+import { ExistsDuplicateTagDto } from '@/common/dto/account/ExistsDuplicateTag.dto';
 
 export const ITagService = Symbol('ITagService');
 export interface ITagService {
-  create(dto: CreateTagDto): Promise<TagResponseDto>;
+  create(dto: CreateTagDto): Promise<TagResponseDto[]>;
   search(query: PaginateQuery): Promise<Paginated<TagResponseDto>>;
   update(dto: UpdateTagDto): Promise<UpdateResult>;
 
+  existsDuplicateTag(dto: ExistsDuplicateTagDto): Promise<boolean>;
   searchSelectable(query: PaginateQuery): Promise<Paginated<TagResponseDto>>;
 }
 

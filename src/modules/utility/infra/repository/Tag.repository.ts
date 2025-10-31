@@ -17,33 +17,26 @@ export const TagRepositoryProvider = (ctx: DataSource | EntityManager) =>
         .getCount();
     },
 
-    existsDuplicate(
+    findDuplicates(
       this: Repository<TagEntity>,
-      payload: {
-        items: {
-          groupName: string;
-          displayName: string;
-        }[];
-      },
+      payload: { items: { groupName: string; displayName: string }[] },
     ) {
       const qb = this.createQueryBuilder('tag');
 
       payload.items.forEach((item, index) => {
-        const condition = `(tag.group_name = :groupName${index} AND tag.display_name = :displayName${index})`;
+        const condition = `(tag.group_name = :groupName${index} AND tag.display_name_normalized = :displayName${index})`;
+        const payload = {
+          [`groupName${index}`]: item.groupName,
+          [`displayName${index}`]: item.displayName.trim().toLowerCase(),
+        };
         if (index === 0) {
-          qb.where(condition, {
-            [`groupName${index}`]: item.groupName,
-            [`displayName${index}`]: item.displayName,
-          });
+          qb.where(condition, payload);
         } else {
-          qb.orWhere(condition, {
-            [`groupName${index}`]: item.groupName,
-            [`displayName${index}`]: item.displayName,
-          });
+          qb.orWhere(condition, payload);
         }
       });
 
-      return qb.getExists();
+      return qb.getMany();
     },
   });
 

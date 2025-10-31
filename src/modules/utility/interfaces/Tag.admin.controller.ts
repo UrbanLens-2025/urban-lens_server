@@ -22,6 +22,7 @@ import {
   ITagService_QueryConfig,
 } from '@/modules/utility/app/ITag.service';
 import { UpdateTagDto } from '@/common/dto/account/UpdateTag.dto';
+import { ExistsDuplicateTagDto } from '@/common/dto/account/ExistsDuplicateTag.dto';
 
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
@@ -37,6 +38,12 @@ export class TagAdminController {
   @Post()
   create(@Body() dto: CreateTagDto) {
     return this.tagService.create(dto);
+  }
+
+  @ApiOperation({ summary: 'Check for duplicate tag' })
+  @Post('/duplicate-check')
+  existsDuplicateTag(@Body() dto: ExistsDuplicateTagDto) {
+    return this.tagService.existsDuplicateTag(dto);
   }
 
   @ApiOperation({ summary: 'Get all tags' })
