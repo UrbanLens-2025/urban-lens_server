@@ -7,7 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PersistenceConfig } from '@/config/persistence.config';
 import { envConfig } from '@/config/env.config';
 import { NotificationModule } from '@/modules/notification/Notification.module';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptorConfig } from '@/common/interceptor/response.interceptor';
 import { BullModule } from '@nestjs/bullmq';
 import { BullConfig } from '@/config/bull.config';
@@ -33,6 +33,8 @@ import { GamificationModule } from './modules/gamification/Gamification.module';
 import { UtilityModule } from '@/modules/utility/Utility.module';
 import { WalletModule } from './modules/wallet/Wallet.module';
 import { TestController } from '@/Test.controller';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
+import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
 
 @Module({
   imports: [
@@ -46,6 +48,7 @@ import { TestController } from '@/Test.controller';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
     }),
+    SentryModule.forRoot(),
     TokenModule,
     RedisModule.forRootAsync({
       useClass: RedisConfig,
@@ -89,6 +92,14 @@ import { TestController } from '@/Test.controller';
   ],
   controllers: [AppController, TestController],
   providers: [
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

@@ -1,10 +1,11 @@
+import './instrument';
+//
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { globalValidationConfig } from '@/config/validation.config';
 import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerDocumentConfig } from '@/config/swagger.config';
-import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
 import { NextFunction, Request, Response } from 'express';
 
 async function bootstrap() {
@@ -23,7 +24,7 @@ async function bootstrap() {
   app.enableCors();
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe(globalValidationConfig));
-  app.useGlobalFilters(new GlobalExceptionFilter());
+  // app.useGlobalFilters(new SentryGlobalFilter(), new GlobalExceptionFilter());
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: ['1'],
