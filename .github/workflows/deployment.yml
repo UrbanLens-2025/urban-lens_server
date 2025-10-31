@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - 'dev-*'
-    branches-ignore:
-      - '*'
   workflow_dispatch:
 
 jobs:
@@ -17,14 +15,14 @@ jobs:
           ref: ${{ github.ref }}
           fetch-depth: 0
 
-      - name: Allow only tags from main
+      - name: Allow only tags that point to commits in main
         run: |
           git fetch origin main --depth=1
-          if ! git merge-base --is-ancestor origin/main ${{ github.sha }}; then
-            echo "❌ Tag ${{ github.ref_name }} is not based on main. Skipping workflow."
+          if ! git branch --contains ${{ github.sha }} origin/main | grep -q 'origin/main'; then
+            echo "❌ Tag ${{ github.ref_name }} does not point to a commit in main. Skipping workflow."
             exit 0
           fi
-          echo "✅ Tag verified: commit is from main."
+          echo "✅ Tag verified: commit exists in main."
 
       - name: Install dependencies
         run: pnpm install
@@ -76,7 +74,7 @@ jobs:
       REDIS_URL: ${{ secrets.REDIS_URL }}
       VNPAY_HASH_SECRET: ${{ secrets.VNPAY_HASH_SECRET }}
       VNPAY_TMN_CODE: ${{ secrets.VNPAY_TMN_CODE }}
-      VNPAY_URL: ${{ vars.VNPAY_URL }}
+      VNPAY_URL: ${{ secrets.VNPAY_URL }}
 
       # PUBLIC VARIABLES
       DATABASE_ENABLE_SYNC: ${{ vars.DATABASE_ENABLE_SYNC }}
@@ -87,6 +85,9 @@ jobs:
       JWT_EXPIRES_IN: ${{ vars.JWT_EXPIRES_IN }}
       LOG_LEVELS: ${{ vars.LOG_LEVELS }}
       MAX_PENDING_DEPOSIT_TRANSACTIONS: ${{ vars.MAX_PENDING_DEPOSIT_TRANSACTIONS }}
+      PAYMENT_EXPIRATION_MINUTES: ${{vars.PAYMENT_EXPIRATION_MINUTES}}
+      PAYMENT_ALLOW_MOCK_HASH: ${{vars.PAYMENT_ALLOW_MOCK_HASH}}
+      PAYMENT_MOCK_HASH: ${{vars.PAYMENT_MOCK_HASH}}
       NODE_ENV: ${{ vars.NODE_ENV }}
       PORT: ${{ vars.PORT }}
 
@@ -103,29 +104,27 @@ jobs:
       - name: Determine active slot (blue/green)
         id: slot
         run: |
-          # Default when first deploy: treat none as blue being the target
           if [ -L /var/www/urbanlens ]; then
             CURRENT=$(readlink /var/www/urbanlens | grep -oE 'blue|green' || echo "none")
           else
             CURRENT="none"
           fi
-          
+
           if [ "$CURRENT" = "blue" ]; then
-            echo "TARGET=green" >> $GITHUB_ENV
-            echo "STANDBY_PORT=8081" >> $GITHUB_ENV
-            echo "CURRENT=blue" >> $GITHUB_ENV
+            TARGET="green"
+            STANDBY_PORT=8081
           else
-            # current is green or none -> deploy to blue by default
-            echo "TARGET=blue" >> $GITHUB_ENV
-            echo "STANDBY_PORT=8081" >> $GITHUB_ENV
-            # if CURRENT was none, set CURRENT to none (guard later)
-            if [ "$CURRENT" = "none" ]; then
-              echo "CURRENT=none" >> $GITHUB_ENV
-            else
-              echo "CURRENT=green" >> $GITHUB_ENV
-            fi
+            TARGET="blue"
+            STANDBY_PORT=8081
           fi
-          
+
+          # persist to later steps
+          {
+            echo "TARGET=$TARGET"
+            echo "STANDBY_PORT=$STANDBY_PORT"
+            echo "CURRENT=$CURRENT"
+          } >> "$GITHUB_ENV"
+
           echo "Current: $CURRENT"
           echo "Target: $TARGET (standby port: $STANDBY_PORT)"
 
@@ -136,15 +135,16 @@ jobs:
           sudo cp -r ./new-deployment/* /var/www/urbanlens-${{ env.TARGET }}/
           sudo chown -R $USER:$USER /var/www/urbanlens-${{ env.TARGET }}/
           cd /var/www/urbanlens-${{ env.TARGET }}/
-          pnpm install --prod
-
+          pnpm install --prod --silent      
+      
       - name: Start standby instance (on standby port)
         run: |
           cd /var/www/urbanlens-${{ env.TARGET }}/
-          export RUNTIME_VERSION=${{ github.ref_name }}
-          export DEPLOYED_AT=$(TZ='Asia/Ho_Chi_Minh' date +"%Y-%m-%dT%H:%M:%S%z")
           pm2 delete urbanlens-${{ env.TARGET }} || true
-          PORT=${{ env.STANDBY_PORT }} pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
+          DEPLOYED_AT=$(TZ='Asia/Ho_Chi_Minh' date +"%Y-%m-%dT%H:%M:%S%z") \
+          RUNTIME_VERSION=${{ github.ref_name }} \
+          PORT=${{ env.STANDBY_PORT }} \
+          pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
           pm2 save
 
       - name: Health check standby (on standby port)
@@ -170,7 +170,10 @@ jobs:
           # start new on 8080
           cd /var/www/urbanlens-${{ env.TARGET }}/
           pm2 delete urbanlens-${{ env.TARGET }} || true
-          PORT=8080 pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
+          DEPLOYED_AT=$(TZ='Asia/Ho_Chi_Minh' date +"%Y-%m-%dT%H:%M:%S%z") \
+          RUNTIME_VERSION=${{ github.ref_name }} \
+          PORT=8080 \
+          pm2 start dist/main.js --name urbanlens-${{ env.TARGET }} --update-env
           pm2 save
 
       - name: Health check promoted instance (on 8080)

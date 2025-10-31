@@ -1,0 +1,130 @@
+doctype html
+html(lang="en")
+    head
+        meta(http-equiv="Content-Type" content="text/html; charset=utf-8")
+        meta(name="viewport" content="width=device-width, initial-scale=1.0")
+        title Deposit Confirmed
+        style.
+            /* Reset styles */
+            body {
+                margin: 0;
+                padding: 0;
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+            }
+            table, td, div {
+                border-collapse: collapse;
+            }
+            img {
+                -ms-interpolation-mode: bicubic;
+            }
+
+            /* Basic styling */
+            body, table, td, a {
+                font-family: Arial, sans-serif;
+                color: #333333;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                margin: 0;
+            }
+            a {
+                text-decoration: none;
+            }
+
+            /* Main content styles */
+            .content-table {
+                border: 1px solid #cccccc;
+                border-collapse: collapse;
+                background-color: #ffffff;
+            }
+            .header {
+                background-color: #212121;
+                padding: 40px 0 30px 0;
+            }
+            .header h1 {
+                color: #ffffff;
+            }
+            .body-section {
+                padding: 30px 30px 20px 30px;
+            }
+            .body-section h2 {
+                color: #333333;
+            }
+            .transaction-details {
+                background-color: #f9f9f9;
+                border: 1px solid #e0e0e0;
+                border-radius: 5px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+            .transaction-details p {
+                margin: 8px 0;
+            }
+            .transaction-details strong {
+                color: #212121;
+            }
+            .amount-highlight {
+                font-size: 24px;
+                color: #4CAF50;
+                font-weight: bold;
+            }
+            .footer {
+                background-color: #eeeded;
+                padding: 30px 30px 30px 30px;
+            }
+            .footer p {
+                margin: 0;
+                font-size: 12px;
+                color: #555555;
+            }
+
+            /* Media Queries for responsiveness */
+            @media only screen and (max-width: 600px) {
+                .content-table {
+                    width: 100% !important;
+                }
+                .body-section, .footer {
+                    padding: 20px !important;
+                }
+                .header h1 {
+                    font-size: 24px;
+                }
+                .amount-highlight {
+                    font-size: 20px;
+                }
+            }
+    body(style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;")
+        table()
+            tr
+                td(style="padding: 20px 0 30px 0;")
+                    table.content-table()
+                        //- Header Section
+                        tr
+                            td.header()
+                                h1 Urban Lens
+                        //- Body Section
+                        tr
+                            td.body-section
+                                h2 Deposit Confirmed!
+                                p Hi there,
+                                p We're pleased to confirm that your deposit has been successfully processed and added to your Urban Lens wallet.
+                                .transaction-details
+                                    p.amount-highlight #{amount} #{currency}
+                                    p
+                                        strong Transaction ID:
+                                        |  #{transactionId}
+                                    p
+                                        strong New Balance:
+                                        |  #{newBalance} #{currency}
+                                p Your funds are now available and ready to use for booking tours and experiences on Urban Lens.
+                                p If you have any questions about this transaction, please don't hesitate to contact our support team.
+                                p Thank you for choosing Urban Lens!
+                                p The Urban Lens Team
+                        //- Footer Section
+                        tr
+                            td.footer
+                                table()
+                                    tr
+                                        td()
+                                            p &copy; 2025 Urban Lens. All rights reserved.
+
