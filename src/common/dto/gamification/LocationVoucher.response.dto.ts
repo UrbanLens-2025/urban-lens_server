@@ -16,6 +16,9 @@ export class LocationVoucherResponseDto {
   description: string;
 
   @Expose()
+  voucherCode: string;
+
+  @Expose()
   imageUrl: string | null;
 
   @Expose()

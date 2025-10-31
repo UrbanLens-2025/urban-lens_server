@@ -8,6 +8,7 @@ import { IUserPointsService } from '../IUserPoints.service';
 import { RewardPointRepository } from '@/modules/gamification/infra/repository/RewardPoint.repository';
 import { RewardPointType } from '@/modules/gamification/domain/RewardPoint.entity';
 import { PointsTransactionType } from '@/modules/gamification/domain/PointsHistory.entity';
+import type { IUserLocationProfileService } from '../IUserLocationProfile.service';
 
 @Injectable()
 export class CheckInCreatedListener {
@@ -16,6 +17,8 @@ export class CheckInCreatedListener {
   constructor(
     @Inject(IUserPointsService)
     private readonly userPointsService: IUserPointsService,
+    @Inject('IUserLocationProfileService')
+    private readonly userLocationProfileService: IUserLocationProfileService,
     private readonly rewardPointRepository: RewardPointRepository,
   ) {}
 
@@ -34,7 +37,7 @@ export class CheckInCreatedListener {
         return;
       }
 
-      // Add points to user
+      // Add points to user (for global ranking) - only from check-in
       await this.userPointsService.addPoints(
         event.userId,
         rewardPoint.points,
@@ -43,8 +46,17 @@ export class CheckInCreatedListener {
         event.checkInId,
       );
 
+      // Create UserLocationProfile (for voucher redemption) - no points added
+      await this.userLocationProfileService.createOrGetUserLocationProfile(
+        event.userId,
+        event.locationId,
+      );
+
       this.logger.log(
-        `Awarded ${rewardPoint.points} points to user ${event.userId} for check-in at location ${event.locationId}`,
+        `Awarded ${rewardPoint.points} global points to user ${event.userId} for check-in at location ${event.locationId}`,
+      );
+      this.logger.log(
+        `Created UserLocationProfile for user ${event.userId} at location ${event.locationId}`,
       );
     } catch (error) {
       this.logger.error(

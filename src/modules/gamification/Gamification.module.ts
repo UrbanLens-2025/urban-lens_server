@@ -2,8 +2,12 @@ import { Module } from '@nestjs/common';
 import { RewardPointController } from './interfaces/RewardPoint.controller';
 import { RankController } from './interfaces/Rank.controller';
 import { LocationMissionBusinessController } from './interfaces/LocationMission.business.controller';
+import { LocationMissionUserController } from './interfaces/LocationMission.user.controller';
 import { LocationVoucherBusinessController } from './interfaces/LocationVoucher.business.controller';
+import { LocationVoucherUserController } from './interfaces/LocationVoucher.user.controller';
 import { QRCodeScanUserController } from './interfaces/QRCodeScan.user.controller';
+import { UserLocationProfileController } from './interfaces/UserLocationProfile.user.controller';
+import { VoucherExchangeUserController } from './interfaces/VoucherExchange.user.controller';
 import { IRewardPointService } from './app/IRewardPoint.service';
 import { IRankService } from './app/IRank.service';
 import { IUserPointsService } from './app/IUserPoints.service';
@@ -12,6 +16,8 @@ import { ILocationVoucherService } from './app/ILocationVoucher.service';
 import { IQRCodeScanService } from './app/IQRCodeScan.service';
 import { ICheckInMissionService } from './app/ICheckInMission.service';
 import { IMissionProgressService } from './app/IMissionProgress.service';
+import { IUserLocationProfileService } from './app/IUserLocationProfile.service';
+import { IVoucherExchangeService } from './app/IVoucherExchange.service';
 import { RewardPointService } from './app/impl/RewardPoint.service';
 import { RankService } from './app/impl/Rank.service';
 import { UserPointsService } from './app/impl/UserPoints.service';
@@ -21,6 +27,8 @@ import { LocationVoucherService } from './app/impl/LocationVoucher.service';
 import { QRCodeScanService } from './app/impl/QRCodeScan.service';
 import { CheckInMissionService } from './app/impl/CheckInMission.service';
 import { MissionProgressService } from './app/impl/MissionProgress.service';
+import { UserLocationProfileService } from './app/impl/UserLocationProfile.service';
+import { VoucherExchangeService } from './app/impl/VoucherExchange.service';
 import { GamificationInfraModule } from './infra/Gamification.infra.module';
 import { PostCreatedListener } from './app/event-listeners/PostCreated.listener';
 import { CommentCreatedListener } from './app/event-listeners/CommentCreated.listener';
@@ -44,8 +52,12 @@ import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.mod
     RewardPointController,
     RankController,
     LocationMissionBusinessController,
+    LocationMissionUserController,
     LocationVoucherBusinessController,
+    LocationVoucherUserController,
     QRCodeScanUserController,
+    UserLocationProfileController,
+    VoucherExchangeUserController,
   ],
   providers: [
     {
@@ -79,6 +91,14 @@ import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.mod
     {
       provide: IMissionProgressService,
       useClass: MissionProgressService,
+    },
+    {
+      provide: 'IUserLocationProfileService',
+      useClass: UserLocationProfileService,
+    },
+    {
+      provide: 'IVoucherExchangeService',
+      useClass: VoucherExchangeService,
     },
     PointsRecalculationService,
     PostCreatedListener,

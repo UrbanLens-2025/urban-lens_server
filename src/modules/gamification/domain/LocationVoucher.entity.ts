@@ -37,10 +37,18 @@ export class LocationVoucherEntity {
   @Column({ name: 'description' })
   description: string;
 
+  @Column({
+    name: 'voucher_code',
+    type: 'varchar',
+    length: 255,
+    nullable: false,
+  })
+  voucherCode: string;
+
   @Column({ name: 'image_url', type: 'text', nullable: true })
   imageUrl: string | null;
 
-  @Column({ name: 'price_point' })
+  @Column({ name: 'price_point', type: 'integer', default: 0 })
   pricePoint: number;
 
   @Column({ name: 'max_quantity', type: 'integer', default: 0 })
