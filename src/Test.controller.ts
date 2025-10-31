@@ -10,6 +10,7 @@ import {
   type PaginateQuery,
 } from 'nestjs-paginate';
 import { AppService } from '@/app.service';
+import * as Sentry from '@sentry/nestjs';
 
 @ApiTags('_Test')
 @ApiBearerAuth()
@@ -20,6 +21,16 @@ export class TestController {
   @Get('/public/hello-world')
   getHelloWorld() {
     return 'Hello, World!';
+  }
+
+  @Get('/public/test-sentry')
+  testSentry() {
+    console.log('Sentry Client:');
+    console.log(Sentry.getClient());
+    const randomUUID = crypto.randomUUID();
+    throw new Error(
+      `This is a test error for Sentry integration + ${randomUUID}`,
+    );
   }
 
   @Get('/public/hello-world-2')
