@@ -1,17 +1,20 @@
 import {
   IsArray,
   IsBoolean,
+  IsEnum,
   IsHexColor,
   IsNotEmpty,
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { TagGroup } from '@/common/constants/TagGroup.constant';
 
 class CreateTagItemDto {
-  @ApiProperty({ example: 'Category' })
+  @ApiProperty({ example: TagGroup.OTHER })
+  @IsEnum(TagGroup)
   @IsNotEmpty()
-  groupName: string;
+  groupName: TagGroup;
 
   @ApiProperty({ example: 'Food' })
   @IsNotEmpty()
