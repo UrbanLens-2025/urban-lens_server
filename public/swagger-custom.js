@@ -85,28 +85,36 @@ window.addEventListener('load', () => {
 
         document.querySelectorAll('.opblock-tag-section').forEach((section) => {
           section.style.display = '';
-          section.querySelectorAll('.opblock').forEach((op) => (op.style.display = ''));
+          section
+            .querySelectorAll('.opblock')
+            .forEach((op) => (op.style.display = ''));
         });
 
         if (!term) return;
 
         if (mode === 'tag') {
-          document.querySelectorAll('.opblock-tag-section').forEach((section) => {
-            const tag = section.querySelector('h3.opblock-tag');
-            const visible = tag && tag.textContent.toLowerCase().includes(term);
-            section.style.display = visible ? '' : 'none';
-          });
+          document
+            .querySelectorAll('.opblock-tag-section')
+            .forEach((section) => {
+              const tag = section.querySelector('h3.opblock-tag');
+              const visible =
+                tag && tag.textContent.toLowerCase().includes(term);
+              section.style.display = visible ? '' : 'none';
+            });
         } else if (mode === 'endpoint') {
           document.querySelectorAll('.opblock').forEach((op) => {
-            const pathEl =
-              op.querySelector('.opblock-summary-path-description-wrapper')?.children?.[0]?.children?.[0]?.children?.[0];
-            const visible = pathEl && pathEl.textContent.toLowerCase().includes(term);
+            const pathEl = op.querySelector(
+              '.opblock-summary-path-description-wrapper',
+            )?.children?.[0]?.children?.[0]?.children?.[0];
+            const visible =
+              pathEl && pathEl.textContent.toLowerCase().includes(term);
             op.style.display = visible ? '' : 'none';
           });
         } else if (mode === 'summary') {
           document.querySelectorAll('.opblock').forEach((op) => {
             const summaryEl = op.querySelector('.opblock-summary-description');
-            const visible = summaryEl && summaryEl.textContent.toLowerCase().includes(term);
+            const visible =
+              summaryEl && summaryEl.textContent.toLowerCase().includes(term);
             op.style.display = visible ? '' : 'none';
           });
         }
@@ -137,4 +145,65 @@ window.addEventListener('load', () => {
       clearInterval(interval);
     }
   }, 1000);
+});
+
+window.addEventListener('load', () => {
+  const oldFetch = window.fetch;
+
+  window.fetch = async (...args) => {
+    const response = await oldFetch(...args);
+
+    try {
+      // Clone the response so we can read it safely
+      const cloned = response.clone();
+      const url = args[0];
+
+      // Match your login endpoints
+      if (
+        url.includes('/api/v1/auth/dev-only/login/business-owner') ||
+        url.includes('/api/v1/auth/dev-only/login/event-creator') ||
+        url.includes('/api/v1/auth/dev-only/login/user') ||
+        url.includes('/api/v1/auth/dev-only/login/admin') ||
+        url.includes('/api/v1/public/auth/login')
+      ) {
+        const json = await cloned.json();
+        const token = json?.data?.token;
+
+        if (token) {
+          // Save token in localStorage so Swagger UI can use it
+          localStorage.setItem(
+            'authorized',
+            JSON.stringify({
+              name: 'bearer',
+              schema: {
+                scheme: 'bearer',
+                bearerFormat: 'JWT',
+                name: 'jwt',
+                type: 'http',
+                description: 'put bearer token here',
+              },
+              value: token,
+            }),
+          );
+
+          // Wait for SwaggerUIBundle global to exist
+          if (window.ui) {
+            window.ui.preauthorizeApiKey('bearer', token);
+          } else {
+            // fallback: poll briefly until ready
+            const interval = setInterval(() => {
+              if (window.ui) {
+                window.ui.preauthorizeApiKey('bearer', token);
+                clearInterval(interval);
+              }
+            }, 500);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Auto-auth hook error:', err);
+    }
+
+    return response;
+  };
 });
