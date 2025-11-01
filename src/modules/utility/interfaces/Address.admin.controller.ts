@@ -1,13 +1,32 @@
-import { Body, Controller, Inject, Param, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateProvinceDto } from '@/common/dto/address/CreateProvince.dto';
 import { UpdateProvinceDto } from '@/common/dto/address/UpdateProvince.dto';
-import { IProvinceService } from '@/modules/utility/app/IProvince.service';
+import {
+  IProvinceService,
+  IProvinceService_QueryConfig,
+} from '@/modules/utility/app/IProvince.service';
 import { CreateWardDto } from '@/common/dto/address/CreateWard.dto';
 import { UpdateWardDto } from '@/common/dto/address/UpdateWard.dto';
-import { IWardService } from '@/modules/utility/app/IWard.service';
+import {
+  IWardService,
+  IWardService_QueryConfig,
+} from '@/modules/utility/app/IWard.service';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 
 @ApiTags('Address')
 @Roles(Role.ADMIN)
@@ -26,6 +45,13 @@ export class AddressAdminController {
   // Province Endpoints
   // -------------------------------
 
+  @ApiOperation({ summary: 'Get all provinces' })
+  @ApiPaginationQuery(IProvinceService_QueryConfig.searchProvinces())
+  @Get('/provinces/search')
+  getProvinces(@Paginate() query: PaginateQuery) {
+    return this.provinceService.searchProvinces(query);
+  }
+
   @ApiOperation({ summary: 'Create provinces' })
   @Post('/provinces')
   createProvince(@Body() dto: CreateProvinceDto) {
@@ -41,6 +67,13 @@ export class AddressAdminController {
   // -------------------------------
   // Ward Endpoints
   // -------------------------------
+
+  @ApiOperation({ summary: 'Get all wards' })
+  @ApiPaginationQuery(IWardService_QueryConfig.searchWard())
+  @Get('/wards/search')
+  getWards(@Paginate() query: PaginateQuery) {
+    return this.wardService.searchWard(query);
+  }
 
   @ApiOperation({ summary: 'Create wards' })
   @Post('/wards')

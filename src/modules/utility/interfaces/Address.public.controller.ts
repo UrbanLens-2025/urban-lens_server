@@ -5,11 +5,20 @@ import {
   Param,
   UseInterceptors,
 } from '@nestjs/common';
-import { IProvinceService } from '@/modules/utility/app/IProvince.service';
-import { IWardService } from '@/modules/utility/app/IWard.service';
-import { WithPagination } from '@/common/WithPagination.decorator';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
-import { ApiParam, ApiTags } from '@nestjs/swagger';
+import {
+  IProvinceService,
+  IProvinceService_QueryConfig,
+} from '@/modules/utility/app/IProvince.service';
+import {
+  IWardService,
+  IWardService_QueryConfig,
+} from '@/modules/utility/app/IWard.service';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CacheInterceptor } from '@nestjs/cache-manager';
 
 @UseInterceptors(CacheInterceptor)
@@ -23,23 +32,20 @@ export class AddressPublicController {
     private readonly wardService: IWardService,
   ) {}
 
-  @WithPagination()
+  @ApiOperation({ summary: 'Get list of selectable provinces' })
+  @ApiPaginationQuery(IProvinceService_QueryConfig.searchProvincesVisible())
   @Get('/province')
   getProvinces(@Paginate() query: PaginateQuery) {
-    return this.provinceService.searchProvinces(query);
+    return this.provinceService.searchProvincesVisible(query);
   }
 
-  @WithPagination()
-  @ApiParam({
-    name: 'provinceCode',
-    description: 'The code of the province to filter wards',
-    example: '01',
-  })
+  @ApiOperation({ summary: 'Get list of selectable wards by province code' })
+  @ApiPaginationQuery(IWardService_QueryConfig.searchWardVisible())
   @Get('/province/:provinceCode/ward')
   getWards(
     @Param('provinceCode') provinceCode: string,
     @Paginate() query: PaginateQuery,
   ) {
-    return this.wardService.searchWard(query, provinceCode);
+    return this.wardService.searchWardVisible(query, provinceCode);
   }
 }

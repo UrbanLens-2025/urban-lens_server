@@ -13,4 +13,7 @@ export class WardResponseDto {
 
   @Expose()
   provinceCode: string;
+
+  @Expose()
+  isVisible: boolean;
 }

@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
+  IsBoolean,
   IsNotEmpty,
   IsString,
   Length,
@@ -38,6 +39,10 @@ class CreateProvinceDtoItem {
   @IsNotEmpty()
   @Length(1, 128)
   administrativeLevel: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  isVisible: boolean;
 }
 
 export class CreateProvinceDto {

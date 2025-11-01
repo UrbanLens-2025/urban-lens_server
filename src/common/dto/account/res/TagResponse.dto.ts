@@ -1,10 +1,11 @@
 import { Expose } from 'class-transformer';
+import { TagGroup } from '@/common/constants/TagGroup.constant';
 
 export class TagResponseDto {
   @Expose()
   id: number;
   @Expose()
-  groupName: string;
+  groupName: TagGroup;
   @Expose()
   displayName: string;
   @Expose()

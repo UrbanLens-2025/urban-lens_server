@@ -1,4 +1,6 @@
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   DeleteDateColumn,
@@ -6,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { TagGroup } from '@/common/constants/TagGroup.constant';
 
 @Entity('tag')
 export class TagEntity {
@@ -21,11 +24,19 @@ export class TagEntity {
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp with time zone' })
   deletedAt: Date;
 
-  @Column({ name: 'group_name', type: 'varchar', length: 100, nullable: true })
-  groupName: string;
+  @Column({
+    name: 'group_name',
+    type: 'varchar',
+    length: 100,
+    default: TagGroup.OTHER,
+  })
+  groupName: TagGroup;
 
   @Column({ name: 'display_name', type: 'varchar', length: 255 })
   displayName: string;
+
+  @Column({ name: 'display_name_normalized', type: 'varchar', length: 255 })
+  displayNameNormalized: string; // for case-insensitive search
 
   @Column({ name: 'color', type: 'varchar', length: 50 })
   color: string;
@@ -35,4 +46,12 @@ export class TagEntity {
 
   @Column({ name: 'is_selectable', type: 'boolean', default: true })
   isSelectable: boolean;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  normalizeDisplayName() {
+    if (this.displayName) {
+      this.displayNameNormalized = this.displayName.trim().toLowerCase();
+    }
+  }
 }
