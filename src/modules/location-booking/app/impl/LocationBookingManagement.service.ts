@@ -1,6 +1,6 @@
 import { CoreService } from '@/common/core/Core.service';
 import { CreateBookingForBusinessLocationDto } from '@/common/dto/location-booking/CreateBookingForBusinessLocation.dto';
-import { ILocationBookingService } from '@/modules/location-booking/app/ILocationBooking.service';
+import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
@@ -10,9 +10,9 @@ import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.
 import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 
 @Injectable()
-export class LocationBookingService
+export class LocationBookingManagementService
   extends CoreService
-  implements ILocationBookingService
+  implements ILocationBookingManagementService
 {
   createBooking_ForBusinessLocation(
     dto: CreateBookingForBusinessLocationDto,

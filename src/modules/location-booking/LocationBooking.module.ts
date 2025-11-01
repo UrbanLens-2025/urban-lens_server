@@ -10,8 +10,8 @@ import { LocationAvailabilityCreatorController } from '@/modules/location-bookin
 import { IBookableLocationSearchService } from '@/modules/location-booking/app/IBookableLocationSearch.service';
 import { BookableLocationSearchService } from '@/modules/location-booking/app/impl/BookableLocationSearch.service';
 import { LocationBookableCreatorController } from '@/modules/location-booking/interfaces/LocationBookable.creator.controller';
-import { ILocationBookingService } from '@/modules/location-booking/app/ILocationBooking.service';
-import { LocationBookingService } from '@/modules/location-booking/app/impl/LocationBooking.service';
+import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
+import { LocationBookingManagementService } from '@/modules/location-booking/app/impl/LocationBookingManagement.service';
 import { LocationBookingOwnerController } from '@/modules/location-booking/interfaces/LocationBooking.owner.controller';
 import { ILocationBookingQueryService } from '@/modules/location-booking/app/ILocationBookingQuery.service';
 import { LocationBookingQueryService } from '@/modules/location-booking/app/impl/LocationBookingQuery.service';
@@ -39,14 +39,14 @@ import { LocationBookingQueryService } from '@/modules/location-booking/app/impl
       useClass: BookableLocationSearchService,
     },
     {
-      provide: ILocationBookingService,
-      useClass: LocationBookingService,
+      provide: ILocationBookingManagementService,
+      useClass: LocationBookingManagementService,
     },
     {
       provide: ILocationBookingQueryService,
       useClass: LocationBookingQueryService,
     },
   ],
-  exports: [ILocationBookingService],
+  exports: [ILocationBookingManagementService],
 })
 export class LocationBookingModule {}

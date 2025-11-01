@@ -10,7 +10,7 @@ import { EventRequestStatus } from '@/common/constants/EventRequestStatus.consta
 import { EventRequestResponseDto } from '@/common/dto/event/res/EventRequest.response.dto';
 import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.repository';
 import { EventRequestTagsRepository } from '@/modules/event/infra/repository/EventRequestTags.repository';
-import { ILocationBookingService } from '@/modules/location-booking/app/ILocationBooking.service';
+import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 
 @Injectable()
@@ -20,8 +20,8 @@ export class EventRequestManagementService
 {
   constructor(
     private readonly configService: ConfigService<Environment>,
-    @Inject(ILocationBookingService)
-    private readonly locationBookingService: ILocationBookingService,
+    @Inject(ILocationBookingManagementService)
+    private readonly locationBookingService: ILocationBookingManagementService,
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
   ) {
