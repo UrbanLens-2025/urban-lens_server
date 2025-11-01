@@ -1,7 +1,4 @@
-import { UserLocationVoucherEntity } from '../domain/UserLocationVoucher.entity';
 import { UserLocationVoucherExchangeHistoryEntity } from '../domain/UserLocationVoucherExchangeHistory.entity';
-import { UserLocationVoucherUsageEntity } from '../domain/UserLocationVoucherUsage.entity';
-import { AvailableVoucherResponseDto } from '@/common/dto/gamification/AvailableVoucher.response.dto';
 
 export interface IVoucherExchangeService {
   exchangeVoucher(
@@ -10,11 +7,12 @@ export interface IVoucherExchangeService {
   ): Promise<{
     success: boolean;
     message: string;
-    userVoucher?: UserLocationVoucherEntity;
     exchangeHistory?: UserLocationVoucherExchangeHistoryEntity;
   }>;
 
-  getUserVouchers(userProfileId: string): Promise<UserLocationVoucherEntity[]>;
+  getUserVouchers(
+    userProfileId: string,
+  ): Promise<UserLocationVoucherExchangeHistoryEntity[]>;
 
   getUserVoucherStats(userProfileId: string): Promise<{
     totalVouchers: number;
@@ -26,16 +24,17 @@ export interface IVoucherExchangeService {
     userProfileId: string,
   ): Promise<UserLocationVoucherExchangeHistoryEntity[]>;
 
-  getUserUsageHistory(
-    userProfileId: string,
-  ): Promise<UserLocationVoucherUsageEntity[]>;
-
   useVoucher(
     userProfileId: string,
-    userVoucherId: string,
+    exchangeHistoryId: string,
   ): Promise<{
     success: boolean;
     message: string;
-    usage?: UserLocationVoucherUsageEntity;
+  }>;
+
+  useVoucherByCode(userVoucherCode: string): Promise<{
+    success: boolean;
+    message: string;
+    voucher?: UserLocationVoucherExchangeHistoryEntity;
   }>;
 }

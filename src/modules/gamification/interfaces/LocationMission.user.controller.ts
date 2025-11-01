@@ -4,9 +4,12 @@ import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import { WithPagination } from '@/common/WithPagination.decorator';
-import type { PaginationParams } from '@/common/services/base.service';
 import { ILocationMissionService } from '../app/ILocationMission.service';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 
 @ApiTags('Location Mission (User)')
 @ApiBearerAuth()
@@ -23,16 +26,20 @@ export class LocationMissionUserController {
     description: 'Get all missions for a specific location',
   })
   @Get('/:locationId')
-  @WithPagination()
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title'],
+    filterableColumns: {
+      title: true,
+    },
+  })
   getMissionsByLocation(
     @Param('locationId') locationId: string,
-    @Query() params: PaginationParams,
+    @Paginate() query: PaginateQuery,
     @AuthUser() user: JwtTokenDto,
   ) {
-    return this.locationMissionService.getMissionsByLocation(
-      locationId,
-      params,
-    );
+    return this.locationMissionService.getMissionsByLocation(locationId, query);
   }
 
   @ApiOperation({
@@ -40,15 +47,21 @@ export class LocationMissionUserController {
     description: 'Get all active missions for a specific location',
   })
   @Get('/:locationId/active')
-  @WithPagination()
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title'],
+    filterableColumns: {
+      title: true,
+    },
+  })
   getActiveMissionsByLocation(
     @Param('locationId') locationId: string,
-    @Query() params: PaginationParams,
-    @AuthUser() user: JwtTokenDto,
+    @Paginate() query: PaginateQuery,
   ) {
     return this.locationMissionService.getActiveMissionsByLocation(
       locationId,
-      params,
+      query,
     );
   }
 }

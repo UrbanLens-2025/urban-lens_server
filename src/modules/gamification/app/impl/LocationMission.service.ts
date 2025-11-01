@@ -4,30 +4,22 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Inject } from '@nestjs/common';
 import { ILocationMissionService } from '../ILocationMission.service';
 import { LocationMissionRepository } from '@/modules/gamification/infra/repository/LocationMission.repository';
 import { CreateLocationMissionDto } from '@/common/dto/gamification/CreateLocationMission.dto';
 import { UpdateLocationMissionDto } from '@/common/dto/gamification/UpdateLocationMission.dto';
-import {
-  BaseService,
-  PaginationParams,
-  PaginationResult,
-} from '@/common/services/base.service';
 import { LocationMissionEntity } from '@/modules/gamification/domain/LocationMission.entity';
 import { LocationRepository } from '@/modules/business/infra/repository/Location.repository';
+import { UserMissionProgressRepository } from '@/modules/gamification/infra/repository/UserMissionProgress.repository';
+import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 
 @Injectable()
-export class LocationMissionService
-  extends BaseService<LocationMissionEntity>
-  implements ILocationMissionService
-{
+export class LocationMissionService implements ILocationMissionService {
   constructor(
     private readonly locationMissionRepository: LocationMissionRepository,
     private readonly locationRepository: LocationRepository,
-  ) {
-    super(locationMissionRepository.repo);
-  }
+    private readonly userMissionProgressRepository: UserMissionProgressRepository,
+  ) {}
 
   async createMission(
     locationId: string,
@@ -43,7 +35,6 @@ export class LocationMissionService
         throw new NotFoundException('Location not found');
       }
 
-      // Validate date range
       const startDate = new Date(dto.startDate);
       const endDate = new Date(dto.endDate);
       const now = new Date();
@@ -99,45 +90,21 @@ export class LocationMissionService
 
   async getMissionsByLocation(
     locationId: string,
-    params: PaginationParams = {},
-  ): Promise<PaginationResult<any>> {
+    query: PaginateQuery,
+  ): Promise<Paginated<any>> {
     try {
-      const { page, limit, skip } = this.normalizePaginationParams(params);
-
-      const [missions, total] =
-        await this.locationMissionRepository.repo.findAndCount({
-          where: { locationId },
-          order: { createdAt: 'DESC' },
-          skip,
-          take: limit,
-        });
-
-      return {
-        data: missions,
-        meta: this.buildPaginationMeta(page, limit, total),
-      };
+      return paginate(query, this.locationMissionRepository.repo, {
+        where: { locationId },
+        sortableColumns: ['createdAt'],
+        defaultSortBy: [['createdAt', 'DESC']],
+        searchableColumns: ['title'],
+        filterableColumns: {
+          title: true,
+        },
+      });
     } catch (error) {
       throw new BadRequestException(error.message);
     }
-  }
-
-  private normalizePaginationParams(params: PaginationParams) {
-    const page = Math.max(1, params.page || 1);
-    const limit = Math.min(100, Math.max(1, params.limit || 10));
-    const skip = (page - 1) * limit;
-    return { page, limit, skip };
-  }
-
-  private buildPaginationMeta(page: number, limit: number, total: number) {
-    const totalPages = Math.ceil(total / limit);
-    return {
-      page,
-      limit,
-      totalItems: total,
-      totalPages,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-    };
   }
 
   async getMissionById(missionId: string): Promise<any> {
@@ -171,6 +138,18 @@ export class LocationMissionService
 
       if (!mission) {
         throw new NotFoundException('Mission not found');
+      }
+
+      // Check if any users have participated in this mission
+      const participantCount =
+        await this.userMissionProgressRepository.repo.count({
+          where: { missionId },
+        });
+
+      if (participantCount > 0) {
+        throw new ForbiddenException(
+          'Cannot update mission - users have already participated',
+        );
       }
 
       // Validate date range if provided
@@ -207,7 +186,8 @@ export class LocationMissionService
     } catch (error) {
       if (
         error instanceof BadRequestException ||
-        error instanceof NotFoundException
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
       ) {
         throw error;
       }
@@ -225,9 +205,24 @@ export class LocationMissionService
         throw new NotFoundException('Mission not found');
       }
 
+      // Check if any users have participated in this mission
+      const participantCount =
+        await this.userMissionProgressRepository.repo.count({
+          where: { missionId },
+        });
+
+      if (participantCount > 0) {
+        throw new ForbiddenException(
+          'Cannot delete mission - users have already participated',
+        );
+      }
+
       await this.locationMissionRepository.repo.remove(mission);
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException(error.message);
@@ -236,26 +231,18 @@ export class LocationMissionService
 
   async getActiveMissionsByLocation(
     locationId: string,
-    params: PaginationParams = {},
-  ): Promise<PaginationResult<any>> {
+    query: PaginateQuery,
+  ): Promise<Paginated<any>> {
     try {
-      const { page, limit, skip } = this.normalizePaginationParams(params);
-      const now = new Date();
-
-      const [missions, total] = await this.locationMissionRepository.repo
-        .createQueryBuilder('mission')
-        .where('mission.locationId = :locationId', { locationId })
-        .andWhere('mission.startDate <= :now', { now })
-        .andWhere('mission.endDate >= :now', { now })
-        .orderBy('mission.createdAt', 'DESC')
-        .offset(skip)
-        .limit(limit)
-        .getManyAndCount();
-
-      return {
-        data: missions,
-        meta: this.buildPaginationMeta(page, limit, total),
-      };
+      return paginate(query, this.locationMissionRepository.repo, {
+        where: { locationId },
+        sortableColumns: ['createdAt'],
+        defaultSortBy: [['createdAt', 'DESC']],
+        searchableColumns: ['title'],
+        filterableColumns: {
+          title: true,
+        },
+      });
     } catch (error) {
       throw new BadRequestException(error.message);
     }

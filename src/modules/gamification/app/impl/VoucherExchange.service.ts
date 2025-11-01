@@ -1,13 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { UserLocationVoucherRepository } from '../../infra/repository/UserLocationVoucher.repository';
 import { UserLocationVoucherExchangeHistoryRepository } from '../../infra/repository/UserLocationVoucherExchangeHistory.repository';
-import { UserLocationVoucherUsageRepository } from '../../infra/repository/UserLocationVoucherUsage.repository';
 import { UserLocationProfileRepository } from '@/modules/gamification/infra/repository/UserLocationProfile.repository';
 import { LocationVoucherRepository } from '../../infra/repository/LocationVoucher.repository';
-import { UserLocationVoucherEntity } from '../../domain/UserLocationVoucher.entity';
 import { UserLocationVoucherExchangeHistoryEntity } from '../../domain/UserLocationVoucherExchangeHistory.entity';
-import { UserLocationVoucherUsageEntity } from '../../domain/UserLocationVoucherUsage.entity';
-import { AvailableVoucherResponseDto } from '@/common/dto/gamification/AvailableVoucher.response.dto';
 
 export interface IVoucherExchangeService {
   exchangeVoucher(
@@ -16,11 +11,12 @@ export interface IVoucherExchangeService {
   ): Promise<{
     success: boolean;
     message: string;
-    userVoucher?: UserLocationVoucherEntity;
     exchangeHistory?: UserLocationVoucherExchangeHistoryEntity;
   }>;
 
-  getUserVouchers(userProfileId: string): Promise<UserLocationVoucherEntity[]>;
+  getUserVouchers(
+    userProfileId: string,
+  ): Promise<UserLocationVoucherExchangeHistoryEntity[]>;
 
   getUserVoucherStats(userProfileId: string): Promise<{
     totalVouchers: number;
@@ -32,26 +28,19 @@ export interface IVoucherExchangeService {
     userProfileId: string,
   ): Promise<UserLocationVoucherExchangeHistoryEntity[]>;
 
-  getUserUsageHistory(
-    userProfileId: string,
-  ): Promise<UserLocationVoucherUsageEntity[]>;
-
   useVoucher(
     userProfileId: string,
-    userVoucherId: string,
+    exchangeHistoryId: string,
   ): Promise<{
     success: boolean;
     message: string;
-    usage?: UserLocationVoucherUsageEntity;
   }>;
 }
 
 @Injectable()
 export class VoucherExchangeService implements IVoucherExchangeService {
   constructor(
-    private readonly userLocationVoucherRepository: UserLocationVoucherRepository,
     private readonly userLocationVoucherExchangeHistoryRepository: UserLocationVoucherExchangeHistoryRepository,
-    private readonly userLocationVoucherUsageRepository: UserLocationVoucherUsageRepository,
     private readonly userLocationProfileRepository: UserLocationProfileRepository,
     private readonly locationVoucherRepository: LocationVoucherRepository,
   ) {}
@@ -62,7 +51,6 @@ export class VoucherExchangeService implements IVoucherExchangeService {
   ): Promise<{
     success: boolean;
     message: string;
-    userVoucher?: UserLocationVoucherEntity;
     exchangeHistory?: UserLocationVoucherExchangeHistoryEntity;
   }> {
     try {
@@ -80,28 +68,19 @@ export class VoucherExchangeService implements IVoucherExchangeService {
       }
 
       // Check if user has reached the redemption limit for this voucher
-      const existingUserVoucher =
-        await this.userLocationVoucherRepository.findByUserAndVoucher(
-          userProfileId,
-          voucherId,
-        );
+      const exchangeHistoryCount =
+        await this.userLocationVoucherExchangeHistoryRepository.repo.count({
+          where: {
+            userProfileId,
+            voucherId,
+          },
+        });
 
-      if (existingUserVoucher) {
-        // Check if user has reached the redemption limit
-        const exchangeHistoryCount =
-          await this.userLocationVoucherExchangeHistoryRepository.repo.count({
-            where: {
-              userProfileId,
-              voucherId,
-            },
-          });
-
-        if (exchangeHistoryCount >= voucher.userRedeemedLimit) {
-          return {
-            success: false,
-            message: `You have reached the maximum redemption limit (${voucher.userRedeemedLimit}) for this voucher`,
-          };
-        }
+      if (exchangeHistoryCount >= voucher.userRedeemedLimit) {
+        return {
+          success: false,
+          message: `You have reached the maximum redemption limit (${voucher.userRedeemedLimit}) for this voucher`,
+        };
       }
 
       // Check user's profile at this location (required for all vouchers)
@@ -135,17 +114,7 @@ export class VoucherExchangeService implements IVoucherExchangeService {
         );
       }
 
-      // Create or get existing user voucher
-      let userVoucher = existingUserVoucher;
-      if (!userVoucher) {
-        userVoucher =
-          await this.userLocationVoucherRepository.createUserVoucher(
-            userProfileId,
-            voucherId,
-          );
-      }
-
-      // Create exchange history
+      // Create exchange history (also serves as user voucher record)
       const exchangeHistory =
         await this.userLocationVoucherExchangeHistoryRepository.createExchangeHistory(
           userProfileId,
@@ -161,7 +130,6 @@ export class VoucherExchangeService implements IVoucherExchangeService {
       return {
         success: true,
         message: successMessage,
-        userVoucher,
         exchangeHistory,
       };
     } catch (error) {
@@ -174,8 +142,10 @@ export class VoucherExchangeService implements IVoucherExchangeService {
 
   async getUserVouchers(
     userProfileId: string,
-  ): Promise<UserLocationVoucherEntity[]> {
-    return this.userLocationVoucherRepository.findByUser(userProfileId);
+  ): Promise<UserLocationVoucherExchangeHistoryEntity[]> {
+    return this.userLocationVoucherExchangeHistoryRepository.findByUser(
+      userProfileId,
+    );
   }
 
   async getUserVoucherStats(userProfileId: string): Promise<{
@@ -183,9 +153,20 @@ export class VoucherExchangeService implements IVoucherExchangeService {
     totalUsed: number;
     availableVouchers: number;
   }> {
-    return this.userLocationVoucherRepository.getUserVoucherStats(
-      userProfileId,
-    );
+    const vouchers =
+      await this.userLocationVoucherExchangeHistoryRepository.findByUser(
+        userProfileId,
+      );
+
+    const totalVouchers = vouchers.length;
+    const totalUsed = vouchers.filter((v) => v.usedAt !== null).length;
+    const availableVouchers = vouchers.filter((v) => v.usedAt === null).length;
+
+    return {
+      totalVouchers,
+      totalUsed,
+      availableVouchers,
+    };
   }
 
   async getUserExchangeHistory(
@@ -196,61 +177,109 @@ export class VoucherExchangeService implements IVoucherExchangeService {
     );
   }
 
-  async getUserUsageHistory(
-    userProfileId: string,
-  ): Promise<UserLocationVoucherUsageEntity[]> {
-    return this.userLocationVoucherUsageRepository.findByUser(userProfileId);
-  }
-
   async useVoucher(
     userProfileId: string,
-    userVoucherId: string,
+    exchangeHistoryId: string,
   ): Promise<{
     success: boolean;
     message: string;
-    usage?: UserLocationVoucherUsageEntity;
   }> {
     try {
-      // Get user voucher
-      const userVoucher = await this.userLocationVoucherRepository.repo.findOne(
-        {
-          where: { id: userVoucherId, userProfileId },
+      // Get exchange history record (user's voucher)
+      const exchangeRecord =
+        await this.userLocationVoucherExchangeHistoryRepository.repo.findOne({
+          where: { id: exchangeHistoryId, userProfileId },
           relations: ['voucher'],
-        },
-      );
+        });
 
-      if (!userVoucher) {
+      if (!exchangeRecord) {
         return {
           success: false,
           message: 'Voucher not found or does not belong to you',
         };
       }
 
+      // Check if already used
+      if (exchangeRecord.usedAt !== null) {
+        return {
+          success: false,
+          message: 'This voucher has already been used',
+        };
+      }
+
       // Check if voucher is still valid
       const now = new Date();
-      if (now > userVoucher.voucher.endDate) {
+      if (now > exchangeRecord.voucher.endDate) {
         return {
           success: false,
           message: 'This voucher has expired',
         };
       }
 
-      // Create usage record
-      const usage = await this.userLocationVoucherUsageRepository.createUsage(
-        userVoucherId,
-        userProfileId,
-      );
-
-      // Increment usage count
-      await this.userLocationVoucherRepository.incrementUsage(
-        userProfileId,
-        userVoucher.voucherId,
+      // Mark as used
+      exchangeRecord.usedAt = now;
+      await this.userLocationVoucherExchangeHistoryRepository.repo.save(
+        exchangeRecord,
       );
 
       return {
         success: true,
-        message: `Successfully used voucher: ${userVoucher.voucher.title}`,
-        usage,
+        message: `Successfully used voucher: ${exchangeRecord.voucher.title}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Usage failed: ${error.message}`,
+      };
+    }
+  }
+
+  async useVoucherByCode(userVoucherCode: string): Promise<{
+    success: boolean;
+    message: string;
+    voucher?: UserLocationVoucherExchangeHistoryEntity;
+  }> {
+    try {
+      // Find voucher by unique code
+      const exchangeRecord =
+        await this.userLocationVoucherExchangeHistoryRepository.findByUserVoucherCode(
+          userVoucherCode,
+        );
+
+      if (!exchangeRecord) {
+        return {
+          success: false,
+          message: 'Voucher code not found',
+        };
+      }
+
+      // Check if already used
+      if (exchangeRecord.usedAt !== null) {
+        return {
+          success: false,
+          message: 'This voucher has already been used',
+        };
+      }
+
+      // Check if voucher is still valid
+      const now = new Date();
+      if (now > exchangeRecord.voucher.endDate) {
+        return {
+          success: false,
+          message: 'This voucher has expired',
+        };
+      }
+
+      // Mark as used
+      exchangeRecord.usedAt = now;
+      await this.userLocationVoucherExchangeHistoryRepository.repo.save(
+        exchangeRecord,
+      );
+
+      return {
+        success: true,
+        message: `Successfully used voucher: ${exchangeRecord.voucher.title}`,
+        voucher: exchangeRecord,
       };
     } catch (error) {
       return {

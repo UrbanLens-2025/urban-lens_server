@@ -40,6 +40,17 @@ export class UserLocationVoucherExchangeHistoryEntity {
   @Column({ name: 'point_spent' })
   pointSpent: number;
 
+  @Column({
+    name: 'user_voucher_code',
+    type: 'varchar',
+    length: 255,
+    unique: true,
+  })
+  userVoucherCode: string;
+
+  @Column({ name: 'used_at', type: 'timestamp with time zone', nullable: true })
+  usedAt: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 }

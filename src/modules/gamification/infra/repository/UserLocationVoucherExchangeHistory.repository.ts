@@ -51,13 +51,29 @@ export class UserLocationVoucherExchangeHistoryRepository {
     voucherId: string,
     pointSpent: number,
   ): Promise<UserLocationVoucherExchangeHistoryEntity> {
+    // Generate unique voucher code for this user
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const userVoucherCode = `VC-${timestamp}-${randomStr}`;
+
     const history = this.repo.create({
       userProfileId,
       voucherId,
       pointSpent,
+      userVoucherCode,
+      usedAt: null,
     });
 
     return this.repo.save(history);
+  }
+
+  async findByUserVoucherCode(
+    userVoucherCode: string,
+  ): Promise<UserLocationVoucherExchangeHistoryEntity | null> {
+    return this.repo.findOne({
+      where: { userVoucherCode },
+      relations: ['voucher'],
+    });
   }
 
   async getUserExchangeStats(userProfileId: string): Promise<{

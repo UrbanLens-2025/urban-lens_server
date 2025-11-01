@@ -16,6 +16,7 @@ export enum LocationMissionMetric {
   JOIN_EVENTS = 'join_events',
   SHARE_POSTS = 'share_posts',
   FOLLOW_LOCATION = 'follow_location',
+  COUNT = 'count',
 }
 
 @Entity({ name: LocationMissionEntity.TABLE_NAME })

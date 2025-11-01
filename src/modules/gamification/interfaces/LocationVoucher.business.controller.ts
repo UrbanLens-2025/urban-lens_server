@@ -8,17 +8,38 @@ import {
   Post,
   Put,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { ILocationVoucherService } from '../app/ILocationVoucher.service';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { IVoucherExchangeService } from '../app/IVoucherExchange.service';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiProperty,
+} from '@nestjs/swagger';
 import { CreateLocationVoucherDto } from '@/common/dto/gamification/CreateLocationVoucher.dto';
 import { UpdateLocationVoucherDto } from '@/common/dto/gamification/UpdateLocationVoucher.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
-import { WithPagination } from '@/common/WithPagination.decorator';
-import type { PaginationParams } from '@/common/services/base.service';
+import { IsNotEmpty, IsString } from 'class-validator';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
+
+export class VerifyVoucherCodeDto {
+  @ApiProperty({
+    description: 'User voucher code to verify and mark as used',
+    example: 'VC-1699999-A1B2C3',
+  })
+  @IsNotEmpty()
+  @IsString()
+  userVoucherCode: string;
+}
 
 @ApiTags('Location Voucher (Business Owner)')
 @ApiBearerAuth()
@@ -28,7 +49,30 @@ export class LocationVoucherBusinessController {
   constructor(
     @Inject(ILocationVoucherService)
     private readonly locationVoucherService: ILocationVoucherService,
+    @Inject('IVoucherExchangeService')
+    private readonly voucherExchangeService: IVoucherExchangeService,
   ) {}
+
+  @ApiOperation({
+    summary: 'Verify and use voucher code',
+    description:
+      'Business owner scans/enters user voucher code to mark it as used',
+  })
+  @Post('/verify-code')
+  async verifyVoucherCode(
+    @Body() dto: VerifyVoucherCodeDto,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    const result = await this.voucherExchangeService.useVoucherByCode(
+      dto.userVoucherCode,
+    );
+
+    if (!result.success) {
+      throw new BadRequestException(result.message);
+    }
+
+    return result;
+  }
 
   @ApiOperation({
     summary: 'Create location voucher',
@@ -47,33 +91,44 @@ export class LocationVoucherBusinessController {
     summary: 'Get vouchers by location',
     description: 'Get all vouchers for a specific location',
   })
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title', 'voucherCode'],
+    filterableColumns: {
+      voucherType: true,
+    },
+  })
   @Get('/:locationId')
-  @WithPagination()
   getVouchersByLocation(
     @Param('locationId') locationId: string,
-    @Query() params: PaginationParams,
+    @Paginate() query: PaginateQuery,
     @AuthUser() user: JwtTokenDto,
   ) {
-    return this.locationVoucherService.getVouchersByLocation(
-      locationId,
-      params,
-    );
+    return this.locationVoucherService.getVouchersByLocation(locationId, query);
   }
 
   @ApiOperation({
     summary: 'Get active vouchers by location',
     description: 'Get all active vouchers for a specific location',
   })
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title', 'voucherCode'],
+    filterableColumns: {
+      voucherType: true,
+    },
+  })
   @Get('/:locationId/active')
-  @WithPagination()
   getActiveVouchersByLocation(
     @Param('locationId') locationId: string,
-    @Query() params: PaginationParams,
+    @Paginate() query: PaginateQuery,
     @AuthUser() user: JwtTokenDto,
   ) {
     return this.locationVoucherService.getActiveVouchersByLocation(
       locationId,
-      params,
+      query,
     );
   }
 
@@ -82,16 +137,23 @@ export class LocationVoucherBusinessController {
     description:
       'Get all available vouchers (with stock) for a specific location',
   })
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title', 'voucherCode'],
+    filterableColumns: {
+      voucherType: true,
+    },
+  })
   @Get('/:locationId/available')
-  @WithPagination()
   getAvailableVouchersByLocation(
     @Param('locationId') locationId: string,
-    @Query() params: PaginationParams,
+    @Paginate() query: PaginateQuery,
     @AuthUser() user: JwtTokenDto,
   ) {
     return this.locationVoucherService.getAvailableVouchersByLocation(
       locationId,
-      params,
+      query,
     );
   }
 

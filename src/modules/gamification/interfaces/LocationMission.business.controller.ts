@@ -14,13 +14,16 @@ import { IQRCodeScanService } from '../app/IQRCodeScan.service';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateLocationMissionDto } from '@/common/dto/gamification/CreateLocationMission.dto';
 import { UpdateLocationMissionDto } from '@/common/dto/gamification/UpdateLocationMission.dto';
-import { GenerateQRCodeDto } from '@/common/dto/gamification/GenerateQRCode.dto';
+import { GenerateOneTimeQRCodeDto } from '@/common/dto/gamification/GenerateOneTimeQRCode.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
-import { WithPagination } from '@/common/WithPagination.decorator';
-import type { PaginationParams } from '@/common/services/base.service';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 
 @ApiTags('Location Mission (Business Owner)')
 @ApiBearerAuth()
@@ -51,33 +54,42 @@ export class LocationMissionBusinessController {
     summary: 'Get missions by location',
     description: 'Get all missions for a specific location',
   })
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title'],
+    filterableColumns: {
+      title: true,
+    },
+  })
   @Get('/:locationId')
-  @WithPagination()
   getMissionsByLocation(
     @Param('locationId') locationId: string,
-    @Query() params: PaginationParams,
-    @AuthUser() user: JwtTokenDto,
+    @Paginate() query: PaginateQuery,
   ) {
-    return this.locationMissionService.getMissionsByLocation(
-      locationId,
-      params,
-    );
+    return this.locationMissionService.getMissionsByLocation(locationId, query);
   }
 
   @ApiOperation({
     summary: 'Get active missions by location',
     description: 'Get all active missions for a specific location',
   })
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title'],
+    filterableColumns: {
+      title: true,
+    },
+  })
   @Get('/:locationId/active')
-  @WithPagination()
   getActiveMissionsByLocation(
     @Param('locationId') locationId: string,
-    @Query() params: PaginationParams,
-    @AuthUser() user: JwtTokenDto,
+    @Paginate() query: PaginateQuery,
   ) {
     return this.locationMissionService.getActiveMissionsByLocation(
       locationId,
-      params,
+      query,
     );
   }
 
@@ -119,37 +131,20 @@ export class LocationMissionBusinessController {
   }
 
   @ApiOperation({
-    summary: 'Generate QR code for mission',
-    description: 'Generate QR code that users can scan to complete mission',
-  })
-  @Post('/mission/:missionId/generate-qr')
-  generateQRCode(
-    @Param('missionId') missionId: string,
-    @Body() dto: GenerateQRCodeDto,
-    @AuthUser() user: JwtTokenDto,
-  ) {
-    return this.qrCodeScanService.generateQRCode(missionId, dto);
-  }
-
-  @ApiOperation({
-    summary: 'Generate one-time QR code for location',
+    summary: 'Generate one-time QR code',
     description:
-      'Generate one-time use QR code for all ORDER_COUNT missions at this location',
+      'Generate one-time use QR code for location. Can optionally specify missionId in body to target a specific mission.',
   })
   @Post('/:locationId/generate-one-time-qr')
   generateOneTimeQRCode(
     @Param('locationId') locationId: string,
+    @Body() dto: GenerateOneTimeQRCodeDto,
     @AuthUser() user: JwtTokenDto,
   ) {
-    const defaultDto = {
-      referenceId: `order-${Date.now()}`,
-      expiresInMinutes: 30,
-    };
-
     return this.qrCodeScanService.generateOneTimeQRCode(
       locationId,
       user.sub,
-      defaultDto,
+      dto,
     );
   }
 }

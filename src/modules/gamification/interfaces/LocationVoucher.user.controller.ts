@@ -4,9 +4,12 @@ import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import { WithPagination } from '@/common/WithPagination.decorator';
-import type { PaginationParams } from '@/common/services/base.service';
 import { ILocationVoucherService } from '../app/ILocationVoucher.service';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
 
 @ApiTags('Location Voucher (User)')
 @ApiBearerAuth()
@@ -23,16 +26,23 @@ export class LocationVoucherUserController {
     description:
       'Get all available vouchers for exchange at a specific location',
   })
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title', 'voucherCode'],
+    filterableColumns: {
+      voucherType: true,
+    },
+  })
   @Get('/:locationId')
-  @WithPagination()
   getAvailableVouchersByLocation(
     @Param('locationId') locationId: string,
-    @Query() params: PaginationParams,
+    @Paginate() query: PaginateQuery,
     @AuthUser() user: JwtTokenDto,
   ) {
     return this.locationVoucherService.getAvailableVouchersByLocation(
       locationId,
-      params,
+      query,
     );
   }
 

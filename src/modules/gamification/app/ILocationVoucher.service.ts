@@ -1,9 +1,6 @@
 import { CreateLocationVoucherDto } from '@/common/dto/gamification/CreateLocationVoucher.dto';
 import { UpdateLocationVoucherDto } from '@/common/dto/gamification/UpdateLocationVoucher.dto';
-import {
-  PaginationParams,
-  PaginationResult,
-} from '@/common/services/base.service';
+import { Paginated, PaginateQuery } from 'nestjs-paginate';
 
 export const ILocationVoucherService = Symbol('ILocationVoucherService');
 
@@ -15,8 +12,8 @@ export interface ILocationVoucherService {
 
   getVouchersByLocation(
     locationId: string,
-    params?: PaginationParams,
-  ): Promise<PaginationResult<any>>;
+    query: PaginateQuery,
+  ): Promise<Paginated<any>>;
 
   getVoucherById(voucherId: string): Promise<any>;
 
@@ -30,11 +27,11 @@ export interface ILocationVoucherService {
 
   getActiveVouchersByLocation(
     locationId: string,
-    params?: PaginationParams,
-  ): Promise<PaginationResult<any>>;
+    query: PaginateQuery,
+  ): Promise<Paginated<any>>;
 
   getAvailableVouchersByLocation(
     locationId: string,
-    params?: PaginationParams,
-  ): Promise<PaginationResult<any>>;
+    query: PaginateQuery,
+  ): Promise<Paginated<any>>;
 }

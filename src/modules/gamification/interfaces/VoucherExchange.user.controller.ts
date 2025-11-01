@@ -19,7 +19,7 @@ import { Role } from '@/common/constants/Role.constant';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import type { IVoucherExchangeService } from '../app/IVoucherExchange.service';
-import { IsNotEmpty, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsUUID, IsString } from 'class-validator';
 
 export class ExchangeVoucherDto {
   @ApiProperty({
@@ -33,16 +33,25 @@ export class ExchangeVoucherDto {
 
 export class UseVoucherDto {
   @ApiProperty({
-    description: 'User voucher ID to use',
+    description: 'Exchange history ID to use',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsNotEmpty()
   @IsUUID()
-  userVoucherId: string;
+  exchangeHistoryId: string;
+}
+
+export class UseVoucherByCodeDto {
+  @ApiProperty({
+    description: 'Unique voucher code',
+    example: 'VC-1234567890-ABC123',
+  })
+  @IsNotEmpty()
+  @IsString()
+  userVoucherCode: string;
 }
 
 export class VoucherExchangeResponseDto {
-  userVoucher?: any;
   exchangeHistory?: any;
 }
 
@@ -85,32 +94,43 @@ export class VoucherExchangeUserController {
     }
 
     return {
-      userVoucher: result.userVoucher || undefined,
       exchangeHistory: result.exchangeHistory || undefined,
     };
   }
 
   @ApiOperation({
-    summary: 'Use a voucher',
-    description: 'Mark a voucher as used',
+    summary: 'Use a voucher by ID',
+    description: 'Mark a voucher as used by exchange history ID',
   })
   @Post('/use')
-  async useVoucher(
-    @Body() dto: UseVoucherDto,
-    @AuthUser() user: JwtTokenDto,
-  ): Promise<VoucherUsageResponseDto> {
+  async useVoucher(@Body() dto: UseVoucherDto, @AuthUser() user: JwtTokenDto) {
     const result = await this.voucherExchangeService.useVoucher(
       user.sub,
-      dto.userVoucherId,
+      dto.exchangeHistoryId,
     );
 
     if (!result.success) {
       throw new BadRequestException(result.message);
     }
 
-    return {
-      usage: result.usage || undefined,
-    };
+    return result;
+  }
+
+  @ApiOperation({
+    summary: 'Use a voucher by code',
+    description: 'Mark a voucher as used by scanning unique voucher code',
+  })
+  @Post('/use-by-code')
+  async useVoucherByCode(@Body() dto: UseVoucherByCodeDto) {
+    const result = await this.voucherExchangeService.useVoucherByCode(
+      dto.userVoucherCode,
+    );
+
+    if (!result.success) {
+      throw new BadRequestException(result.message);
+    }
+
+    return result;
   }
 
   @ApiOperation({
@@ -139,24 +159,11 @@ export class VoucherExchangeUserController {
 
   @ApiOperation({
     summary: 'Get user exchange history',
-    description: 'Get history of voucher exchanges',
+    description: 'Get history of voucher exchanges and usage',
   })
-  @Get('/exchange-history')
+  @Get('/history')
   async getUserExchangeHistory(@AuthUser() user: JwtTokenDto) {
     const history = await this.voucherExchangeService.getUserExchangeHistory(
-      user.sub,
-    );
-
-    return history;
-  }
-
-  @ApiOperation({
-    summary: 'Get user usage history',
-    description: 'Get history of voucher usage',
-  })
-  @Get('/usage-history')
-  async getUserUsageHistory(@AuthUser() user: JwtTokenDto) {
-    const history = await this.voucherExchangeService.getUserUsageHistory(
       user.sub,
     );
 

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsOptional, IsPositive, IsUUID } from 'class-validator';
+import { Exclude, Expose } from 'class-transformer';
 
 export class AddPointsToLocationDto {
   @ApiProperty({
@@ -37,43 +38,51 @@ export class DeductPointsDto {
   points: number;
 }
 
+@Exclude()
 export class UserLocationProfileResponseDto {
+  @Expose()
   @ApiProperty({
     description: 'Profile ID',
     example: '797fa0fb-7fb6-469f-83f8-c3f42752a033',
   })
   id: string;
 
+  @Expose()
   @ApiProperty({
     description: 'Location ID',
     example: '06288525-140c-495a-b1d8-fb29b9421fc0',
   })
   locationId: string;
 
+  @Expose()
   @ApiProperty({
     description: 'User Profile ID',
     example: '95381666f-a1ca-4c16-9d74-edff4bc3f0ad',
   })
   userProfileId: string;
 
+  @Expose()
   @ApiProperty({
     description: 'Total points earned at this location',
     example: 500,
   })
   totalPoints: number;
 
+  @Expose()
   @ApiProperty({
     description: 'Available points for redemption',
     example: 300,
   })
   availablePoints: number;
 
+  @Expose()
   @ApiProperty({
     description: 'Profile creation date',
     example: '2025-01-26T10:00:00.000Z',
   })
   createdAt: Date;
 
+  @Expose()
   @ApiProperty({
     description: 'Profile last update date',
     example: '2025-01-26T10:00:00.000Z',
