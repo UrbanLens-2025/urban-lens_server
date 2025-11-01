@@ -279,3 +279,36 @@ window.addEventListener('load', () => {
     return response;
   };
 });
+
+// === Role-based highlighting ===
+const highlightRoles = () => {
+  const roleColors = {
+    '/admin/': '#e74c3c',   // red
+    '/creator/': '#8e44ad', // purple
+    '/owner/': '#12d300',   // orange
+    '/business/': '#12d300',   // orange
+    '/private/': '#2739ae', // green
+    '/public/': '#000000',  // blue
+    '/user/': '#ffe400',    // teal
+  };
+
+  document.querySelectorAll('.opblock-summary-path').forEach((el) => {
+    const text = el.textContent;
+    for (const [role, color] of Object.entries(roleColors)) {
+      if (text.includes(role)) {
+        el.style.backgroundColor = color;
+        el.style.color = '#fff';
+        el.style.padding = '2px 8px';
+        el.style.borderRadius = '4px';
+        el.style.fontWeight = '600';
+        el.style.display = 'inline-block';
+        break;
+      }
+    }
+  });
+};
+
+// Run after load and on DOM updates
+const observer = new MutationObserver(() => highlightRoles());
+observer.observe(document.body, { childList: true, subtree: true });
+highlightRoles();
