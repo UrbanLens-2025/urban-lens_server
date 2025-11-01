@@ -174,6 +174,78 @@ window.addEventListener('load', () => {
           localStorage.setItem(
             'authorized',
             JSON.stringify({
+              bearer: {
+                name: 'bearer',
+                schema: {
+                  scheme: 'bearer',
+                  bearerFormat: 'JWT',
+                  name: 'jwt',
+                  type: 'http',
+                  description: 'put bearer token here',
+                },
+                value: token,
+              },
+              name: 'bearer',
+              schema: {
+                scheme: 'bearer',
+                bearerFormat: 'JWT',
+                name: 'jwt',
+                type: 'http',
+                description: 'put bearer token here',
+              },
+              value: token,
+            }),
+          );
+
+          // Wait for SwaggerUIBundle global to exist
+          if (window.ui) {
+            window.ui.preauthorizeApiKey('bearer', token);
+          } else {
+            // fallback: poll briefly until ready
+            const interval = setInterval(() => {
+              if (window.ui) {
+                window.ui.preauthorizeApiKey('bearer', token);
+                clearInterval(interval);
+              }
+            }, 500);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Auto-auth hook error:', err);
+    }
+
+    return response;
+  };
+});
+
+window.addEventListener('load', () => {
+  const oldFetch = window.fetch;
+
+  window.fetch = async (...args) => {
+    const response = await oldFetch(...args);
+
+    try {
+      // Clone the response so we can read it safely
+      const cloned = response.clone();
+      const url = args[0];
+
+      // Match your login endpoints
+      if (
+        url.includes('/api/v1/auth/dev-only/login/business-owner') ||
+        url.includes('/api/v1/auth/dev-only/login/event-creator') ||
+        url.includes('/api/v1/auth/dev-only/login/user') ||
+        url.includes('/api/v1/auth/dev-only/login/admin') ||
+        url.includes('/api/v1/public/auth/login')
+      ) {
+        const json = await cloned.json();
+        const token = json?.data?.token;
+
+        if (token) {
+          // Save token in localStorage so Swagger UI can use it
+          localStorage.setItem(
+            'authorized',
+            JSON.stringify({
               name: 'bearer',
               schema: {
                 scheme: 'bearer',
