@@ -68,6 +68,14 @@ export class UserProfileEntity {
   @Column({ name: 'total_following', type: 'integer', default: 0 })
   totalFollowing: number;
 
+  @Column({
+    name: 'tag_scores',
+    type: 'jsonb',
+    nullable: true,
+    default: () => "'{}'",
+  })
+  tagScores: Record<string, number>;
+
   canSuggestLocation() {
     return true;
   }
