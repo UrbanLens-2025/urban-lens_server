@@ -5,14 +5,16 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
-import { LocationBookingEntity } from '@/modules/location-reservation/domain/LocationBooking.entity';
+import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { EventRequestStatus } from '@/common/constants/EventRequestStatus.constant';
 import { EventRequestTagsEntity } from '@/modules/event/domain/EventRequestTags.entity';
 import { SocialLink } from '@/common/json/SocialLink.json';
+import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
 
 @Entity({
   name: EventRequestEntity.TABLE_NAME,
@@ -56,7 +58,14 @@ export class EventRequestEntity {
   @Column({ name: 'status', type: 'varchar', length: 55 })
   status: EventRequestStatus;
 
-  @ManyToOne(
+  @Column({
+    name: 'event_validation_documents',
+    type: 'jsonb',
+    nullable: true,
+  })
+  eventValidationDocuments: EventValidationDocumentsJson[];
+
+  @OneToOne(
     () => LocationBookingEntity,
     (locationBooking) => locationBooking.id,
     {
@@ -83,5 +92,5 @@ export class EventRequestEntity {
     (eventRequestTags) => eventRequestTags.eventRequest,
     { createForeignKeyConstraints: false },
   )
-  eventRequestTags: EventRequestTagsEntity[];
+  tags: EventRequestTagsEntity[];
 }

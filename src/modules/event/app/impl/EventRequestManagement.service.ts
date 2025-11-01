@@ -1,7 +1,7 @@
 import { CoreService } from '@/common/core/Core.service';
 import { CreateEventRequestWithBusinessLocationDto } from '@/common/dto/event/CreateEventRequestWithBusinessLocation.dto';
 import { IEventRequestManagementService } from '@/modules/event/app/IEventRequestManagement.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { EventRequestRepository } from '@/modules/event/infra/repository/EventRequest.repository';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
@@ -10,13 +10,21 @@ import { EventRequestStatus } from '@/common/constants/EventRequestStatus.consta
 import { EventRequestResponseDto } from '@/common/dto/event/res/EventRequest.response.dto';
 import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.repository';
 import { EventRequestTagsRepository } from '@/modules/event/infra/repository/EventRequestTags.repository';
+import { ILocationBookingService } from '@/modules/location-booking/app/ILocationBooking.service';
+import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 
 @Injectable()
 export class EventRequestManagementService
   extends CoreService
   implements IEventRequestManagementService
 {
-  constructor(private readonly configService: ConfigService<Environment>) {
+  constructor(
+    private readonly configService: ConfigService<Environment>,
+    @Inject(ILocationBookingService)
+    private readonly locationBookingService: ILocationBookingService,
+    @Inject(IFileStorageService)
+    private readonly fileStorageService: IFileStorageService,
+  ) {
     super();
   }
 
@@ -36,16 +44,35 @@ export class EventRequestManagementService
         );
       }
 
+      // create location booking
+      const locationBooking =
+        await this.locationBookingService.createBooking_ForBusinessLocation({
+          ...dto,
+          locationId: dto.locationId,
+          startDateTime: dto.startDateTime,
+          endDateTime: dto.endDateTime,
+          accountId: dto.accountId,
+        });
+
       const eventRequest = this.mapTo_safe(EventRequestEntity, dto);
       eventRequest.createdById = dto.accountId;
       eventRequest.status = EventRequestStatus.PENDING;
+      eventRequest.referencedLocationBookingId = locationBooking.id;
 
       return (
         eventRequestRepository
           .save(eventRequest)
+          // confirm uploads
+          .then(async (savedEventRequest) => {
+            const filesToConfirm = dto.eventValidationDocuments.flatMap(
+              (i) => i.documentImageUrls,
+            );
+            await this.fileStorageService.confirmUpload(filesToConfirm, em);
+            return savedEventRequest;
+          })
           // save tags
           .then(async (savedEventRequest) => {
-            savedEventRequest.eventRequestTags =
+            savedEventRequest.tags =
               await eventRequestTagRepository.persistEntities({
                 eventRequestId: savedEventRequest.id,
                 tagIds: dto.tagIds,

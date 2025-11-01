@@ -126,7 +126,7 @@ export class CoreService {
     plainObject: object,
     onError?: (errors: ValidationError[]) => Error,
   ): Promise<T> {
-    const dto = this.mapTo_Raw(clazz, plainObject);
+    const dto = this.mapTo_safe(clazz, plainObject);
     const errors = await validate(dto);
     if (errors.length > 0) {
       if (onError) throw onError(errors);

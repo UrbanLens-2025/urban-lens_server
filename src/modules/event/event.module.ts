@@ -9,9 +9,17 @@ import { EventManagementService } from '@/modules/event/app/impl/EventManagement
 import { EventRequestCreatorController } from '@/modules/event/interfaces/EventRequest.creator.controller';
 import { IEventRequestManagementService } from '@/modules/event/app/IEventRequestManagement.service';
 import { EventRequestManagementService } from '@/modules/event/app/impl/EventRequestManagement.service';
+import { LocationBookingModule } from '@/modules/location-booking/LocationBooking.module';
+import { IEventRequestQueryService } from '@/modules/event/app/IEventRequestQuery.service';
+import { EventRequestQueryService } from '@/modules/event/app/impl/EventRequestQuery.service';
 
 @Module({
-  imports: [EventInfraModule, FileStorageModule],
+  imports: [
+    EventInfraModule,
+    FileStorageModule,
+    LocationBookingModule,
+    FileStorageModule,
+  ],
   controllers: [EventCreatorController, EventRequestCreatorController],
   providers: [
     {
@@ -25,6 +33,10 @@ import { EventRequestManagementService } from '@/modules/event/app/impl/EventReq
     {
       provide: IEventRequestManagementService,
       useClass: EventRequestManagementService,
+    },
+    {
+      provide: IEventRequestQueryService,
+      useClass: EventRequestQueryService,
     },
   ],
 })

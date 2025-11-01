@@ -1,6 +1,4 @@
 export enum WalletTransactionType {
-  TRANSFER = 'TRANSFER',
-  PAYMENT = 'PAYMENT',
-  REFUND = 'REFUND',
-  ADJUSTMENT = 'ADJUSTMENT',
+  TO_ESCROW = 'TO_ESCROW',
+  TO_REVENUE = 'TO_REVENUE',
 }

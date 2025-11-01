@@ -18,6 +18,8 @@ import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
 import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
+import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
+import { InternalServerErrorException } from '@nestjs/common';
 
 @Entity({ name: LocationEntity.TABLE_NAME })
 export class LocationEntity {
@@ -138,6 +140,15 @@ export class LocationEntity {
   )
   tags: LocationTagsEntity[];
 
+  @OneToOne(
+    () => LocationBookingConfigEntity,
+    (bookingConfig) => bookingConfig.location,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
+  bookingConfig: LocationBookingConfigEntity;
+
   //#endregion
 
   @BeforeInsert()
@@ -159,6 +170,17 @@ export class LocationEntity {
 
   canBeViewedOnMap(): boolean {
     return this.isVisibleOnMap;
+  }
+
+  canBeBooked(): boolean {
+    const bookingConfig = this.bookingConfig;
+    if (!bookingConfig) {
+      throw new InternalServerErrorException(
+        'Location booking config not loaded',
+      );
+    }
+
+    return bookingConfig.allowBooking;
   }
 
   //#endregion

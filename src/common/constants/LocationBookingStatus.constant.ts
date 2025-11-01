@@ -1,1 +1,4 @@
-export enum LocationBookingStatus {}
+export enum LocationBookingStatus {
+  AWAITING_BUSINESS_PROCESSING = 'AWAITING_BUSINESS_PROCESSING',
+  READY_FOR_PAYMENT = 'READY_FOR_PAYMENT',
+}

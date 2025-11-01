@@ -3,6 +3,8 @@ import { EventRequestStatus } from '@/common/constants/EventRequestStatus.consta
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { EventRequestTagsResponseDto } from '@/common/dto/event/res/EventRequestTags.response.dto';
 import { SocialLink } from '@/common/json/SocialLink.json';
+import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
+import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
 
 @Exclude()
 export class EventRequestResponseDto {
@@ -44,16 +46,19 @@ export class EventRequestResponseDto {
 
   @Expose()
   @Type(() => EventRequestTagsResponseDto)
-  eventRequestTags: EventRequestTagsResponseDto[];
+  tags: EventRequestTagsResponseDto[];
 
   @Expose()
   @Type(() => SocialLink)
   socialLinks?: SocialLink[];
 
-  //   @Expose()
-  //   referencedLocationBookingId?: string | null;
+  @Expose()
+  referencedLocationBookingId?: string;
 
-  //   @Expose()
-  //   @Type(() => any)
-  //   referencedLocationBooking?: any;
+  @Expose()
+  @Type(() => LocationBookingResponseDto)
+  referencedLocationBooking?: LocationBookingResponseDto;
+
+  @Expose()
+  eventValidationDocuments: EventValidationDocumentsJson[];
 }

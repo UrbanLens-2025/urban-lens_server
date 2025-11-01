@@ -14,6 +14,7 @@ import { WalletExternalTransactionStatus } from '@/common/constants/WalletExtern
 import { WalletExternalTransactionTimelineEntity } from '@/modules/wallet/domain/WalletExternalTransactionTimeline.entity';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { SupportedPaymentProviders } from '@/common/constants/SupportedPaymentProviders.constant';
+import { ExternalTransactionAfterFinishAction } from '@/common/constants/ExternalTransactionAfterFinishAction.constant';
 
 @Entity({ name: WalletExternalTransactionEntity.TABLE_NAME })
 export class WalletExternalTransactionEntity {
@@ -80,6 +81,14 @@ export class WalletExternalTransactionEntity {
 
   @Column({ name: 'created_by', type: 'uuid' })
   createdById: string;
+
+  @Column({
+    name: 'after_finish_action',
+    type: 'varchar',
+    length: 50,
+    default: ExternalTransactionAfterFinishAction.NONE,
+  })
+  afterFinishAction: ExternalTransactionAfterFinishAction;
 
   @OneToMany(
     () => WalletExternalTransactionTimelineEntity,

@@ -3,32 +3,22 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsBoolean,
+  IsDate,
   IsInt,
+  IsISO8601,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
-  IsUrl,
+  IsUUID,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-
-class SocialLinkDto {
-  @IsNotEmpty()
-  @MaxLength(255)
-  @ApiProperty()
-  platform: string;
-
-  @IsNotEmpty()
-  @IsUrl()
-  @ApiProperty()
-  url: string;
-
-  @IsNotEmpty()
-  @ApiProperty()
-  isMain: boolean;
-}
+import { SocialLink } from '@/common/json/SocialLink.json';
+import { IsBefore } from '@/common/decorators/IsBefore.decorator';
+import { IsAfterToday } from '@/common/decorators/IsAfterToday.decorator';
+import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
 
 export class CreateEventRequestWithBusinessLocationDto {
   // transient fields
@@ -67,11 +57,42 @@ export class CreateEventRequestWithBusinessLocationDto {
   tagIds: number[];
 
   @ApiProperty({
-    type: [SocialLinkDto],
+    type: [SocialLink],
   })
   @ValidateNested({ each: true })
   @IsOptional()
   @IsArray()
-  @Type(() => SocialLinkDto)
-  social: SocialLinkDto[];
+  @Type(() => SocialLink)
+  social: SocialLink[];
+
+  @ApiProperty({
+    description: 'ID of the business location to book for the event',
+  })
+  @IsNotEmpty()
+  @IsUUID()
+  locationId: string;
+
+  @ApiProperty()
+  @Type(() => Date)
+  @IsNotEmpty()
+  @IsBefore('endDateTime')
+  @IsAfterToday()
+  @IsDate()
+  startDateTime: Date;
+
+  @ApiProperty()
+  @Type(() => Date)
+  @IsNotEmpty()
+  @IsDate()
+  endDateTime: Date;
+
+  @ApiProperty({
+    isArray: true,
+    type: EventValidationDocumentsJson,
+  })
+  @ValidateNested({ each: true })
+  @IsArray()
+  @ArrayNotEmpty()
+  @Type(() => EventValidationDocumentsJson)
+  eventValidationDocuments: EventValidationDocumentsJson[];
 }

@@ -15,7 +15,7 @@ import { WalletExternalTransactionDirection } from '@/common/constants/WalletExt
 import { WalletExternalTransactionRepository } from '@/modules/wallet/infra/repository/WalletExternalTransaction.repository';
 import { WalletExternalTransactionStatus } from '@/common/constants/WalletExternalTransactionStatus.constant';
 import { ConfirmDepositTransactionDto } from '@/common/dto/wallet/ConfirmDepositTransaction.dto';
-import { In, UpdateResult } from 'typeorm';
+import { EntityManager, In, UpdateResult } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service';
@@ -28,6 +28,9 @@ import {
   WALLET_DEPOSIT_CONFIRMED,
   WalletDepositConfirmedEvent,
 } from '@/modules/wallet/domain/events/WalletDepositConfirmed.event';
+import { ExternalTransactionAfterFinishAction } from '@/common/constants/ExternalTransactionAfterFinishAction.constant';
+import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
+import { IWalletTransactionHandlerService } from '@/modules/wallet/app/IWalletTransactionHandler.service';
 
 @Injectable()
 export class WalletExternalTransactionManagementService
@@ -47,6 +50,8 @@ export class WalletExternalTransactionManagementService
     private readonly paymentGatewayPort: IPaymentGatewayPort,
     @Inject(IWalletActionService)
     private readonly walletActionService: IWalletActionService,
+    @Inject(IWalletTransactionHandlerService)
+    private readonly walletTransactionHandlerService: IWalletTransactionHandlerService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     super();
@@ -100,6 +105,7 @@ export class WalletExternalTransactionManagementService
           currency: dto.currency,
           createdById: dto.accountId,
         });
+      externalTransaction.afterFinishAction = dto.afterAction;
 
       return await externalTransactionRepository
         .save(externalTransaction)
@@ -286,7 +292,31 @@ export class WalletExternalTransactionManagementService
         this.eventEmitter.emit(WALLET_DEPOSIT_CONFIRMED, depositConfirmedEvent);
       }
 
+      this.logger.debug('Processing after action for deposit transaction');
+
+      await this.processAfterAction(transaction, em);
+
       return updateResult;
     });
+  }
+
+  private async processAfterAction(
+    transaction: WalletExternalTransactionEntity,
+    em: EntityManager,
+  ) {
+    switch (transaction.afterFinishAction) {
+      case ExternalTransactionAfterFinishAction.TRANSFER_TO_ESCROW: {
+        this.logger.debug('Transferring deposited funds to escrow wallet');
+
+        await this.walletTransactionHandlerService.transferFunds_toSystem({
+          entityManager: em,
+          destinationWalletId: DefaultSystemWallet.ESCROW,
+          sourceWalletId: transaction.walletId,
+          ownerId: transaction.createdById,
+          amountToTransfer: transaction.amount,
+          currency: transaction.currency,
+        });
+      }
+    }
   }
 }

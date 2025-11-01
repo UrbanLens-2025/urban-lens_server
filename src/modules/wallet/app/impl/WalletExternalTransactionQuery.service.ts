@@ -25,7 +25,9 @@ export class WalletExternalTransactionQueryService
       .findOne({
         where: {
           id: dto.transactionId,
-          walletId: dto.walletId,
+          wallet: {
+            createdById: dto.accountId,
+          },
         },
         relations: {
           timeline: true,
