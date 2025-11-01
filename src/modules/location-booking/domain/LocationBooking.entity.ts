@@ -89,4 +89,10 @@ export class LocationBookingEntity {
     },
   )
   referencedEventRequest?: EventRequestEntity | null;
+
+  // domain functions
+
+  public canBeProcessed(): boolean {
+    return this.status === LocationBookingStatus.AWAITING_BUSINESS_PROCESSING;
+  }
 }
