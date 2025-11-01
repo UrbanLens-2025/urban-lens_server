@@ -6,10 +6,13 @@ import { ICreateEventService } from '@/modules/event/app/ICreateEvent.service';
 import { CreateEventService } from '@/modules/event/app/impl/CreateEvent.service';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
 import { EventManagementService } from '@/modules/event/app/impl/EventManagement.service';
+import { EventRequestCreatorController } from '@/modules/event/interfaces/EventRequest.creator.controller';
+import { IEventRequestManagementService } from '@/modules/event/app/IEventRequestManagement.service';
+import { EventRequestManagementService } from '@/modules/event/app/impl/EventRequestManagement.service';
 
 @Module({
   imports: [EventInfraModule, FileStorageModule],
-  controllers: [EventCreatorController],
+  controllers: [EventCreatorController, EventRequestCreatorController],
   providers: [
     {
       provide: ICreateEventService,
@@ -18,6 +21,10 @@ import { EventManagementService } from '@/modules/event/app/impl/EventManagement
     {
       provide: IEventManagementService,
       useClass: EventManagementService,
+    },
+    {
+      provide: IEventRequestManagementService,
+      useClass: EventRequestManagementService,
     },
   ],
 })
