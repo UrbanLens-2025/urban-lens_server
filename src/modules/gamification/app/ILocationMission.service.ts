@@ -25,4 +25,16 @@ export interface ILocationMissionService {
     locationId: string,
     query: PaginateQuery,
   ): Promise<Paginated<any>>;
+
+  getAvailableMissionsForUser(
+    locationId: string,
+    userProfileId: string,
+    query: PaginateQuery,
+  ): Promise<Paginated<any>>;
+
+  getCompletedMissionsByUser(
+    locationId: string,
+    userProfileId: string,
+    query: PaginateQuery,
+  ): Promise<Paginated<any>>;
 }

@@ -64,4 +64,55 @@ export class LocationMissionUserController {
       query,
     );
   }
+
+  @ApiOperation({
+    summary: 'Get available missions for user',
+    description:
+      'Get active missions that user has not completed yet at this location',
+  })
+  @Get('/:locationId/available')
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title'],
+    filterableColumns: {
+      title: true,
+    },
+  })
+  getAvailableMissionsForUser(
+    @Param('locationId') locationId: string,
+    @Paginate() query: PaginateQuery,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.locationMissionService.getAvailableMissionsForUser(
+      locationId,
+      user.sub,
+      query,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Get completed missions by user',
+    description: 'Get all missions that user has completed at this location',
+  })
+  @Get('/:locationId/completed')
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title'],
+    filterableColumns: {
+      title: true,
+    },
+  })
+  getCompletedMissionsByUser(
+    @Param('locationId') locationId: string,
+    @Paginate() query: PaginateQuery,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.locationMissionService.getCompletedMissionsByUser(
+      locationId,
+      user.sub,
+      query,
+    );
+  }
 }

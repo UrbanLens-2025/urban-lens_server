@@ -234,8 +234,14 @@ export class LocationMissionService implements ILocationMissionService {
     query: PaginateQuery,
   ): Promise<Paginated<any>> {
     try {
-      return paginate(query, this.locationMissionRepository.repo, {
-        where: { locationId },
+      const now = new Date();
+      const queryBuilder = this.locationMissionRepository.repo
+        .createQueryBuilder('mission')
+        .where('mission.locationId = :locationId', { locationId })
+        .andWhere('mission.startDate <= :now', { now })
+        .andWhere('mission.endDate >= :now', { now });
+
+      return paginate(query, queryBuilder, {
         sortableColumns: ['createdAt'],
         defaultSortBy: [['createdAt', 'DESC']],
         searchableColumns: ['title'],
@@ -243,6 +249,200 @@ export class LocationMissionService implements ILocationMissionService {
           title: true,
         },
       });
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async getAvailableMissionsForUser(
+    locationId: string,
+    userProfileId: string,
+    query: PaginateQuery,
+  ): Promise<Paginated<any>> {
+    try {
+      const now = new Date();
+
+      // Get all active missions at this location
+      const activeMissions = await this.locationMissionRepository.repo
+        .createQueryBuilder('mission')
+        .where('mission.locationId = :locationId', { locationId })
+        .andWhere('mission.startDate <= :now', { now })
+        .andWhere('mission.endDate >= :now', { now })
+        .getMany();
+
+      // Get user's mission progress (all missions)
+      const userProgress = await this.userMissionProgressRepository.repo.find({
+        where: {
+          userProfileId,
+        },
+      });
+
+      // Create progress map
+      const progressMap = new Map<
+        string,
+        { progress: number; completed: boolean }
+      >();
+      userProgress.forEach((p) => {
+        progressMap.set(p.missionId, {
+          progress: p.progress,
+          completed: p.completed,
+        });
+      });
+
+      // Filter out completed missions and add progress data
+      const availableMissions = activeMissions
+        .filter((m) => {
+          const prog = progressMap.get(m.id);
+          return !prog || !prog.completed; // Include if no progress or not completed
+        })
+        .map((m) => {
+          const prog = progressMap.get(m.id);
+          return {
+            ...m,
+            currentProgress: prog?.progress || 0,
+            isStarted: !!prog,
+          };
+        });
+
+      if (availableMissions.length === 0) {
+        // Return empty paginated result
+        return {
+          data: [],
+          meta: {
+            itemsPerPage: query.limit || 10,
+            totalItems: 0,
+            currentPage: query.page || 1,
+            totalPages: 0,
+            sortBy: [],
+            searchBy: [],
+            search: '',
+            select: [],
+            filter: {},
+          },
+          links: {
+            first: '',
+            previous: '',
+            current: '',
+            next: '',
+            last: '',
+          },
+        };
+      }
+
+      // Manual pagination since we already have enriched data
+      const page = query.page || 1;
+      const limit = query.limit || 10;
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+
+      const paginatedData = availableMissions.slice(startIndex, endIndex);
+      const totalItems = availableMissions.length;
+      const totalPages = Math.ceil(totalItems / limit);
+
+      return {
+        data: paginatedData,
+        meta: {
+          itemsPerPage: limit,
+          totalItems,
+          currentPage: page,
+          totalPages,
+          sortBy: [],
+          searchBy: [],
+          search: '',
+          select: [],
+          filter: {},
+        },
+        links: {
+          first: '',
+          previous: '',
+          current: '',
+          next: '',
+          last: '',
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async getCompletedMissionsByUser(
+    locationId: string,
+    userProfileId: string,
+    query: PaginateQuery,
+  ): Promise<Paginated<any>> {
+    try {
+      // Get user's completed missions at this location
+      const completedProgress = await this.userMissionProgressRepository.repo
+        .createQueryBuilder('progress')
+        .leftJoinAndSelect('progress.mission', 'mission')
+        .where('progress.userProfileId = :userProfileId', { userProfileId })
+        .andWhere('progress.completed = :completed', { completed: true })
+        .andWhere('mission.locationId = :locationId', { locationId })
+        .getMany();
+
+      if (completedProgress.length === 0) {
+        // Return empty paginated result
+        return {
+          data: [],
+          meta: {
+            itemsPerPage: query.limit || 10,
+            totalItems: 0,
+            currentPage: query.page || 1,
+            totalPages: 0,
+            sortBy: [],
+            searchBy: [],
+            search: '',
+            select: [],
+            filter: {},
+          },
+          links: {
+            first: '',
+            previous: '',
+            current: '',
+            next: '',
+            last: '',
+          },
+        };
+      }
+
+      // Add progress data to missions
+      const completedMissions = completedProgress.map((p) => ({
+        ...p.mission,
+        currentProgress: p.progress,
+        isCompleted: true,
+      }));
+
+      // Manual pagination
+      const page = query.page || 1;
+      const limit = query.limit || 10;
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+
+      const paginatedData = completedMissions.slice(startIndex, endIndex);
+      const totalItems = completedMissions.length;
+      const totalPages = Math.ceil(totalItems / limit);
+
+      return {
+        data: paginatedData,
+        meta: {
+          itemsPerPage: limit,
+          totalItems,
+          currentPage: page,
+          totalPages,
+          sortBy: [],
+          searchBy: [],
+          search: '',
+          select: [],
+          filter: {},
+        },
+        links: {
+          first: '',
+          previous: '',
+          current: '',
+          next: '',
+          last: '',
+        },
+      };
     } catch (error) {
       throw new BadRequestException(error.message);
     }
