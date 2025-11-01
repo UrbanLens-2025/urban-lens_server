@@ -8,27 +8,18 @@ import { LocationVoucherRepository } from '@/modules/gamification/infra/reposito
 import { CreateLocationVoucherDto } from '@/common/dto/gamification/CreateLocationVoucher.dto';
 import { UpdateLocationVoucherDto } from '@/common/dto/gamification/UpdateLocationVoucher.dto';
 import {
-  BaseService,
-  PaginationParams,
-  PaginationResult,
-} from '@/common/services/base.service';
-import {
   LocationVoucherEntity,
   LocationVoucherType,
 } from '@/modules/gamification/domain/LocationVoucher.entity';
 import { LocationRepository } from '@/modules/business/infra/repository/Location.repository';
+import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 
 @Injectable()
-export class LocationVoucherService
-  extends BaseService<LocationVoucherEntity>
-  implements ILocationVoucherService
-{
+export class LocationVoucherService implements ILocationVoucherService {
   constructor(
     private readonly locationVoucherRepository: LocationVoucherRepository,
     private readonly locationRepository: LocationRepository,
-  ) {
-    super(locationVoucherRepository.repo);
-  }
+  ) {}
 
   async createVoucher(
     locationId: string,
@@ -134,23 +125,18 @@ export class LocationVoucherService
 
   async getVouchersByLocation(
     locationId: string,
-    params: PaginationParams = {},
-  ): Promise<PaginationResult<any>> {
+    query: PaginateQuery,
+  ): Promise<Paginated<any>> {
     try {
-      const { page, limit, skip } = this.normalizePaginationParams(params);
-
-      const [vouchers, total] =
-        await this.locationVoucherRepository.repo.findAndCount({
-          where: { locationId },
-          order: { createdAt: 'DESC' },
-          skip,
-          take: limit,
-        });
-
-      return {
-        data: vouchers,
-        meta: this.buildPaginationMeta(page, limit, total),
-      };
+      return paginate(query, this.locationVoucherRepository.repo, {
+        where: { locationId },
+        sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
+        defaultSortBy: [['createdAt', 'DESC']],
+        searchableColumns: ['title', 'voucherCode'],
+        filterableColumns: {
+          voucherType: true,
+        },
+      });
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -289,26 +275,24 @@ export class LocationVoucherService
 
   async getActiveVouchersByLocation(
     locationId: string,
-    params: PaginationParams = {},
-  ): Promise<PaginationResult<any>> {
+    query: PaginateQuery,
+  ): Promise<Paginated<any>> {
     try {
-      const { page, limit, skip } = this.normalizePaginationParams(params);
       const now = new Date();
-
-      const [vouchers, total] = await this.locationVoucherRepository.repo
+      const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
         .where('voucher.locationId = :locationId', { locationId })
         .andWhere('voucher.startDate <= :now', { now })
-        .andWhere('voucher.endDate >= :now', { now })
-        .orderBy('voucher.createdAt', 'DESC')
-        .offset(skip)
-        .limit(limit)
-        .getManyAndCount();
+        .andWhere('voucher.endDate >= :now', { now });
 
-      return {
-        data: vouchers,
-        meta: this.buildPaginationMeta(page, limit, total),
-      };
+      return paginate(query, queryBuilder, {
+        sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
+        defaultSortBy: [['createdAt', 'DESC']],
+        searchableColumns: ['title', 'voucherCode'],
+        filterableColumns: {
+          voucherType: true,
+        },
+      });
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -316,48 +300,27 @@ export class LocationVoucherService
 
   async getAvailableVouchersByLocation(
     locationId: string,
-    params: PaginationParams = {},
-  ): Promise<PaginationResult<any>> {
+    query: PaginateQuery,
+  ): Promise<Paginated<any>> {
     try {
-      const { page, limit, skip } = this.normalizePaginationParams(params);
       const now = new Date();
-
-      const [vouchers, total] = await this.locationVoucherRepository.repo
+      const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
         .where('voucher.locationId = :locationId', { locationId })
         .andWhere('voucher.startDate <= :now', { now })
         .andWhere('voucher.endDate >= :now', { now })
-        .andWhere('voucher.maxQuantity > 0')
-        .orderBy('voucher.createdAt', 'DESC')
-        .offset(skip)
-        .limit(limit)
-        .getManyAndCount();
+        .andWhere('voucher.maxQuantity > 0');
 
-      return {
-        data: vouchers,
-        meta: this.buildPaginationMeta(page, limit, total),
-      };
+      return paginate(query, queryBuilder, {
+        sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
+        defaultSortBy: [['createdAt', 'DESC']],
+        searchableColumns: ['title', 'voucherCode'],
+        filterableColumns: {
+          voucherType: true,
+        },
+      });
     } catch (error) {
       throw new BadRequestException(error.message);
     }
-  }
-
-  private normalizePaginationParams(params: PaginationParams) {
-    const page = Math.max(1, params.page || 1);
-    const limit = Math.min(100, Math.max(1, params.limit || 10));
-    const skip = (page - 1) * limit;
-    return { page, limit, skip };
-  }
-
-  private buildPaginationMeta(page: number, limit: number, total: number) {
-    const totalPages = Math.ceil(total / limit);
-    return {
-      page,
-      limit,
-      totalItems: total,
-      totalPages,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-    };
   }
 }

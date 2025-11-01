@@ -1,9 +1,6 @@
 import { CreateLocationMissionDto } from '@/common/dto/gamification/CreateLocationMission.dto';
 import { UpdateLocationMissionDto } from '@/common/dto/gamification/UpdateLocationMission.dto';
-import {
-  PaginationParams,
-  PaginationResult,
-} from '@/common/services/base.service';
+import { Paginated, PaginateQuery } from 'nestjs-paginate';
 
 export const ILocationMissionService = Symbol('ILocationMissionService');
 
@@ -15,8 +12,8 @@ export interface ILocationMissionService {
 
   getMissionsByLocation(
     locationId: string,
-    params?: PaginationParams,
-  ): Promise<PaginationResult<any>>;
+    query: PaginateQuery,
+  ): Promise<Paginated<any>>;
 
   getMissionById(missionId: string): Promise<any>;
 
@@ -26,6 +23,6 @@ export interface ILocationMissionService {
 
   getActiveMissionsByLocation(
     locationId: string,
-    params?: PaginationParams,
-  ): Promise<PaginationResult<any>>;
+    query: PaginateQuery,
+  ): Promise<Paginated<any>>;
 }

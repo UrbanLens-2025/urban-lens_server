@@ -6,8 +6,6 @@ import {
 } from '@nestjs/common';
 import { IQRCodeScanService } from '../IQRCodeScan.service';
 import { ScanQRCodeDto } from '@/common/dto/gamification/ScanQRCode.dto';
-import { GenerateQRCodeDto } from '@/common/dto/gamification/GenerateQRCode.dto';
-import { QRCodeScanResponseDto } from '@/common/dto/gamification/QRCodeScan.response.dto';
 import { LocationMissionRepository } from '@/modules/gamification/infra/repository/LocationMission.repository';
 import { UserMissionProgressRepository } from '@/modules/gamification/infra/repository/UserMissionProgress.repository';
 import { LocationMissionLogRepository } from '@/modules/gamification/infra/repository/LocationMissionLog.repository';
@@ -23,9 +21,9 @@ import { OneTimeQRCodeEntity } from '@/modules/gamification/domain/OneTimeQRCode
 import { GenerateOneTimeQRCodeDto } from '@/common/dto/gamification/GenerateOneTimeQRCode.dto';
 import { OneTimeQRCodeResponseDto } from '@/common/dto/gamification/OneTimeQRCode.response.dto';
 import { Inject } from '@nestjs/common';
-import * as QRCode from 'qrcode';
 import { plainToClass } from 'class-transformer';
 import type { IUserLocationProfileService } from '../IUserLocationProfile.service';
+import { LocationRepository } from '@/modules/business/infra/repository/Location.repository';
 
 @Injectable()
 export class QRCodeScanService implements IQRCodeScanService {
@@ -35,6 +33,7 @@ export class QRCodeScanService implements IQRCodeScanService {
     private readonly locationMissionLogRepository: LocationMissionLogRepository,
     private readonly userProfileRepository: UserProfileRepository,
     private readonly oneTimeQRCodeRepository: OneTimeQRCodeRepository,
+    private readonly locationRepository: LocationRepository,
     @Inject(IUserPointsService)
     private readonly userPointsService: IUserPointsService,
     @Inject(ICheckInMissionService)
@@ -43,10 +42,7 @@ export class QRCodeScanService implements IQRCodeScanService {
     private readonly userLocationProfileService: IUserLocationProfileService,
   ) {}
 
-  async scanQRCode(
-    userId: string,
-    dto: ScanQRCodeDto,
-  ): Promise<QRCodeScanResponseDto> {
+  async scanQRCode(userId: string, dto: ScanQRCodeDto): Promise<any> {
     try {
       // First, check if this is a one-time QR code
       const oneTimeQR = await this.oneTimeQRCodeRepository.findValidQRCode(
@@ -115,29 +111,24 @@ export class QRCodeScanService implements IQRCodeScanService {
         });
       }
 
-      // Check if already completed
+      // Check if already completed - return empty missions array
       if (userProgress.completed) {
+        const userLocationProfile =
+          await this.userLocationProfileService.getUserLocationProfile(
+            userId,
+            mission.locationId,
+          );
+        const totalPoints = userLocationProfile?.totalPoints || 0;
+
         return {
-          success: false,
-          message: 'Mission already completed',
-          missionId: mission.id,
-          missionTitle: mission.title,
-          missionDescription: mission.description,
-          missionMetric: mission.metric,
-          missionTarget: mission.target,
-          missionReward: mission.reward,
-          currentProgress: userProgress.progress,
-          isCompleted: true,
+          totalPoints,
           pointsEarned: 0,
-          totalPoints: 0,
+          missions: [],
         };
       }
 
       // Update progress based on mission type
-      const progressIncrement = this.calculateProgressIncrement(
-        mission.metric,
-        dto.referenceId,
-      );
+      const progressIncrement = this.calculateProgressIncrement(mission.metric);
       const newProgress = Math.min(
         userProgress.progress + progressIncrement,
         mission.target,
@@ -152,7 +143,7 @@ export class QRCodeScanService implements IQRCodeScanService {
       // Create mission log
       const missionLog = this.locationMissionLogRepository.repo.create({
         userMissionProgressId: userProgress.id,
-        imageUrls: dto.proofImages || [],
+        imageUrls: [],
       });
       await this.locationMissionLogRepository.repo.save(missionLog);
 
@@ -178,25 +169,22 @@ export class QRCodeScanService implements IQRCodeScanService {
         );
       totalPoints = userLocationProfile?.totalPoints || 0;
 
-      // Get updated user profile for global points (for ranking)
-      const userProfile = await this.userProfileRepository.repo.findOne({
-        where: { accountId: userId },
-      });
-      const globalPoints = userProfile?.points || 0;
-
       return {
-        success: true,
-        message: isCompleted ? 'Mission completed!' : 'Progress updated',
-        missionId: mission.id,
-        missionTitle: mission.title,
-        missionDescription: mission.description,
-        missionMetric: mission.metric,
-        missionTarget: mission.target,
-        missionReward: mission.reward,
-        currentProgress: newProgress,
-        isCompleted,
-        pointsEarned,
         totalPoints,
+        pointsEarned,
+        missions: [
+          {
+            missionId: mission.id,
+            missionTitle: mission.title,
+            missionDescription: mission.description,
+            missionMetric: mission.metric,
+            missionTarget: mission.target,
+            missionReward: mission.reward,
+            currentProgress: newProgress,
+            isCompleted,
+            pointsEarned,
+          },
+        ],
       };
     } catch (error) {
       if (
@@ -204,45 +192,6 @@ export class QRCodeScanService implements IQRCodeScanService {
         error instanceof NotFoundException ||
         error instanceof ForbiddenException
       ) {
-        throw error;
-      }
-      throw new BadRequestException(error.message);
-    }
-  }
-
-  async generateQRCode(
-    missionId: string,
-    dto: GenerateQRCodeDto,
-  ): Promise<{ qrCodeUrl: string; qrCodeData: string }> {
-    try {
-      // Verify mission exists
-      const mission = await this.locationMissionRepository.repo.findOne({
-        where: { id: missionId },
-      });
-
-      if (!mission) {
-        throw new NotFoundException('Mission not found');
-      }
-
-      // Generate QR code data - use URL format for better iPhone compatibility
-      const qrCodeData = `https://app.urbanlens.com/scan?mission=${missionId}&location=${mission.locationId}`;
-
-      // Generate QR code image
-      const qrCodeUrl = await QRCode.toDataURL(qrCodeData, {
-        width: dto.size || 256,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF',
-        },
-      });
-
-      return {
-        qrCodeUrl,
-        qrCodeData,
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) {
         throw error;
       }
       throw new BadRequestException(error.message);
@@ -374,7 +323,7 @@ export class QRCodeScanService implements IQRCodeScanService {
     userId: string,
     oneTimeQR: OneTimeQRCodeEntity,
     dto: ScanQRCodeDto,
-  ): Promise<QRCodeScanResponseDto> {
+  ): Promise<any> {
     // Check if QR code is expired
     if (new Date() > oneTimeQR.expiresAt) {
       throw new BadRequestException('QR code has expired');
@@ -397,18 +346,46 @@ export class QRCodeScanService implements IQRCodeScanService {
       );
     }
 
-    // Lấy tất cả ORDER_COUNT missions tại location này
-    const orderCountMissions = await this.locationMissionRepository.repo.find({
-      where: {
-        locationId: oneTimeQR.locationId,
-        metric: LocationMissionMetric.ORDER_COUNT,
-      },
-    });
+    // Parse QR data to check if mission ID is specified
+    let missionId: string | null = null;
+    try {
+      const url = new URL(dto.qrCodeData);
+      missionId = url.searchParams.get('mission');
+    } catch (error) {
+      // Not a URL format, continue with location-wide scan
+    }
 
-    if (orderCountMissions.length === 0) {
-      throw new BadRequestException(
-        'No ORDER_COUNT missions available at this location',
-      );
+    // Check if this QR is for a specific mission
+    let orderCountMissions: any[];
+
+    if (missionId) {
+      // QR code for specific mission
+      const mission = await this.locationMissionRepository.repo.findOne({
+        where: {
+          id: missionId,
+          locationId: oneTimeQR.locationId,
+        },
+      });
+
+      if (!mission) {
+        throw new BadRequestException('Mission not found');
+      }
+
+      orderCountMissions = [mission];
+    } else {
+      // QR code for all ORDER_COUNT missions at location
+      orderCountMissions = await this.locationMissionRepository.repo.find({
+        where: {
+          locationId: oneTimeQR.locationId,
+          metric: LocationMissionMetric.ORDER_COUNT,
+        },
+      });
+
+      if (orderCountMissions.length === 0) {
+        throw new BadRequestException(
+          'No ORDER_COUNT missions available at this location',
+        );
+      }
     }
 
     // Xử lý từng mission
@@ -449,27 +426,14 @@ export class QRCodeScanService implements IQRCodeScanService {
         });
       }
 
-      // Skip if already completed
+      // Skip if already completed - don't include in results
       if (userProgress.completed) {
-        results.push({
-          missionId: mission.id,
-          missionTitle: mission.title,
-          missionDescription: mission.description,
-          missionMetric: mission.metric,
-          missionTarget: mission.target,
-          missionReward: mission.reward,
-          currentProgress: userProgress.progress,
-          isCompleted: true,
-          pointsEarned: 0,
-        });
         continue;
       }
 
-      // Update progress (+1 cho ORDER_COUNT)
       const newProgress = Math.min(userProgress.progress + 1, mission.target);
       const isCompleted = newProgress >= mission.target;
 
-      // Update user progress
       userProgress.progress = newProgress;
       userProgress.completed = isCompleted;
       await this.userMissionProgressRepository.repo.save(userProgress);
@@ -477,7 +441,7 @@ export class QRCodeScanService implements IQRCodeScanService {
       // Create mission log
       const missionLog = this.locationMissionLogRepository.repo.create({
         userMissionProgressId: userProgress.id,
-        imageUrls: dto.proofImages || [],
+        imageUrls: [],
       });
       await this.locationMissionLogRepository.repo.save(missionLog);
 
@@ -519,33 +483,11 @@ export class QRCodeScanService implements IQRCodeScanService {
       );
     const totalPoints = userLocationProfile?.totalPoints || 0;
 
-    // Get updated user profile for global points (for ranking)
-    const userProfile = await this.userProfileRepository.repo.findOne({
-      where: { accountId: userId },
-    });
-    const globalPoints = userProfile?.points || 0;
-
-    const completedMissions = results.filter((r) => r.isCompleted);
-    const message =
-      completedMissions.length > 0
-        ? `Hoàn thành ${completedMissions.length} nhiệm vụ! Nhận được ${totalPointsEarned} điểm!`
-        : 'Đã cập nhật tiến độ nhiệm vụ!';
-
+    // Return only the updated missions
     return {
-      success: true,
-      message,
-      missionId: results[0]?.missionId || '',
-      missionTitle: results[0]?.missionTitle || 'Multiple Missions',
-      missionDescription:
-        results[0]?.missionDescription || 'Multiple ORDER_COUNT missions',
-      missionMetric: LocationMissionMetric.ORDER_COUNT,
-      missionTarget: results[0]?.missionTarget || 0,
-      missionReward: results[0]?.missionReward || 0,
-      currentProgress: results[0]?.currentProgress || 0,
-      isCompleted: completedMissions.length > 0,
-      pointsEarned: totalPointsEarned,
       totalPoints,
-      allMissions: results.map((r) => ({
+      pointsEarned: totalPointsEarned,
+      missions: results.map((r) => ({
         missionId: r.missionId,
         missionTitle: r.missionTitle,
         missionDescription: r.missionDescription || '',
@@ -565,9 +507,56 @@ export class QRCodeScanService implements IQRCodeScanService {
     dto: GenerateOneTimeQRCodeDto,
   ): Promise<OneTimeQRCodeResponseDto> {
     try {
+      // If missionId is provided, validate mission belongs to location
+      if (dto.missionId) {
+        const mission = await this.locationMissionRepository.repo.findOne({
+          where: { id: dto.missionId },
+          relations: ['location', 'location.business'],
+        });
+
+        if (!mission) {
+          throw new NotFoundException('Mission not found');
+        }
+
+        if (mission.locationId !== locationId) {
+          throw new BadRequestException(
+            'Mission does not belong to this location',
+          );
+        }
+
+        // Check ownership
+        if (mission.location.business?.accountId !== businessOwnerId) {
+          throw new ForbiddenException(
+            'You do not have permission to generate QR codes for this mission',
+          );
+        }
+      } else {
+        // Verify location exists and belongs to business owner
+        const location = await this.locationRepository.repo.findOne({
+          where: { id: locationId },
+          relations: ['business'],
+        });
+
+        if (!location) {
+          throw new NotFoundException('Location not found');
+        }
+
+        // Check if the location belongs to this business owner
+        if (location.business?.accountId !== businessOwnerId) {
+          throw new ForbiddenException(
+            'You do not have permission to generate QR codes for this location',
+          );
+        }
+      }
+
       // Generate unique QR code data
       const qrCodeId = `qr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const qrCodeData = `urbanlens://scan?qr=${qrCodeId}`;
+      let qrCodeData = `urbanlens://scan?qr=${qrCodeId}`;
+
+      // Add mission ID to QR data if specified
+      if (dto.missionId) {
+        qrCodeData += `&mission=${dto.missionId}`;
+      }
 
       // Calculate expiration time
       const expiresAt = new Date();
@@ -581,7 +570,6 @@ export class QRCodeScanService implements IQRCodeScanService {
         locationId,
         businessOwnerId,
         expiresAt,
-        referenceId: dto.referenceId || null,
         isUsed: false,
       });
 
@@ -591,6 +579,13 @@ export class QRCodeScanService implements IQRCodeScanService {
         excludeExtraneousValues: true,
       });
     } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       throw new BadRequestException(error.message);
     }
   }
