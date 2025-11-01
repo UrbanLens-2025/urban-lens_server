@@ -41,6 +41,7 @@ export class AccountQueryService
         relations: {
           userProfile: true,
           businessProfile: true,
+          creatorProfile: true,
         },
       })
       .then((res) => this.mapTo(AccountResponseDto, res));
