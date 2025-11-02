@@ -70,12 +70,21 @@ export class WalletEntity {
 
   @OneToMany(
     () => WalletTransactionEntity,
-    (transaction) => transaction.wallet,
+    (transaction) => transaction.sourceWallet,
     {
       createForeignKeyConstraints: false,
     },
   )
-  transactions: WalletTransactionEntity[];
+  sourceTransactions: WalletTransactionEntity[];
+
+  @OneToMany(
+    () => WalletTransactionEntity,
+    (transaction) => transaction.destinationWallet,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
+  destinationTransactions: WalletTransactionEntity[];
 
   @OneToMany(
     () => WalletExternalTransactionEntity,

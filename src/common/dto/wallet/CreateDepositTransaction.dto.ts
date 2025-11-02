@@ -8,6 +8,7 @@ import {
   Min,
 } from 'class-validator';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
+import { ExternalTransactionAfterFinishAction } from '@/common/constants/ExternalTransactionAfterFinishAction.constant';
 
 export class CreateDepositTransactionDto {
   @ApiProperty({ example: 100000 })
@@ -26,6 +27,11 @@ export class CreateDepositTransactionDto {
   @IsUrl()
   @IsNotEmpty()
   returnUrl: string;
+
+  // TODO dirty ass code
+  @ApiProperty({ example: ExternalTransactionAfterFinishAction.NONE })
+  @IsEnum(ExternalTransactionAfterFinishAction)
+  afterAction: ExternalTransactionAfterFinishAction;
 
   // Transient field
   accountId: string;

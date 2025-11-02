@@ -1,15 +1,25 @@
 import { Module } from '@nestjs/common';
 import { EventInfraModule } from '@/modules/event/infra/event.infra.module';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
-import { EventCreatorController } from '@/modules/event/interfaces/Event.creator.controller';
 import { ICreateEventService } from '@/modules/event/app/ICreateEvent.service';
 import { CreateEventService } from '@/modules/event/app/impl/CreateEvent.service';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
 import { EventManagementService } from '@/modules/event/app/impl/EventManagement.service';
+import { EventRequestCreatorController } from '@/modules/event/interfaces/EventRequest.creator.controller';
+import { IEventRequestManagementService } from '@/modules/event/app/IEventRequestManagement.service';
+import { EventRequestManagementService } from '@/modules/event/app/impl/EventRequestManagement.service';
+import { LocationBookingModule } from '@/modules/location-booking/LocationBooking.module';
+import { IEventRequestQueryService } from '@/modules/event/app/IEventRequestQuery.service';
+import { EventRequestQueryService } from '@/modules/event/app/impl/EventRequestQuery.service';
 
 @Module({
-  imports: [EventInfraModule, FileStorageModule],
-  controllers: [EventCreatorController],
+  imports: [
+    EventInfraModule,
+    FileStorageModule,
+    LocationBookingModule,
+    FileStorageModule,
+  ],
+  controllers: [EventRequestCreatorController],
   providers: [
     {
       provide: ICreateEventService,
@@ -18,6 +28,14 @@ import { EventManagementService } from '@/modules/event/app/impl/EventManagement
     {
       provide: IEventManagementService,
       useClass: EventManagementService,
+    },
+    {
+      provide: IEventRequestManagementService,
+      useClass: EventRequestManagementService,
+    },
+    {
+      provide: IEventRequestQueryService,
+      useClass: EventRequestQueryService,
     },
   ],
 })

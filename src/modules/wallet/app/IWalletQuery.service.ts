@@ -4,6 +4,7 @@ import { GetTransactionHistoryByWalletIdDto } from '@/common/dto/wallet/GetTrans
 import { PaginateConfig, Paginated } from 'nestjs-paginate';
 import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTransaction.response.dto';
 import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransaction.entity';
+import { GetAnyWalletByIdDto } from '@/common/dto/wallet/GetAnyWalletById.dto';
 
 export const IWalletQueryService = Symbol('IWalletQueryService');
 
@@ -14,6 +15,8 @@ export interface IWalletQueryService {
   getTransactionHistoryByWalletId(
     dto: GetTransactionHistoryByWalletIdDto,
   ): Promise<Paginated<WalletTransactionResponseDto>>;
+
+  getAnyWalletById(dto: GetAnyWalletByIdDto): Promise<WalletResponseDto>;
 }
 
 export namespace IWalletQueryService_QueryConfig {

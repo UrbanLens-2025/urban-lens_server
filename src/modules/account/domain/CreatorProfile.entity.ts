@@ -1,4 +1,4 @@
-import { Column, Entity, OneToOne, PrimaryColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from 'typeorm';
 import { CreatorTypes } from '@/common/constants/CreatorType.constant';
 import { SocialLink } from '@/common/json/SocialLink.json';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
@@ -11,6 +11,7 @@ export class CreatorProfileEntity {
   @OneToOne(() => AccountEntity, (account) => account.id, {
     createForeignKeyConstraints: false,
   })
+  @JoinColumn({ name: 'account_id' })
   account: AccountEntity;
 
   @Column({ name: 'display_name', type: 'varchar', length: 555 })

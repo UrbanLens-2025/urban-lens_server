@@ -78,7 +78,7 @@ export class WalletPrivateController {
   ) {
     return this.externalTransactionQueryService.getExternalTransactionByWalletIdAndId(
       {
-        walletId: user.sub,
+        accountId: user.sub,
         transactionId: id,
       },
     );

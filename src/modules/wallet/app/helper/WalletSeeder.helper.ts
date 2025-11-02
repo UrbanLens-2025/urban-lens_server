@@ -7,11 +7,10 @@ import { CoreService } from '@/common/core/Core.service';
 import { In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
+import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
 
 @Injectable()
 export class WalletSeederHelper extends CoreService implements OnModuleInit {
-  public readonly SYSTEM_WALLET_ID = '19042003-1904-4444-bbbb-bbbbbbbbbbbb';
-  public readonly ESCROW_WALLET_ID = '19042003-1904-4444-aaaa-aaaaaaaaaaaa';
   private readonly LOGGER = new Logger(WalletSeederHelper.name);
 
   constructor(private readonly configService: ConfigService<Environment>) {
@@ -31,7 +30,7 @@ export class WalletSeederHelper extends CoreService implements OnModuleInit {
     // Check if system wallets exist
     const existingWallets = await walletRepository.find({
       where: {
-        id: In([this.SYSTEM_WALLET_ID, this.ESCROW_WALLET_ID]),
+        id: In([DefaultSystemWallet.REVENUE, DefaultSystemWallet.ESCROW]),
       },
       select: { id: true, walletType: true },
     });
@@ -41,30 +40,30 @@ export class WalletSeederHelper extends CoreService implements OnModuleInit {
     const walletsToCreate: WalletEntity[] = [];
 
     // Create SYSTEM wallet if it doesn't exist
-    if (!existingIds.includes(this.SYSTEM_WALLET_ID)) {
+    if (!existingIds.includes(DefaultSystemWallet.REVENUE)) {
       const systemWallet = new WalletEntity();
-      systemWallet.id = this.SYSTEM_WALLET_ID;
+      systemWallet.id = DefaultSystemWallet.REVENUE;
       systemWallet.ownedBy = null;
       systemWallet.walletType = WalletType.SYSTEM;
       systemWallet.currency = SupportedCurrency.VND;
       systemWallet.balance = 0;
       systemWallet.totalTransactions = 0;
       systemWallet.isLocked = false;
-      systemWallet.createdById = this.SYSTEM_WALLET_ID;
+      systemWallet.createdById = DefaultSystemWallet.REVENUE;
       walletsToCreate.push(systemWallet);
     }
 
     // Create ESCROW wallet if it doesn't exist
-    if (!existingIds.includes(this.ESCROW_WALLET_ID)) {
+    if (!existingIds.includes(DefaultSystemWallet.ESCROW)) {
       const escrowWallet = new WalletEntity();
-      escrowWallet.id = this.ESCROW_WALLET_ID;
+      escrowWallet.id = DefaultSystemWallet.ESCROW;
       escrowWallet.ownedBy = null;
       escrowWallet.walletType = WalletType.ESCROW;
       escrowWallet.currency = SupportedCurrency.VND;
       escrowWallet.balance = 0;
       escrowWallet.totalTransactions = 0;
       escrowWallet.isLocked = false;
-      escrowWallet.createdById = this.SYSTEM_WALLET_ID;
+      escrowWallet.createdById = DefaultSystemWallet.REVENUE;
       walletsToCreate.push(escrowWallet);
     }
 
