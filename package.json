@@ -18,7 +18,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "start:services": "docker compose --env-file .env.development up --build -d"
+    "start:services": "docker compose --env-file .env.development up --build -d",
+    "migration:generate": "node   --require ts-node/register   --require tsconfig-paths/register   ./node_modules/typeorm/cli.js   migration:generate -d ./src/migration.ts",
+    "migration:run": "node --require ts-node/register --require tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d ./src/migration.ts",
+    "migration:revert": "node --require ts-node/register --require tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d ./src/migration.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",
