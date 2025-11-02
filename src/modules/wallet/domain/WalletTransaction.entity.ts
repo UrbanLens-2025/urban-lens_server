@@ -65,7 +65,7 @@ export class WalletTransactionEntity {
       );
     }
 
-    switch (destinationWalletId) {
+    switch (this.destinationWalletId) {
       case DefaultSystemWallet.ESCROW.toString(): {
         this.type = WalletTransactionType.TO_ESCROW;
         this.status = WalletTransactionStatus.PENDING;
