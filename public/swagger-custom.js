@@ -246,15 +246,17 @@ window.addEventListener('load', () => {
           localStorage.setItem(
             'authorized',
             JSON.stringify({
-              name: 'bearer',
-              schema: {
-                scheme: 'bearer',
-                bearerFormat: 'JWT',
-                name: 'jwt',
-                type: 'http',
-                description: 'put bearer token here',
+              bearer: {
+                name: 'bearer',
+                schema: {
+                  scheme: 'bearer',
+                  bearerFormat: 'JWT',
+                  name: 'jwt',
+                  type: 'http',
+                  description: 'put bearer token here',
+                },
+                value: token,
               },
-              value: token,
             }),
           );
 
@@ -280,35 +282,68 @@ window.addEventListener('load', () => {
   };
 });
 
-// === Role-based highlighting ===
-const highlightRoles = () => {
+// === Role-based highlighting (highlight only matched segments, no infinite loop) ===
+const highlightRoles = (() => {
   const roleColors = {
-    '/admin/': '#e74c3c',   // red
-    '/creator/': '#8e44ad', // purple
-    '/owner/': '#12d300',   // orange
-    '/business/': '#12d300',   // orange
-    '/private/': '#2739ae', // green
-    '/public/': '#000000',  // blue
-    '/user/': '#ffe400',    // teal
+    '/admin/': '#FF9E8A',
+    '/creator/': '#CBA6FF',
+    '/owner/': '#7FE2A8',
+    '/business/': '#7FE2A8',
+    '/private/': '#8DB9FF',
+    '/public/': '#C9C9C9',
+    '/user/': '#FFE97F',
   };
 
-  document.querySelectorAll('.opblock-summary-path').forEach((el) => {
-    const text = el.textContent;
-    for (const [role, color] of Object.entries(roleColors)) {
-      if (text.includes(role)) {
-        el.style.backgroundColor = color;
-        el.style.color = '#fff';
-        el.style.padding = '2px 8px';
-        el.style.borderRadius = '4px';
-        el.style.fontWeight = '600';
-        el.style.display = 'inline-block';
-        break;
-      }
-    }
-  });
-};
+  let isHighlighting = false;
 
-// Run after load and on DOM updates
-const observer = new MutationObserver(() => highlightRoles());
-observer.observe(document.body, { childList: true, subtree: true });
+  return () => {
+    if (isHighlighting) return;
+    isHighlighting = true;
+
+    document.querySelectorAll('.opblock-summary-path').forEach((el) => {
+      const originalText = el.textContent;
+      if (!originalText) return;
+
+      // Skip if already highlighted
+      if (el.dataset.highlighted === 'true') return;
+
+      for (const [role, color] of Object.entries(roleColors)) {
+        if (originalText.includes(role)) {
+          const escaped = role.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(${escaped})`, 'g');
+          const replaced = originalText.replace(
+            regex,
+            `<span class="role-highlight" style="
+              background-color: ${color};
+              color: #000;
+              padding: 1px 4px;
+              border-radius: 3px;
+              font-weight: 600;
+              display: inline-block;
+            ">$1</span>`,
+          );
+          el.innerHTML = replaced;
+          el.dataset.highlighted = 'true';
+          break;
+        }
+      }
+    });
+
+    isHighlighting = false;
+  };
+})();
+
+// Run initially
 highlightRoles();
+
+// Observe DOM changes safely (ignore our own modifications)
+const observer = new MutationObserver((mutations) => {
+  const shouldRehighlight = mutations.some((m) =>
+    [...m.addedNodes].some(
+      (n) => n.nodeType === 1 && n.querySelector?.('.opblock-summary-path'),
+    ),
+  );
+  if (shouldRehighlight) highlightRoles();
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
