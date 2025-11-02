@@ -72,7 +72,7 @@ export class WalletTransactionManagementService
       transaction.amount = dto.amountToTransfer;
       transaction.currency = dto.currency;
 
-      transaction.startTransfer();
+      transaction.startTransfer(destinationWallet.id);
 
       return (
         walletTransactionRepository
