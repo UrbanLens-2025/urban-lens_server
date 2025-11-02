@@ -23,10 +23,12 @@ export namespace ILocationBookingQueryService_QueryConfig {
       sortableColumns: ['createdAt'],
       filterableColumns: {
         status: true,
+        locationId: true,
       },
       relations: {
         referencedEventRequest: true,
         createdBy: true,
+        location: true,
       },
     };
   }

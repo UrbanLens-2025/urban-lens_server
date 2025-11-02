@@ -1,56 +1,43 @@
 import {
   Controller,
-  Get,
   Inject,
+  Ip,
   Param,
   ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import {
-  ApiPaginationQuery,
-  Paginate,
-  type PaginateQuery,
-} from 'nestjs-paginate';
-import {
-  IBookableLocationSearchService,
-  IBookableLocationSearchService_QueryConfig,
-} from '@/modules/location-booking/app/IBookableLocationSearch.service';
+import { AuthUser } from '@/common/AuthUser.decorator';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 
-@ApiTags('Location')
+@ApiTags('Location Bookings')
 @ApiBearerAuth()
 @Roles(Role.EVENT_CREATOR)
-@Controller('/creator/location/booking')
+@Controller('/creator/location-bookings')
 export class LocationBookingCreatorController {
   constructor(
-    @Inject(IBookableLocationSearchService)
-    private readonly bookableLocationSearchService: IBookableLocationSearchService,
+    @Inject(ILocationBookingManagementService)
+    private readonly locationBookingManagementService: ILocationBookingManagementService,
   ) {}
 
-  @ApiOperation({ summary: 'Search Bookable Locations' })
-  @ApiPaginationQuery(
-    IBookableLocationSearchService_QueryConfig.searchBookableLocations(),
-  )
-  @Get('/search')
-  searchBookableLocations(@Paginate() query: PaginateQuery) {
-    return this.bookableLocationSearchService.searchBookableLocations({
-      query,
-    });
-  }
-
-  @ApiOperation({ summary: 'Start payment for booking' })
-  @Post('/payment')
-  startPayment() {}
-
-  @ApiOperation({ summary: 'Get Bookable Location by ID' })
-  @Get('/search/:locationId')
-  getBookableLocationById(
-    @Param('locationId', ParseUUIDPipe) locationId: string,
+  @ApiOperation({
+    summary: 'Pay for booking',
+  })
+  @Post('/finish-payment/:locationBookingId')
+  finishPayment(
+    @AuthUser() userDto: JwtTokenDto,
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+    @Ip() ipAddress: string,
   ) {
-    return this.bookableLocationSearchService.getBookableLocationById({
-      locationId,
+    return this.locationBookingManagementService.initiatePaymentForBooking({
+      accountId: userDto.sub,
+      locationBookingId: locationBookingId,
+      accountName: userDto.email,
+      ipAddress,
+      returnUrl: 'http://google.com', //TODO CHANGE THIS
     });
   }
 }

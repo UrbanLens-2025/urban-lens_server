@@ -3,4 +3,5 @@ export enum LocationBookingStatus {
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
+  PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',
 }

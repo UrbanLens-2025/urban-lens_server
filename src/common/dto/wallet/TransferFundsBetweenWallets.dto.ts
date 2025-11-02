@@ -5,11 +5,11 @@ import { CoreActionDto } from '@/common/dto/CoreAction.dto';
 export class TransferFundsBetweenWalletsDto extends CoreActionDto {
   @IsNotEmpty()
   @IsUUID()
-  fromWalletId: string;
+  sourceWalletId: string;
 
   @IsNotEmpty()
   @IsUUID()
-  toWalletId: string;
+  destinationWalletId: string;
 
   @IsPositive()
   @IsNotEmpty()

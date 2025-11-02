@@ -30,7 +30,7 @@ import {
 } from '@/modules/wallet/domain/events/WalletDepositConfirmed.event';
 import { ExternalTransactionAfterFinishAction } from '@/common/constants/ExternalTransactionAfterFinishAction.constant';
 import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
-import { IWalletTransactionHandlerService } from '@/modules/wallet/app/IWalletTransactionHandler.service';
+import { IWalletTransactionManagementService } from '@/modules/wallet/app/IWalletTransactionManagement.service';
 
 @Injectable()
 export class WalletExternalTransactionManagementService
@@ -50,8 +50,8 @@ export class WalletExternalTransactionManagementService
     private readonly paymentGatewayPort: IPaymentGatewayPort,
     @Inject(IWalletActionService)
     private readonly walletActionService: IWalletActionService,
-    @Inject(IWalletTransactionHandlerService)
-    private readonly walletTransactionHandlerService: IWalletTransactionHandlerService,
+    @Inject(IWalletTransactionManagementService)
+    private readonly walletTransactionHandlerService: IWalletTransactionManagementService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     super();
@@ -308,7 +308,7 @@ export class WalletExternalTransactionManagementService
       case ExternalTransactionAfterFinishAction.TRANSFER_TO_ESCROW: {
         this.logger.debug('Transferring deposited funds to escrow wallet');
 
-        await this.walletTransactionHandlerService.transferFunds_toSystem({
+        await this.walletTransactionHandlerService.transferFunds({
           entityManager: em,
           destinationWalletId: DefaultSystemWallet.ESCROW,
           sourceWalletId: transaction.walletId,

@@ -21,7 +21,6 @@ export class LocationBookingQueryService
     return paginate(dto.query, LocationBookingRepository(this.dataSource), {
       ...ILocationBookingQueryService_QueryConfig.searchBookingsByLocation(),
       where: {
-        locationId: dto.locationId,
         location: {
           businessId: dto.accountId,
         },

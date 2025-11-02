@@ -9,21 +9,24 @@ import { LocationBookingConfigOwnerController } from '@/modules/location-booking
 import { LocationAvailabilityCreatorController } from '@/modules/location-booking/interfaces/LocationAvailability.creator.controller';
 import { IBookableLocationSearchService } from '@/modules/location-booking/app/IBookableLocationSearch.service';
 import { BookableLocationSearchService } from '@/modules/location-booking/app/impl/BookableLocationSearch.service';
-import { LocationBookingCreatorController } from '@/modules/location-booking/interfaces/LocationBooking.creator.controller';
+import { LocationCreatorController } from '@/modules/location-booking/interfaces/Location.creator.controller';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { LocationBookingManagementService } from '@/modules/location-booking/app/impl/LocationBookingManagement.service';
 import { LocationBookingOwnerController } from '@/modules/location-booking/interfaces/LocationBooking.owner.controller';
 import { ILocationBookingQueryService } from '@/modules/location-booking/app/ILocationBookingQuery.service';
 import { LocationBookingQueryService } from '@/modules/location-booking/app/impl/LocationBookingQuery.service';
+import { WalletModule } from '@/modules/wallet/Wallet.module';
+import { LocationBookingCreatorController } from '@/modules/location-booking/interfaces/LocationBooking.creator.controller';
 
 @Module({
-  imports: [LocationReservationInfraModule],
+  imports: [LocationReservationInfraModule, WalletModule],
   controllers: [
     LocationAvailabilityOwnerController,
     LocationAvailabilityCreatorController,
     LocationBookingConfigOwnerController,
-    LocationBookingCreatorController,
+    LocationCreatorController,
     LocationBookingOwnerController,
+    LocationBookingCreatorController,
   ],
   providers: [
     {

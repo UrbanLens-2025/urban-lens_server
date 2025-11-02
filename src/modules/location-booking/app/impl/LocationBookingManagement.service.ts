@@ -3,6 +3,7 @@ import { CreateBookingForBusinessLocationDto } from '@/common/dto/location-booki
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import {
   BadRequestException,
+  Inject,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -26,6 +27,8 @@ import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import dayjs from 'dayjs';
 import { StartBookingPaymentDto } from '@/common/dto/location-booking/StartBookingPayment.dto';
+import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
+import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 
 @Injectable()
 export class LocationBookingManagementService
@@ -37,6 +40,8 @@ export class LocationBookingManagementService
   constructor(
     private readonly configService: ConfigService<Environment>,
     private readonly eventEmitter: EventEmitter2,
+    @Inject(IWalletTransactionCoordinatorService)
+    private readonly walletTransactionCoordinatorService: IWalletTransactionCoordinatorService,
   ) {
     super();
   }
@@ -154,9 +159,12 @@ export class LocationBookingManagementService
     });
   }
 
-  startBookingPayment(dto: StartBookingPaymentDto): Promise<void> {
+  initiatePaymentForBooking(
+    dto: StartBookingPaymentDto,
+  ): Promise<LocationBookingResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const locationBookingRepository = LocationBookingRepository(em);
+      const eventRequestRepository = EventRequestRepository(em);
 
       const booking = await locationBookingRepository.findOneOrFail({
         where: {
@@ -170,6 +178,56 @@ export class LocationBookingManagementService
           'This booking cannot start payment process. It needs to be approved and not expired.',
         );
       }
+
+      const transaction =
+        await this.walletTransactionCoordinatorService.coordinateTransferToEscrow(
+          {
+            entityManager: em,
+            fromAccountId: dto.accountId,
+            amountToTransfer: booking.amountToPay,
+            currency: SupportedCurrency.VND,
+            accountName: dto.accountName,
+            ipAddress: dto.ipAddress,
+            returnUrl: dto.returnUrl,
+          },
+        );
+
+      booking.referencedTransactionId = transaction.id;
+      booking.status = LocationBookingStatus.PAYMENT_RECEIVED;
+      await locationBookingRepository.update(
+        { id: booking.id },
+        {
+          referencedTransactionId: booking.referencedTransactionId,
+          status: booking.status,
+        },
+      );
+
+      // update parent object based on booking type
+      switch (booking.bookingObject) {
+        case LocationBookingObject.FOR_EVENT: {
+          if (!booking.referencedEventRequest) {
+            throw new InternalServerErrorException(
+              'Booking is for event but no referenced event request found.',
+            );
+          }
+
+          // update referenced event request status
+          const eventRequest = booking.referencedEventRequest;
+          eventRequest.status = EventRequestStatus.BOOKED;
+          await eventRequestRepository.update(
+            { id: eventRequest.id },
+            eventRequest,
+          );
+          break;
+        }
+        default: {
+          throw new InternalServerErrorException(
+            'Unknown booking object type.',
+          );
+        }
+      }
+
+      return this.mapTo(LocationBookingResponseDto, booking);
     });
   }
 }
