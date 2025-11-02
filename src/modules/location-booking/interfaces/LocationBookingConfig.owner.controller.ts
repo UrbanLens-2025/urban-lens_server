@@ -20,7 +20,7 @@ import { UpdateLocationBookingConfigDto } from '@/common/dto/location-booking/Up
 @ApiTags('Location Booking Config')
 @ApiBearerAuth()
 @Roles(Role.BUSINESS_OWNER)
-@Controller('location-booking-config')
+@Controller('/owner/location-booking-config')
 export class LocationBookingConfigOwnerController {
   constructor(
     @Inject(ILocationBookingConfigManagementService)
