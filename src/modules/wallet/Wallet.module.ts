@@ -15,9 +15,11 @@ import { WalletExternalTransactionWebhook } from '@/modules/wallet/interfaces/we
 import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service';
 import { WalletActionService } from '@/modules/wallet/app/impl/WalletAction.service';
 import { WalletSeederHelper } from '@/modules/wallet/app/helper/WalletSeeder.helper';
-import { IWalletTransactionHandlerService } from '@/modules/wallet/app/IWalletTransactionHandler.service';
-import { WalletTransactionHandlerService } from '@/modules/wallet/app/impl/WalletTransactionHandler.service';
+import { IWalletTransactionManagementService } from '@/modules/wallet/app/IWalletTransactionManagement.service';
+import { WalletTransactionManagementService } from '@/modules/wallet/app/impl/WalletTransactionManagement.service';
 import { WalletAdminController } from '@/modules/wallet/interfaces/Wallet.admin.controller';
+import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
+import { WalletTransactionCoordinatorService } from '@/modules/wallet/app/impl/WalletTransactionCoordinator.service';
 
 @Module({
   imports: [WalletInfraModule],
@@ -49,12 +51,16 @@ import { WalletAdminController } from '@/modules/wallet/interfaces/Wallet.admin.
       useClass: VNPayPaymentGatewayAdapter,
     },
     {
-      provide: IWalletTransactionHandlerService,
-      useClass: WalletTransactionHandlerService,
+      provide: IWalletTransactionManagementService,
+      useClass: WalletTransactionManagementService,
+    },
+    {
+      provide: IWalletTransactionCoordinatorService,
+      useClass: WalletTransactionCoordinatorService,
     },
     WalletCreationListener,
     WalletSeederHelper,
   ],
-  exports: [WalletInfraModule],
+  exports: [WalletInfraModule, IWalletTransactionCoordinatorService],
 })
 export class WalletModule {}

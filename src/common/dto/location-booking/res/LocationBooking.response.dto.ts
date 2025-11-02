@@ -41,6 +41,9 @@ export class LocationBookingResponseDto {
   @Expose()
   referencedTransactionId: string;
 
+  @Expose()
+  softLockedUntil?: Date;
+
   // -- Relations --
 
   @Expose()

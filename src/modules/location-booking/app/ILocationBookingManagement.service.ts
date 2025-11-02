@@ -14,5 +14,7 @@ export interface ILocationBookingManagementService {
 
   processBooking(dto: ProcessBookingDto): Promise<UpdateResult>;
 
-  startBookingPayment(dto: StartBookingPaymentDto): Promise<void>;
+  initiatePaymentForBooking(
+    dto: StartBookingPaymentDto,
+  ): Promise<LocationBookingResponseDto>;
 }

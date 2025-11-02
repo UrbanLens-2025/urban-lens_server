@@ -23,8 +23,8 @@ import { Role } from '@/common/constants/Role.constant';
 import { DataSource, In } from 'typeorm';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
-import { IWalletTransactionHandlerService } from '@/modules/wallet/app/IWalletTransactionHandler.service';
-import { TransferFundsToEscrowDto } from '@/common/dto/wallet/TransferFundsToEscrow.dto';
+import { IWalletTransactionManagementService } from '@/modules/wallet/app/IWalletTransactionManagement.service';
+import { TransferFundsDto } from '@/common/dto/wallet/TransferFunds.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
@@ -40,8 +40,8 @@ export class WalletDevOnlyController {
     private readonly walletExternalTransactionManagementService: IWalletExternalTransactionManagementService,
     @Inject(IPaymentGatewayPort)
     private readonly paymentGatewayPort: IPaymentGatewayPort,
-    @Inject(IWalletTransactionHandlerService)
-    private readonly walletTransactionHandlerService: IWalletTransactionHandlerService,
+    @Inject(IWalletTransactionManagementService)
+    private readonly walletTransactionHandlerService: IWalletTransactionManagementService,
     private readonly eventEmitter: EventEmitter2,
     private readonly dataSource: DataSource,
   ) {}
@@ -80,10 +80,10 @@ export class WalletDevOnlyController {
   @ApiOperation({ summary: 'Transfer funds to escrow wallet' })
   @Post('/transfer-to-escrow')
   async transferToEscrow(
-    @Body() dto: TransferFundsToEscrowDto,
+    @Body() dto: TransferFundsDto,
     @AuthUser() userDto: JwtTokenDto,
   ) {
-    return this.walletTransactionHandlerService.transferFunds_toSystem({
+    return this.walletTransactionHandlerService.transferFunds({
       ...dto,
       ownerId: userDto.sub,
       destinationWalletId: DefaultSystemWallet.ESCROW,

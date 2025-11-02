@@ -5,7 +5,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
 import { WalletResponseDto } from '@/common/dto/wallet/res/Wallet.response.dto';
 import { WithdrawFundsDto } from '@/common/dto/wallet/WithdrawFunds.dto';
-import { TransferFundsBetweenWalletsDto } from '@/common/dto/wallet/TransferFundsBetweenWallets.dto';
 
 @Injectable()
 export class WalletActionService
@@ -99,26 +98,6 @@ export class WalletActionService
       this.logger.verbose('Withdrawal successful from wallet: ' + dto.walletId);
 
       return this.mapTo(WalletResponseDto, wallet);
-    });
-  }
-
-  transferFundsBetweenWallets(
-    dto: TransferFundsBetweenWalletsDto,
-  ): Promise<void> {
-    return this.ensureTransaction(dto.entityManager, async (em) => {
-      await this.withdrawFunds({
-        entityManager: em,
-        walletId: dto.fromWalletId,
-        amount: dto.amount,
-        currency: dto.currency,
-      });
-
-      await this.depositFunds({
-        entityManager: em,
-        walletId: dto.toWalletId,
-        amount: dto.amount,
-        currency: dto.currency,
-      });
     });
   }
 }

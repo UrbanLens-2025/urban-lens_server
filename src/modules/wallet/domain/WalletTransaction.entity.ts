@@ -57,18 +57,31 @@ export class WalletTransactionEntity {
   })
   status: WalletTransactionStatus;
 
-  public startTransferToEscrow(): WalletTransactionEntity {
-    this.destinationWalletId = DefaultSystemWallet.ESCROW;
-    this.type = WalletTransactionType.TO_ESCROW;
-    this.status = WalletTransactionStatus.PENDING;
-    return this;
-  }
+  public startTransfer(destinationWalletId?: string): WalletTransactionEntity {
+    this.destinationWalletId = destinationWalletId ?? this.destinationWalletId;
+    if (!this.destinationWalletId) {
+      throw new Error(
+        'Destination wallet ID must be provided to start transfer.',
+      );
+    }
 
-  public startTransferToRevenue(): WalletTransactionEntity {
-    this.destinationWalletId = DefaultSystemWallet.REVENUE;
-    this.type = WalletTransactionType.TO_REVENUE;
-    this.status = WalletTransactionStatus.PENDING;
-    return this;
+    switch (this.destinationWalletId) {
+      case DefaultSystemWallet.ESCROW.toString(): {
+        this.type = WalletTransactionType.TO_ESCROW;
+        this.status = WalletTransactionStatus.PENDING;
+        return this;
+      }
+      case DefaultSystemWallet.REVENUE.toString(): {
+        this.type = WalletTransactionType.TO_REVENUE;
+        this.status = WalletTransactionStatus.PENDING;
+        return this;
+      }
+      default: {
+        this.type = WalletTransactionType.TO_WALLET;
+        this.status = WalletTransactionStatus.PENDING;
+        return this;
+      }
+    }
   }
 
   public confirmTransfer(): WalletTransactionEntity {

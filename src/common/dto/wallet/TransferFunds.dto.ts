@@ -1,13 +1,12 @@
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsPositive, IsUUID } from 'class-validator';
-import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
 import { CoreActionDto } from '@/common/dto/CoreAction.dto';
 
-export class TransferFundsToEscrowDto extends CoreActionDto {
+export class TransferFundsDto extends CoreActionDto {
   // transient fields
   ownerId: string;
-  destinationWalletId: DefaultSystemWallet;
+  destinationWalletId: string;
 
   // request body
   @ApiProperty()

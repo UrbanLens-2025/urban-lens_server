@@ -45,10 +45,8 @@ export class LocationBookingOwnerController {
   searchBookingsByLocation(
     @AuthUser() userDto: JwtTokenDto,
     @Paginate() query: PaginateQuery,
-    @Query('locationId', ParseUUIDPipe) locationId: string,
   ) {
     return this.locationBookingQueryService.searchBookingsByLocation({
-      locationId,
       accountId: userDto.sub,
       query,
     });
