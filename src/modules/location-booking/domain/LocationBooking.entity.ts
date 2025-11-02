@@ -69,6 +69,13 @@ export class LocationBookingEntity {
   @Column({ name: 'referenced_transaction_id', type: 'uuid', nullable: true })
   referencedTransactionId: string;
 
+  @Column({
+    name: 'soft_locked_until',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  softLockedUntil?: Date | null;
+
   @ManyToOne(
     () => WalletTransactionEntity,
     (walletTransaction) => walletTransaction.id,
@@ -94,5 +101,14 @@ export class LocationBookingEntity {
 
   public canBeProcessed(): boolean {
     return this.status === LocationBookingStatus.AWAITING_BUSINESS_PROCESSING;
+  }
+
+  public canStartPayment(): boolean {
+    const now = new Date();
+    return (
+      this.status === LocationBookingStatus.APPROVED &&
+      !!this.softLockedUntil &&
+      now < this.softLockedUntil
+    );
   }
 }

@@ -1,4 +1,13 @@
-import { Controller, Get, Inject, ParseUUIDPipe, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -13,6 +22,8 @@ import {
 } from 'nestjs-paginate';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
+import { ProcessBookingDto } from '@/common/dto/location-booking/ProcessBooking.dto';
 
 @ApiTags('Location Bookings')
 @ApiBearerAuth()
@@ -22,6 +33,8 @@ export class LocationBookingOwnerController {
   constructor(
     @Inject(ILocationBookingQueryService)
     private readonly locationBookingQueryService: ILocationBookingQueryService,
+    @Inject(ILocationBookingManagementService)
+    private readonly locationBookingManagementService: ILocationBookingManagementService,
   ) {}
 
   @ApiOperation({ summary: 'Search Bookings by Location' })
@@ -42,9 +55,6 @@ export class LocationBookingOwnerController {
   }
 
   @ApiOperation({ summary: "Get my location's booking by ID" })
-  @ApiPaginationQuery(
-    ILocationBookingQueryService_QueryConfig.searchBookingsByLocation(),
-  )
   @Get('/search/:locationBookingId')
   getMyLocationsBookingById(
     @AuthUser() userDto: JwtTokenDto,
@@ -53,6 +63,20 @@ export class LocationBookingOwnerController {
     return this.locationBookingQueryService.getBookingForMyLocationById({
       bookingId: locationBookingId,
       accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Process location booking' })
+  @Post('/process/:locationBookingId')
+  processLocationBooking(
+    @AuthUser() userDto: JwtTokenDto,
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+    @Body() dto: ProcessBookingDto,
+  ) {
+    return this.locationBookingManagementService.processBooking({
+      ...dto,
+      accountId: userDto.sub,
+      bookingId: locationBookingId,
     });
   }
 }

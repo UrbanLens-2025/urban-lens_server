@@ -1,4 +1,11 @@
-import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -15,8 +22,8 @@ import {
 @ApiTags('Location')
 @ApiBearerAuth()
 @Roles(Role.EVENT_CREATOR)
-@Controller('/creator/location/bookable')
-export class LocationBookableCreatorController {
+@Controller('/creator/location/booking')
+export class LocationBookingCreatorController {
   constructor(
     @Inject(IBookableLocationSearchService)
     private readonly bookableLocationSearchService: IBookableLocationSearchService,
@@ -32,6 +39,10 @@ export class LocationBookableCreatorController {
       query,
     });
   }
+
+  @ApiOperation({ summary: 'Start payment for booking' })
+  @Post('/payment')
+  startPayment() {}
 
   @ApiOperation({ summary: 'Get Bookable Location by ID' })
   @Get('/search/:locationId')

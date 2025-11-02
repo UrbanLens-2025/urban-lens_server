@@ -67,7 +67,7 @@ export class EventRequestEntity {
 
   @OneToOne(
     () => LocationBookingEntity,
-    (locationBooking) => locationBooking.id,
+    (locationBooking) => locationBooking.referencedEventRequest,
     {
       createForeignKeyConstraints: false,
       nullable: true,

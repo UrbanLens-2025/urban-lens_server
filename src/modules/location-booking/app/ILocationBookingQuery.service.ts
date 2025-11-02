@@ -26,6 +26,7 @@ export namespace ILocationBookingQueryService_QueryConfig {
       },
       relations: {
         referencedEventRequest: true,
+        createdBy: true,
       },
     };
   }

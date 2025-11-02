@@ -9,7 +9,7 @@ import { LocationBookingConfigOwnerController } from '@/modules/location-booking
 import { LocationAvailabilityCreatorController } from '@/modules/location-booking/interfaces/LocationAvailability.creator.controller';
 import { IBookableLocationSearchService } from '@/modules/location-booking/app/IBookableLocationSearch.service';
 import { BookableLocationSearchService } from '@/modules/location-booking/app/impl/BookableLocationSearch.service';
-import { LocationBookableCreatorController } from '@/modules/location-booking/interfaces/LocationBookable.creator.controller';
+import { LocationBookingCreatorController } from '@/modules/location-booking/interfaces/LocationBooking.creator.controller';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { LocationBookingManagementService } from '@/modules/location-booking/app/impl/LocationBookingManagement.service';
 import { LocationBookingOwnerController } from '@/modules/location-booking/interfaces/LocationBooking.owner.controller';
@@ -22,7 +22,7 @@ import { LocationBookingQueryService } from '@/modules/location-booking/app/impl
     LocationAvailabilityOwnerController,
     LocationAvailabilityCreatorController,
     LocationBookingConfigOwnerController,
-    LocationBookableCreatorController,
+    LocationBookingCreatorController,
     LocationBookingOwnerController,
   ],
   providers: [

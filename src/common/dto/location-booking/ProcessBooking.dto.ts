@@ -6,7 +6,9 @@ export class ProcessBookingDto {
   accountId: string;
   bookingId: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    enum: [LocationBookingStatus.APPROVED, LocationBookingStatus.REJECTED],
+  })
   @IsNotEmpty()
   @IsEnum([LocationBookingStatus.APPROVED, LocationBookingStatus.REJECTED])
   status: LocationBookingStatus;
