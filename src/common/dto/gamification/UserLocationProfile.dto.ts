@@ -77,6 +77,20 @@ export class UserLocationProfileResponseDto {
 
   @Expose()
   @ApiProperty({
+    description: 'Location information',
+  })
+  location: {
+    id: string;
+    name: string;
+    description: string;
+    addressLine: string;
+    latitude: number;
+    longitude: number;
+    imageUrl: string[];
+  };
+
+  @Expose()
+  @ApiProperty({
     description: 'Profile creation date',
     example: '2025-01-26T10:00:00.000Z',
   })

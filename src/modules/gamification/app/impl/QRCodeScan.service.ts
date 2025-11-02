@@ -121,6 +121,7 @@ export class QRCodeScanService implements IQRCodeScanService {
         const totalPoints = userLocationProfile?.totalPoints || 0;
 
         return {
+          locationId: mission.locationId,
           totalPoints,
           pointsEarned: 0,
           missions: [],
@@ -170,6 +171,7 @@ export class QRCodeScanService implements IQRCodeScanService {
       totalPoints = userLocationProfile?.totalPoints || 0;
 
       return {
+        locationId: mission.locationId,
         totalPoints,
         pointsEarned,
         missions: [
@@ -485,6 +487,7 @@ export class QRCodeScanService implements IQRCodeScanService {
 
     // Return only the updated missions
     return {
+      locationId: oneTimeQR.locationId,
       totalPoints,
       pointsEarned: totalPointsEarned,
       missions: results.map((r) => ({

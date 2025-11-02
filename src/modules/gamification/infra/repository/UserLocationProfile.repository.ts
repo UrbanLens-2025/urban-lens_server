@@ -19,6 +19,7 @@ export class UserLocationProfileRepository {
         userProfileId,
         locationId,
       },
+      relations: ['location'],
     });
   }
 
@@ -27,6 +28,7 @@ export class UserLocationProfileRepository {
   ): Promise<UserLocationProfileEntity[]> {
     return this.repo.find({
       where: { userProfileId },
+      relations: ['location'],
       order: { totalPoints: 'DESC' },
     });
   }
