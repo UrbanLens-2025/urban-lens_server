@@ -10,7 +10,7 @@ import { AnnouncementResponseDto } from '@/common/dto/posts/Announcement.respons
 import { AnnouncementRepository } from '@/modules/post/infra/repository/Announcement.repository';
 import { SearchVisibleAnnouncementsDto } from '@/common/dto/posts/SearchVisibleAnnouncements.dto';
 import { SearchMyAnnouncementsDto } from '@/common/dto/posts/SearchMyAnnouncements.dto';
-import { LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { IsNull, LessThanOrEqual, MoreThanOrEqual, Or } from 'typeorm';
 import { GetAnnouncementByIdDto } from '@/common/dto/posts/GetAnnouncementById.dto';
 import { GetMyAnnouncementByIdDto } from '@/common/dto/posts/GetMyAnnouncementById.dto';
 
@@ -34,19 +34,12 @@ export class AnnouncementQueryService
     const now = new Date();
     return paginate(dto.query, AnnouncementRepository(this.dataSource), {
       ...IAnnouncementQueryService_QueryConfig.searchByLocation(),
-      where: [
-        {
-          locationId: dto.locationId,
-          isHidden: false,
-          startDate: LessThanOrEqual(now),
-        },
-        {
-          locationId: dto.locationId,
-          isHidden: false,
-          startDate: LessThanOrEqual(now),
-          endDate: MoreThanOrEqual(now),
-        },
-      ],
+      where: {
+        locationId: dto.locationId,
+        isHidden: false,
+        startDate: LessThanOrEqual(now),
+        endDate: Or(IsNull(), MoreThanOrEqual(now)),
+      },
     }).then((res) => this.mapToPaginated(AnnouncementResponseDto, res));
   }
 
@@ -68,15 +61,12 @@ export class AnnouncementQueryService
     const now = new Date();
     const repo = AnnouncementRepository(this.dataSource);
     const found = await repo.findOneOrFail({
-      where: [
-        { id: dto.id, isHidden: false, startDate: LessThanOrEqual(now) },
-        {
-          id: dto.id,
-          isHidden: false,
-          startDate: LessThanOrEqual(now),
-          endDate: MoreThanOrEqual(now),
-        },
-      ],
+      where: {
+        id: dto.id,
+        isHidden: false,
+        startDate: LessThanOrEqual(now),
+        endDate: Or(IsNull(), MoreThanOrEqual(now)),
+      },
     });
     return this.mapTo(AnnouncementResponseDto, found);
   }
