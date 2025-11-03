@@ -24,6 +24,8 @@ import { AccountModule } from '@/modules/account/Account.module';
 import { LocationSubmissionUserController } from '@/modules/business/interfaces/LocationSubmission.user.controller';
 import { CheckInTagPublisherListener } from '@/modules/business/app/listener/CheckInTagPublisher.listener';
 import { getRabbitMQConfig } from '@/config/rabbitmq.config';
+import { LocationDevOnlyController } from '@/modules/business/interfaces/Location.dev-only.controller';
+import { LocationCheckInAnalyticsListener } from '@/modules/business/app/event-listeners/LocationCheckInAnalytics.listener';
 
 @Module({
   imports: [
@@ -42,6 +44,7 @@ import { getRabbitMQConfig } from '@/config/rabbitmq.config';
     LocationPublicController,
     LocationOwnerController,
     LocationAdminController,
+    LocationDevOnlyController,
   ],
   providers: [
     {
@@ -65,6 +68,7 @@ import { getRabbitMQConfig } from '@/config/rabbitmq.config';
       useClass: LocationManagementService,
     },
     CheckInTagPublisherListener,
+    LocationCheckInAnalyticsListener,
   ],
   exports: [BusinessInfraModule],
 })

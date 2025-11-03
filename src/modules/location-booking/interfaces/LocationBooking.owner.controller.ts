@@ -1,0 +1,80 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { Roles } from '@/common/Roles.decorator';
+import { Role } from '@/common/constants/Role.constant';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ILocationBookingQueryService,
+  ILocationBookingQueryService_QueryConfig,
+} from '@/modules/location-booking/app/ILocationBookingQuery.service';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
+import { AuthUser } from '@/common/AuthUser.decorator';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
+import { ProcessBookingDto } from '@/common/dto/location-booking/ProcessBooking.dto';
+
+@ApiTags('Location Bookings')
+@ApiBearerAuth()
+@Roles(Role.BUSINESS_OWNER)
+@Controller('/owner/location-bookings')
+export class LocationBookingOwnerController {
+  constructor(
+    @Inject(ILocationBookingQueryService)
+    private readonly locationBookingQueryService: ILocationBookingQueryService,
+    @Inject(ILocationBookingManagementService)
+    private readonly locationBookingManagementService: ILocationBookingManagementService,
+  ) {}
+
+  @ApiOperation({ summary: 'Search Bookings by Location' })
+  @ApiPaginationQuery(
+    ILocationBookingQueryService_QueryConfig.searchBookingsByLocation(),
+  )
+  @Get('/search')
+  searchBookingsByLocation(
+    @AuthUser() userDto: JwtTokenDto,
+    @Paginate() query: PaginateQuery,
+  ) {
+    return this.locationBookingQueryService.searchBookingsByLocation({
+      accountId: userDto.sub,
+      query,
+    });
+  }
+
+  @ApiOperation({ summary: "Get my location's booking by ID" })
+  @Get('/search/:locationBookingId')
+  getMyLocationsBookingById(
+    @AuthUser() userDto: JwtTokenDto,
+    @Query('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+  ) {
+    return this.locationBookingQueryService.getBookingForMyLocationById({
+      bookingId: locationBookingId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Process location booking' })
+  @Post('/process/:locationBookingId')
+  processLocationBooking(
+    @AuthUser() userDto: JwtTokenDto,
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+    @Body() dto: ProcessBookingDto,
+  ) {
+    return this.locationBookingManagementService.processBooking({
+      ...dto,
+      accountId: userDto.sub,
+      bookingId: locationBookingId,
+    });
+  }
+}

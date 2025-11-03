@@ -14,6 +14,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
+import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
 
 @Entity({ name: 'accounts' })
 export class AccountEntity {
@@ -72,7 +73,16 @@ export class AccountEntity {
   })
   businessProfile?: BusinessEntity;
 
+  @OneToOne(() => CreatorProfileEntity, (creator) => creator.account, {
+    createForeignKeyConstraints: false,
+  })
+  creatorProfile?: CreatorProfileEntity;
+
   public canCreateEvent(): boolean {
     return this.role === Role.EVENT_CREATOR && this.hasOnboarded;
+  }
+
+  public canPerformActions(): boolean {
+    return this.hasOnboarded;
   }
 }

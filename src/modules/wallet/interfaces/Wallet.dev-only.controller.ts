@@ -1,9 +1,17 @@
-import { Controller, Get, Inject, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { IPaymentGatewayPort } from '@/modules/wallet/app/ports/IPaymentGateway.port';
 import { CreatePaymentLinkDto } from '@/common/dto/wallet/CreatePaymentLink.dto';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { type Request } from 'express';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IWalletExternalTransactionManagementService } from '@/modules/wallet/app/IWalletExternalTransactionManagement.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
@@ -15,8 +23,14 @@ import { Role } from '@/common/constants/Role.constant';
 import { DataSource, In } from 'typeorm';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
+import { IWalletTransactionManagementService } from '@/modules/wallet/app/IWalletTransactionManagement.service';
+import { TransferFundsDto } from '@/common/dto/wallet/TransferFunds.dto';
+import { AuthUser } from '@/common/AuthUser.decorator';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
 
 @ApiTags('_Development')
+@ApiBearerAuth()
 @Controller('/dev-only/wallet')
 export class WalletDevOnlyController {
   constructor(
@@ -26,6 +40,8 @@ export class WalletDevOnlyController {
     private readonly walletExternalTransactionManagementService: IWalletExternalTransactionManagementService,
     @Inject(IPaymentGatewayPort)
     private readonly paymentGatewayPort: IPaymentGatewayPort,
+    @Inject(IWalletTransactionManagementService)
+    private readonly walletTransactionHandlerService: IWalletTransactionManagementService,
     private readonly eventEmitter: EventEmitter2,
     private readonly dataSource: DataSource,
   ) {}
@@ -59,6 +75,19 @@ export class WalletDevOnlyController {
     dto.returnUrl = 'https://google.com';
     dto.bankCode = undefined;
     return this.paymentGateway.createPaymentUrl(dto);
+  }
+
+  @ApiOperation({ summary: 'Transfer funds to escrow wallet' })
+  @Post('/transfer-to-escrow')
+  async transferToEscrow(
+    @Body() dto: TransferFundsDto,
+    @AuthUser() userDto: JwtTokenDto,
+  ) {
+    return this.walletTransactionHandlerService.transferFunds({
+      ...dto,
+      ownerId: userDto.sub,
+      destinationWalletId: DefaultSystemWallet.ESCROW,
+    });
   }
 
   @ApiOperation({

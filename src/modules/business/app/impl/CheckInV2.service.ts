@@ -22,6 +22,7 @@ import { GetMyCheckInsDto } from '@/common/dto/business/GetMyCheckIns.dto';
 import { paginate, Paginated } from 'nestjs-paginate';
 import { GetMyCheckInByLocationIdDto } from '@/common/dto/business/GetMyCheckInByLocationId.dto';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
+import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
 
 @Injectable()
 export class CheckInV2Service extends CoreService implements ICheckInV2Service {
@@ -33,6 +34,18 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
     return this.ensureTransaction(null, async (manager) => {
       const locationRepository = LocationRepositoryProvider(manager);
       const checkInRepository = CheckInRepositoryProvider(manager);
+      const accountRepository = AccountRepositoryProvider(manager);
+
+      // verify account can check in
+      const account = await accountRepository.findOneOrFail({
+        where: { id: dto.accountId },
+      });
+
+      if (!account.canPerformActions()) {
+        throw new BadRequestException(
+          'You must complete your account setup to check in.',
+        );
+      }
 
       const location = await locationRepository.findOneByOrFail({
         id: dto.locationId,
@@ -96,11 +109,10 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
           })
           // Emit events
           .then((e) => {
-            const checkInCreatedEvent = new CheckInCreatedEvent();
-            checkInCreatedEvent.checkInId = e.id;
-            checkInCreatedEvent.userId = e.userProfileId;
-            checkInCreatedEvent.locationId = e.locationId;
-            this.eventEmitter.emit(CHECK_IN_CREATED_EVENT, checkInCreatedEvent);
+            this.eventEmitter.emit(
+              CHECK_IN_CREATED_EVENT,
+              new CheckInCreatedEvent(e),
+            );
 
             return e;
           })

@@ -25,7 +25,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { EventEmitterConfig } from '@/config/event-emitter.config';
-import { LocationReservationModule } from '@/modules/location-reservation/LocationReservation.module';
+import { LocationBookingModule } from '@/modules/location-booking/LocationBooking.module';
 import { ReportModule } from '@/modules/report/Report.module';
 import { GamificationModule } from './modules/gamification/Gamification.module';
 import { UtilityModule } from '@/modules/utility/Utility.module';
@@ -82,7 +82,7 @@ import { EmailWorkerService } from '@/workers/EmailWorker.service';
     FileStorageModule,
     PostModule,
     EventModule,
-    LocationReservationModule,
+    LocationBookingModule,
     ReportModule,
     GamificationModule,
     UtilityModule,
