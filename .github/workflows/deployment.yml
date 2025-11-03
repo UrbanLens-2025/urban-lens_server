@@ -76,7 +76,7 @@ jobs:
       VNPAY_TMN_CODE: ${{ secrets.VNPAY_TMN_CODE }}
       VNPAY_URL: ${{ secrets.VNPAY_URL }}
       RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
-      RABBITMQ_QUEUE: ${{secrets.RABBITMQ_QUEUE}}
+      RABBITMQ_QUEUE: ${{ secrets.RABBITMQ_QUEUE }}
 
       # PUBLIC VARIABLES
       DATABASE_ENABLE_SYNC: ${{ vars.DATABASE_ENABLE_SYNC }}
