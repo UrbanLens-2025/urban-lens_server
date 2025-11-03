@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LocationAvailabilityEntity } from '@/modules/location-booking/domain/LocationAvailability.entity';
 import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
+import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { LocationBookingEntity } from '@/modules/location-booking/domain/Locatio
       LocationAvailabilityEntity,
       LocationBookingConfigEntity,
       LocationBookingEntity,
+      LocationBookingDateEntity,
     ]),
   ],
 })

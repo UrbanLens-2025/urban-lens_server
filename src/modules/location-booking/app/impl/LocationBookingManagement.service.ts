@@ -29,6 +29,7 @@ import dayjs from 'dayjs';
 import { StartBookingPaymentDto } from '@/common/dto/location-booking/StartBookingPayment.dto';
 import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
+import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
 
 @Injectable()
 export class LocationBookingManagementService
@@ -66,17 +67,25 @@ export class LocationBookingManagementService
         throw new BadRequestException('This location cannot be booked.');
       }
 
-      // check availability in the selected range
-      // TODO - implement availability check
+      // check availability for all provided date ranges (TODO)
+      // for (const range of dto.dates) { /* validate availability */ }
 
       // calculate pricing
       const bookingPrice = location.bookingConfig.baseBookingPrice;
 
       // save booking
-      const booking = this.mapTo_safe(LocationBookingEntity, dto);
+      const booking = new LocationBookingEntity();
+      booking.locationId = dto.locationId;
       booking.amountToPay = bookingPrice;
       booking.createdById = dto.accountId;
       booking.status = LocationBookingStatus.AWAITING_BUSINESS_PROCESSING;
+      // attach dates
+      booking.dates = dto.dates.map((d) =>
+        this.mapTo_safe(LocationBookingDateEntity, {
+          startDateTime: d.startDateTime,
+          endDateTime: d.endDateTime,
+        }),
+      );
 
       return (
         locationBookingRepository
@@ -170,6 +179,9 @@ export class LocationBookingManagementService
         where: {
           id: dto.locationBookingId,
           createdById: dto.accountId,
+        },
+        relations: {
+          referencedEventRequest: true,
         },
       });
 

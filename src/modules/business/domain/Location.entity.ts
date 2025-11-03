@@ -20,6 +20,7 @@ import { LocationOwnershipType } from '@/common/constants/LocationType.constant'
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
 import { InternalServerErrorException } from '@nestjs/common';
+import { LocationOpeningHoursEntity } from '@/modules/business/domain/LocationOpeningHours.entity';
 
 @Entity({ name: LocationEntity.TABLE_NAME })
 export class LocationEntity {
@@ -148,6 +149,15 @@ export class LocationEntity {
     },
   )
   bookingConfig: LocationBookingConfigEntity;
+
+  @OneToMany(
+    () => LocationOpeningHoursEntity,
+    (openingHours) => openingHours.location,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
+  openingHours: LocationOpeningHoursEntity[];
 
   //#endregion
 

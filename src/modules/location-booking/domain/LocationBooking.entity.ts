@@ -4,6 +4,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -14,6 +15,7 @@ import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import { EventRequestEntity } from '@/modules/event/domain/EventRequest.entity';
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
+import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
 
 @Entity({ name: LocationBookingEntity.TABLE_NAME })
 export class LocationBookingEntity {
@@ -54,11 +56,12 @@ export class LocationBookingEntity {
   @Column({ name: 'location_id', type: 'uuid' })
   locationId: string;
 
-  @Column({ name: 'start_date_time', type: 'timestamp with time zone' })
-  startDateTime: Date;
-
-  @Column({ name: 'end_date_time', type: 'timestamp with time zone' })
-  endDateTime: Date;
+  @OneToMany(() => LocationBookingDateEntity, (date) => date.booking, {
+    createForeignKeyConstraints: false,
+    cascade: ['insert'],
+    eager: true,
+  })
+  dates: LocationBookingDateEntity[];
 
   @Column({ name: 'status', type: 'varchar', length: 55 })
   status: LocationBookingStatus;

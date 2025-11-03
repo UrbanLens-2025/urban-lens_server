@@ -44,14 +44,12 @@ export class EventRequestManagementService
         );
       }
 
-      // create location booking
+      // create location booking with dates
       const locationBooking =
         await this.locationBookingService.createBooking_ForBusinessLocation({
-          ...dto,
-          locationId: dto.locationId,
-          startDateTime: dto.startDateTime,
-          endDateTime: dto.endDateTime,
           accountId: dto.accountId,
+          locationId: dto.locationId,
+          dates: dto.dates,
         });
 
       const eventRequest = this.mapTo_safe(EventRequestEntity, dto);
