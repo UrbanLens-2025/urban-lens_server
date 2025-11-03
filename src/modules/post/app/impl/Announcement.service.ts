@@ -71,14 +71,4 @@ export class AnnouncementService
     });
   }
 
-  async getById(dto: GetAnnouncementByIdDto): Promise<AnnouncementResponseDto> {
-    const repo = AnnouncementRepository(this.dataSource);
-    const found = await repo.findOneByOrFail({
-      id: dto.id,
-      isHidden: dto.publicOnly ? false : undefined,
-      startDate: dto.publicOnly ? LessThanOrEqual(new Date()) : undefined,
-      endDate: dto.publicOnly ? MoreThanOrEqual(new Date()) : undefined,
-    });
-    return this.mapTo(AnnouncementResponseDto, found);
-  }
 }
