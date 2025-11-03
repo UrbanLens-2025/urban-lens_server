@@ -28,6 +28,17 @@ export const LocationAnalyticsRepository = (
 
       return analytics;
     },
+
+    async incrementCheckInsCount(
+      this: Repository<LocationAnalyticsEntity>,
+      payload: { locationId: string },
+    ) {
+      await this.increment(
+        { locationId: payload.locationId },
+        'totalCheckIns',
+        1,
+      );
+    },
   });
 };
 

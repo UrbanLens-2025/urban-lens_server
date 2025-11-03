@@ -22,6 +22,7 @@ import { ILocationRequestQueryService } from '@/modules/business/app/ILocationRe
 import { AccountModule } from '@/modules/account/Account.module';
 import { LocationSubmissionUserController } from '@/modules/business/interfaces/LocationSubmission.user.controller';
 import { LocationDevOnlyController } from '@/modules/business/interfaces/Location.dev-only.controller';
+import { LocationCheckInAnalyticsListener } from '@/modules/business/app/event-listeners/LocationCheckInAnalytics.listener';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { LocationDevOnlyController } from '@/modules/business/interfaces/Locatio
       provide: ILocationManagementService,
       useClass: LocationManagementService,
     },
+    LocationCheckInAnalyticsListener,
   ],
   exports: [BusinessInfraModule],
 })

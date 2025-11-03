@@ -96,11 +96,10 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
           })
           // Emit events
           .then((e) => {
-            const checkInCreatedEvent = new CheckInCreatedEvent();
-            checkInCreatedEvent.checkInId = e.id;
-            checkInCreatedEvent.userId = e.userProfileId;
-            checkInCreatedEvent.locationId = e.locationId;
-            this.eventEmitter.emit(CHECK_IN_CREATED_EVENT, checkInCreatedEvent);
+            this.eventEmitter.emit(
+              CHECK_IN_CREATED_EVENT,
+              new CheckInCreatedEvent(e),
+            );
 
             return e;
           })
