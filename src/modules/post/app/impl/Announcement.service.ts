@@ -1,0 +1,84 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { CoreService } from '@/common/core/Core.service';
+import { IAnnouncementService } from '@/modules/post/app/IAnnouncement.service';
+import { CreateAnnouncementDto } from '@/common/dto/posts/CreateAnnouncement.dto';
+import { UpdateAnnouncementDto } from '@/common/dto/posts/UpdateAnnouncement.dto';
+import { GetAnnouncementByIdDto } from '@/common/dto/posts/GetAnnouncementById.dto';
+import { AnnouncementResponseDto } from '@/common/dto/posts/Announcement.response.dto';
+import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
+import { AnnouncementRepository } from '@/modules/post/infra/repository/Announcement.repository';
+import { AnnouncementEntity } from '@/modules/post/domain/Announcement.entity';
+import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
+import { LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+
+@Injectable()
+export class AnnouncementService
+  extends CoreService
+  implements IAnnouncementService
+{
+  constructor(
+    @Inject(IFileStorageService)
+    private readonly fileStorageService: IFileStorageService,
+  ) {
+    super();
+  }
+
+  async create(dto: CreateAnnouncementDto): Promise<AnnouncementResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const repo = AnnouncementRepository(em);
+
+      if (dto.imageUrl) {
+        await this.fileStorageService.confirmUpload([dto.imageUrl], em);
+      }
+
+      const entity = new AnnouncementEntity();
+
+      // Ownership check if locationId provided
+      if (dto.locationId) {
+        const locationRepo = LocationRepositoryProvider(em);
+        const location = await locationRepo.findOneByOrFail({
+          id: dto.locationId,
+          businessId: dto.accountId,
+        });
+        entity.locationId = location.id;
+      }
+
+      this.assignTo_safe(entity, dto);
+      entity.createdById = dto.accountId;
+      entity.updatedById = dto.accountId;
+
+      const saved = await repo.save(entity);
+      return this.mapTo(AnnouncementResponseDto, saved);
+    });
+  }
+
+  async update(dto: UpdateAnnouncementDto): Promise<AnnouncementResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const repo = AnnouncementRepository(em);
+      const existing = await repo.findOneByOrFail({
+        id: dto.id,
+        createdById: dto.accountId,
+      });
+
+      if (dto.imageUrl)
+        await this.fileStorageService.confirmUpload([dto.imageUrl], em);
+
+      this.assignTo_safeIgnoreEmpty(existing, dto);
+      existing.updatedById = dto.accountId ?? existing.updatedById;
+
+      const saved = await repo.save(existing);
+      return this.mapTo(AnnouncementResponseDto, saved);
+    });
+  }
+
+  async getById(dto: GetAnnouncementByIdDto): Promise<AnnouncementResponseDto> {
+    const repo = AnnouncementRepository(this.dataSource);
+    const found = await repo.findOneByOrFail({
+      id: dto.id,
+      isHidden: dto.publicOnly ? false : undefined,
+      startDate: dto.publicOnly ? LessThanOrEqual(new Date()) : undefined,
+      endDate: dto.publicOnly ? MoreThanOrEqual(new Date()) : undefined,
+    });
+    return this.mapTo(AnnouncementResponseDto, found);
+  }
+}

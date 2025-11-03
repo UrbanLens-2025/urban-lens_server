@@ -105,6 +105,22 @@ export class CoreService {
     return target;
   }
 
+  protected assignTo_safeIgnoreEmpty<T extends object, V extends object>(
+    target: T,
+    plain: V,
+  ): T {
+    const validKeys = Object.keys(target);
+
+    for (const [key, value] of Object.entries(plain)) {
+      if (validKeys.includes(key) && value !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        target[key] = value;
+      }
+    }
+
+    return target;
+  }
+
   /**
    * Map plain object to class instance. Maps all properties.
    * @param cls Target class
