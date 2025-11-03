@@ -1,10 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EmailNotificationService } from '@/modules/notification/app/impl/EmailNotification.service';
-import { BullModule } from '@nestjs/bullmq';
-import { EmailNotificationConsumerService } from '@/modules/notification/app/listeners/EmailNotificationConsumer.service';
 import { MailerConfig } from '@/config/mailer.config';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { FirebaseNotificationService } from '@/modules/notification/app/impl/FirebaseNotification.service';
 import { PushNotificationUserController } from '@/modules/notification/interfaces/PushNotification.user.controller';
 import { PushNotificationDevOnlyController } from '@/modules/notification/interfaces/PushNotification.dev-only.controller';
@@ -15,6 +13,8 @@ import { LocationRequestApprovedListener } from '@/modules/notification/app/even
 import { LocationRequestNeedsMoreInfoListener } from '@/modules/notification/app/event-listeners/LocationRequestNeedsMoreInfo.listener';
 import { LocationRequestRejectedListener } from '@/modules/notification/app/event-listeners/LocationRequestRejected.listener';
 import { WalletDepositConfirmedListener } from '@/modules/notification/app/event-listeners/WalletDepositConfirmed.listener';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { Environment } from '@/config/env.config';
 
 @Module({
   imports: [
@@ -23,7 +23,32 @@ import { WalletDepositConfirmedListener } from '@/modules/notification/app/event
       useClass: MailerConfig,
       imports: [ConfigModule],
     }),
-    BullModule.registerQueue({ name: 'email-notifications' }),
+    ClientsModule.registerAsync([
+      {
+        name: 'RABBITMQ_CLIENT',
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService<Environment>) => {
+          const rabbitMQUrl = configService.get('RABBITMQ_URL');
+          if (!rabbitMQUrl) {
+            return {
+              transport: Transport.RMQ,
+              options: {},
+            };
+          }
+          return {
+            transport: Transport.RMQ,
+            options: {
+              urls: [rabbitMQUrl],
+              queue: configService.get('RABBITMQ_QUEUE') || 'urban-lens',
+              queueOptions: {
+                durable: true,
+              },
+            },
+          };
+        },
+        inject: [ConfigService],
+      },
+    ]),
   ],
   providers: [
     {
@@ -34,7 +59,6 @@ import { WalletDepositConfirmedListener } from '@/modules/notification/app/event
       provide: IFirebaseNotificationService,
       useClass: FirebaseNotificationService,
     },
-    EmailNotificationConsumerService,
     LocationRequestApprovedListener,
     LocationRequestNeedsMoreInfoListener,
     LocationRequestRejectedListener,

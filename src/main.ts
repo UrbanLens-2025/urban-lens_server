@@ -7,6 +7,7 @@ import { globalValidationConfig } from '@/config/validation.config';
 import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerDocumentConfig } from '@/config/swagger.config';
 import { NextFunction, Request, Response } from 'express';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const logLevelString = process.env.LOG_LEVELS || 'log';
@@ -21,10 +22,33 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: logLevels,
   });
+
+  // RabbitMQ consumer (worker) - runs in the same app as HTTP server
+  if (process.env.RABBITMQ_URL) {
+    console.log('RabbitMQ enabled - configuring publisher and consumer');
+
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: {
+        urls: [process.env.RABBITMQ_URL],
+        queue: process.env.RABBITMQ_QUEUE || 'urban-lens',
+        queueOptions: {
+          durable: true,
+        },
+        noAck: false,
+        prefetchCount: 50,
+      },
+    });
+
+    await app.startAllMicroservices();
+    console.log('RabbitMQ consumer started');
+  } else {
+    console.log('RabbitMQ not configured');
+  }
+
   app.enableCors();
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe(globalValidationConfig));
-  // app.useGlobalFilters(new SentryGlobalFilter(), new GlobalExceptionFilter());
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: ['1'],
@@ -55,10 +79,10 @@ async function bootstrap() {
         cacheControl: false,
       },
       customJs: '/swagger-custom.js',
-      // customCss: theme.getBuffer(SwaggerThemeNameEnum),
     },
   );
 
   await app.listen(process.env.PORT ?? 3000);
+  console.log(`HTTP server listening on port ${process.env.PORT ?? 3000}`);
 }
 void bootstrap();

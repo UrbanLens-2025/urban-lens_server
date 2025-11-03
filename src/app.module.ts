@@ -9,8 +9,6 @@ import { envConfig } from '@/config/env.config';
 import { NotificationModule } from '@/modules/notification/Notification.module';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptorConfig } from '@/common/interceptor/response.interceptor';
-import { BullModule } from '@nestjs/bullmq';
-import { BullConfig } from '@/config/bull.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { RedisConfig } from '@/config/redis.config';
@@ -35,6 +33,10 @@ import { WalletModule } from './modules/wallet/Wallet.module';
 import { TestController } from '@/Test.controller';
 import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
+import { TagScoreWorkerController } from '@/workers/TagScoreWorker.controller';
+import { TagScoreWorkerService } from '@/workers/TagScoreWorker.service';
+import { EmailWorkerController } from '@/workers/EmailWorker.controller';
+import { EmailWorkerService } from '@/workers/EmailWorker.service';
 
 @Module({
   imports: [
@@ -56,10 +58,6 @@ import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
     }),
     TypeOrmModule.forRootAsync({
       useClass: PersistenceConfig,
-      imports: [ConfigModule],
-    }),
-    BullModule.forRootAsync({
-      useClass: BullConfig,
       imports: [ConfigModule],
     }),
     ThrottlerModule.forRoot({
@@ -90,7 +88,12 @@ import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
     UtilityModule,
     WalletModule,
   ],
-  controllers: [AppController, TestController],
+  controllers: [
+    AppController,
+    TestController,
+    TagScoreWorkerController,
+    EmailWorkerController,
+  ],
   providers: [
     {
       provide: APP_FILTER,
@@ -114,6 +117,8 @@ import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
     },
     FirebaseAdminProvider,
     AppService,
+    TagScoreWorkerService,
+    EmailWorkerService,
   ],
 })
 export class AppModule {}

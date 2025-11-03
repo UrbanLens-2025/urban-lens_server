@@ -28,6 +28,9 @@ export interface Environment {
   REDIS_PASSWORD: string;
   REDIS_URL: string;
 
+  RABBITMQ_URL?: string;
+  RABBITMQ_QUEUE?: string;
+
   JWT_SECRET: string;
   JWT_EXPIRES_IN: string;
 
@@ -83,6 +86,9 @@ export const envConfig = joi.object<Environment>({
   REDIS_PORT: joi.number().required(),
   REDIS_PASSWORD: joi.string(),
   REDIS_URL: joi.string().required(),
+
+  RABBITMQ_URL: joi.string().optional(),
+  RABBITMQ_QUEUE: joi.string().default('urban-lens'),
 
   JWT_SECRET: joi.string().required(),
   JWT_EXPIRES_IN: joi.string().required(),
