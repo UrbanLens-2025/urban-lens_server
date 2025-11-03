@@ -6,7 +6,6 @@ import { IWalletExternalTransactionQueryService } from '@/modules/wallet/app/IWa
 import { WalletExternalTransactionQueryService } from '@/modules/wallet/app/impl/WalletExternalTransactionQuery.service';
 import { IWalletExternalTransactionManagementService } from '@/modules/wallet/app/IWalletExternalTransactionManagement.service';
 import { WalletExternalTransactionManagementService } from '@/modules/wallet/app/impl/WalletExternalTransactionManagement.service';
-import { WalletCreationListener } from '@/modules/wallet/app/listeners/WalletCreation.listener';
 import { WalletPrivateController } from '@/modules/wallet/interfaces/Wallet.private.controller';
 import { IPaymentGatewayPort } from '@/modules/wallet/app/ports/IPaymentGateway.port';
 import { VNPayPaymentGatewayAdapter } from '@/modules/wallet/infra/adapter/VNPayPaymentGateway.adapter';
@@ -64,7 +63,6 @@ import { WalletTransactionQueryService } from '@/modules/wallet/app/impl/WalletT
       provide: IWalletTransactionQueryService,
       useClass: WalletTransactionQueryService,
     },
-    WalletCreationListener,
     WalletSeederHelper,
   ],
   exports: [WalletInfraModule, IWalletTransactionCoordinatorService],
