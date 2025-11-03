@@ -10,7 +10,7 @@ import {
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { LocationAvailabilityStatus } from '@/common/constants/LocationAvailabilityStatus.constant';
-import { LocationAvailabilitySource } from '@/common/constants/LocationAvailabilitySource.constant';
+import { DayOfWeek } from '@/common/constants/DayOfWeek.constant';
 
 @Entity({ name: LocationAvailabilityEntity.TABLE_NAME })
 export class LocationAvailabilityEntity {
@@ -45,28 +45,18 @@ export class LocationAvailabilityEntity {
 
   //
 
-  @Column({ name: 'start_date_time', type: 'timestamp with time zone' })
-  startDateTime: Date;
+  @Column({ name: 'day_of_week', type: 'varchar', length: 20 })
+  dayOfWeek: DayOfWeek;
 
-  @Column({ name: 'end_date_time', type: 'timestamp with time zone' })
-  endDateTime: Date;
+  @Column({ name: 'start_time', type: 'time without time zone' })
+  startTime: string;
+
+  @Column({ name: 'end_time', type: 'time without time zone' })
+  endTime: string;
 
   @Column({ name: 'status', type: 'varchar', length: 50 })
   status: LocationAvailabilityStatus;
 
-  @Column({ name: 'source', type: 'varchar', length: 50 })
-  source: LocationAvailabilitySource;
-
   @Column({ name: 'note', type: 'text', nullable: true })
   note: string | null;
-
-  public canBeRemoved(): boolean {
-    const now = new Date();
-    return this.endDateTime >= now;
-  }
-
-  public canBeUpdated(): boolean {
-    const now = new Date();
-    return this.endDateTime >= now;
-  }
 }

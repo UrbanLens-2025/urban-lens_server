@@ -15,6 +15,7 @@ import { EventRequestStatus } from '@/common/constants/EventRequestStatus.consta
 import { EventRequestTagsEntity } from '@/modules/event/domain/EventRequestTags.entity';
 import { SocialLink } from '@/common/json/SocialLink.json';
 import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
+import { EventEntity } from '@/modules/event/domain/Event.entity';
 
 @Entity({
   name: EventRequestEntity.TABLE_NAME,
@@ -84,7 +85,7 @@ export class EventRequestEntity {
   referencedLocationBookingId: string;
 
   @Column({ name: 'social', type: 'jsonb', nullable: true })
-  social?: SocialLink | null;
+  social?: SocialLink[] | null;
 
   // reverse relations
   @OneToMany(
@@ -93,4 +94,27 @@ export class EventRequestEntity {
     { createForeignKeyConstraints: false },
   )
   tags: EventRequestTagsEntity[];
+
+  @OneToOne(() => EventEntity, (event) => event.referencedEventRequest, {
+    createForeignKeyConstraints: false,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'referenced_event_id' })
+  referencedEvent?: EventEntity | null;
+
+  @Column({
+    name: 'referenced_event_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  referencedEventId?: string | null;
+
+  canConfirmBooking(): boolean {
+    return this.status === EventRequestStatus.PROCESSED;
+  }
+
+  confirmBooking(): EventRequestEntity {
+    this.status = EventRequestStatus.CONFIRMED;
+    return this;
+  }
 }

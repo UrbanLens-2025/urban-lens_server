@@ -9,12 +9,11 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
-  Query,
 } from '@nestjs/common';
 import { ILocationAvailabilityManagementService } from '@/modules/location-booking/app/ILocationAvailabilityManagement.service';
 import { AddLocationAvailabilityDto } from '@/common/dto/location-booking/AddLocationAvailability.dto';
+import { UpdateLocationAvailabilityStatusDto } from '@/common/dto/location-booking/UpdateLocationAvailabilityStatus.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UpdateLocationAvailabilityDto } from '@/common/dto/location-booking/UpdateLocationAvailability.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { Roles } from '@/common/Roles.decorator';
@@ -30,22 +29,13 @@ export class LocationAvailabilityOwnerController {
     private readonly manualLocationAvailabilityManagement: ILocationAvailabilityManagementService,
   ) {}
 
-  @ApiOperation({
-    summary: 'Get location availability for calendar view',
-    description: 'Fetches one month before and after the given month',
-  })
-  @Get('/calendar')
-  getLocationAvailabilityForCalendar(
-    @Query('month', ParseIntPipe) month: number,
-    @Query('year', ParseIntPipe) year: number,
-    @Query('locationId', ParseUUIDPipe) locationId: string,
+  @ApiOperation({ summary: 'Get weekly location availability' })
+  @Get('/search/:locationId')
+  getLocationAvailabilityForWeek(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
   ) {
-    return this.manualLocationAvailabilityManagement.getLocationAvailabilityByMonthYear(
-      {
-        month,
-        year,
-        locationId,
-      },
+    return this.manualLocationAvailabilityManagement.getAvailabilityForLocation(
+      { locationId },
     );
   }
 
@@ -62,21 +52,19 @@ export class LocationAvailabilityOwnerController {
   }
 
   @ApiOperation({
-    summary: 'Update a location availability',
-    description:
-      'You can only update location availabilities where endDateTime is NOT in the past',
+    summary: 'Update location availability (status and note only)',
   })
   @Put('/:locationAvailabilityId')
   updateLocationAvailability(
     @Param('locationAvailabilityId', ParseIntPipe)
     locationAvailabilityId: number,
-    @Body() dto: UpdateLocationAvailabilityDto,
     @AuthUser() userDto: JwtTokenDto,
+    @Body() body: UpdateLocationAvailabilityStatusDto,
   ) {
     return this.manualLocationAvailabilityManagement.updateLocationAvailability(
       {
-        ...dto,
-        locationAvailabilityId: locationAvailabilityId,
+        ...body,
+        locationAvailabilityId,
         createdById: userDto.sub,
       },
     );

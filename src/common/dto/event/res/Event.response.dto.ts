@@ -1,9 +1,31 @@
 import { Exclude, Expose, Type } from 'class-transformer';
+import { EventStatus } from '@/common/constants/EventStatus.constant';
+import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
+import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
+import { EventRequestResponseDto } from '@/common/dto/event/res/EventRequest.response.dto';
+import { EventTagsResponseDto } from '@/common/dto/event/res/EventTags.response.dto';
+import { SocialLink } from '@/common/json/SocialLink.json';
+import { EventTicketResponseDto } from '@/common/dto/event/res/EventTicket.response.dto';
 
 @Exclude()
 export class EventResponseDto {
   @Expose()
   id: string;
+
+  @Expose()
+  @Type(() => Date)
+  createdAt: Date;
+
+  @Expose()
+  @Type(() => Date)
+  updatedAt: Date;
+
+  @Expose()
+  createdById: string;
+
+  @Expose()
+  @Type(() => AccountResponseDto)
+  createdBy?: AccountResponseDto;
 
   @Expose()
   displayName: string;
@@ -12,34 +34,43 @@ export class EventResponseDto {
   description: string;
 
   @Expose()
-  isDraft: boolean;
+  avatarUrl?: string | null;
 
   @Expose()
-  @Type(() => Date)
-  startDate: Date;
+  coverUrl?: string | null;
 
   @Expose()
-  @Type(() => Date)
-  endDate: Date;
+  status: EventStatus;
 
   @Expose()
-  expectedParticipants: number;
+  locationId: string;
 
   @Expose()
-  avatarUrl?: string;
+  @Type(() => LocationResponseDto)
+  location?: LocationResponseDto;
 
   @Expose()
-  coverUrl?: string;
+  @Type(() => SocialLink)
+  social?: SocialLink[] | null;
 
   @Expose()
-  customProperties: Record<string, any>;
+  refundPolicy?: string | null;
 
   @Expose()
-  createdById: string;
+  termsAndConditions?: string | null;
 
   @Expose()
-  createdAt: Date;
+  referencedEventRequestId: string;
 
   @Expose()
-  updatedAt: Date;
+  @Type(() => EventRequestResponseDto)
+  referencedEventRequest?: EventRequestResponseDto;
+
+  @Expose()
+  @Type(() => EventTagsResponseDto)
+  tags?: EventTagsResponseDto[];
+
+  @Expose()
+  @Type(() => EventTicketResponseDto)
+  tickets?: EventTicketResponseDto[];
 }

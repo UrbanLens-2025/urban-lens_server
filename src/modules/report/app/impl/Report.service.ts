@@ -303,8 +303,6 @@ export class ReportService implements IReportService {
                 id: true,
                 displayName: true,
                 description: true,
-                startDate: true,
-                endDate: true,
                 avatarUrl: true,
                 coverUrl: true,
                 createdAt: true,

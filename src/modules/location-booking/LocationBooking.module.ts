@@ -16,7 +16,6 @@ import { LocationBookingOwnerController } from '@/modules/location-booking/inter
 import { ILocationBookingQueryService } from '@/modules/location-booking/app/ILocationBookingQuery.service';
 import { LocationBookingQueryService } from '@/modules/location-booking/app/impl/LocationBookingQuery.service';
 import { WalletModule } from '@/modules/wallet/Wallet.module';
-import { LocationBookingCreatorController } from '@/modules/location-booking/interfaces/LocationBooking.creator.controller';
 
 @Module({
   imports: [LocationReservationInfraModule, WalletModule],
@@ -26,7 +25,6 @@ import { LocationBookingCreatorController } from '@/modules/location-booking/int
     LocationBookingConfigOwnerController,
     LocationCreatorController,
     LocationBookingOwnerController,
-    LocationBookingCreatorController,
   ],
   providers: [
     {

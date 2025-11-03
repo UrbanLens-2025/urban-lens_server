@@ -57,6 +57,18 @@ export class EventTicketEntity {
   @Column({ name: 'quantity_reserved', type: 'int', default: 0 })
   quantityReserved: number;
 
+  @Column({ name: 'sale_start_date', type: 'timestamp with time zone' })
+  saleStartDate: Date;
+
+  @Column({ name: 'sale_end_date', type: 'timestamp with time zone' })
+  saleEndDate: Date;
+
+  @Column({ name: 'min_quantity_per_order', type: 'int', default: 1 })
+  minQuantityPerOrder: number;
+
+  @Column({ name: 'max_quantity_per_order', type: 'int', default: 5 })
+  maxQuantityPerOrder: number;
+
   @ManyToOne(() => EventEntity, (event) => event.id, {
     createForeignKeyConstraints: false,
   })

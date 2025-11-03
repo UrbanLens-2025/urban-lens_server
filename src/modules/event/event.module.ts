@@ -1,16 +1,21 @@
 import { Module } from '@nestjs/common';
 import { EventInfraModule } from '@/modules/event/infra/event.infra.module';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
-import { ICreateEventService } from '@/modules/event/app/ICreateEvent.service';
-import { CreateEventService } from '@/modules/event/app/impl/CreateEvent.service';
-import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
-import { EventManagementService } from '@/modules/event/app/impl/EventManagement.service';
 import { EventRequestCreatorController } from '@/modules/event/interfaces/EventRequest.creator.controller';
 import { IEventRequestManagementService } from '@/modules/event/app/IEventRequestManagement.service';
 import { EventRequestManagementService } from '@/modules/event/app/impl/EventRequestManagement.service';
 import { LocationBookingModule } from '@/modules/location-booking/LocationBooking.module';
 import { IEventRequestQueryService } from '@/modules/event/app/IEventRequestQuery.service';
 import { EventRequestQueryService } from '@/modules/event/app/impl/EventRequestQuery.service';
+import { EventCreatorController } from '@/modules/event/interfaces/Event.creator.controller';
+import { IEventQueryService } from '@/modules/event/app/IEventQuery.service';
+import { EventQueryService } from '@/modules/event/app/impl/EventQuery.service';
+import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
+import { EventManagementService } from '@/modules/event/app/impl/EventManagement.service';
+import { IEventTagsManagementService } from '@/modules/event/app/IEventTagsManagement.service';
+import { EventTagsManagementService } from '@/modules/event/app/impl/EventTagsManagement.service';
+import { IEventTicketManagementService } from '@/modules/event/app/IEventTicketManagement.service';
+import { EventTicketManagementService } from '@/modules/event/app/impl/EventTicketManagement.service';
 
 @Module({
   imports: [
@@ -19,16 +24,8 @@ import { EventRequestQueryService } from '@/modules/event/app/impl/EventRequestQ
     LocationBookingModule,
     FileStorageModule,
   ],
-  controllers: [EventRequestCreatorController],
+  controllers: [EventRequestCreatorController, EventCreatorController],
   providers: [
-    {
-      provide: ICreateEventService,
-      useClass: CreateEventService,
-    },
-    {
-      provide: IEventManagementService,
-      useClass: EventManagementService,
-    },
     {
       provide: IEventRequestManagementService,
       useClass: EventRequestManagementService,
@@ -36,6 +33,22 @@ import { EventRequestQueryService } from '@/modules/event/app/impl/EventRequestQ
     {
       provide: IEventRequestQueryService,
       useClass: EventRequestQueryService,
+    },
+    {
+      provide: IEventQueryService,
+      useClass: EventQueryService,
+    },
+    {
+      provide: IEventManagementService,
+      useClass: EventManagementService,
+    },
+    {
+      provide: IEventTagsManagementService,
+      useClass: EventTagsManagementService,
+    },
+    {
+      provide: IEventTicketManagementService,
+      useClass: EventTicketManagementService,
     },
   ],
 })

@@ -1,6 +1,6 @@
 export enum EventRequestStatus {
   PENDING = 'PENDING',
   PROCESSED = 'PROCESSED',
-  BOOKED = 'BOOKED',
+  CONFIRMED = 'CONFIRMED',
   CANCELLED = 'CANCELLED',
 }

@@ -26,6 +26,8 @@ import { CheckInTagPublisherListener } from '@/modules/business/app/listener/Che
 import { getRabbitMQConfig } from '@/config/rabbitmq.config';
 import { LocationDevOnlyController } from '@/modules/business/interfaces/Location.dev-only.controller';
 import { LocationCheckInAnalyticsListener } from '@/modules/business/app/event-listeners/LocationCheckInAnalytics.listener';
+import { ILocationOpeningHoursManagementService } from '@/modules/business/app/ILocationOpeningHoursManagement.service';
+import { LocationOpeningHoursManagementService } from '@/modules/business/app/impl/LocationOpeningHoursManagement.service';
 
 @Module({
   imports: [
@@ -66,6 +68,10 @@ import { LocationCheckInAnalyticsListener } from '@/modules/business/app/event-l
     {
       provide: ILocationManagementService,
       useClass: LocationManagementService,
+    },
+    {
+      provide: ILocationOpeningHoursManagementService,
+      useClass: LocationOpeningHoursManagementService,
     },
     CheckInTagPublisherListener,
     LocationCheckInAnalyticsListener,

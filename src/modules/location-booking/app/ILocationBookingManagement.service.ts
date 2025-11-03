@@ -2,7 +2,7 @@ import { CreateBookingForBusinessLocationDto } from '@/common/dto/location-booki
 import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 import { ProcessBookingDto } from '@/common/dto/location-booking/ProcessBooking.dto';
 import { UpdateResult } from 'typeorm';
-import { StartBookingPaymentDto } from '@/common/dto/location-booking/StartBookingPayment.dto';
+import { PayForBookingDto } from '@/common/dto/location-booking/PayForBooking.dto';
 
 export const ILocationBookingManagementService = Symbol(
   'ILocationBookingManagementService',
@@ -14,7 +14,5 @@ export interface ILocationBookingManagementService {
 
   processBooking(dto: ProcessBookingDto): Promise<UpdateResult>;
 
-  initiatePaymentForBooking(
-    dto: StartBookingPaymentDto,
-  ): Promise<LocationBookingResponseDto>;
+  payForBooking(dto: PayForBookingDto): Promise<LocationBookingResponseDto>;
 }

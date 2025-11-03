@@ -1,14 +1,15 @@
 import { LocationAvailabilityStatus } from '@/common/constants/LocationAvailabilityStatus.constant';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBefore } from '@/common/decorators/IsBefore.decorator';
 import {
-  IsDate,
   IsEnum,
+  IsMilitaryTime,
   IsNotEmpty,
   IsOptional,
+  IsUUID,
   MaxLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { TimeIsBefore } from '@/common/decorators/TimeIsBefore.decorator';
+import { DayOfWeek } from '@/common/constants/DayOfWeek.constant';
 
 export class AddLocationAvailabilityDto {
   // transient fields
@@ -16,21 +17,25 @@ export class AddLocationAvailabilityDto {
 
   // body fields
   @IsNotEmpty()
+  @IsUUID()
   @ApiProperty()
   locationId: string;
 
-  @Type(() => Date)
-  @IsDate()
+  @IsMilitaryTime()
   @IsNotEmpty()
-  @IsBefore('endDateTime')
+  @TimeIsBefore('endTime')
   @ApiProperty()
-  startDateTime: Date;
+  startTime: string;
 
-  @Type(() => Date)
-  @IsDate()
+  @IsMilitaryTime()
   @IsNotEmpty()
   @ApiProperty()
-  endDateTime: Date;
+  endTime: string;
+
+  @ApiProperty({ enum: DayOfWeek, example: DayOfWeek.MONDAY })
+  @IsEnum(DayOfWeek)
+  @IsNotEmpty()
+  dayOfWeek: DayOfWeek;
 
   @IsNotEmpty()
   @IsEnum(LocationAvailabilityStatus)

@@ -12,6 +12,12 @@ import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.re
 import { EventRequestTagsRepository } from '@/modules/event/infra/repository/EventRequestTags.repository';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
+import { StartBookingPaymentDto } from '@/common/dto/location-booking/StartBookingPayment.dto';
+import { EntityManager } from 'typeorm';
+import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
+import { EventEntity } from '@/modules/event/domain/Event.entity';
+import { EventStatus } from '@/common/constants/EventStatus.constant';
+import { EventTagsRepository } from '@/modules/event/infra/repository/EventTags.repository';
 
 @Injectable()
 export class EventRequestManagementService
@@ -79,6 +85,100 @@ export class EventRequestManagementService
           })
           // map to response
           .then((res) => this.mapTo(EventRequestResponseDto, res))
+      );
+    });
+  }
+
+  initiatePayment(
+    dto: StartBookingPaymentDto,
+  ): Promise<EventRequestResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const eventRequestRepository = EventRequestRepository(em);
+
+      const eventRequest = await eventRequestRepository
+        .findOneOrFail({
+          where: {
+            id: dto.eventRequestId,
+          },
+        })
+        // check can confirm
+        .then((res) => {
+          if (!res.canConfirmBooking()) {
+            throw new BadRequestException(
+              'Event request is not eligible for booking confirmation.',
+            );
+          }
+          return res;
+        });
+
+      return await this.locationBookingService
+        .payForBooking({
+          ...dto,
+          locationBookingId: eventRequest.referencedLocationBookingId,
+          entityManager: em,
+        })
+        // update event request status
+        .then(async (_) => {
+          await eventRequestRepository.update(
+            {
+              id: eventRequest.id,
+            },
+            eventRequest.confirmBooking(),
+          );
+
+          return _;
+        })
+        // transfer event request details to event
+        .then(async (_) => {
+          await this.createEventFromRequest(eventRequest.id, em);
+          return _;
+        })
+        // map to dto
+        .then((locationBookingResponseDto) => ({
+          ...this.mapTo(EventRequestResponseDto, eventRequest),
+          locationBooking: locationBookingResponseDto,
+        }));
+    });
+  }
+
+  private async createEventFromRequest(
+    eventRequestId: string,
+    entityManager: EntityManager,
+  ) {
+    return this.ensureTransaction(entityManager, async (em) => {
+      const eventRepository = EventRepository(em);
+      const eventRequestRepository = EventRequestRepository(em);
+      const eventTagsRepository = EventTagsRepository(em);
+
+      const eventRequest = await eventRequestRepository.findOneOrFail({
+        where: {
+          id: eventRequestId,
+        },
+        relations: {
+          referencedLocationBooking: true,
+          tags: true,
+        },
+      });
+
+      const event = new EventEntity();
+      event.displayName = eventRequest.eventName;
+      event.description = eventRequest.eventDescription;
+      event.locationId = eventRequest.referencedLocationBooking.locationId;
+      event.referencedEventRequestId = eventRequestId;
+      event.createdById = eventRequest.createdById;
+      event.social = eventRequest.social;
+      event.status = EventStatus.DRAFT;
+
+      return (
+        eventRepository
+          .save(event)
+          // save tags
+          .then(async (event) => {
+            await eventTagsRepository.persistEntities({
+              eventId: event.id,
+              tagIds: eventRequest.tags.map((i) => i.tagId),
+            });
+          })
       );
     });
   }

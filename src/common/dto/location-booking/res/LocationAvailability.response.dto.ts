@@ -1,6 +1,10 @@
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import { DayOfWeek } from '@/common/constants/DayOfWeek.constant';
 import { LocationAvailabilityStatus } from '@/common/constants/LocationAvailabilityStatus.constant';
-import { LocationAvailabilitySource } from '@/common/constants/LocationAvailabilitySource.constant';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 @Exclude()
 export class LocationAvailabilityResponseDto {
@@ -14,37 +18,59 @@ export class LocationAvailabilityResponseDto {
   createdById: string;
 
   @Expose()
-  status: LocationAvailabilityStatus;
+  dayOfWeek: DayOfWeek;
 
   @Expose()
-  source: LocationAvailabilitySource;
+  @Transform(({ value }) => {
+    if (!value) {
+      return null;
+    }
+    const parsed = dayjs(
+      value as unknown as string,
+      ['HH:mm:ss', 'HH:mm', 'H:mm'],
+      true,
+    );
+
+    if (!parsed.isValid()) {
+      console.warn(`Invalid time format: ${value}`);
+      return null;
+    }
+
+    return parsed.format('HH:mm');
+  })
+  startTime: string;
+
+  @Expose()
+  @Transform(({ value }) => {
+    if (!value) {
+      return null;
+    }
+    const parsed = dayjs(
+      value as unknown as string,
+      ['HH:mm:ss', 'HH:mm', 'H:mm'],
+      true,
+    );
+
+    if (!parsed.isValid()) {
+      console.warn(`Invalid time format: ${value}`);
+      return null;
+    }
+
+    return parsed.format('HH:mm');
+  })
+  endTime: string;
+
+  @Expose()
+  status: LocationAvailabilityStatus;
 
   @Expose()
   note: string | null;
 
   @Expose()
   @Type(() => Date)
-  @Transform(({ value }) =>
-    (value as unknown as Date | undefined)?.toISOString(),
-  )
-  startDateTime: Date;
-
-  @Expose()
-  @Type(() => Date)
-  @Transform(({ value }) =>
-    (value as unknown as Date | undefined)?.toISOString(),
-  )
-  endDateTime: Date;
-
-  @Expose()
-  @Transform(({ value }) =>
-    (value as unknown as Date | undefined)?.toISOString(),
-  )
   createdAt: Date;
 
   @Expose()
-  @Transform(({ value }) =>
-    (value as unknown as Date | undefined)?.toISOString(),
-  )
+  @Type(() => Date)
   updatedAt: Date;
 }
