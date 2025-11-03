@@ -41,7 +41,7 @@ export class AnnouncementPublicController {
   ): Promise<Paginated<AnnouncementResponseDto>> {
     return this.announcementQueryService.getAllVisibleAnnouncements({
       query,
-      locationId: locationId,
+      locationId,
     });
   }
 }
