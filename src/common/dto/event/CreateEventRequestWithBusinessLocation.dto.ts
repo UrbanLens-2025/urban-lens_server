@@ -5,7 +5,6 @@ import {
   IsBoolean,
   IsDate,
   IsInt,
-  IsISO8601,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -19,6 +18,23 @@ import { SocialLink } from '@/common/json/SocialLink.json';
 import { IsBefore } from '@/common/decorators/IsBefore.decorator';
 import { IsAfterToday } from '@/common/decorators/IsAfterToday.decorator';
 import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
+import dayjs from 'dayjs';
+
+class EventDateRange {
+  @ApiProperty({ example: new Date().toISOString() })
+  @Type(() => Date)
+  @IsNotEmpty()
+  @IsBefore('endDateTime')
+  @IsAfterToday()
+  @IsDate()
+  startDateTime: Date;
+
+  @ApiProperty({ example: dayjs().add(12, 'hours').toISOString() })
+  @Type(() => Date)
+  @IsNotEmpty()
+  @IsDate()
+  endDateTime: Date;
+}
 
 export class CreateEventRequestWithBusinessLocationDto {
   // transient fields
@@ -72,19 +88,16 @@ export class CreateEventRequestWithBusinessLocationDto {
   @IsUUID()
   locationId: string;
 
-  @ApiProperty()
-  @Type(() => Date)
-  @IsNotEmpty()
-  @IsBefore('endDateTime')
-  @IsAfterToday()
-  @IsDate()
-  startDateTime: Date;
-
-  @ApiProperty()
-  @Type(() => Date)
-  @IsNotEmpty()
-  @IsDate()
-  endDateTime: Date;
+  @ApiProperty({
+    description: 'List of date ranges for the booking',
+    isArray: true,
+    type: EventDateRange,
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => EventDateRange)
+  dates: EventDateRange[];
 
   @ApiProperty({
     isArray: true,
