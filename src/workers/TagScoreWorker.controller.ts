@@ -23,8 +23,8 @@ export class TagScoreWorkerController {
   private readonly batchTimers = new Map<string, NodeJS.Timeout>();
 
   // Batch configuration
-  private readonly BATCH_SIZE = 10; // Process after 10 messages from same user
-  private readonly BATCH_TIMEOUT_MS = 5000; // Or process after 5 seconds
+  private readonly BATCH_SIZE = 10;
+  private readonly BATCH_TIMEOUT_MS = 5000;
 
   @EventPattern('user.checkin.tags')
   async handleCheckInTags(

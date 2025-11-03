@@ -56,24 +56,6 @@ services:
       - '5672:5672' # AMQP port
       - '15672:15672' # Management UI
 
-  ubl-worker:
-    build:
-      context: .
-      dockerfile: Dockerfile.worker
-    container_name: ubl-worker
-    restart: on-failure
-    env_file:
-      - .env.development
-    environment:
-      # RabbitMQ (override from env file)
-      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://admin:admin123@ubl-rabbitmq:5672}
-      - RABBITMQ_QUEUE=${RABBITMQ_QUEUE:-urban-lens}
-    depends_on:
-      ubl-rabbitmq:
-        condition: service_healthy
-    networks:
-      - ubl-network
-
 networks:
   ubl-network:
 volumes:

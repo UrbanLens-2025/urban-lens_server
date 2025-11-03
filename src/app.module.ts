@@ -33,6 +33,10 @@ import { WalletModule } from './modules/wallet/Wallet.module';
 import { TestController } from '@/Test.controller';
 import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
+import { TagScoreWorkerController } from '@/workers/TagScoreWorker.controller';
+import { TagScoreWorkerService } from '@/workers/TagScoreWorker.service';
+import { EmailWorkerController } from '@/workers/EmailWorker.controller';
+import { EmailWorkerService } from '@/workers/EmailWorker.service';
 
 @Module({
   imports: [
@@ -84,7 +88,12 @@ import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
     UtilityModule,
     WalletModule,
   ],
-  controllers: [AppController, TestController],
+  controllers: [
+    AppController,
+    TestController,
+    TagScoreWorkerController,
+    EmailWorkerController,
+  ],
   providers: [
     {
       provide: APP_FILTER,
@@ -108,6 +117,8 @@ import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
     },
     FirebaseAdminProvider,
     AppService,
+    TagScoreWorkerService,
+    EmailWorkerService,
   ],
 })
 export class AppModule {}

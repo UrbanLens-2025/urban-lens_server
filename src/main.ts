@@ -7,6 +7,7 @@ import { globalValidationConfig } from '@/config/validation.config';
 import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerDocumentConfig } from '@/config/swagger.config';
 import { NextFunction, Request, Response } from 'express';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const logLevelString = process.env.LOG_LEVELS || 'log';
@@ -22,11 +23,25 @@ async function bootstrap() {
     logger: logLevels,
   });
 
-  // RabbitMQ is configured via ClientsModule in Business module
-  // This app only publishes messages, does not consume
-  // Consumer should be a separate microservice application
+  // RabbitMQ consumer (worker) - runs in the same app as HTTP server
   if (process.env.RABBITMQ_URL) {
-    console.log('RabbitMQ publisher enabled');
+    console.log('RabbitMQ enabled - configuring publisher and consumer');
+
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: {
+        urls: [process.env.RABBITMQ_URL],
+        queue: process.env.RABBITMQ_QUEUE || 'urban-lens',
+        queueOptions: {
+          durable: true,
+        },
+        noAck: false,
+        prefetchCount: 50,
+      },
+    });
+
+    await app.startAllMicroservices();
+    console.log('RabbitMQ consumer started');
   } else {
     console.log('RabbitMQ not configured');
   }
