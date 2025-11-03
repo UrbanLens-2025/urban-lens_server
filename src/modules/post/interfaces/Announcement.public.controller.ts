@@ -20,8 +20,6 @@ export class AnnouncementPublicController {
   constructor(
     @Inject(IAnnouncementQueryService)
     private readonly announcementQueryService: IAnnouncementQueryService,
-    @Inject(IAnnouncementService)
-    private readonly announcementService: IAnnouncementService,
   ) {}
 
   @ApiOperation({ summary: 'Get announcement by ID (public)' })
