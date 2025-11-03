@@ -6,11 +6,19 @@ import { Module } from '@nestjs/common';
 import { PostRepository } from './repository/Post.repository';
 import { CommentRepository } from './repository/Comment.repository';
 import { ReactRepository } from './repository/React.repository';
+import { AnnouncementEntity } from '@/modules/post/domain/Announcement.entity';
 
 const repositories = [PostRepository, CommentRepository, ReactRepository];
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PostEntity, CommentEntity, ReactEntity])],
+  imports: [
+    TypeOrmModule.forFeature([
+      PostEntity,
+      CommentEntity,
+      ReactEntity,
+      AnnouncementEntity,
+    ]),
+  ],
   providers: repositories,
   exports: repositories,
 })
