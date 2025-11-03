@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsDate,
   IsDateString,
   IsOptional,
   IsString,
@@ -30,8 +31,8 @@ export class UpdateAnnouncementDto {
   })
   @Type(() => Date)
   @IsOptional()
-  @IsDateString()
-  startDate?: string;
+  @IsDate()
+  startDate?: Date;
 
   @ApiPropertyOptional({
     description: 'Stop being visible from this date (inclusive)',
@@ -40,7 +41,7 @@ export class UpdateAnnouncementDto {
   })
   @Type(() => Date)
   @IsOptional()
-  @IsDateString()
+  @IsDate()
   endDate?: string | null;
 
   @ApiPropertyOptional({
