@@ -38,6 +38,8 @@ export class EventRequestQueryService
         },
         relations: {
           referencedLocationBooking: true,
+          tags: true,
+          createdBy: true,
         },
       })
       .then((entity) => this.mapTo(EventRequestResponseDto, entity));
