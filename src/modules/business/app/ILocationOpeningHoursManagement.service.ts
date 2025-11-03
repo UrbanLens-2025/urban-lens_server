@@ -26,4 +26,3 @@ export interface ILocationOpeningHoursManagementService {
     dto: GetLocationOpeningHoursDto,
   ): Promise<LocationOpeningHoursResponseDto[]>;
 }
-

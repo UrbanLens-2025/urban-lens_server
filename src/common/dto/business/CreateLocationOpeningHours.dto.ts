@@ -1,11 +1,6 @@
 import { DayOfWeek } from '@/common/constants/DayOfWeek.constant';
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsMilitaryTime,
-  IsNotEmpty,
-  IsUUID,
-} from 'class-validator';
+import { IsEnum, IsMilitaryTime, IsNotEmpty, IsUUID } from 'class-validator';
 import { TimeIsBefore } from '@/common/decorators/TimeIsBefore.decorator';
 
 export class CreateLocationOpeningHoursDto {
@@ -34,4 +29,3 @@ export class CreateLocationOpeningHoursDto {
   @ApiProperty()
   endTime: string;
 }
-

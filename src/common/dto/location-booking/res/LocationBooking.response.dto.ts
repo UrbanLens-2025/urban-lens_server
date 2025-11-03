@@ -1,10 +1,11 @@
-import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTransaction.response.dto';
 import { EventRequestResponseDto } from '@/common/dto/event/res/EventRequest.response.dto';
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
+import { LocationBookingDateResponseDto } from '@/common/dto/location-booking/res/LocationBookingDate.response.dto';
 
 @Exclude()
 export class LocationBookingResponseDto {
@@ -59,21 +60,4 @@ export class LocationBookingResponseDto {
   @Expose()
   @Type(() => EventRequestResponseDto)
   referencedEventRequest: EventRequestResponseDto;
-}
-
-@Exclude()
-export class LocationBookingDateResponseDto {
-  @Expose()
-  @Type(() => Date)
-  @Transform(({ value }) =>
-    (value as unknown as Date | undefined)?.toISOString(),
-  )
-  startDateTime: Date;
-
-  @Expose()
-  @Type(() => Date)
-  @Transform(({ value }) =>
-    (value as unknown as Date | undefined)?.toISOString(),
-  )
-  endDateTime: Date;
 }

@@ -67,16 +67,19 @@ export class WalletTransactionEntity {
 
     switch (this.destinationWalletId) {
       case DefaultSystemWallet.ESCROW.toString(): {
+        console.debug('Starting transfer to escrow');
         this.type = WalletTransactionType.TO_ESCROW;
         this.status = WalletTransactionStatus.PENDING;
         return this;
       }
       case DefaultSystemWallet.REVENUE.toString(): {
+        console.debug('Starting transfer to revenue');
         this.type = WalletTransactionType.TO_REVENUE;
         this.status = WalletTransactionStatus.PENDING;
         return this;
       }
       default: {
+        console.debug('Starting transfer to wallet');
         this.type = WalletTransactionType.TO_WALLET;
         this.status = WalletTransactionStatus.PENDING;
         return this;
