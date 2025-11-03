@@ -20,6 +20,8 @@ import { WalletTransactionManagementService } from '@/modules/wallet/app/impl/Wa
 import { WalletAdminController } from '@/modules/wallet/interfaces/Wallet.admin.controller';
 import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
 import { WalletTransactionCoordinatorService } from '@/modules/wallet/app/impl/WalletTransactionCoordinator.service';
+import { IWalletTransactionQueryService } from '@/modules/wallet/app/IWalletTransactionQuery.service';
+import { WalletTransactionQueryService } from '@/modules/wallet/app/impl/WalletTransactionQuery.service';
 
 @Module({
   imports: [WalletInfraModule],
@@ -57,6 +59,10 @@ import { WalletTransactionCoordinatorService } from '@/modules/wallet/app/impl/W
     {
       provide: IWalletTransactionCoordinatorService,
       useClass: WalletTransactionCoordinatorService,
+    },
+    {
+      provide: IWalletTransactionQueryService,
+      useClass: WalletTransactionQueryService,
     },
     WalletCreationListener,
     WalletSeederHelper,

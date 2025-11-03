@@ -7,4 +7,3 @@ export class GetLocationOpeningHoursDto {
   @ApiProperty()
   locationId: string;
 }
-
