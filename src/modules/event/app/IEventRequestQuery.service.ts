@@ -24,6 +24,9 @@ export namespace IEventRequestQueryService_QueryConfig {
       filterableColumns: {
         status: true,
       },
+      relations: {
+        tags: true,
+      },
     };
   }
 }

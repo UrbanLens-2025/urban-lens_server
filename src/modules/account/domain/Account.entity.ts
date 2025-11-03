@@ -81,4 +81,8 @@ export class AccountEntity {
   public canCreateEvent(): boolean {
     return this.role === Role.EVENT_CREATOR && this.hasOnboarded;
   }
+
+  public canPerformActions(): boolean {
+    return this.hasOnboarded;
+  }
 }

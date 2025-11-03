@@ -21,6 +21,7 @@ import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
 import { InternalServerErrorException } from '@nestjs/common';
 import { LocationOpeningHoursEntity } from '@/modules/business/domain/LocationOpeningHours.entity';
+import { LocationAnalyticsEntity } from '@/modules/business/domain/LocationAnalytics.entity';
 
 @Entity({ name: LocationEntity.TABLE_NAME })
 export class LocationEntity {
@@ -121,9 +122,6 @@ export class LocationEntity {
   @OneToMany(() => CheckInEntity, (checkIn) => checkIn.location)
   checkIns: CheckInEntity[];
 
-  @Column({ name: 'total_check_ins', type: 'bigint', default: 0 })
-  totalCheckIns: number;
-
   //#region TRANSIENT FIELDS - Do NOT add @Column to these. These are NOT PERSISTED to the db.
 
   distanceMeters?: number;
@@ -149,6 +147,11 @@ export class LocationEntity {
     },
   )
   bookingConfig: LocationBookingConfigEntity;
+
+  @OneToOne(() => LocationAnalyticsEntity, (analytics) => analytics.location, {
+    createForeignKeyConstraints: false,
+  })
+  analytics: LocationAnalyticsEntity;
 
   @OneToMany(
     () => LocationOpeningHoursEntity,

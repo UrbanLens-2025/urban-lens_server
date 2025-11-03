@@ -24,7 +24,9 @@ export class CheckInEntity {
   @Column({ name: 'user_profile_id' })
   userProfileId: string;
 
-  @ManyToOne(() => UserProfileEntity, (profile) => profile.checkIns)
+  @ManyToOne(() => UserProfileEntity, (profile) => profile.checkIns, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn({ name: 'user_profile_id' })
   userProfile: UserProfileEntity;
 

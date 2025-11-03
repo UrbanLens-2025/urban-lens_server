@@ -8,6 +8,8 @@ import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest
 import { LocationRequestTagsEntity } from '@/modules/business/domain/LocationRequestTags.entity';
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
 import { LocationOpeningHoursEntity } from '@/modules/business/domain/LocationOpeningHours.entity';
+import { LocationAnalyticsEntity } from '@/modules/business/domain/LocationAnalytics.entity';
+import { LocationSubscriber } from '@/modules/business/infra/subscriber/Location.subscriber';
 
 const repositories = [LocationRepository, CheckInRepository];
 
@@ -20,9 +22,10 @@ const repositories = [LocationRepository, CheckInRepository];
       CheckInEntity,
       LocationRequestEntity,
       LocationRequestTagsEntity,
+      LocationAnalyticsEntity,
     ]),
   ],
-  providers: repositories,
+  providers: [...repositories, LocationSubscriber],
   exports: repositories,
 })
 export class BusinessInfraModule {}

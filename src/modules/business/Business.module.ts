@@ -21,6 +21,8 @@ import { LocationRequestQueryService } from '@/modules/business/app/impl/Locatio
 import { ILocationRequestQueryService } from '@/modules/business/app/ILocationRequestQuery.service';
 import { AccountModule } from '@/modules/account/Account.module';
 import { LocationSubmissionUserController } from '@/modules/business/interfaces/LocationSubmission.user.controller';
+import { LocationDevOnlyController } from '@/modules/business/interfaces/Location.dev-only.controller';
+import { LocationCheckInAnalyticsListener } from '@/modules/business/app/event-listeners/LocationCheckInAnalytics.listener';
 
 @Module({
   imports: [
@@ -38,6 +40,7 @@ import { LocationSubmissionUserController } from '@/modules/business/interfaces/
     LocationPublicController,
     LocationOwnerController,
     LocationAdminController,
+    LocationDevOnlyController,
   ],
   providers: [
     {
@@ -60,6 +63,7 @@ import { LocationSubmissionUserController } from '@/modules/business/interfaces/
       provide: ILocationManagementService,
       useClass: LocationManagementService,
     },
+    LocationCheckInAnalyticsListener,
   ],
   exports: [BusinessInfraModule],
 })
