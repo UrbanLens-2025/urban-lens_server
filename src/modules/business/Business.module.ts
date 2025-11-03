@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ClientsModule } from '@nestjs/microservices';
 import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.module';
 import { LocationUserController } from './interfaces/Location.user.controller';
 import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
@@ -21,6 +22,8 @@ import { LocationRequestQueryService } from '@/modules/business/app/impl/Locatio
 import { ILocationRequestQueryService } from '@/modules/business/app/ILocationRequestQuery.service';
 import { AccountModule } from '@/modules/account/Account.module';
 import { LocationSubmissionUserController } from '@/modules/business/interfaces/LocationSubmission.user.controller';
+import { CheckInTagPublisherListener } from '@/modules/business/app/listener/CheckInTagPublisher.listener';
+import { getRabbitMQConfig } from '@/config/rabbitmq.config';
 
 @Module({
   imports: [
@@ -29,6 +32,7 @@ import { LocationSubmissionUserController } from '@/modules/business/interfaces/
     TokenModule,
     FileStorageModule,
     AccountModule,
+    ClientsModule.register(getRabbitMQConfig()),
   ],
   controllers: [
     LocationRequestBusinessController,
@@ -60,6 +64,7 @@ import { LocationSubmissionUserController } from '@/modules/business/interfaces/
       provide: ILocationManagementService,
       useClass: LocationManagementService,
     },
+    CheckInTagPublisherListener,
   ],
   exports: [BusinessInfraModule],
 })

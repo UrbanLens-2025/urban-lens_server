@@ -1,9 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { SendEmailDto } from '@/common/dto/notification/SendEmail.dto';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
 import { IEmailNotificationService } from '@/modules/notification/app/IEmailNotification.service';
 import { CoreService } from '@/common/core/Core.service';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class EmailNotificationService
@@ -13,16 +12,29 @@ export class EmailNotificationService
   private readonly logger = new Logger(EmailNotificationService.name);
 
   constructor(
-    @InjectQueue('email-notifications') private readonly emailQueue: Queue,
+    @Optional()
+    @Inject('RABBITMQ_CLIENT')
+    private readonly rabbitMQClient: ClientProxy | null,
   ) {
     super();
   }
 
   async sendEmail(dto: SendEmailDto): Promise<void> {
-    const res = await this.emailQueue.add('otp-email', dto, {
-      removeOnComplete: true,
-      removeOnFail: { age: 60 * 30 },
-    });
-    this.logger.debug(`Email job added to queue with ID: ${res.id}`);
+    if (!this.rabbitMQClient) {
+      this.logger.warn('RabbitMQ client not available, skipping email send');
+      return;
+    }
+
+    try {
+      this.rabbitMQClient.emit('email.send', {
+        to: dto.to,
+        template: dto.template,
+        context: dto.context,
+      });
+      this.logger.debug(`Email message published to RabbitMQ: ${dto.to}`);
+    } catch (error) {
+      this.logger.error(`Failed to publish email message: ${error.message}`);
+      throw error;
+    }
   }
 }

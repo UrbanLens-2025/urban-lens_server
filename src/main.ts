@@ -21,10 +21,19 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: logLevels,
   });
+
+  // RabbitMQ is configured via ClientsModule in Business module
+  // This app only publishes messages, does not consume
+  // Consumer should be a separate microservice application
+  if (process.env.RABBITMQ_URL) {
+    console.log('RabbitMQ publisher enabled');
+  } else {
+    console.log('RabbitMQ not configured');
+  }
+
   app.enableCors();
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe(globalValidationConfig));
-  // app.useGlobalFilters(new SentryGlobalFilter(), new GlobalExceptionFilter());
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: ['1'],
@@ -55,10 +64,10 @@ async function bootstrap() {
         cacheControl: false,
       },
       customJs: '/swagger-custom.js',
-      // customCss: theme.getBuffer(SwaggerThemeNameEnum),
     },
   );
 
   await app.listen(process.env.PORT ?? 3000);
+  console.log(`HTTP server listening on port ${process.env.PORT ?? 3000}`);
 }
 void bootstrap();

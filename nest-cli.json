@@ -6,10 +6,18 @@
     "deleteOutDir": true,
     "webpack": true,
     "tsConfigPath": "tsconfig.build.json",
-    "assets": [
-      "**/*.pug",
-      "**/*.env.development"
-    ],
+    "assets": ["**/*.pug", "**/*.env.development"],
     "watchAssets": true
+  },
+  "projects": {
+    "worker": {
+      "type": "application",
+      "root": "src",
+      "entryFile": "worker",
+      "sourceRoot": "src",
+      "compilerOptions": {
+        "tsConfigPath": "tsconfig.build.json"
+      }
+    }
   }
 }

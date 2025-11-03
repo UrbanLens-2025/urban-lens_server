@@ -9,8 +9,6 @@ import { envConfig } from '@/config/env.config';
 import { NotificationModule } from '@/modules/notification/Notification.module';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptorConfig } from '@/common/interceptor/response.interceptor';
-import { BullModule } from '@nestjs/bullmq';
-import { BullConfig } from '@/config/bull.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { RedisConfig } from '@/config/redis.config';
@@ -56,10 +54,6 @@ import { GlobalExceptionFilter } from '@/common/filters/GlobalException.filter';
     }),
     TypeOrmModule.forRootAsync({
       useClass: PersistenceConfig,
-      imports: [ConfigModule],
-    }),
-    BullModule.forRootAsync({
-      useClass: BullConfig,
       imports: [ConfigModule],
     }),
     ThrottlerModule.forRoot({
