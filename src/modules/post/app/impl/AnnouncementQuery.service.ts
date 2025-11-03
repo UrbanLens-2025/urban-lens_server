@@ -10,7 +10,7 @@ import { AnnouncementResponseDto } from '@/common/dto/posts/Announcement.respons
 import { AnnouncementRepository } from '@/modules/post/infra/repository/Announcement.repository';
 import { SearchVisibleAnnouncementsDto } from '@/common/dto/posts/SearchVisibleAnnouncements.dto';
 import { SearchMyAnnouncementsDto } from '@/common/dto/posts/SearchMyAnnouncements.dto';
-import { LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { IsNull, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { GetAnnouncementByIdDto } from '@/common/dto/posts/GetAnnouncementById.dto';
 import { GetMyAnnouncementByIdDto } from '@/common/dto/posts/GetMyAnnouncementById.dto';
 
@@ -39,6 +39,7 @@ export class AnnouncementQueryService
           locationId: dto.locationId,
           isHidden: false,
           startDate: LessThanOrEqual(now),
+          endDate: IsNull(),
         },
         {
           locationId: dto.locationId,
@@ -69,7 +70,12 @@ export class AnnouncementQueryService
     const repo = AnnouncementRepository(this.dataSource);
     const found = await repo.findOneOrFail({
       where: [
-        { id: dto.id, isHidden: false, startDate: LessThanOrEqual(now) },
+        {
+          id: dto.id,
+          isHidden: false,
+          startDate: LessThanOrEqual(now),
+          endDate: IsNull(),
+        },
         {
           id: dto.id,
           isHidden: false,
