@@ -8,5 +8,4 @@ export const IAnnouncementService = Symbol('IAnnouncementService');
 export interface IAnnouncementService {
   create(dto: CreateAnnouncementDto): Promise<AnnouncementResponseDto>;
   update(dto: UpdateAnnouncementDto): Promise<AnnouncementResponseDto>;
-  getById(dto: GetAnnouncementByIdDto): Promise<AnnouncementResponseDto>;
 }
