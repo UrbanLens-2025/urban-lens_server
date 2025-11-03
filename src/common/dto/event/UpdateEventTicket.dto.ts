@@ -1,5 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsBoolean,
+  IsDate,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -10,8 +12,15 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsBefore } from '@/common/decorators/IsBefore.decorator';
 
 export class UpdateEventTicketDto {
+  // transient fields
+  ticketId: string;
+  accountId: string;
+
+  // persistent fields
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
@@ -42,6 +51,11 @@ export class UpdateEventTicketDto {
   @ApiPropertyOptional()
   imageUrl?: string;
 
+  @IsBoolean()
+  @IsOptional()
+  @ApiPropertyOptional()
+  isActive?: boolean;
+
   @IsString()
   @IsOptional()
   @ApiPropertyOptional()
@@ -52,4 +66,29 @@ export class UpdateEventTicketDto {
   @IsOptional()
   @ApiPropertyOptional()
   totalQuantityAvailable?: number;
+
+  @Type(() => Date)
+  @IsDate()
+  @IsOptional()
+  @IsBefore('saleEndDate')
+  @ApiPropertyOptional({ type: String, example: new Date().toISOString() })
+  saleStartDate?: Date;
+
+  @Type(() => Date)
+  @IsDate()
+  @IsOptional()
+  @ApiPropertyOptional({ type: String, example: new Date().toISOString() })
+  saleEndDate?: Date;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  @ApiPropertyOptional()
+  minQuantityPerOrder?: number;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  @ApiPropertyOptional()
+  maxQuantityPerOrder?: number;
 }

@@ -48,6 +48,7 @@ export class LocationBookingQueryService
           createdBy: {
             creatorProfile: true,
           },
+          location: true,
         },
       })
       .then((res) => this.mapTo(LocationBookingResponseDto, res));

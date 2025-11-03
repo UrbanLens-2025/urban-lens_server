@@ -9,103 +9,148 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { ICreateEventService } from '@/modules/event/app/ICreateEvent.service';
-import { CreateEventDraftDto } from '@/common/dto/event/CreateEventDraft.dto';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  IEventQueryService,
+  IEventQueryService_QueryConfig,
+} from '@/modules/event/app/IEventQuery.service';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AddTicketToEventDto } from '@/common/dto/event/AddTicketToEvent.dto';
-import { UpdateEventTicketDto } from '@/common/dto/event/UpdateEventTicket.dto';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
+import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
+import { UpdateEventDto } from '@/common/dto/event/UpdateEvent.dto';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
-import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
-import { Paginate, type PaginateQuery } from 'nestjs-paginate';
-import { WithPagination } from '@/common/WithPagination.decorator';
+import { IEventTagsManagementService } from '@/modules/event/app/IEventTagsManagement.service';
+import { AddEventTagDto } from '@/common/dto/event/AddEventTag.dto';
+import { RemoveEventTagDto } from '@/common/dto/event/RemoveEventTag.dto';
+import { IEventTicketManagementService } from '@/modules/event/app/IEventTicketManagement.service';
+import { AddTicketToEventDto } from '@/common/dto/event/AddTicketToEvent.dto';
+import { UpdateEventTicketDto } from '@/common/dto/event/UpdateEventTicket.dto';
 
-@ApiTags('Event')
 @ApiBearerAuth()
+@ApiTags('Event')
 @Roles(Role.EVENT_CREATOR)
-@Controller('/creator/event')
+@Controller('/creator/events')
 export class EventCreatorController {
   constructor(
-    @Inject(ICreateEventService)
-    private readonly createEventService: ICreateEventService,
+    @Inject(IEventQueryService)
+    private readonly eventQueryService: IEventQueryService,
     @Inject(IEventManagementService)
     private readonly eventManagementService: IEventManagementService,
+    @Inject(IEventTagsManagementService)
+    private readonly eventTagsManagementService: IEventTagsManagementService,
+    @Inject(IEventTicketManagementService)
+    private readonly eventTicketManagementService: IEventTicketManagementService,
   ) {}
 
-  @ApiOperation({ summary: 'Get my events (with pagination)' })
+  @ApiOperation({ summary: 'Get all my events' })
+  @ApiPaginationQuery(IEventQueryService_QueryConfig.searchMyEvents())
   @Get()
-  @WithPagination()
   getMyEvents(
     @AuthUser() userDto: JwtTokenDto,
     @Paginate() query: PaginateQuery,
   ) {
-    return this.eventManagementService.searchEvents(query, userDto.sub);
+    return this.eventQueryService.searchMyEvents({
+      accountId: userDto.sub,
+      query,
+    });
   }
 
-  @ApiOperation({ summary: 'Get event by ID' })
+  @ApiOperation({ summary: 'Get my event by ID' })
   @Get('/:eventId')
-  getEventById(
-    @AuthUser() userDto: JwtTokenDto,
+  getMyEventById(
     @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
   ) {
-    return this.eventManagementService.findEventById(eventId, userDto.sub);
+    return this.eventQueryService.getMyEventById({
+      eventId,
+      accountId: userDto.sub,
+    });
   }
 
-  @ApiOperation({ summary: 'Get tickets in event' })
+  @ApiOperation({ summary: 'Update my event details' })
+  @Put('/:eventId')
+  updateMyEventById(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: UpdateEventDto,
+  ) {
+    return this.eventManagementService.updateMyEvent({
+      ...dto,
+      eventId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Add tags to my event' })
+  @Post('/:eventId/tags')
+  addTagsToMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: AddEventTagDto,
+  ) {
+    return this.eventTagsManagementService.addEventTag({
+      ...dto,
+      eventId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Delete tags from my event' })
+  @Delete('/:eventId/tags')
+  removeTagsFromMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: RemoveEventTagDto,
+  ) {
+    return this.eventTagsManagementService.deleteEventTag({
+      ...dto,
+      eventId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Get all tickets for my event' })
   @Get('/:eventId/tickets')
-  getTicketsInEvent(
-    @AuthUser() userDto: JwtTokenDto,
+  getAllTicketsForMyEvent(
     @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
   ) {
-    return this.eventManagementService.findTicketsInEvent(eventId, userDto.sub);
+    return this.eventQueryService.getAllEventTickets({
+      eventId,
+      accountId: userDto.sub,
+    });
   }
 
-  @ApiOperation({ summary: 'Create Event (basic details)' })
-  @Post('/draft')
-  createDraftEvent(
+  @ApiOperation({ summary: 'Create a ticket for my event' })
+  @Post('/:eventId/tickets')
+  createTicketForMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
     @AuthUser() userDto: JwtTokenDto,
-    @Body() dto: CreateEventDraftDto,
-  ) {
-    return this.createEventService.createEventDraft(userDto.sub, dto);
-  }
-
-  @ApiOperation({ summary: 'Add ticket to event' })
-  @Post('/draft/:eventId/ticket')
-  addTicketToEvent(
-    @AuthUser() userDto: JwtTokenDto,
-    @Param('eventId', ParseUUIDPipe) id: string,
     @Body() dto: AddTicketToEventDto,
   ) {
-    return this.createEventService.addTicketToEvent(userDto.sub, id, dto);
+    return this.eventTicketManagementService.createEventTicket({
+      ...dto,
+      eventId,
+      accountId: userDto.sub,
+    });
   }
 
-  @ApiOperation({ summary: 'Update event ticket by ID' })
-  @Put('/draft/:eventId/ticket/:ticketId')
-  updateTicket(
-    @AuthUser() userDto: JwtTokenDto,
+  @ApiOperation({ summary: 'Update a ticket for my event' })
+  @Put('/:eventId/tickets/:ticketId')
+  updateTicketForMyEvent(
     @Param('eventId', ParseUUIDPipe) eventId: string,
     @Param('ticketId', ParseUUIDPipe) ticketId: string,
+    @AuthUser() userDto: JwtTokenDto,
     @Body() dto: UpdateEventTicketDto,
   ) {
-    return this.createEventService.updateTicket(
-      userDto.sub,
-      ticketId,
-      eventId,
-      dto,
-    );
-  }
-
-  @ApiOperation({ summary: 'Delete event ticket by ID' })
-  @Delete('/draft/:eventId/ticket/:ticketId')
-  hardRemoveTicketFromEvent(
-    @Param('eventId', ParseUUIDPipe) eventId: string,
-    @Param('ticketId', ParseUUIDPipe) ticketId: string,
-    @AuthUser() userDto: JwtTokenDto,
-  ) {
-    return this.createEventService.hardRemoveTicketFromEvent({
-      eventId,
+    return this.eventTicketManagementService.updateEventTicket({
+      ...dto,
       ticketId,
       accountId: userDto.sub,
     });

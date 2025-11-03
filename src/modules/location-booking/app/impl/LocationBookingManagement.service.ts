@@ -26,10 +26,10 @@ import { UpdateResult } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import dayjs from 'dayjs';
-import { StartBookingPaymentDto } from '@/common/dto/location-booking/StartBookingPayment.dto';
 import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
+import { PayForBookingDto } from '@/common/dto/location-booking/PayForBooking.dto';
 
 @Injectable()
 export class LocationBookingManagementService
@@ -168,12 +168,9 @@ export class LocationBookingManagementService
     });
   }
 
-  initiatePaymentForBooking(
-    dto: StartBookingPaymentDto,
-  ): Promise<LocationBookingResponseDto> {
-    return this.ensureTransaction(null, async (em) => {
+  payForBooking(dto: PayForBookingDto): Promise<LocationBookingResponseDto> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
       const locationBookingRepository = LocationBookingRepository(em);
-      const eventRequestRepository = EventRequestRepository(em);
 
       const booking = await locationBookingRepository.findOneOrFail({
         where: {
@@ -213,31 +210,6 @@ export class LocationBookingManagementService
           status: booking.status,
         },
       );
-
-      // update parent object based on booking type
-      switch (booking.bookingObject) {
-        case LocationBookingObject.FOR_EVENT: {
-          if (!booking.referencedEventRequest) {
-            throw new InternalServerErrorException(
-              'Booking is for event but no referenced event request found.',
-            );
-          }
-
-          // update referenced event request status
-          const eventRequest = booking.referencedEventRequest;
-          eventRequest.status = EventRequestStatus.BOOKED;
-          await eventRequestRepository.update(
-            { id: eventRequest.id },
-            eventRequest,
-          );
-          break;
-        }
-        default: {
-          throw new InternalServerErrorException(
-            'Unknown booking object type.',
-          );
-        }
-      }
 
       return this.mapTo(LocationBookingResponseDto, booking);
     });

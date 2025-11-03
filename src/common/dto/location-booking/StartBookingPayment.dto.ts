@@ -1,5 +1,5 @@
 export class StartBookingPaymentDto {
-  locationBookingId: string;
+  eventRequestId: string;
   accountId: string;
   accountName: string;
   ipAddress: string;

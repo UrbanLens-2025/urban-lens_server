@@ -4,10 +4,18 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
+import { EventStatus } from '@/common/constants/EventStatus.constant';
+import { LocationEntity } from '@/modules/business/domain/Location.entity';
+import { SocialLink } from '@/common/json/SocialLink.json';
+import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
+import { EventRequestEntity } from '@/modules/event/domain/EventRequest.entity';
+import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
 
 @Entity({ name: EventEntity.TABLE_NAME })
 export class EventEntity {
@@ -37,29 +45,49 @@ export class EventEntity {
   @Column({ name: 'description', type: 'text' })
   description: string;
 
-  @Column({ name: 'is_draft', type: 'boolean' })
-  isDraft: boolean;
-
-  @Column({ name: 'start_date', type: 'timestamptz' })
-  startDate: Date;
-
-  @Column({ name: 'end_date', type: 'timestamptz' })
-  endDate: Date;
-
-  @Column({ name: 'expected_participants', type: 'int' })
-  expectedParticipants: number;
-
   @Column({ name: 'avatar_url', type: 'varchar', length: 500, nullable: true })
   avatarUrl: string;
 
   @Column({ name: 'cover_url', type: 'varchar', length: 500, nullable: true })
   coverUrl: string;
 
-  canModifyTickets(): boolean {
-    return true;
-  }
+  @Column({ name: 'status', type: 'varchar', length: 50 })
+  status: EventStatus;
 
-  canHardDeleteTickets(): boolean {
-    return this.isDraft;
-  }
+  @ManyToOne(() => LocationEntity, (location) => location.id, {
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'location_id' })
+  location: LocationEntity;
+
+  @Column({ name: 'location_id', type: 'uuid' })
+  locationId: string;
+
+  @Column({ name: 'social', type: 'jsonb', nullable: true })
+  social?: SocialLink[] | null;
+
+  @Column({ name: 'refund_policy', type: 'text', nullable: true })
+  refundPolicy?: string | null;
+
+  @Column({ name: 'terms_and_conditions', type: 'text', nullable: true })
+  termsAndConditions?: string | null;
+
+  @OneToMany(() => EventTagsEntity, (eventTags) => eventTags.event, {
+    createForeignKeyConstraints: false,
+  })
+  tags: EventTagsEntity[];
+
+  @OneToOne(() => EventRequestEntity, (eventRequest) => eventRequest.id, {
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'referenced_event_request_id' })
+  referencedEventRequest: EventRequestEntity;
+
+  @Column({ name: 'referenced_event_request_id', type: 'uuid' })
+  referencedEventRequestId: string;
+
+  @OneToMany(() => EventTicketEntity, (eventTicket) => eventTicket.event, {
+    createForeignKeyConstraints: false,
+  })
+  tickets: EventTicketEntity[];
 }

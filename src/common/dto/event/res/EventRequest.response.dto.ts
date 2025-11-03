@@ -5,6 +5,7 @@ import { EventRequestTagsResponseDto } from '@/common/dto/event/res/EventRequest
 import { SocialLink } from '@/common/json/SocialLink.json';
 import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
+import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 
 @Exclude()
 export class EventRequestResponseDto {
@@ -61,4 +62,8 @@ export class EventRequestResponseDto {
 
   @Expose()
   eventValidationDocuments: EventValidationDocumentsJson[];
+
+  @Expose()
+  @Type(() => EventResponseDto)
+  referencedEvent?: EventResponseDto | null;
 }

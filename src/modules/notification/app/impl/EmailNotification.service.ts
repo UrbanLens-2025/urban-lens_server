@@ -19,7 +19,7 @@ export class EmailNotificationService
     super();
   }
 
-  async sendEmail(dto: SendEmailDto): Promise<void> {
+  sendEmail(dto: SendEmailDto): void {
     if (!this.rabbitMQClient) {
       this.logger.warn('RabbitMQ client not available, skipping email send');
       return;
@@ -33,7 +33,7 @@ export class EmailNotificationService
       });
       this.logger.debug(`Email message published to RabbitMQ: ${dto.to}`);
     } catch (error) {
-      this.logger.error(`Failed to publish email message: ${error.message}`);
+      this.logger.error(`Failed to publish email message: ${error}`);
       throw error;
     }
   }

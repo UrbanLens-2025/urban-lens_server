@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Inject,
+  Ip,
   Param,
   ParseUUIDPipe,
   Post,
@@ -48,6 +49,22 @@ export class EventRequestCreatorController {
         accountId: user.sub,
       },
     );
+  }
+
+  @ApiOperation({ summary: 'Pay for booking and complete request' })
+  @Post('/pay-for-booking/:eventRequestId')
+  payForBooking(
+    @AuthUser() user: JwtTokenDto,
+    @Ip() ipAddress: string,
+    @Param('eventRequestId', ParseUUIDPipe) eventRequestId: string,
+  ) {
+    return this.eventRequestManagementService.initiatePayment({
+      eventRequestId,
+      returnUrl: 'http://google.com',
+      ipAddress,
+      accountName: user.email,
+      accountId: user.sub,
+    });
   }
 
   @ApiOperation({ summary: 'Search my created event requests' })

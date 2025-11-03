@@ -1,7 +1,7 @@
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
-import { Controller, Inject } from '@nestjs/common';
+import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ILocationAvailabilityManagementService } from '@/modules/location-booking/app/ILocationAvailabilityManagement.service';
 
 @ApiTags('Location Availability')
@@ -13,4 +13,14 @@ export class LocationAvailabilityCreatorController {
     @Inject(ILocationAvailabilityManagementService)
     private readonly locationAvailabilityManagement: ILocationAvailabilityManagementService,
   ) {}
+
+  @ApiOperation({ summary: 'Get weekly location availability' })
+  @Get('/search/:locationId')
+  getLocationAvailabilityForWeek(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+  ) {
+    return this.locationAvailabilityManagement.getAvailabilityForLocation({
+      locationId,
+    });
+  }
 }
