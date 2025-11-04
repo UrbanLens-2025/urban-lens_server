@@ -1,9 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsArray,
   IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
-  IsArray,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -15,35 +16,33 @@ export class UpdateEventDto {
   accountId: string;
 
   // persistent fields
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'Event name' })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   displayName?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'Event description' })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'https://google.com' })
   @IsOptional()
-  @IsString()
-  @MaxLength(500)
+  @IsUrl()
   avatarUrl?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'https://google.com' })
   @IsOptional()
-  @IsString()
-  @MaxLength(500)
+  @IsUrl()
   coverUrl?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'Refund policy details here' })
   @IsOptional()
   @IsString()
   refundPolicy?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'Terms and conditions details here' })
   @IsOptional()
   @IsString()
   termsAndConditions?: string | null;
@@ -55,4 +54,3 @@ export class UpdateEventDto {
   @Type(() => SocialLink)
   social?: SocialLink[] | null;
 }
-

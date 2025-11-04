@@ -10,7 +10,7 @@ import {
   type PaginateQuery,
 } from 'nestjs-paginate';
 
-@ApiTags('Events')
+@ApiTags('Event')
 @Controller('/public/events')
 export class EventPublicController {
   constructor(
