@@ -1,8 +1,6 @@
-import { LocationAvailabilityStatus } from '@/common/constants/LocationAvailabilityStatus.constant';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBefore } from '@/common/decorators/IsBefore.decorator';
-import { IsDate, IsEnum, IsOptional, MaxLength } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsMilitaryTime, IsOptional } from 'class-validator';
+import { TimeIsBefore } from '@/common/decorators/TimeIsBefore.decorator';
 
 export class UpdateLocationAvailabilityDto {
   // transient fields
@@ -10,25 +8,14 @@ export class UpdateLocationAvailabilityDto {
   createdById: string;
 
   // body fields
-  @Type(() => Date)
-  @IsDate()
+  @IsMilitaryTime()
   @IsOptional()
-  @IsBefore('endDateTime')
+  @TimeIsBefore('endTime')
   @ApiPropertyOptional()
-  startDateTime: Date;
+  startTime?: string;
 
-  @Type(() => Date)
-  @IsDate()
+  @IsMilitaryTime()
   @IsOptional()
   @ApiPropertyOptional()
-  endDateTime: Date;
-
-  @IsOptional()
-  @IsEnum(LocationAvailabilityStatus)
-  @ApiPropertyOptional({ enum: LocationAvailabilityStatus })
-  status: LocationAvailabilityStatus;
-
-  @MaxLength(555)
-  @ApiPropertyOptional({ example: '' })
-  note?: string | null;
+  endTime?: string;
 }

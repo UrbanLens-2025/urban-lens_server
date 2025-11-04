@@ -9,7 +9,7 @@ import { LocationAvailabilityResponseDto } from '@/common/dto/location-booking/r
 import { In } from 'typeorm';
 import { RemoveLocationAvailabilityDto } from '@/common/dto/location-booking/RemoveLocationAvailability.dto';
 import { GetAvailabilityForLocationDto } from '@/common/dto/location-booking/GetAvailabilityForLocation.dto';
-import { UpdateLocationAvailabilityStatusDto } from '@/common/dto/location-booking/UpdateLocationAvailabilityStatus.dto';
+import { UpdateLocationAvailabilityDto } from '@/common/dto/location-booking/UpdateLocationAvailability.dto';
 
 @Injectable()
 export class LocationAvailabilityManagementService
@@ -109,7 +109,7 @@ export class LocationAvailabilityManagementService
   }
 
   updateLocationAvailability(
-    dto: UpdateLocationAvailabilityStatusDto,
+    dto: UpdateLocationAvailabilityDto,
   ): Promise<LocationAvailabilityResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const locationAvailabilityRepository = LocationAvailabilityRepository(em);
@@ -122,9 +122,59 @@ export class LocationAvailabilityManagementService
               businessId: dto.createdById,
             },
           },
+          relations: {
+            location: true,
+          },
         });
 
-      this.assignTo_safeIgnoreEmpty(locationAvailability, dto);
+      // Update startTime and endTime if provided
+      if (dto.startTime !== undefined) {
+        locationAvailability.startTime = dto.startTime;
+      }
+      if (dto.endTime !== undefined) {
+        locationAvailability.endTime = dto.endTime;
+      }
+
+      const finalStartTime = locationAvailability.startTime;
+      const finalEndTime = locationAvailability.endTime;
+
+      // check overlapping (excluding the current record)
+      const overlappingRanges =
+        await locationAvailabilityRepository.findOverlapping({
+          endTime: finalEndTime,
+          startTime: finalStartTime,
+          locationId: locationAvailability.locationId,
+          dayOfWeek: locationAvailability.dayOfWeek,
+        });
+
+      // Filter out the current record from overlaps
+      const otherOverlappingRanges = overlappingRanges.filter(
+        (r) => r.id !== locationAvailability.id,
+      );
+
+      if (otherOverlappingRanges.length > 0) {
+        // merge overlapping ranges
+        const earliestStartTime = otherOverlappingRanges.reduce(
+          (min, t) => (t.startTime < min ? t.startTime : min),
+          '23:59',
+        );
+        const latestEndTime = otherOverlappingRanges.reduce(
+          (max, t) => (t.endTime > max ? t.endTime : max),
+          '00:00',
+        );
+
+        locationAvailability.startTime =
+          earliestStartTime < finalStartTime
+            ? earliestStartTime
+            : finalStartTime;
+        locationAvailability.endTime =
+          latestEndTime > finalEndTime ? latestEndTime : finalEndTime;
+
+        // delete overlapping ranges
+        await locationAvailabilityRepository.delete({
+          id: In(otherOverlappingRanges.map((r) => r.id)),
+        });
+      }
 
       return locationAvailabilityRepository
         .save(locationAvailability)

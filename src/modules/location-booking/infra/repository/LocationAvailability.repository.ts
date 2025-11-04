@@ -25,7 +25,7 @@ export const LocationAvailabilityRepository = (
 
       // where start time is contained within an existing availability
       qb.andWhere(
-        '(:startTime BETWEEN availability.start_time AND availability.end_time) OR (:endTime BETWEEN availability.start_time AND availability.end_time) OR (availability.start_time BETWEEN :startTime AND :endTime)',
+        '((:startTime BETWEEN availability.start_time AND availability.end_time) OR (:endTime BETWEEN availability.start_time AND availability.end_time) OR (availability.start_time BETWEEN :startTime AND :endTime))',
         {
           startTime: payload.startTime,
           endTime: payload.endTime,

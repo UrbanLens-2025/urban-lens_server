@@ -1,13 +1,5 @@
-import { LocationAvailabilityStatus } from '@/common/constants/LocationAvailabilityStatus.constant';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsMilitaryTime,
-  IsNotEmpty,
-  IsOptional,
-  IsUUID,
-  MaxLength,
-} from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsMilitaryTime, IsNotEmpty, IsUUID } from 'class-validator';
 import { TimeIsBefore } from '@/common/decorators/TimeIsBefore.decorator';
 import { DayOfWeek } from '@/common/constants/DayOfWeek.constant';
 
@@ -36,14 +28,4 @@ export class AddLocationAvailabilityDto {
   @IsEnum(DayOfWeek)
   @IsNotEmpty()
   dayOfWeek: DayOfWeek;
-
-  @IsNotEmpty()
-  @IsEnum(LocationAvailabilityStatus)
-  @ApiProperty({ enum: LocationAvailabilityStatus })
-  status: LocationAvailabilityStatus;
-
-  @IsOptional()
-  @MaxLength(555)
-  @ApiPropertyOptional()
-  note?: string;
 }

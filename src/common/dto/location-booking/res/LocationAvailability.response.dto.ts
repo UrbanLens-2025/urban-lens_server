@@ -1,6 +1,5 @@
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { DayOfWeek } from '@/common/constants/DayOfWeek.constant';
-import { LocationAvailabilityStatus } from '@/common/constants/LocationAvailabilityStatus.constant';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 
@@ -59,12 +58,6 @@ export class LocationAvailabilityResponseDto {
     return parsed.format('HH:mm');
   })
   endTime: string;
-
-  @Expose()
-  status: LocationAvailabilityStatus;
-
-  @Expose()
-  note: string | null;
 
   @Expose()
   @Type(() => Date)
