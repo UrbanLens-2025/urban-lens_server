@@ -30,6 +30,7 @@ import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWall
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
 import { PayForBookingDto } from '@/common/dto/location-booking/PayForBooking.dto';
+import { LocationBookingConfigRepository } from '@/modules/location-booking/infra/repository/LocationBookingConfig.repository';
 
 @Injectable()
 export class LocationBookingManagementService
@@ -53,19 +54,37 @@ export class LocationBookingManagementService
       const locationBookingRepository = LocationBookingRepository(em);
       const locationRepository = LocationRepositoryProvider(em);
       const locationAvailabilityRepository = LocationAvailabilityRepository(em);
+      const locationBookingConfigRepository =
+        LocationBookingConfigRepository(em);
 
-      const location = await locationRepository.findOneOrFail({
-        where: {
-          id: dto.locationId,
-        },
-        relations: {
-          bookingConfig: true,
-        },
-      });
+      const location = await locationRepository
+        .findOneOrFail({
+          where: {
+            id: dto.locationId,
+          },
+        })
+        .then(async (res) => {
+          const bookingConfig = await locationBookingConfigRepository.findOne({
+            where: {
+              locationId: res.id,
+            },
+          });
 
-      if (!location.canBeBooked()) {
-        throw new BadRequestException('This location cannot be booked.');
-      }
+          if (!bookingConfig) {
+            throw new BadRequestException(
+              'This location has not been configured for bookings yet.',
+            );
+          }
+          res.bookingConfig = bookingConfig;
+          return res;
+        })
+        .then((res) => {
+          if (!res.canBeBooked()) {
+            throw new BadRequestException('This location cannot be booked.');
+          }
+
+          return res;
+        });
 
       // check availability for all provided date ranges (TODO)
       // for (const range of dto.dates) { /* validate availability */ }
