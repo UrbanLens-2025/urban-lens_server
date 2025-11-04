@@ -37,7 +37,7 @@ export class LocationBookingManagementService
   extends CoreService
   implements ILocationBookingManagementService
 {
-  private readonly MAX_TIME_TO_PAY_MINUTES: number = 840; // 14 hours
+  private readonly MAX_TIME_TO_PAY_MINUTES: number = 720; // 12 hours
 
   constructor(
     private readonly configService: ConfigService<Environment>,

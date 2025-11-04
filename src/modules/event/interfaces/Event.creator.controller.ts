@@ -101,7 +101,7 @@ export class EventCreatorController {
     });
   }
 
-  @ApiOperation({ summary: 'Delete tags from my event' })
+  @ApiOperation({ summary: 'Remove tags from my event' })
   @Delete('/:eventId/tags')
   removeTagsFromMyEvent(
     @Param('eventId', ParseUUIDPipe) eventId: string,
@@ -152,6 +152,18 @@ export class EventCreatorController {
     return this.eventTicketManagementService.updateEventTicket({
       ...dto,
       ticketId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Publish my event' })
+  @Post('/:eventId/publish')
+  publishMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+  ) {
+    return this.eventManagementService.publishEvent({
+      eventId,
       accountId: userDto.sub,
     });
   }

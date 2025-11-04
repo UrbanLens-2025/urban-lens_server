@@ -8,6 +8,7 @@ import { LocationBookingModule } from '@/modules/location-booking/LocationBookin
 import { IEventRequestQueryService } from '@/modules/event/app/IEventRequestQuery.service';
 import { EventRequestQueryService } from '@/modules/event/app/impl/EventRequestQuery.service';
 import { EventCreatorController } from '@/modules/event/interfaces/Event.creator.controller';
+import { EventPublicController } from '@/modules/event/interfaces/Event.public.controller';
 import { IEventQueryService } from '@/modules/event/app/IEventQuery.service';
 import { EventQueryService } from '@/modules/event/app/impl/EventQuery.service';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
@@ -24,7 +25,11 @@ import { EventTicketManagementService } from '@/modules/event/app/impl/EventTick
     LocationBookingModule,
     FileStorageModule,
   ],
-  controllers: [EventRequestCreatorController, EventCreatorController],
+  controllers: [
+    EventRequestCreatorController,
+    EventCreatorController,
+    EventPublicController,
+  ],
   providers: [
     {
       provide: IEventRequestManagementService,

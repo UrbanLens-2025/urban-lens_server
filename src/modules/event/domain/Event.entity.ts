@@ -90,4 +90,10 @@ export class EventEntity {
     createForeignKeyConstraints: false,
   })
   tickets: EventTicketEntity[];
+
+  //#region TRANSIENT FIELDS - Do NOT add @Column to these. These are NOT PERSISTED to the db.
+
+  distanceMeters?: number;
+
+  //#endregion
 }
