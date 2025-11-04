@@ -67,7 +67,6 @@ export class LocationBookingConfigManagementService
     return locationBookingConfigRepository
       .findOneByOrFail({
         locationId: dto.locationId,
-        createdById: dto.accountId,
       })
       .then((res) => this.mapTo(LocationBookingConfigResponseDto, res));
   }

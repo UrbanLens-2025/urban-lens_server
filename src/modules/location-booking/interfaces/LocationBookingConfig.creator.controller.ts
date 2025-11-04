@@ -24,7 +24,6 @@ export class LocationBookingConfigCreatorController {
   ) {
     return this.locationBookingConfigManagementService.getConfig({
       locationId: id,
-      accountId: user.sub,
     });
   }
 }

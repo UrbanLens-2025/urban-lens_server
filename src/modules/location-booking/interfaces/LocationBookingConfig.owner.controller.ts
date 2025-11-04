@@ -61,7 +61,6 @@ export class LocationBookingConfigOwnerController {
   ) {
     return this.locationBookingConfigManagementService.getConfig({
       locationId: id,
-      accountId: user.sub,
     });
   }
 }
