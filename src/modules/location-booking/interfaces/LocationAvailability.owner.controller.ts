@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ILocationAvailabilityManagementService } from '@/modules/location-booking/app/ILocationAvailabilityManagement.service';
 import { AddLocationAvailabilityDto } from '@/common/dto/location-booking/AddLocationAvailability.dto';
-import { UpdateLocationAvailabilityStatusDto } from '@/common/dto/location-booking/UpdateLocationAvailabilityStatus.dto';
+import { UpdateLocationAvailabilityDto } from '@/common/dto/location-booking/UpdateLocationAvailability.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
@@ -52,18 +52,18 @@ export class LocationAvailabilityOwnerController {
   }
 
   @ApiOperation({
-    summary: 'Update location availability (status and note only)',
+    summary: 'Update location availability (startTime and endTime only)',
   })
   @Put('/:locationAvailabilityId')
   updateLocationAvailability(
     @Param('locationAvailabilityId', ParseIntPipe)
     locationAvailabilityId: number,
     @AuthUser() userDto: JwtTokenDto,
-    @Body() body: UpdateLocationAvailabilityStatusDto,
+    @Body() dto: UpdateLocationAvailabilityDto,
   ) {
     return this.manualLocationAvailabilityManagement.updateLocationAvailability(
       {
-        ...body,
+        ...dto,
         locationAvailabilityId,
         createdById: userDto.sub,
       },

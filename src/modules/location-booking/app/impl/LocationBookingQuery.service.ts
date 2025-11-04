@@ -9,6 +9,12 @@ import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/Lo
 import { paginate, Paginated } from 'nestjs-paginate';
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 import { GetBookingByIdDto } from '@/common/dto/location-booking/GetBookingById.dto';
+import { GetBookedDatesByDateRangeDto } from '@/common/dto/location-booking/GetBookedDatesByDateRange.dto';
+import {
+  BookedDateResponseDto,
+  BookedDatesResponseDto,
+} from '@/common/dto/location-booking/res/BookedDate.response.dto';
+import { LocationBookingDateRepository } from '@/modules/location-booking/infra/repository/LocationBookingDate.repository';
 
 @Injectable()
 export class LocationBookingQueryService
@@ -52,5 +58,27 @@ export class LocationBookingQueryService
         },
       })
       .then((res) => this.mapTo(LocationBookingResponseDto, res));
+  }
+
+  getBookedDatesByDateRange(
+    dto: GetBookedDatesByDateRangeDto,
+  ): Promise<BookedDatesResponseDto> {
+    const locationBookingDateRepository = LocationBookingDateRepository(
+      this.dataSource,
+    );
+
+    return locationBookingDateRepository
+      .findBookedDatesByDateRange({
+        startDate: dto.startDate,
+        endDate: dto.endDate,
+      })
+      .then((results) => {
+        const dates = results.map((result) => ({
+          startDateTime: result.startDateTime,
+          endDateTime: result.endDateTime,
+        }));
+        const mappedDates = this.mapToArray(BookedDateResponseDto, dates);
+        return this.mapTo(BookedDatesResponseDto, { dates: mappedDates });
+      });
   }
 }

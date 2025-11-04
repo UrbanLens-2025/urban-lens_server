@@ -13,6 +13,7 @@ import { LocationCreatorController } from '@/modules/location-booking/interfaces
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { LocationBookingManagementService } from '@/modules/location-booking/app/impl/LocationBookingManagement.service';
 import { LocationBookingOwnerController } from '@/modules/location-booking/interfaces/LocationBooking.owner.controller';
+import { LocationBookingCreatorController } from '@/modules/location-booking/interfaces/LocationBooking.creator.controller';
 import { ILocationBookingQueryService } from '@/modules/location-booking/app/ILocationBookingQuery.service';
 import { LocationBookingQueryService } from '@/modules/location-booking/app/impl/LocationBookingQuery.service';
 import { WalletModule } from '@/modules/wallet/Wallet.module';
@@ -26,6 +27,7 @@ import { LocationBookingConfigCreatorController } from '@/modules/location-booki
     LocationBookingConfigOwnerController,
     LocationCreatorController,
     LocationBookingOwnerController,
+    LocationBookingCreatorController,
     LocationBookingConfigCreatorController,
   ],
   providers: [
