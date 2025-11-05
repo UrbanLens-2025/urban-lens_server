@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -26,10 +27,14 @@ export class EventAttendanceEntity {
     nullable: false,
     createForeignKeyConstraints: false,
   })
+  @JoinColumn({ name: 'order_id' })
   order: TicketOrderEntity;
 
   @Column({ name: 'order_id', type: 'uuid' })
   orderId: string;
+
+  @Column({ name: 'can_check_in', type: 'boolean', default: true })
+  canCheckIn: boolean;
 
   @Column({ name: 'status', type: 'varchar', length: 20 })
   status: EventAttendanceStatus;

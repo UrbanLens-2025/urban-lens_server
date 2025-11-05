@@ -4,7 +4,9 @@ import { EventAttendanceEntity } from '@/modules/event/domain/EventAttendance.en
 import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
 import { EventAttendanceRepository } from '@/modules/event/infra/repository/EventAttendance.repository';
 import { DataSource, EntitySubscriberInterface, InsertEvent } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class EventAttendanceCreationSubscriber
   implements EntitySubscriberInterface<TicketOrderEntity>
 {

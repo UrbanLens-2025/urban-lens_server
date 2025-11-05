@@ -21,8 +21,11 @@ import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderM
 import { TicketOrderManagementService } from '@/modules/event/app/impl/TicketOrderManagement.service';
 import { ITicketOrderQueryService } from '@/modules/event/app/ITicketOrderQuery.service';
 import { TicketOrderQueryService } from '@/modules/event/app/impl/TicketOrderQuery.service';
+import { IEventAttendanceQueryService } from '@/modules/event/app/IEventAttendanceQuery.service';
+import { EventAttendanceQueryService } from '@/modules/event/app/impl/EventAttendanceQuery.service';
 import { EventUserController } from '@/modules/event/interfaces/Event.user.controller';
 import { WalletModule } from '@/modules/wallet/Wallet.module';
+import { EventAttendanceCreationSubscriber } from '@/modules/event/infra/subscriber/EventAttendanceCreation.subscriber';
 
 @Module({
   imports: [
@@ -71,6 +74,11 @@ import { WalletModule } from '@/modules/wallet/Wallet.module';
       provide: ITicketOrderQueryService,
       useClass: TicketOrderQueryService,
     },
+    {
+      provide: IEventAttendanceQueryService,
+      useClass: EventAttendanceQueryService,
+    },
+    EventAttendanceCreationSubscriber,
   ],
 })
 export class EventModule {}
