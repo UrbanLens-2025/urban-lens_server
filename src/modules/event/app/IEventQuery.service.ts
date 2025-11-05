@@ -64,7 +64,6 @@ export namespace IEventQueryService_QueryConfig {
       searchableColumns: ['displayName', 'description'],
       filterableColumns: {},
       relations: {
-        createdBy: true,
         location: true,
         tags: {
           tag: true,
