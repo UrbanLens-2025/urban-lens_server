@@ -17,9 +17,16 @@ import { IEventTagsManagementService } from '@/modules/event/app/IEventTagsManag
 import { EventTagsManagementService } from '@/modules/event/app/impl/EventTagsManagement.service';
 import { IEventTicketManagementService } from '@/modules/event/app/IEventTicketManagement.service';
 import { EventTicketManagementService } from '@/modules/event/app/impl/EventTicketManagement.service';
+import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
+import { TicketOrderManagementService } from '@/modules/event/app/impl/TicketOrderManagement.service';
+import { ITicketOrderQueryService } from '@/modules/event/app/ITicketOrderQuery.service';
+import { TicketOrderQueryService } from '@/modules/event/app/impl/TicketOrderQuery.service';
+import { EventUserController } from '@/modules/event/interfaces/Event.user.controller';
+import { WalletModule } from '@/modules/wallet/Wallet.module';
 
 @Module({
   imports: [
+    WalletModule,
     EventInfraModule,
     FileStorageModule,
     LocationBookingModule,
@@ -29,6 +36,7 @@ import { EventTicketManagementService } from '@/modules/event/app/impl/EventTick
     EventRequestCreatorController,
     EventCreatorController,
     EventPublicController,
+    EventUserController,
   ],
   providers: [
     {
@@ -54,6 +62,14 @@ import { EventTicketManagementService } from '@/modules/event/app/impl/EventTick
     {
       provide: IEventTicketManagementService,
       useClass: EventTicketManagementService,
+    },
+    {
+      provide: ITicketOrderManagementService,
+      useClass: TicketOrderManagementService,
+    },
+    {
+      provide: ITicketOrderQueryService,
+      useClass: TicketOrderQueryService,
     },
   ],
 })

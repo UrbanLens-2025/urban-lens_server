@@ -51,6 +51,9 @@ export class EventTicketEntity {
   @Column({ type: 'text', nullable: true })
   tos: string;
 
+  @Column({ name: 'total_quantity', type: 'int', default: 0 })
+  totalQuantity: number;
+
   @Column({ name: 'total_quantity_available', type: 'int', default: 0 })
   totalQuantityAvailable: number;
 
@@ -77,4 +80,11 @@ export class EventTicketEntity {
 
   @Column({ name: 'event_id', type: 'uuid' })
   eventId: string;
+
+  public canBePurchasedNow(): boolean {
+    const now = new Date();
+    return (
+      this.isActive && now >= this.saleStartDate && now <= this.saleEndDate
+    );
+  }
 }

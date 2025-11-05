@@ -1,15 +1,18 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
 import { LocationTagsResponseDto } from '@/common/dto/business/res/LocationTags.response.dto';
 import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
 import { LocationBookingConfigResponseDto } from '@/common/dto/location-booking/res/LocationBookingConfig.response.dto';
 import { LocationAnalyticsResponseDto } from '@/common/dto/business/res/LocationAnalytics.response.dto';
+import { TagResponseDto } from '@/common/dto/account/res/TagResponse.dto';
 
 @Exclude()
 export class LocationResponseDto {
   @Expose()
   id: string;
+
+  type = 'location';
 
   @Expose()
   ownershipType: LocationOwnershipType;
@@ -42,9 +45,6 @@ export class LocationResponseDto {
   imageUrl?: string[];
 
   @Expose()
-  totalCheckIns: number;
-
-  @Expose()
   status: LocationRequestStatus;
 
   @Expose()
@@ -68,7 +68,15 @@ export class LocationResponseDto {
 
   @Expose()
   @Type(() => LocationTagsResponseDto)
-  tags: LocationTagsResponseDto[];
+  @Transform(({ value }) => {
+    if (!value || !Array.isArray(value)) {
+      return undefined;
+    }
+    return value
+      .map((locationTag: LocationTagsResponseDto) => locationTag?.tag)
+      .filter(Boolean);
+  })
+  tags: TagResponseDto[];
 
   @Expose()
   @Type(() => LocationBookingConfigResponseDto)

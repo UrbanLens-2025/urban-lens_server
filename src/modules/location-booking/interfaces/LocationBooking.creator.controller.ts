@@ -6,7 +6,7 @@ import { ILocationBookingQueryService } from '@/modules/location-booking/app/ILo
 import { GetBookedDatesByDateRangeDto } from '@/common/dto/location-booking/GetBookedDatesByDateRange.dto';
 import { BookedDatesResponseDto } from '@/common/dto/location-booking/res/BookedDate.response.dto';
 
-@ApiTags('Location Booking')
+@ApiTags('Location Bookings')
 @ApiBearerAuth()
 @Roles(Role.EVENT_CREATOR)
 @Controller('/creator/location-booking')

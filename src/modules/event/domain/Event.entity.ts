@@ -96,4 +96,8 @@ export class EventEntity {
   distanceMeters?: number;
 
   //#endregion
+
+  public isPublished() {
+    return this.status === EventStatus.PUBLISHED;
+  }
 }
