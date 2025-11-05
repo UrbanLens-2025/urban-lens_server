@@ -68,6 +68,7 @@ export namespace IEventQueryService_QueryConfig {
         tags: {
           tag: true,
         },
+        tickets: true,
       },
     };
   }

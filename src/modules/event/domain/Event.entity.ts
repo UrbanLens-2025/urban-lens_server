@@ -54,6 +54,18 @@ export class EventEntity {
   @Column({ name: 'status', type: 'varchar', length: 50 })
   status: EventStatus;
 
+  @Column({
+    name: 'start_date',
+    type: 'timestamp with time zone',
+  })
+  startDate: Date;
+
+  @Column({
+    name: 'end_date',
+    type: 'timestamp with time zone',
+  })
+  endDate: Date;
+
   @ManyToOne(() => LocationEntity, (location) => location.id, {
     createForeignKeyConstraints: false,
   })

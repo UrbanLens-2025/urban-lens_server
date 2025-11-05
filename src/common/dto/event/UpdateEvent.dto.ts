@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsDate,
   IsOptional,
   IsString,
   IsUrl,
@@ -9,6 +10,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SocialLink } from '@/common/json/SocialLink.json';
+import { IsBefore } from '@/common/decorators/IsBefore.decorator';
 
 export class UpdateEventDto {
   // transient fields
@@ -36,6 +38,17 @@ export class UpdateEventDto {
   @IsOptional()
   @IsUrl()
   coverUrl?: string | null;
+
+  @ApiPropertyOptional({ example: new Date().toISOString() })
+  @IsOptional()
+  @IsDate()
+  @IsBefore('endDate')
+  startTime?: Date;
+
+  @ApiPropertyOptional({ example: new Date().toISOString() })
+  @IsOptional()
+  @IsDate()
+  endDate?: Date;
 
   @ApiPropertyOptional({ example: 'Refund policy details here' })
   @IsOptional()
