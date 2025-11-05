@@ -46,6 +46,14 @@ export class EventResponseDto {
   status: EventStatus;
 
   @Expose()
+  @Type(() => Date)
+  startDate: Date;
+
+  @Expose()
+  @Type(() => Date)
+  endDate: Date;
+
+  @Expose()
   locationId: string;
 
   @Expose()
@@ -65,7 +73,6 @@ export class EventResponseDto {
 
   @Expose()
   @Transform(({ value }) => {
-    console.log(value);
     if (!value || !Array.isArray(value)) {
       return undefined;
     }

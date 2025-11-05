@@ -68,29 +68,18 @@ export class EventQueryService
   getAllEventTickets(
     dto: SearchEventTicketsDto,
   ): Promise<EventTicketResponseDto[]> {
-    const eventRepository = EventRepository(this.dataSource);
     const eventTicketRepository = EventTicketRepository(this.dataSource);
 
-    // validate event ownership
-    return eventRepository
-      .findOneByOrFail({
-        id: dto.eventId,
-        createdById: dto.accountId,
+    return eventTicketRepository
+      .find({
+        where: {
+          eventId: dto.eventId,
+          event: {
+            createdById: dto.accountId,
+          },
+        },
       })
-      .then(() => {
-        return eventTicketRepository
-          .find({
-            where: { eventId: dto.eventId },
-            relations: {
-              createdBy: true,
-              event: true,
-            },
-            order: { createdAt: 'DESC' },
-          })
-          .then((entities) =>
-            this.mapToArray(EventTicketResponseDto, entities),
-          );
-      });
+      .then((entities) => this.mapToArray(EventTicketResponseDto, entities));
   }
 
   searchPublishedEvents(
