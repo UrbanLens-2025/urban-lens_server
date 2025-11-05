@@ -7,6 +7,7 @@ import { EventRequestTagsEntity } from '@/modules/event/domain/EventRequestTags.
 import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
 import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
 import { TicketOrderDetailsEntity } from '@/modules/event/domain/TicketOrderDetails.entity';
+import { EventAttendanceEntity } from '@/modules/event/domain/EventAttendance.entity';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TicketOrderDetailsEntity } from '@/modules/event/domain/TicketOrderDeta
       EventRequestEntity,
       EventRequestTagsEntity,
       EventTagsEntity,
+      EventAttendanceEntity,
       TicketOrderEntity,
       TicketOrderDetailsEntity,
     ]),

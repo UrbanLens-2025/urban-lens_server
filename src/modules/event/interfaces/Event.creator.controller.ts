@@ -31,6 +31,14 @@ import { RemoveEventTagDto } from '@/common/dto/event/RemoveEventTag.dto';
 import { IEventTicketManagementService } from '@/modules/event/app/IEventTicketManagement.service';
 import { AddTicketToEventDto } from '@/common/dto/event/AddTicketToEvent.dto';
 import { UpdateEventTicketDto } from '@/common/dto/event/UpdateEventTicket.dto';
+import {
+  IEventAttendanceQueryService,
+  IEventAttendanceQueryService_QueryConfig,
+} from '@/modules/event/app/IEventAttendanceQuery.service';
+import {
+  ITicketOrderQueryService,
+  ITicketOrderQueryService_QueryConfig,
+} from '@/modules/event/app/ITicketOrderQuery.service';
 
 @ApiBearerAuth()
 @ApiTags('Event')
@@ -46,6 +54,10 @@ export class EventCreatorController {
     private readonly eventTagsManagementService: IEventTagsManagementService,
     @Inject(IEventTicketManagementService)
     private readonly eventTicketManagementService: IEventTicketManagementService,
+    @Inject(IEventAttendanceQueryService)
+    private readonly eventAttendanceQueryService: IEventAttendanceQueryService,
+    @Inject(ITicketOrderQueryService)
+    private readonly ticketOrderQueryService: ITicketOrderQueryService,
   ) {}
 
   @ApiOperation({ summary: 'Get all my events' })
@@ -165,6 +177,44 @@ export class EventCreatorController {
     return this.eventManagementService.publishEvent({
       eventId,
       accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Search all event attendance' })
+  @ApiPaginationQuery(
+    IEventAttendanceQueryService_QueryConfig.searchAllEventAttendance(),
+  )
+  @Get('/attendance')
+  searchAllEventAttendance(@Paginate() query: PaginateQuery) {
+    return this.eventAttendanceQueryService.searchAllEventAttendance({ query });
+  }
+
+  @ApiOperation({ summary: 'Get order details in my event by ID' })
+  @Get('/:eventId/orders/:orderId')
+  getOrderInEventById(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @AuthUser() userDto: JwtTokenDto,
+  ) {
+    return this.ticketOrderQueryService.getOrderInEventById({
+      eventId,
+      orderId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Get all orders in my event' })
+  @ApiPaginationQuery(ITicketOrderQueryService_QueryConfig.getOrdersInEvent())
+  @Get('/:eventId/orders')
+  getOrdersInEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Paginate() query: PaginateQuery,
+  ) {
+    return this.ticketOrderQueryService.getOrdersInEvent({
+      eventId,
+      accountId: userDto.sub,
+      query,
     });
   }
 }
