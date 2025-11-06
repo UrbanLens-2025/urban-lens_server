@@ -11,7 +11,7 @@ import { Type } from 'class-transformer';
 import { TagGroup } from '@/common/constants/TagGroup.constant';
 
 class CreateTagItemDto {
-  @ApiProperty({ example: TagGroup.OTHER })
+  @ApiProperty({ example: TagGroup.USER_TYPE })
   @IsEnum(TagGroup)
   @IsNotEmpty()
   groupName: TagGroup;
