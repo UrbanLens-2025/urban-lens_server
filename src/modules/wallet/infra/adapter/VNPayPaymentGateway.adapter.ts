@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import { PaymentProviderConfirmationResponseDto } from '@/common/dto/wallet/res/PaymentProviderConfirmation.response.dto';
 import { CreateMockProcessPaymentConfirmationPayloadDto } from '@/common/dto/wallet/CreateMockProcessPaymentConfirmationPayload.dto';
+import { VNPayBankCode } from '@/common/constants/VNPayBankCode.constant';
 
 @Injectable()
 export class VNPayPaymentGatewayAdapter
@@ -55,16 +56,12 @@ export class VNPayPaymentGatewayAdapter
     vnp_Params['vnp_Locale'] = locale;
     vnp_Params['vnp_CurrCode'] = currCode;
     vnp_Params['vnp_TxnRef'] = orderId;
-    vnp_Params['vnp_OrderInfo'] = 'Thanh toan cho ma GD:' + orderId;
+    vnp_Params['vnp_OrderInfo'] = 'test';
     vnp_Params['vnp_OrderType'] = 'other';
     vnp_Params['vnp_Amount'] = amount * 100;
     vnp_Params['vnp_ReturnUrl'] = returnUrl;
     vnp_Params['vnp_IpAddr'] = ipAddr;
     vnp_Params['vnp_CreateDate'] = createDate;
-    vnp_Params['vnp_ExpireDate'] = expireDate;
-    if (bankCode !== null && bankCode !== '') {
-      vnp_Params['vnp_BankCode'] = bankCode;
-    }
 
     vnp_Params = this.sortObject(vnp_Params);
 

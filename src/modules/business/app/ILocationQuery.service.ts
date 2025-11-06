@@ -15,7 +15,7 @@ export interface ILocationQueryService {
   // public locations
   getNearbyVisibleLocationsByCoordinates(
     dto: GetNearbyVisibleLocationsByCoordinatesDto,
-  ): Promise<LocationWithDistanceResponseDto[]>;
+  ): Promise<Paginated<LocationWithDistanceResponseDto>>;
 
   getVisibleLocationById(
     dto: GetVisibleLocationByIdDto,
@@ -47,6 +47,18 @@ export interface ILocationQueryService {
 }
 
 export namespace ILocationQueryService_QueryConfig {
+  export function getNearbyVisibleLocationsByCoordinates(): PaginateConfig<LocationEntity> {
+    return {
+      sortableColumns: ['createdAt'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      relations: {
+        tags: {
+          tag: true,
+        },
+      },
+    };
+  }
+
   export function searchVisibleLocations(): PaginateConfig<LocationEntity> {
     return {
       sortableColumns: ['name', 'createdAt', 'updatedAt'],

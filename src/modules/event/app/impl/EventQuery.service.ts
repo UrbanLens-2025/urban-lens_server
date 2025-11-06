@@ -23,18 +23,25 @@ export class EventQueryService
   extends CoreService
   implements IEventQueryService
 {
-  searchNearbyPublishedEvents(
+  searchNearbyPublishedEventsByCoordinates(
     dto: SearchNearbyPublishedEventsDto,
-  ): Promise<EventResponseDto[]> {
+  ): Promise<Paginated<EventResponseDto>> {
     const eventRepository = EventRepository(this.dataSource);
 
-    return eventRepository
-      .findNearbyLocations({
+    return paginate(
+      dto.query,
+      eventRepository.findNearbyLocations({
         latitude: dto.latitude,
         longitude: dto.longitude,
         radiusInMeters: dto.radiusInMeters,
-      })
-      .then((res) => this.mapToArray(EventResponseDto, res));
+      }),
+      {
+        ...IEventQueryService_QueryConfig.searchNearbyPublishedEventsByCoordinates(),
+        where: {
+          status: EventStatus.PUBLISHED,
+        },
+      },
+    ).then((res) => this.mapToPaginated(EventResponseDto, res));
   }
 
   searchMyEvents(dto: SearchMyEventsDto): Promise<Paginated<EventResponseDto>> {
