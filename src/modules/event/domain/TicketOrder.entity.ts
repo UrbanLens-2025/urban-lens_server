@@ -14,6 +14,7 @@ import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransacti
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { EventTicketOrderStatus } from '@/common/constants/EventTicketOrderStatus.constant';
 import { TicketOrderDetailsEntity } from '@/modules/event/domain/TicketOrderDetails.entity';
+import { EventEntity } from '@/modules/event/domain/Event.entity';
 
 @Entity({ name: TicketOrderEntity.TABLE_NAME })
 export class TicketOrderEntity {
@@ -68,6 +69,14 @@ export class TicketOrderEntity {
 
   @Column({ name: 'referenced_transaction_id', type: 'uuid', nullable: true })
   referencedTransactionId: string | null;
+
+  @ManyToOne(() => EventEntity, (event) => event.id, {
+    createForeignKeyConstraints: false,
+  })
+  event: EventEntity;
+
+  @Column({ name: 'event_id', type: 'uuid' })
+  eventId: string;
 
   //
 

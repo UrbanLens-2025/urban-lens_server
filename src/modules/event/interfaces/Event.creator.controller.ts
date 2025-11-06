@@ -127,6 +127,23 @@ export class EventCreatorController {
     });
   }
 
+  @ApiOperation({ summary: 'Search all event attendance' })
+  @ApiPaginationQuery(
+    IEventAttendanceQueryService_QueryConfig.searchAllEventAttendance(),
+  )
+  @Get('/attendance/:eventId')
+  searchAllEventAttendance(
+    @Paginate() query: PaginateQuery,
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+  ) {
+    return this.eventAttendanceQueryService.searchAllEventAttendance({
+      query,
+      eventId,
+      accountId: userDto.sub,
+    });
+  }
+
   @ApiOperation({ summary: 'Get all tickets for my event' })
   @Get('/:eventId/tickets')
   getAllTicketsForMyEvent(
@@ -178,15 +195,6 @@ export class EventCreatorController {
       eventId,
       accountId: userDto.sub,
     });
-  }
-
-  @ApiOperation({ summary: 'Search all event attendance' })
-  @ApiPaginationQuery(
-    IEventAttendanceQueryService_QueryConfig.searchAllEventAttendance(),
-  )
-  @Get('/attendance')
-  searchAllEventAttendance(@Paginate() query: PaginateQuery) {
-    return this.eventAttendanceQueryService.searchAllEventAttendance({ query });
   }
 
   @ApiOperation({ summary: 'Get order details in my event by ID' })

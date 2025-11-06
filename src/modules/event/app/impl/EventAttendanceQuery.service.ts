@@ -19,6 +19,12 @@ export class EventAttendanceQueryService
   ): Promise<Paginated<EventAttendanceResponseDto>> {
     return paginate(dto.query, EventAttendanceRepository(this.dataSource), {
       ...IEventAttendanceQueryService_QueryConfig.searchAllEventAttendance(),
+      where: {
+        eventId: dto.eventId,
+        event: {
+          createdById: dto.accountId,
+        },
+      },
     }).then((res) => this.mapToPaginated(EventAttendanceResponseDto, res));
   }
 }
