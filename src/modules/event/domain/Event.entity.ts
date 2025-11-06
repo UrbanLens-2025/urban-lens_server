@@ -54,6 +54,18 @@ export class EventEntity {
   @Column({ name: 'status', type: 'varchar', length: 50 })
   status: EventStatus;
 
+  @Column({
+    name: 'start_date',
+    type: 'timestamp with time zone',
+  })
+  startDate: Date;
+
+  @Column({
+    name: 'end_date',
+    type: 'timestamp with time zone',
+  })
+  endDate: Date;
+
   @ManyToOne(() => LocationEntity, (location) => location.id, {
     createForeignKeyConstraints: false,
   })
@@ -90,4 +102,14 @@ export class EventEntity {
     createForeignKeyConstraints: false,
   })
   tickets: EventTicketEntity[];
+
+  //#region TRANSIENT FIELDS - Do NOT add @Column to these. These are NOT PERSISTED to the db.
+
+  distanceMeters?: number;
+
+  //#endregion
+
+  public isPublished() {
+    return this.status === EventStatus.PUBLISHED;
+  }
 }

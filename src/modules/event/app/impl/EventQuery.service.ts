@@ -12,12 +12,31 @@ import { paginate, Paginated } from 'nestjs-paginate';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { EventTicketRepository } from '@/modules/event/infra/repository/EventTicket.repository';
 import { GetMyEventByIdDto } from '@/common/dto/event/GetMyEventById.dto';
+import { SearchPublishedEventsDto } from '@/common/dto/event/SearchPublishedEvents.dto';
+import { GetPublishedEventByIdDto } from '@/common/dto/event/GetPublishedEventById.dto';
+import { GetPublishedEventTicketsDto } from '@/common/dto/event/GetPublishedEventTickets.dto';
+import { EventStatus } from '@/common/constants/EventStatus.constant';
+import { SearchNearbyPublishedEventsDto } from '@/common/dto/event/SearchNearbyPublishedEvents.dto';
 
 @Injectable()
 export class EventQueryService
   extends CoreService
   implements IEventQueryService
 {
+  searchNearbyPublishedEvents(
+    dto: SearchNearbyPublishedEventsDto,
+  ): Promise<EventResponseDto[]> {
+    const eventRepository = EventRepository(this.dataSource);
+
+    return eventRepository
+      .findNearbyLocations({
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        radiusInMeters: dto.radiusInMeters,
+      })
+      .then((res) => this.mapToArray(EventResponseDto, res));
+  }
+
   searchMyEvents(dto: SearchMyEventsDto): Promise<Paginated<EventResponseDto>> {
     return paginate(dto.query, EventRepository(this.dataSource), {
       ...IEventQueryService_QueryConfig.searchMyEvents(),
@@ -49,28 +68,61 @@ export class EventQueryService
   getAllEventTickets(
     dto: SearchEventTicketsDto,
   ): Promise<EventTicketResponseDto[]> {
-    const eventRepository = EventRepository(this.dataSource);
     const eventTicketRepository = EventTicketRepository(this.dataSource);
 
-    // validate event ownership
-    return eventRepository
-      .findOneByOrFail({
-        id: dto.eventId,
-        createdById: dto.accountId,
+    return eventTicketRepository
+      .find({
+        where: {
+          eventId: dto.eventId,
+          event: {
+            createdById: dto.accountId,
+          },
+        },
       })
-      .then(() => {
-        return eventTicketRepository
-          .find({
-            where: { eventId: dto.eventId },
-            relations: {
-              createdBy: true,
-              event: true,
-            },
-            order: { createdAt: 'DESC' },
-          })
-          .then((entities) =>
-            this.mapToArray(EventTicketResponseDto, entities),
-          );
-      });
+      .then((entities) => this.mapToArray(EventTicketResponseDto, entities));
+  }
+
+  searchPublishedEvents(
+    dto: SearchPublishedEventsDto,
+  ): Promise<Paginated<EventResponseDto>> {
+    return paginate(dto.query, EventRepository(this.dataSource), {
+      ...IEventQueryService_QueryConfig.searchPublishedEvents(),
+      where: {
+        status: EventStatus.PUBLISHED,
+      },
+    }).then((res) => this.mapToPaginated(EventResponseDto, res));
+  }
+
+  getPublishedEventById(
+    dto: GetPublishedEventByIdDto,
+  ): Promise<EventResponseDto> {
+    const eventRepository = EventRepository(this.dataSource);
+    return eventRepository
+      .findOneOrFail({
+        where: {
+          id: dto.eventId,
+          status: EventStatus.PUBLISHED,
+        },
+        relations: {
+          createdBy: true,
+          location: true,
+          tags: {
+            tag: true,
+          },
+        },
+      })
+      .then((entity) => this.mapTo(EventResponseDto, entity));
+  }
+
+  getPublishedEventTickets(
+    dto: GetPublishedEventTicketsDto,
+  ): Promise<EventTicketResponseDto[]> {
+    const eventTicketRepository = EventTicketRepository(this.dataSource);
+
+    return eventTicketRepository
+      .find({
+        where: { eventId: dto.eventId },
+      })
+      .then((entities) => this.mapToArray(EventTicketResponseDto, entities));
   }
 }

@@ -3,6 +3,8 @@ import { SearchBookingsByLocationDto } from '@/common/dto/location-booking/Searc
 import { PaginateConfig, Paginated } from 'nestjs-paginate';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { GetBookingByIdDto } from '@/common/dto/location-booking/GetBookingById.dto';
+import { GetBookedDatesByDateRangeDto } from '@/common/dto/location-booking/GetBookedDatesByDateRange.dto';
+import { BookedDatesResponseDto } from '@/common/dto/location-booking/res/BookedDate.response.dto';
 
 export const ILocationBookingQueryService = Symbol(
   'ILocationBookingQueryService',
@@ -15,6 +17,10 @@ export interface ILocationBookingQueryService {
   getBookingForMyLocationById(
     dto: GetBookingByIdDto,
   ): Promise<LocationBookingResponseDto>;
+
+  getBookedDatesByDateRange(
+    dto: GetBookedDatesByDateRangeDto,
+  ): Promise<BookedDatesResponseDto>;
 }
 
 export namespace ILocationBookingQueryService_QueryConfig {

@@ -5,6 +5,10 @@ import { GetMyEventByIdDto } from '@/common/dto/event/GetMyEventById.dto';
 import { SearchEventTicketsDto } from '@/common/dto/event/SearchEventTickets.dto';
 import { EventTicketResponseDto } from '@/common/dto/event/res/EventTicket.response.dto';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
+import { SearchPublishedEventsDto } from '@/common/dto/event/SearchPublishedEvents.dto';
+import { GetPublishedEventByIdDto } from '@/common/dto/event/GetPublishedEventById.dto';
+import { GetPublishedEventTicketsDto } from '@/common/dto/event/GetPublishedEventTickets.dto';
+import { SearchNearbyPublishedEventsDto } from '@/common/dto/event/SearchNearbyPublishedEvents.dto';
 
 export const IEventQueryService = Symbol('IEventQueryService');
 
@@ -15,6 +19,22 @@ export interface IEventQueryService {
 
   getAllEventTickets(
     dto: SearchEventTicketsDto,
+  ): Promise<EventTicketResponseDto[]>;
+
+  searchPublishedEvents(
+    dto: SearchPublishedEventsDto,
+  ): Promise<Paginated<EventResponseDto>>;
+
+  searchNearbyPublishedEvents(
+    dto: SearchNearbyPublishedEventsDto,
+  ): Promise<EventResponseDto[]>;
+
+  getPublishedEventById(
+    dto: GetPublishedEventByIdDto,
+  ): Promise<EventResponseDto>;
+
+  getPublishedEventTickets(
+    dto: GetPublishedEventTicketsDto,
   ): Promise<EventTicketResponseDto[]>;
 }
 
@@ -33,6 +53,22 @@ export namespace IEventQueryService_QueryConfig {
         tags: {
           tag: true,
         },
+      },
+    };
+  }
+
+  export function searchPublishedEvents(): PaginateConfig<EventEntity> {
+    return {
+      sortableColumns: ['createdAt', 'updatedAt', 'displayName'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      searchableColumns: ['displayName', 'description'],
+      filterableColumns: {},
+      relations: {
+        location: true,
+        tags: {
+          tag: true,
+        },
+        tickets: true,
       },
     };
   }

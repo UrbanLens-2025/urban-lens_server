@@ -1,11 +1,13 @@
 import { CoreService } from '@/common/core/Core.service';
 import { UpdateEventDto } from '@/common/dto/event/UpdateEvent.dto';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { UpdateResult } from 'typeorm';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
+import { PublishEventDto } from '@/common/dto/event/PublishEvent.dto';
+import { EventStatus } from '@/common/constants/EventStatus.constant';
 
 @Injectable()
 export class EventManagementService
@@ -36,6 +38,28 @@ export class EventManagementService
 
       const updatedEvent = this.mapTo_safe(EventEntity, dto);
       return eventRepository.update({ id: dto.eventId }, updatedEvent);
+    });
+  }
+
+  publishEvent(dto: PublishEventDto): Promise<UpdateResult> {
+    return this.ensureTransaction(null, async (em) => {
+      const eventRepository = EventRepository(em);
+
+      const event = await eventRepository.findOneByOrFail({
+        id: dto.eventId,
+        createdById: dto.accountId,
+      });
+
+      if (event.status !== EventStatus.DRAFT) {
+        throw new BadRequestException(
+          `Event cannot be published. Current status: ${event.status}`,
+        );
+      }
+
+      return eventRepository.update(
+        { id: dto.eventId },
+        { status: EventStatus.PUBLISHED },
+      );
     });
   }
 }

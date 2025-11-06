@@ -2,7 +2,7 @@ import { AddLocationAvailabilityDto } from '@/common/dto/location-booking/AddLoc
 import { LocationAvailabilityResponseDto } from '@/common/dto/location-booking/res/LocationAvailability.response.dto';
 import { RemoveLocationAvailabilityDto } from '@/common/dto/location-booking/RemoveLocationAvailability.dto';
 import { GetAvailabilityForLocationDto } from '@/common/dto/location-booking/GetAvailabilityForLocation.dto';
-import { UpdateLocationAvailabilityStatusDto } from '@/common/dto/location-booking/UpdateLocationAvailabilityStatus.dto';
+import { UpdateLocationAvailabilityDto } from '@/common/dto/location-booking/UpdateLocationAvailability.dto';
 
 export const ILocationAvailabilityManagementService = Symbol(
   'IManualLocationManagementService',
@@ -21,6 +21,6 @@ export interface ILocationAvailabilityManagementService {
   ): Promise<LocationAvailabilityResponseDto[]>;
 
   updateLocationAvailability(
-    dto: UpdateLocationAvailabilityStatusDto,
+    dto: UpdateLocationAvailabilityDto,
   ): Promise<LocationAvailabilityResponseDto>;
 }

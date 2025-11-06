@@ -8,6 +8,7 @@ import { LocationBookingModule } from '@/modules/location-booking/LocationBookin
 import { IEventRequestQueryService } from '@/modules/event/app/IEventRequestQuery.service';
 import { EventRequestQueryService } from '@/modules/event/app/impl/EventRequestQuery.service';
 import { EventCreatorController } from '@/modules/event/interfaces/Event.creator.controller';
+import { EventPublicController } from '@/modules/event/interfaces/Event.public.controller';
 import { IEventQueryService } from '@/modules/event/app/IEventQuery.service';
 import { EventQueryService } from '@/modules/event/app/impl/EventQuery.service';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
@@ -16,15 +17,30 @@ import { IEventTagsManagementService } from '@/modules/event/app/IEventTagsManag
 import { EventTagsManagementService } from '@/modules/event/app/impl/EventTagsManagement.service';
 import { IEventTicketManagementService } from '@/modules/event/app/IEventTicketManagement.service';
 import { EventTicketManagementService } from '@/modules/event/app/impl/EventTicketManagement.service';
+import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
+import { TicketOrderManagementService } from '@/modules/event/app/impl/TicketOrderManagement.service';
+import { ITicketOrderQueryService } from '@/modules/event/app/ITicketOrderQuery.service';
+import { TicketOrderQueryService } from '@/modules/event/app/impl/TicketOrderQuery.service';
+import { IEventAttendanceQueryService } from '@/modules/event/app/IEventAttendanceQuery.service';
+import { EventAttendanceQueryService } from '@/modules/event/app/impl/EventAttendanceQuery.service';
+import { EventUserController } from '@/modules/event/interfaces/Event.user.controller';
+import { WalletModule } from '@/modules/wallet/Wallet.module';
+import { EventAttendanceCreationSubscriber } from '@/modules/event/infra/subscriber/EventAttendanceCreation.subscriber';
 
 @Module({
   imports: [
+    WalletModule,
     EventInfraModule,
     FileStorageModule,
     LocationBookingModule,
     FileStorageModule,
   ],
-  controllers: [EventRequestCreatorController, EventCreatorController],
+  controllers: [
+    EventRequestCreatorController,
+    EventCreatorController,
+    EventPublicController,
+    EventUserController,
+  ],
   providers: [
     {
       provide: IEventRequestManagementService,
@@ -50,6 +66,19 @@ import { EventTicketManagementService } from '@/modules/event/app/impl/EventTick
       provide: IEventTicketManagementService,
       useClass: EventTicketManagementService,
     },
+    {
+      provide: ITicketOrderManagementService,
+      useClass: TicketOrderManagementService,
+    },
+    {
+      provide: ITicketOrderQueryService,
+      useClass: TicketOrderQueryService,
+    },
+    {
+      provide: IEventAttendanceQueryService,
+      useClass: EventAttendanceQueryService,
+    },
+    EventAttendanceCreationSubscriber,
   ],
 })
 export class EventModule {}
