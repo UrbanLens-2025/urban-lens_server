@@ -25,9 +25,9 @@ export interface IEventQueryService {
     dto: SearchPublishedEventsDto,
   ): Promise<Paginated<EventResponseDto>>;
 
-  searchNearbyPublishedEvents(
+  searchNearbyPublishedEventsByCoordinates(
     dto: SearchNearbyPublishedEventsDto,
-  ): Promise<EventResponseDto[]>;
+  ): Promise<Paginated<EventResponseDto>>;
 
   getPublishedEventById(
     dto: GetPublishedEventByIdDto,
@@ -39,6 +39,19 @@ export interface IEventQueryService {
 }
 
 export namespace IEventQueryService_QueryConfig {
+  export function searchNearbyPublishedEventsByCoordinates(): PaginateConfig<EventEntity> {
+    return {
+      sortableColumns: ['createdAt', 'displayName'],
+      defaultSortBy: [['displayName', 'ASC']],
+      relations: {
+        tickets: true,
+        tags: {
+          tag: true,
+        },
+      },
+    };
+  }
+
   export function searchMyEvents(): PaginateConfig<EventEntity> {
     return {
       sortableColumns: ['createdAt', 'updatedAt', 'displayName', 'status'],

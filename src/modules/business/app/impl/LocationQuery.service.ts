@@ -22,25 +22,24 @@ export class LocationQueryService
 {
   getNearbyVisibleLocationsByCoordinates(
     dto: GetNearbyVisibleLocationsByCoordinatesDto,
-  ): Promise<LocationWithDistanceResponseDto[]> {
+  ): Promise<Paginated<LocationWithDistanceResponseDto>> {
     const locationRepository = LocationRepositoryProvider(this.dataSource);
-    return locationRepository
-      .findNearbyLocations(
-        {
-          latitude: dto.latitude,
-          longitude: dto.longitude,
-          radiusInMeters: dto.radiusMeters,
+    return paginate(
+      dto.query,
+      locationRepository.findNearbyLocations({
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        radiusInMeters: dto.radiusMeters,
+      }),
+      {
+        ...ILocationQueryService_QueryConfig.getNearbyVisibleLocationsByCoordinates(),
+        where: {
+          isVisibleOnMap: true,
         },
-        {
-          where: {
-            isVisibleOnMap: true,
-          },
-          relations: ['business'], // DO NOT CHANGE TO OBJECT.
-        },
-      )
-      .then((locations) => {
-        return this.mapToArray(LocationWithDistanceResponseDto, locations);
-      });
+      },
+    ).then((locations) => {
+      return this.mapToPaginated(LocationWithDistanceResponseDto, locations);
+    });
   }
 
   getVisibleLocationById(

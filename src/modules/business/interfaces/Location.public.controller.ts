@@ -32,17 +32,22 @@ export class LocationPublicController {
   @ApiOperation({
     summary: 'Get nearby visible locations by coordinates',
   })
+  @ApiPaginationQuery(
+    ILocationQueryService_QueryConfig.getNearbyVisibleLocationsByCoordinates(),
+  )
   @Get('/nearby/:latitude/:longitude/:radiusMeters')
   getNearbyVisibleLocationsByCoordinates(
     @AuthUser() userDto: JwtTokenDto, // for future recommendations based on user preferences
     @Param('latitude', ParseFloatPipe) latitude: number,
     @Param('longitude', ParseFloatPipe) longitude: number,
     @Param('radiusMeters', ParseIntPipe) radiusMeters: number,
+    @Paginate() query: PaginateQuery,
   ) {
     return this.locationQueryService.getNearbyVisibleLocationsByCoordinates({
       latitude,
       longitude,
       radiusMeters,
+      query,
     });
   }
 

@@ -57,14 +57,16 @@ export class EventEntity {
   @Column({
     name: 'start_date',
     type: 'timestamp with time zone',
+    nullable: true,
   })
-  startDate: Date;
+  startDate?: Date | null;
 
   @Column({
     name: 'end_date',
     type: 'timestamp with time zone',
+    nullable: true,
   })
-  endDate: Date;
+  endDate?: Date | null;
 
   @ManyToOne(() => LocationEntity, (location) => location.id, {
     createForeignKeyConstraints: false,
