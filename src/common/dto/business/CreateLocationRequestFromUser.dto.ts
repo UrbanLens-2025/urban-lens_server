@@ -57,10 +57,9 @@ export class CreateLocationRequestFromUserDto {
 
   @ApiProperty({ isArray: true, type: String, example: ['http://google.com'] })
   @IsArray()
-  @ArrayNotEmpty()
   @IsUrl({}, { each: true })
   @IsNotEmpty({ each: true })
-  locationImageUrls: string[];
+  locationImageUrls: string[] = [];
 
   @ApiProperty({ isArray: true, type: Number, example: [1, 2, 3] })
   @IsArray()
