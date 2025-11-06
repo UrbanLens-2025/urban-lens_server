@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
 import { EventAttendanceStatus } from '@/common/constants/EventAttendanceStatus.constant';
+import { EventEntity } from '@/modules/event/domain/Event.entity';
 
 @Entity({ name: EventAttendanceEntity.TABLE_NAME })
 export class EventAttendanceEntity {
@@ -32,6 +33,16 @@ export class EventAttendanceEntity {
 
   @Column({ name: 'order_id', type: 'uuid' })
   orderId: string;
+
+  @ManyToOne(() => EventEntity, (event) => event.id, {
+    nullable: false,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'event_id' })
+  event: EventEntity;
+
+  @Column({ name: 'event_id', type: 'uuid' })
+  eventId: string;
 
   @Column({ name: 'can_check_in', type: 'boolean', default: true })
   canCheckIn: boolean;

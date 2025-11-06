@@ -25,6 +25,7 @@ export class EventAttendanceCreationSubscriber
     const eventAttendance = new EventAttendanceEntity();
     eventAttendance.orderId = ticketOrder.id;
     eventAttendance.status = EventAttendanceStatus.CREATED;
+    eventAttendance.eventId = ticketOrder.eventId;
 
     const eventAttendanceRepository = EventAttendanceRepository(event.manager);
     await eventAttendanceRepository.save(eventAttendance);

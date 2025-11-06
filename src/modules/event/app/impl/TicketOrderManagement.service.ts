@@ -126,6 +126,7 @@ export class TicketOrderManagementService
         0,
       );
       order.status = EventTicketOrderStatus.PENDING;
+      order.eventId = event.id;
       order.currency = SupportedCurrency.VND;
       order.orderDetails = orderDetails;
 

@@ -28,9 +28,6 @@ export class CreateDepositTransactionDto {
   @IsNotEmpty()
   returnUrl: string;
 
-  // TODO dirty ass code
-  @ApiProperty({ example: ExternalTransactionAfterFinishAction.NONE })
-  @IsEnum(ExternalTransactionAfterFinishAction)
   afterAction: ExternalTransactionAfterFinishAction;
 
   // Transient field
