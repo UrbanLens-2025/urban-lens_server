@@ -40,6 +40,10 @@ import {
   POST_CREATED_EVENT,
   PostCreatedEvent,
 } from '@/modules/gamification/domain/events/PostCreated.event';
+import {
+  POST_REACTED_EVENT,
+  PostReactedEvent,
+} from '@/modules/post/domain/events/PostReacted.event';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 import { EntityManager } from 'typeorm';
 
@@ -654,12 +658,17 @@ export class PostService
 
       let upvotesDelta = 0;
       let downvotesDelta = 0;
+      let shouldEmitEvent = false;
+      let finalReactType: ReactType | null = null;
 
       if (react && react.type === dto.type) {
+        // User is removing their reaction
         await this.reactRepository.repo.delete(react.id);
         if (dto.type === ReactType.UPVOTE) upvotesDelta = -1;
         if (dto.type === ReactType.DOWNVOTE) downvotesDelta = -1;
+        finalReactType = null; // reaction removed
       } else if (react && react.type !== dto.type) {
+        // User is changing their reaction
         await this.reactRepository.repo.update(react.id, { type: dto.type });
         if (
           react.type === ReactType.UPVOTE &&
@@ -674,7 +683,10 @@ export class PostService
           downvotesDelta = -1;
           upvotesDelta = +1;
         }
+        shouldEmitEvent = true;
+        finalReactType = dto.type;
       } else {
+        // User is adding a new reaction
         await this.reactRepository.repo.save(
           this.reactRepository.repo.create({
             entityId: dto.postId,
@@ -685,7 +697,10 @@ export class PostService
         );
         if (dto.type === ReactType.UPVOTE) upvotesDelta = +1;
         if (dto.type === ReactType.DOWNVOTE) downvotesDelta = +1;
+        shouldEmitEvent = true;
+        finalReactType = dto.type;
       }
+
       await this.analyticRepository.repo.increment(
         { entityId: post.postId, entityType: AnalyticEntityType.POST },
         'totalUpvotes',
@@ -696,6 +711,17 @@ export class PostService
         'totalDownvotes',
         downvotesDelta,
       );
+
+      // Emit event for user behavior analysis (only if reaction was added/changed, not removed)
+      if (shouldEmitEvent && finalReactType && post.authorId !== dto.userId) {
+        const event = new PostReactedEvent();
+        event.postId = dto.postId;
+        event.postAuthorId = post.authorId;
+        event.reactorUserId = dto.userId;
+        event.reactType = finalReactType;
+        event.locationId = post.locationId;
+        this.eventEmitter.emit(POST_REACTED_EVENT, event);
+      }
 
       return 'React post successfully';
     } catch (error) {
