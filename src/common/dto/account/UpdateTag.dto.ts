@@ -1,17 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsBoolean,
-  IsEnum,
-  IsHexColor,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsBoolean, IsEnum, IsHexColor, IsOptional } from 'class-validator';
 import { TagGroup } from '@/common/constants/TagGroup.constant';
 
 export class UpdateTagDto {
   tagId: number;
 
-  @ApiPropertyOptional({ example: TagGroup.OTHER, enum: TagGroup })
+  @ApiPropertyOptional({ example: TagGroup.USER_TYPE, enum: TagGroup })
   @IsOptional()
   @IsEnum(TagGroup)
   groupName?: TagGroup;

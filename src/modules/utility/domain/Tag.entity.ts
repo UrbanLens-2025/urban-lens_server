@@ -28,7 +28,7 @@ export class TagEntity {
     name: 'group_name',
     type: 'varchar',
     length: 100,
-    default: TagGroup.OTHER,
+    default: TagGroup.USER_TYPE,
   })
   groupName: TagGroup;
 

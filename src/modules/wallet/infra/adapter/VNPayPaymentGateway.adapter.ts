@@ -11,7 +11,6 @@ import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import { PaymentProviderConfirmationResponseDto } from '@/common/dto/wallet/res/PaymentProviderConfirmation.response.dto';
 import { CreateMockProcessPaymentConfirmationPayloadDto } from '@/common/dto/wallet/CreateMockProcessPaymentConfirmationPayload.dto';
-import { VNPayBankCode } from '@/common/constants/VNPayBankCode.constant';
 
 @Injectable()
 export class VNPayPaymentGatewayAdapter
