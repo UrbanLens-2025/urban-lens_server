@@ -43,6 +43,8 @@ jobs:
             ecosystem.config.js
             package.json
             pnpm-lock.yaml
+            src/assets/
+            src/assets/templates/
           retention-days: 1
 
   deploy:
@@ -138,7 +140,7 @@ jobs:
           sudo chown -R $USER:$USER /var/www/urbanlens-${{ env.TARGET }}/
           cd /var/www/urbanlens-${{ env.TARGET }}/
           pnpm install --prod --silent      
-      
+
       - name: Start standby instance (on standby port)
         run: |
           cd /var/www/urbanlens-${{ env.TARGET }}/
