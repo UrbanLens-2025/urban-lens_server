@@ -41,12 +41,10 @@ export class AuthPublicController {
   }
 
   @ApiOperation({
-    summary: 'Resend OTP code to email (unimplemented)',
-    deprecated: true,
+    summary: 'Resend OTP code to email',
   })
   @Post('/register/resend-otp')
-  resendOtp(@Body('email') dto: RegisterResendOtpDto) {
-    throw new Error('Method not implemented.');
-    // return this.authService.resendOtp(dto);
+  resendOtp(@Body() dto: RegisterResendOtpDto) {
+    return this.authService.resendOtp(dto);
   }
 }

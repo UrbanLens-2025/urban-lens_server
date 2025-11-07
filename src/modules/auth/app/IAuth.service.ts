@@ -10,7 +10,7 @@ import { UpdateResult } from 'typeorm';
 
 export const IAuthService = Symbol('IAuthService');
 export interface IAuthService {
-  resendOtp(dto: RegisterResendOtpDto): Promise<any>;
+  resendOtp(dto: RegisterResendOtpDto): Promise<RegisterResponseDto>;
 
   register(dto: RegisterDto): Promise<RegisterResponseDto>;
 
