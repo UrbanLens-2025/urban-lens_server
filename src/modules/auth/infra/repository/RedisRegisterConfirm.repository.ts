@@ -32,6 +32,21 @@ export class RedisRegisterConfirmRepository {
     return res === 'OK';
   }
 
+  async getByEmail(
+    email: string,
+  ): Promise<(RegisterDto & { confirmCode: string; otpCode: string }) | null> {
+    const key =
+      RedisRegisterConfirmRepository.REGISTER_CONFIRM_KEY.concat(email);
+    const dataJson = await this.redis.get(key);
+
+    if (!dataJson) return null;
+
+    return JSON.parse(dataJson) as RegisterDto & {
+      confirmCode: string;
+      otpCode: string;
+    };
+  }
+
   async getAndValidate(
     email: string,
     confirmCode: string,

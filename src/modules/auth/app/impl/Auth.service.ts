@@ -27,7 +27,10 @@ import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
 import { IEmailNotificationService } from '@/modules/notification/app/IEmailNotification.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { UserRegistrationConfirmedEvent, USER_REGISTRATION_CONFIRMED } from '@/modules/auth/app/events/UserRegistrationConfirmed.event';
+import {
+  USER_REGISTRATION_CONFIRMED,
+  UserRegistrationConfirmedEvent,
+} from '@/modules/auth/app/events/UserRegistrationConfirmed.event';
 
 @Injectable()
 export class AuthService extends CoreService implements IAuthService {
@@ -44,8 +47,54 @@ export class AuthService extends CoreService implements IAuthService {
     super();
   }
 
-  resendOtp(_: RegisterResendOtpDto): Promise<any> {
-    throw new Error('Method not implemented.');
+  async resendOtp(dto: RegisterResendOtpDto): Promise<RegisterResponseDto> {
+    const existingRegistration =
+      await this.redisRegisterConfirmRepository.getByEmail(dto.email);
+
+    if (!existingRegistration) {
+      throw new BadRequestException('No pending registration found');
+    }
+
+    if (existingRegistration.confirmCode !== dto.confirmCode) {
+      throw new BadRequestException('Invalid confirm code');
+    }
+
+    const userExistsDb = await this.accountRepository.repo.existsBy({
+      email: dto.email,
+    });
+
+    if (userExistsDb) {
+      throw new BadRequestException('User already exists');
+    }
+
+    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+    this.LOGGER.debug(`Resending OTP code: ${otpCode} for email: ${dto.email}`);
+
+    this.emailNotificationService.sendEmail({
+      to: dto.email,
+      template: EmailTemplates.CONFIRM_OTP,
+      context: {
+        name: existingRegistration.firstName,
+        otp: otpCode,
+        expiresInMinutes: RedisRegisterConfirmRepository.getExpirationS() / 60,
+      },
+    });
+
+    try {
+      await this.redisRegisterConfirmRepository.set(
+        existingRegistration,
+        existingRegistration.confirmCode,
+        otpCode,
+      );
+    } catch (error) {
+      throw new InternalServerErrorException("Couldn't update OTP in redis.");
+    }
+
+    const response = new RegisterResponseDto();
+    response.confirmCode = existingRegistration.confirmCode;
+
+    return response;
   }
 
   async register(createAuthDto: RegisterDto): Promise<RegisterResponseDto> {
@@ -68,7 +117,7 @@ export class AuthService extends CoreService implements IAuthService {
       `Generated OTP code: ${otpCode} for email: ${createAuthDto.email}`,
     );
 
-    await this.emailNotificationService.sendEmail({
+    this.emailNotificationService.sendEmail({
       to: createAuthDto.email,
       template: EmailTemplates.CONFIRM_OTP,
       context: {
@@ -119,7 +168,7 @@ export class AuthService extends CoreService implements IAuthService {
 
     const user = await this.accountRepository.repo.save(userEntity);
 
-    await this.emailNotificationService.sendEmail({
+    this.emailNotificationService.sendEmail({
       to: user.email,
       template: EmailTemplates.WELCOME,
       context: {
