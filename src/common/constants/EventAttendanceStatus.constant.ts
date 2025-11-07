@@ -1,4 +1,4 @@
 export enum EventAttendanceStatus {
   CREATED = 'CREATED',
-  ATTENDED = 'ATTENDED',
+  CHECKED_IN = 'ATTENDED',
 }

@@ -8,12 +8,25 @@ import { EventAttendanceResponseDto } from '@/common/dto/event/res/EventAttendan
 import { SearchEventAttendanceDto } from '@/common/dto/event/SearchEventAttendance.dto';
 import { paginate, Paginated } from 'nestjs-paginate';
 import { EventAttendanceRepository } from '@/modules/event/infra/repository/EventAttendance.repository';
+import { SearchMyEventAttendanceDto } from '@/common/dto/event/SearchMyEventAttendance.dto';
 
 @Injectable()
 export class EventAttendanceQueryService
   extends CoreService
   implements IEventAttendanceQueryService
 {
+  searchMyEventAttendance(
+    dto: SearchMyEventAttendanceDto,
+  ): Promise<Paginated<EventAttendanceResponseDto>> {
+    return paginate(dto.query, EventAttendanceRepository(this.dataSource), {
+      ...IEventAttendanceQueryService_QueryConfig.searchMyEventAttendance(),
+      where: {
+        eventId: dto.eventId,
+        ownerId: dto.accountId,
+      },
+    }).then((res) => this.mapToPaginated(EventAttendanceResponseDto, res));
+  }
+
   searchAllEventAttendance(
     dto: SearchEventAttendanceDto,
   ): Promise<Paginated<EventAttendanceResponseDto>> {

@@ -114,4 +114,8 @@ export class EventEntity {
   public isPublished() {
     return this.status === EventStatus.PUBLISHED;
   }
+
+  public canCheckIn(): boolean {
+    return this.status === EventStatus.PUBLISHED;
+  }
 }

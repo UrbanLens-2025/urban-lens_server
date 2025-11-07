@@ -26,6 +26,8 @@ import { EventAttendanceQueryService } from '@/modules/event/app/impl/EventAtten
 import { EventUserController } from '@/modules/event/interfaces/Event.user.controller';
 import { WalletModule } from '@/modules/wallet/Wallet.module';
 import { EventAttendanceCreationSubscriber } from '@/modules/event/infra/subscriber/EventAttendanceCreation.subscriber';
+import { EventAttendanceManagementService } from '@/modules/event/app/impl/EventAttendanceManagement.service';
+import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
 
 @Module({
   imports: [
@@ -77,6 +79,10 @@ import { EventAttendanceCreationSubscriber } from '@/modules/event/infra/subscri
     {
       provide: IEventAttendanceQueryService,
       useClass: EventAttendanceQueryService,
+    },
+    {
+      provide: IEventAttendanceManagementService,
+      useClass: EventAttendanceManagementService,
     },
     EventAttendanceCreationSubscriber,
   ],
