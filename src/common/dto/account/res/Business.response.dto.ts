@@ -1,8 +1,9 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import {
   BusinessCategory,
   BusinessRequestStatus,
 } from '@/common/constants/Business.constant';
+import { BusinessLicenseJson } from '@/common/json/BusinessLicense.json';
 
 @Exclude()
 export class BusinessResponseDto {
@@ -31,13 +32,8 @@ export class BusinessResponseDto {
   description: string;
 
   @Expose()
-  licenseNumber: string;
-
-  @Expose()
-  licenseExpirationDate: string;
-
-  @Expose()
-  licenseType: string;
+  @Type(() => BusinessLicenseJson)
+  licenses: BusinessLicenseJson[];
 
   @Expose()
   isActive: boolean;

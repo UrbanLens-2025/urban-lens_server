@@ -14,6 +14,7 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { BusinessLicenseJson } from '@/common/json/BusinessLicense.json';
 
 @Entity({ name: BusinessEntity.TABLE_NAME })
 export class BusinessEntity {
@@ -49,14 +50,8 @@ export class BusinessEntity {
   @Column({ name: 'description', type: 'text' })
   description: string;
 
-  @Column({ name: 'license_number', type: 'varchar', length: 255 })
-  licenseNumber: string;
-
-  @Column({ name: 'license_expiration_date', type: 'varchar', length: 255 })
-  licenseExpirationDate: string;
-
-  @Column({ name: 'license_type', type: 'varchar', length: 255 })
-  licenseType: string;
+  @Column({ name: 'licenses', type: 'jsonb', nullable: true })
+  licenses: BusinessLicenseJson[];
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
