@@ -27,10 +27,10 @@ import {
   type PaginateQuery,
 } from 'nestjs-paginate';
 
-@ApiTags('Location Announcements')
+@ApiTags('Announcements')
 @ApiBearerAuth()
 @Roles(Role.BUSINESS_OWNER)
-@Controller('/owner/location/announcements')
+@Controller('/owner/announcements')
 export class AnnouncementOwnerController {
   constructor(
     @Inject(IAnnouncementService)
