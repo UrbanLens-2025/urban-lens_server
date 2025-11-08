@@ -41,7 +41,9 @@ export namespace ILocationRequestQueryService_QueryConfig {
           userProfile: true,
         },
         processedBy: true,
-        tags: true,
+        tags: {
+          tag: true,
+        },
         createdLocation: true,
       },
     };
@@ -61,7 +63,9 @@ export namespace ILocationRequestQueryService_QueryConfig {
           userProfile: true,
         },
         processedBy: true,
-        tags: true,
+        tags: {
+          tag: true,
+        },
         createdLocation: true,
       },
     };

@@ -4,3 +4,4 @@ onlyBuiltDependencies:
   - bcrypt
   - protobufjs
   - unrs-resolver
+  - '@sentry/profiling-node'
