@@ -9,6 +9,8 @@ import { AnnouncementRepository } from '@/modules/post/infra/repository/Announce
 import { AnnouncementEntity } from '@/modules/post/domain/Announcement.entity';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { CreateAnnouncementForEventDto } from '@/common/dto/posts/CreateAnnouncementForEvent.dto';
+import { AnnouncementType } from '@/common/constants/AnnouncementType.constant';
+import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 
 @Injectable()
 export class AnnouncementService
@@ -24,37 +26,55 @@ export class AnnouncementService
   createForEvent(
     dto: CreateAnnouncementForEventDto,
   ): Promise<AnnouncementResponseDto> {
-    throw new Error('Method not implemented.');
+    return this.ensureTransaction(null, async (em) => {
+      const announcementRepository = AnnouncementRepository(em);
+      const eventRepository = EventRepository(em);
+
+      const event = await eventRepository.findOneByOrFail({
+        id: dto.eventId,
+        createdById: dto.accountId,
+      });
+
+      const announcementEntity = new AnnouncementEntity();
+      this.assignTo_safe(announcementEntity, dto);
+      announcementEntity.createdById = dto.accountId;
+      announcementEntity.updatedById = dto.accountId;
+      announcementEntity.type = AnnouncementType.EVENT;
+      announcementEntity.event = event;
+
+      await this.fileStorageService.confirmUpload([dto.imageUrl], em);
+
+      return announcementRepository
+        .save(announcementEntity)
+        .then((e) => this.mapTo(AnnouncementResponseDto, e));
+    });
   }
 
   async createForLocation(
     dto: CreateAnnouncementForLocationDto,
   ): Promise<AnnouncementResponseDto> {
     return this.ensureTransaction(null, async (em) => {
-      const repo = AnnouncementRepository(em);
+      const announcementRepository = AnnouncementRepository(em);
+      const locationRepository = LocationRepositoryProvider(em);
 
-      if (dto.imageUrl) {
-        await this.fileStorageService.confirmUpload([dto.imageUrl], em);
-      }
+      const location = await locationRepository.findOneByOrFail({
+        id: dto.locationId,
+        businessId: dto.accountId,
+      });
 
-      const entity = new AnnouncementEntity();
+      const announcementEntity = new AnnouncementEntity();
 
-      // Ownership check if locationId provided
-      if (dto.locationId) {
-        const locationRepo = LocationRepositoryProvider(em);
-        const location = await locationRepo.findOneByOrFail({
-          id: dto.locationId,
-          businessId: dto.accountId,
-        });
-        entity.locationId = location.id;
-      }
+      this.assignTo_safe(announcementEntity, dto);
+      announcementEntity.createdById = dto.accountId;
+      announcementEntity.updatedById = dto.accountId;
+      announcementEntity.type = AnnouncementType.LOCATION;
+      announcementEntity.location = location;
 
-      this.assignTo_safe(entity, dto);
-      entity.createdById = dto.accountId;
-      entity.updatedById = dto.accountId;
+      await this.fileStorageService.confirmUpload([dto.imageUrl], em);
 
-      const saved = await repo.save(entity);
-      return this.mapTo(AnnouncementResponseDto, saved);
+      return announcementRepository
+        .save(announcementEntity)
+        .then((e) => this.mapTo(AnnouncementResponseDto, e));
     });
   }
 

@@ -25,6 +25,7 @@ import { PostEntity } from '@/modules/post/domain/Post.entity';
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
 import { ClientsModule } from '@nestjs/microservices';
 import { getRabbitMQConfig } from '@/config/rabbitmq.config';
+import { AnnouncementCreatorController } from '@/modules/post/interfaces/Announcement.creator.controller';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { getRabbitMQConfig } from '@/config/rabbitmq.config';
     PostUserController,
     AnnouncementPublicController,
     AnnouncementOwnerController,
+    AnnouncementCreatorController,
   ],
   providers: [
     {

@@ -1,18 +1,14 @@
-import { Controller, Get, Inject, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Query,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import {
-  IAnnouncementQueryService,
-  IAnnouncementQueryService_QueryConfig,
-} from '@/modules/post/app/IAnnouncementQuery.service';
-import { AnnouncementResponseDto } from '@/common/dto/posts/Announcement.response.dto';
-import { GetAnnouncementByIdDto } from '@/common/dto/posts/GetAnnouncementById.dto';
-import {
-  ApiPaginationQuery,
-  Paginate,
-  Paginated,
-  type PaginateQuery,
-} from 'nestjs-paginate';
-import { IAnnouncementService } from '@/modules/post/app/IAnnouncement.service';
+import { IAnnouncementQueryService } from '@/modules/post/app/IAnnouncementQuery.service';
+import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 
 @ApiTags('Location Announcements')
 @Controller('/public/location/announcements')
@@ -22,26 +18,35 @@ export class AnnouncementPublicController {
     private readonly announcementQueryService: IAnnouncementQueryService,
   ) {}
 
-  @ApiOperation({ summary: 'Get announcement by ID (public)' })
-  @Get('/:id')
-  getById(
-    @Param() params: GetAnnouncementByIdDto,
-  ): Promise<AnnouncementResponseDto> {
-    return this.announcementQueryService.getPublicById(params);
+  @ApiOperation({ summary: 'Get visible announcement for event' })
+  @Get('/event/:eventId')
+  getVisibleAnnouncementsForEvent(
+    @Query('eventId', ParseUUIDPipe) eventId: string,
+    @Paginate() query: PaginateQuery,
+  ) {
+    return this.announcementQueryService.getViewableAnnouncementsForEvent({
+      eventId,
+      query,
+    });
   }
 
-  @ApiOperation({
-    summary: 'List announcements for a location (public, paginated)',
-  })
-  @ApiPaginationQuery(IAnnouncementQueryService_QueryConfig.searchByLocation())
-  @Get('/by-location/:locationId')
-  searchByLocation(
+  @ApiOperation({ summary: 'Get visible announcement for location' })
+  @Get('/location/:locationId')
+  getVisibleAnnouncementsForLocation(
+    @Query('locationId', ParseUUIDPipe) locationId: string,
     @Paginate() query: PaginateQuery,
-    @Param('locationId') locationId: string,
-  ): Promise<Paginated<AnnouncementResponseDto>> {
-    return this.announcementQueryService.getAllVisibleAnnouncements({
-      query,
+  ) {
+    return this.announcementQueryService.getViewableAnnouncementsForLocation({
       locationId,
+      query,
+    });
+  }
+
+  @ApiOperation({ summary: 'Get visible announcement by ID' })
+  @Get('/:id')
+  getVisibleAnnouncementById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.announcementQueryService.getViewableAnnouncementById({
+      announcementId: id,
     });
   }
 }

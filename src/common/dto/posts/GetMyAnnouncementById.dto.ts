@@ -5,7 +5,7 @@ export class GetMyAnnouncementByIdDto {
   @ApiProperty({ description: 'Announcement ID' })
   @IsUUID()
   @IsNotEmpty()
-  id: string;
+  announcementId: string;
 
   // transient
   accountId: string;
