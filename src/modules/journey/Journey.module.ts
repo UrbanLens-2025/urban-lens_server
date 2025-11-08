@@ -4,9 +4,10 @@ import { JourneyPlannerService } from './app/impl/JourneyPlanner.service';
 import { JourneyInfraModule } from './infra/Journey.infra.module';
 import { JourneyPlannerController } from './interfaces/JourneyPlanner.controller';
 import { GoogleMapsModule } from '@/common/core/google-maps/GoogleMaps.module';
+import { TokenModule } from '@/common/core/token/token.module';
 
 @Module({
-  imports: [JourneyInfraModule, GoogleMapsModule],
+  imports: [JourneyInfraModule, GoogleMapsModule, TokenModule],
   controllers: [JourneyPlannerController],
   providers: [
     {

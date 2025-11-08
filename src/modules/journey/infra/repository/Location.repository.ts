@@ -21,8 +21,9 @@ export class LocationRepository implements ILocationRepository {
       .leftJoinAndSelect('location.tags', 'tags')
       .leftJoinAndSelect('tags.tag', 'tag')
       .leftJoinAndSelect('location.analytics', 'analytics')
-      .where('location.status = :status', { status: 'active' })
-      .andWhere('location.visibleOnMap = :visibleOnMap', { visibleOnMap: true })
+      .where('location.isVisibleOnMap = :isVisibleOnMap', {
+        isVisibleOnMap: true,
+      })
       .andWhere(
         `(
           6371 * acos(

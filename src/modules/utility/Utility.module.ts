@@ -12,6 +12,9 @@ import { IWardService } from '@/modules/utility/app/IWard.service';
 import { WardService } from '@/modules/utility/app/impl/Ward.service';
 import { IProvinceService } from '@/modules/utility/app/IProvince.service';
 import { ProvinceService } from '@/modules/utility/app/impl/Province.service';
+import { ITagCategoryService } from '@/modules/utility/app/ITagCategory.service';
+import { TagCategoryService } from '@/modules/utility/app/impl/TagCategory.service';
+import { TagCategoryController } from '@/modules/utility/interfaces/TagCategory.controller';
 
 @Module({
   imports: [
@@ -33,12 +36,17 @@ import { ProvinceService } from '@/modules/utility/app/impl/Province.service';
       provide: IProvinceService,
       useClass: ProvinceService,
     },
+    {
+      provide: ITagCategoryService,
+      useClass: TagCategoryService,
+    },
   ],
   controllers: [
     TagAdminController,
     TagPublicController,
     AddressAdminController,
     AddressPublicController,
+    TagCategoryController,
   ],
 })
 export class UtilityModule {}

@@ -73,14 +73,11 @@ export class JourneyPlannerService implements IJourneyPlannerService {
 
     // 2. Determine search area
     const searchCenter = {
-      latitude:
-        dto.preferredAreaLatitude ?? dto.currentLatitude ?? dto.currentLatitude,
-      longitude:
-        dto.preferredAreaLongitude ??
-        dto.currentLongitude ??
-        dto.currentLongitude,
+      latitude: dto.preferredAreaLatitude ?? dto.currentLatitude,
+      longitude: dto.preferredAreaLongitude ?? dto.currentLongitude,
     };
-    const searchRadiusKm = dto.maxRadiusKm ?? 10;
+    // Use preferredAreaRadiusKm if specified, otherwise fall back to maxRadiusKm
+    const searchRadiusKm = dto.preferredAreaRadiusKm ?? dto.maxRadiusKm ?? 10;
 
     this.logger.debug(
       `Search center: (${searchCenter.latitude}, ${searchCenter.longitude}), radius: ${searchRadiusKm}km`,
