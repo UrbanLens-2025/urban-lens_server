@@ -4,96 +4,103 @@ import {
   IAnnouncementQueryService,
   IAnnouncementQueryService_QueryConfig,
 } from '@/modules/post/app/IAnnouncementQuery.service';
-import { SearchAnnouncementsByLocationDto } from '@/common/dto/posts/SearchAnnouncementsByLocation.dto';
-import { paginate, Paginated } from 'nestjs-paginate';
 import { AnnouncementResponseDto } from '@/common/dto/posts/Announcement.response.dto';
-import { AnnouncementRepository } from '@/modules/post/infra/repository/Announcement.repository';
-import { SearchVisibleAnnouncementsDto } from '@/common/dto/posts/SearchVisibleAnnouncements.dto';
-import { SearchMyAnnouncementsDto } from '@/common/dto/posts/SearchMyAnnouncements.dto';
-import { IsNull, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
-import { GetAnnouncementByIdDto } from '@/common/dto/posts/GetAnnouncementById.dto';
 import { GetMyAnnouncementByIdDto } from '@/common/dto/posts/GetMyAnnouncementById.dto';
+import { GetMyEventsAnnouncementsDto } from '@/common/dto/posts/GetMyEventsAnnouncements.dto';
+import { GetMyLocationsAnnouncementsDto } from '@/common/dto/posts/GetMyLocationsAnnouncements.dto';
+import { GetViewableAnnouncementByIdDto } from '@/common/dto/posts/GetViewableAnnouncementById.dto';
+import { GetViewableAnnouncementsForEventDto } from '@/common/dto/posts/GetViewableAnnouncementsForEvent.dto';
+import { GetViewableAnnouncementsForLocationDto } from '@/common/dto/posts/GetViewableAnnouncementsForLocation.dto';
+import { paginate, Paginated } from 'nestjs-paginate';
+import { AnnouncementRepository } from '@/modules/post/infra/repository/Announcement.repository';
+import { AnnouncementType } from '@/common/constants/AnnouncementType.constant';
 
 @Injectable()
 export class AnnouncementQueryService
   extends CoreService
   implements IAnnouncementQueryService
 {
-  async searchByLocation(
-    dto: SearchAnnouncementsByLocationDto,
+  getViewableAnnouncementsForLocation(
+    dto: GetViewableAnnouncementsForLocationDto,
   ): Promise<Paginated<AnnouncementResponseDto>> {
-    return paginate(dto.query, AnnouncementRepository(this.dataSource), {
-      ...IAnnouncementQueryService_QueryConfig.searchByLocation(),
-      where: { locationId: dto.locationId },
-    }).then((res) => this.mapToPaginated(AnnouncementResponseDto, res));
-  }
-
-  async getAllVisibleAnnouncements(
-    dto: SearchVisibleAnnouncementsDto,
-  ): Promise<Paginated<AnnouncementResponseDto>> {
-    const now = new Date();
-    return paginate(dto.query, AnnouncementRepository(this.dataSource), {
-      ...IAnnouncementQueryService_QueryConfig.searchByLocation(),
-      where: [
-        {
-          locationId: dto.locationId,
-          isHidden: false,
-          startDate: LessThanOrEqual(now),
-          endDate: IsNull(),
-        },
-        {
-          locationId: dto.locationId,
-          isHidden: false,
-          startDate: LessThanOrEqual(now),
-          endDate: MoreThanOrEqual(now),
-        },
-      ],
-    }).then((res) => this.mapToPaginated(AnnouncementResponseDto, res));
-  }
-
-  async getAllAnnouncements(
-    dto: SearchMyAnnouncementsDto,
-  ): Promise<Paginated<AnnouncementResponseDto>> {
-    return paginate(dto.query, AnnouncementRepository(this.dataSource), {
-      ...IAnnouncementQueryService_QueryConfig.searchByLocation(),
+    const announcementRepository = AnnouncementRepository(this.dataSource);
+    return paginate(dto.query, announcementRepository, {
+      ...IAnnouncementQueryService_QueryConfig.getViewableAnnouncementsForLocation(),
       where: {
-        createdById: dto.accountId,
         locationId: dto.locationId,
+        type: AnnouncementType.LOCATION,
+        isHidden: false,
       },
     }).then((res) => this.mapToPaginated(AnnouncementResponseDto, res));
   }
 
-  async getPublicById(
-    dto: GetAnnouncementByIdDto,
-  ): Promise<AnnouncementResponseDto> {
-    const now = new Date();
-    const repo = AnnouncementRepository(this.dataSource);
-    const found = await repo.findOneOrFail({
-      where: [
-        {
-          id: dto.id,
-          isHidden: false,
-          startDate: LessThanOrEqual(now),
-          endDate: IsNull(),
-        },
-        {
-          id: dto.id,
-          isHidden: false,
-          startDate: LessThanOrEqual(now),
-          endDate: MoreThanOrEqual(now),
-        },
-      ],
-    });
-    return this.mapTo(AnnouncementResponseDto, found);
+  getViewableAnnouncementsForEvent(
+    dto: GetViewableAnnouncementsForEventDto,
+  ): Promise<Paginated<AnnouncementResponseDto>> {
+    const announcementRepository = AnnouncementRepository(this.dataSource);
+    return paginate(dto.query, announcementRepository, {
+      ...IAnnouncementQueryService_QueryConfig.getViewableAnnouncementsForEvent(),
+      where: {
+        eventId: dto.eventId,
+        type: AnnouncementType.EVENT,
+        isHidden: false,
+      },
+    }).then((res) => this.mapToPaginated(AnnouncementResponseDto, res));
   }
 
-  async getOwnerById(
+  getViewableAnnouncementById(
+    dto: GetViewableAnnouncementByIdDto,
+  ): Promise<AnnouncementResponseDto> {
+    const announcementRepository = AnnouncementRepository(this.dataSource);
+    return announcementRepository
+      .findOneByOrFail({
+        id: dto.announcementId,
+        isHidden: false,
+      })
+      .then((res) => this.mapTo(AnnouncementResponseDto, res));
+  }
+
+  getMyLocationsAnnouncements(
+    dto: GetMyLocationsAnnouncementsDto,
+  ): Promise<Paginated<AnnouncementResponseDto>> {
+    const announcementRepository = AnnouncementRepository(this.dataSource);
+    return paginate(dto.query, announcementRepository, {
+      ...IAnnouncementQueryService_QueryConfig.getMyLocationsAnnouncements(),
+      where: {
+        locationId: dto.locationId,
+        type: AnnouncementType.LOCATION,
+        location: {
+          businessId: dto.accountId,
+        },
+      },
+    }).then((res) => this.mapToPaginated(AnnouncementResponseDto, res));
+  }
+
+  getMyEventsAnnouncements(
+    dto: GetMyEventsAnnouncementsDto,
+  ): Promise<Paginated<AnnouncementResponseDto>> {
+    const announcementRepository = AnnouncementRepository(this.dataSource);
+    return paginate(dto.query, announcementRepository, {
+      ...IAnnouncementQueryService_QueryConfig.getMyEventsAnnouncements(),
+      where: {
+        eventId: dto.eventId,
+        type: AnnouncementType.EVENT,
+        event: {
+          createdById: dto.accountId,
+        },
+      },
+    }).then((res) => this.mapToPaginated(AnnouncementResponseDto, res));
+  }
+
+  getMyAnnouncementById(
     dto: GetMyAnnouncementByIdDto,
   ): Promise<AnnouncementResponseDto> {
-    const repo = AnnouncementRepository(this.dataSource);
-    const found = await repo.findOneOrFail({
-      where: { id: dto.id, createdById: dto.accountId },
-    });
-    return this.mapTo(AnnouncementResponseDto, found);
+    const announcementRepository = AnnouncementRepository(this.dataSource);
+    return announcementRepository
+      .findOneByOrFail({
+        id: dto.announcementId,
+        createdById: dto.accountId, // TODO: Check this part if errors
+      })
+      .then((res) => this.mapTo(AnnouncementResponseDto, res));
   }
 }
