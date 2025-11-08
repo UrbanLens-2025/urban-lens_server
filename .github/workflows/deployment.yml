@@ -87,6 +87,7 @@ jobs:
       VNPAY_URL: ${{ secrets.VNPAY_URL }}
       RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
       RABBITMQ_QUEUE: ${{ secrets.RABBITMQ_QUEUE }}
+      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
 
       # PUBLIC VARIABLES
       DATABASE_ENABLE_SYNC: ${{ vars.DATABASE_ENABLE_SYNC }}
