@@ -10,6 +10,8 @@ import {
 import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
 import { EventAttendanceStatus } from '@/common/constants/EventAttendanceStatus.constant';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
+import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
 
 @Entity({ name: EventAttendanceEntity.TABLE_NAME })
 export class EventAttendanceEntity {
@@ -44,9 +46,46 @@ export class EventAttendanceEntity {
   @Column({ name: 'event_id', type: 'uuid' })
   eventId: string;
 
-  @Column({ name: 'can_check_in', type: 'boolean', default: true })
-  canCheckIn: boolean;
-
   @Column({ name: 'status', type: 'varchar', length: 20 })
   status: EventAttendanceStatus;
+
+  @ManyToOne(() => AccountEntity, (account) => account.id, {
+    nullable: true,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'owner_id' })
+  owner?: AccountEntity | null;
+
+  @Column({ name: 'owner_id', type: 'uuid', nullable: true, })
+  ownerId?: string | null;
+
+  @Column({ name: 'owner_email', type: 'varchar', length: 255, nullable: true, })
+  ownerEmail?: string | null;
+
+  @Column({ name: 'owner_phone_number', type: 'varchar', length: 255, nullable: true, })
+  ownerPhoneNumber?: string | null;
+
+  @ManyToOne(() => TicketOrderEntity, (order) => order.id, {
+    nullable: false,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'referenced_ticket_order_id' })
+  referencedTicketOrder: TicketOrderEntity;
+
+  @Column({ name: 'referenced_ticket_order_id', type: 'uuid' })
+  referencedTicketOrderId: string;
+
+  @ManyToOne(() => EventTicketEntity, (ticket) => ticket.id, {
+    nullable: false,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'ticket_id' })
+  ticket: EventTicketEntity;
+
+  @Column({ name: 'ticket_id', type: 'uuid' })
+  ticketId: string;
+
+  public canCheckIn(): boolean {
+    return this.status === EventAttendanceStatus.CREATED;
+  }
 }

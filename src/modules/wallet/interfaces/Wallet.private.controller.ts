@@ -108,7 +108,7 @@ export class WalletPrivateController {
   }
 
   @ApiOperation({
-    summary: 'Get my wallet transactions list',
+    summary: 'Get my INTERNAL wallet transactions list',
     description: 'Search and filter wallet transactions',
   })
   @ApiPaginationQuery(
@@ -126,7 +126,7 @@ export class WalletPrivateController {
   }
 
   @ApiOperation({
-    summary: 'Get wallet transaction details by ID',
+    summary: 'Get my INTERNAL wallet transaction details by ID',
   })
   @Get('/transactions/:id')
   getTransactionById(

@@ -19,16 +19,21 @@ export class EventPublicController {
   ) {}
 
   @ApiOperation({ summary: 'Get nearby published events' })
+  @ApiPaginationQuery(
+    IEventQueryService_QueryConfig.searchNearbyPublishedEventsByCoordinates(),
+  )
   @Get('/nearby/:latitude/:longitude/:radiusInMeters')
   getNearbyPublishedEvents(
     @Param('latitude') latitude: number,
     @Param('longitude') longitude: number,
     @Param('radiusInMeters') radiusInMeters: number,
+    @Paginate() query: PaginateQuery,
   ) {
-    return this.eventQueryService.searchNearbyPublishedEvents({
+    return this.eventQueryService.searchNearbyPublishedEventsByCoordinates({
       latitude,
       longitude,
       radiusInMeters,
+      query,
     });
   }
 

@@ -1,12 +1,17 @@
 import { BusinessCategory } from '@/common/constants/Business.constant';
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  ArrayNotEmpty,
+  IsArray,
   IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { BusinessLicenseJson } from '@/common/json/BusinessLicense.json';
 
 export class CreateBusinessDto {
   @IsString()
@@ -67,29 +72,16 @@ export class CreateBusinessDto {
   @IsNotEmpty()
   avatar: string;
 
-  @IsString()
   @ApiProperty({
-    description: 'The license number of the business',
-    example: '1234567890',
+    description: 'List of business licenses',
+    isArray: true,
+    type: BusinessLicenseJson,
   })
-  @IsNotEmpty()
-  licenseNumber: string;
-
-  @IsString()
-  @ApiProperty({
-    description: 'The license expiration date of the business',
-    example: '2025-01-01',
-  })
-  @IsNotEmpty()
-  licenseExpirationDate: string;
-
-  @IsString()
-  @ApiProperty({
-    description: 'The license type of the business',
-    example: 'Business License',
-  })
-  @IsNotEmpty()
-  licenseType: string;
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => BusinessLicenseJson)
+  licenses: BusinessLicenseJson[];
 
   @IsString()
   @ApiProperty({

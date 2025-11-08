@@ -90,7 +90,14 @@ export class LocationBookingManagementService
       // for (const range of dto.dates) { /* validate availability */ }
 
       // calculate pricing
-      const bookingPrice = location.bookingConfig.baseBookingPrice;
+      const totalNumberOfHoursBooked = dto.dates.reduce((sum, curr) => {
+        const start = dayjs(curr.startDateTime);
+        const end = dayjs(curr.endDateTime);
+        const hours = end.diff(start, 'hour');
+        return sum + hours;
+      }, 0);
+      const bookingPrice =
+        location.bookingConfig.baseBookingPrice * totalNumberOfHoursBooked;
 
       // save booking
       const booking = new LocationBookingEntity();

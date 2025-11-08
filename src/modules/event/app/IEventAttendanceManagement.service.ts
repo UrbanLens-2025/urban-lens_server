@@ -1,0 +1,11 @@
+import { ConfirmTicketUsageDto } from '@/common/dto/event/ConfirmTicketUsage.dto';
+import { EventAttendanceResponseDto } from '@/common/dto/event/res/EventAttendance.response.dto';
+
+export const IEventAttendanceManagementService = Symbol(
+  'IEventAttendanceManagementService',
+);
+export interface IEventAttendanceManagementService {
+  confirmTicketUsage(
+    dto: ConfirmTicketUsageDto,
+  ): Promise<EventAttendanceResponseDto>;
+}

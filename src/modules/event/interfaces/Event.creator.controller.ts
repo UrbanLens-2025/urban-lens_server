@@ -39,6 +39,8 @@ import {
   ITicketOrderQueryService,
   ITicketOrderQueryService_QueryConfig,
 } from '@/modules/event/app/ITicketOrderQuery.service';
+import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
+import { ConfirmTicketUsageDto } from '@/common/dto/event/ConfirmTicketUsage.dto';
 
 @ApiBearerAuth()
 @ApiTags('Event')
@@ -58,6 +60,8 @@ export class EventCreatorController {
     private readonly eventAttendanceQueryService: IEventAttendanceQueryService,
     @Inject(ITicketOrderQueryService)
     private readonly ticketOrderQueryService: ITicketOrderQueryService,
+    @Inject(IEventAttendanceManagementService)
+    private readonly eventAttendanceManagementService: IEventAttendanceManagementService,
   ) {}
 
   @ApiOperation({ summary: 'Get all my events' })
@@ -223,6 +227,20 @@ export class EventCreatorController {
       eventId,
       accountId: userDto.sub,
       query,
+    });
+  }
+
+  @ApiOperation({ summary: 'Confirm ticket usage' })
+  @Post('/:eventId/attendance/confirm-usage')
+  confirmTicketUsage(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: ConfirmTicketUsageDto,
+  ) {
+    return this.eventAttendanceManagementService.confirmTicketUsage({
+      ...dto,
+      accountId: userDto.sub,
+      eventId: eventId,
     });
   }
 }

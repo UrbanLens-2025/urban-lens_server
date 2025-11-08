@@ -9,6 +9,7 @@ import { Injectable } from '@nestjs/common';
 import { paginate, Paginated } from 'nestjs-paginate';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { GetBookableLocationByIdDto } from '@/common/dto/location-booking/GetBookableLocationById.dto';
+import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
 
 @Injectable()
 export class BookableLocationSearchService
@@ -41,6 +42,7 @@ export class BookableLocationSearchService
     return paginate(dto.query, LocationRepositoryProvider(this.dataSource), {
       ...IBookableLocationSearchService_QueryConfig.searchBookableLocations(),
       where: {
+        ownershipType: LocationOwnershipType.OWNED_BY_BUSINESS,
         bookingConfig: {
           allowBooking: true,
         },
