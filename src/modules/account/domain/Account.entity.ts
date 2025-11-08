@@ -51,7 +51,7 @@ export class AccountEntity {
   @Column({ name: 'has_onboarded', type: 'boolean', default: false })
   hasOnboarded: boolean;
 
-  @Column({ name: 'role', type: 'enum', enum: Role, default: Role.USER })
+  @Column({ name: 'role', type: 'varchar', length: 50, default: Role.USER })
   role: Role;
 
   @OneToMany(() => PostEntity, (post) => post.author)

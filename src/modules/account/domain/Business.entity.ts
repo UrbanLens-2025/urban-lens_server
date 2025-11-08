@@ -25,6 +25,7 @@ export class BusinessEntity {
 
   @OneToOne(() => AccountEntity, (account) => account.businessProfile, {
     onDelete: 'CASCADE',
+    createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;
@@ -64,8 +65,8 @@ export class BusinessEntity {
 
   @Column({
     name: 'status',
-    type: 'enum',
-    enum: BusinessRequestStatus,
+    type: 'varchar',
+    length: 50,
     default: BusinessRequestStatus.PENDING,
   })
   status: BusinessRequestStatus;
@@ -81,14 +82,15 @@ export class BusinessEntity {
 
   @Column({
     name: 'category',
-    type: 'enum',
-    enum: BusinessCategory,
+    type: 'varchar',
+    length: 50,
     default: BusinessCategory.OTHER,
   })
   category: BusinessCategory;
 
   @OneToMany(() => LocationEntity, (location) => location.business, {
     cascade: true,
+    createForeignKeyConstraints: false,
   })
   locations: LocationEntity[];
 

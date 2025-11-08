@@ -10,12 +10,12 @@ import type { Notification } from 'firebase-admin/messaging';
 import { PushNotificationStatus } from '@/common/constants/PushNotificationStatus.constant';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
-@Entity({ name: 'push-notification' })
+@Entity({ name: 'push_notification' })
 export class PushNotificationEntity {
   @PrimaryGeneratedColumn('identity')
   id: number;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 
   @Column({ name: 'type', type: 'varchar', length: 50, nullable: false })
@@ -37,8 +37,8 @@ export class PushNotificationEntity {
 
   @Column({
     name: 'status',
-    type: 'enum',
-    enum: PushNotificationStatus,
+    type: 'varchar',
+    length: 50,
     default: PushNotificationStatus.UNSEEN,
   })
   status: PushNotificationStatus;

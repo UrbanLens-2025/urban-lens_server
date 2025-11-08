@@ -14,7 +14,7 @@ export class RewardPointEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'type', type: 'enum', enum: RewardPointType })
+  @Column({ name: 'type', type: 'varchar', length: 50 })
   type: RewardPointType;
 
   @Column({ name: 'points', type: 'int', nullable: false })

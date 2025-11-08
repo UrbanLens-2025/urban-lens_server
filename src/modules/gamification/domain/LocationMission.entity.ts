@@ -42,7 +42,7 @@ export class LocationMissionEntity {
   @Column({ name: 'description' })
   description: string;
 
-  @Column({ name: 'metric', type: 'enum', enum: LocationMissionMetric })
+  @Column({ name: 'metric', type: 'varchar', length: 50 })
   metric: LocationMissionMetric;
 
   @Column({ name: 'target' })

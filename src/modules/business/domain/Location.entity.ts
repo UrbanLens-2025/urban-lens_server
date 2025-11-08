@@ -89,7 +89,7 @@ export class LocationEntity {
   @Column({ name: 'address_level_2', type: 'varchar', length: 100 })
   addressLevel2: string;
 
-  @Column({ type: 'text', array: true, nullable: true })
+  @Column({ name: 'image_url', type: 'text', array: true, nullable: true })
   imageUrl: string[];
 
   @Column({ name: 'is_visible_on_map', type: 'boolean', default: false })

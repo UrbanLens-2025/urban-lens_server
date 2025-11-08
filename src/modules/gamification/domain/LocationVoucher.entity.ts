@@ -59,8 +59,8 @@ export class LocationVoucherEntity {
 
   @Column({
     name: 'voucher_type',
-    type: 'enum',
-    enum: LocationVoucherType,
+    type: 'varchar',
+    length: 50,
     default: LocationVoucherType.PUBLIC,
   })
   voucherType: LocationVoucherType;

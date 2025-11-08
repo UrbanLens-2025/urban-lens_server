@@ -16,8 +16,8 @@ export class AccountInteractionEntity {
 
   @Column({
     name: 'interaction_type',
-    type: 'enum',
-    enum: ActionType,
+    type: 'varchar',
+    length: 50,
   })
   interactionType: ActionType;
 
