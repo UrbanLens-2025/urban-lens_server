@@ -54,6 +54,8 @@ export interface Environment {
 
   PAYMENT_MOCK_HASH: string;
   PAYMENT_ALLOW_MOCK_HASH: boolean;
+
+  GOOGLE_MAPS_API_KEY: string;
 }
 
 export const envConfig = joi.object<Environment>({
@@ -114,4 +116,6 @@ export const envConfig = joi.object<Environment>({
     .string()
     .default('MOCK_SECURE_HASH_FOR_TESTING_PURPOSES'),
   PAYMENT_ALLOW_MOCK_HASH: joi.boolean().default(false),
+
+  GOOGLE_MAPS_API_KEY: joi.string().required(),
 });
