@@ -8,6 +8,7 @@ import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { PublishEventDto } from '@/common/dto/event/PublishEvent.dto';
 import { EventStatus } from '@/common/constants/EventStatus.constant';
+import { FinishEventDto } from '@/common/dto/event/FinishEvent.dto';
 
 @Injectable()
 export class EventManagementService
@@ -20,7 +21,6 @@ export class EventManagementService
   ) {
     super();
   }
-
   updateMyEvent(dto: UpdateEventDto): Promise<UpdateResult> {
     return this.ensureTransaction(null, async (em) => {
       const eventRepository = EventRepository(em);
@@ -61,5 +61,9 @@ export class EventManagementService
         { status: EventStatus.PUBLISHED },
       );
     });
+  }
+  
+  finishEvent(dto: FinishEventDto): Promise<UpdateResult> {
+    throw new Error('Method not implemented.');
   }
 }

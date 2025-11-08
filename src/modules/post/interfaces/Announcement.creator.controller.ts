@@ -12,10 +12,10 @@ import { JwtTokenDto } from "@/common/dto/JwtToken.dto";
 import { CreateAnnouncementForEventDto } from "@/common/dto/posts/CreateAnnouncementForEvent.dto";
 import { UpdateAnnouncementDto } from "@/common/dto/posts/UpdateAnnouncement.dto";
 
-@ApiTags('Location Announcements')
+@ApiTags('Announcements')
 @ApiBearerAuth()
 @Roles(Role.EVENT_CREATOR)
-@Controller('/creator/location/announcements')
+@Controller('/creator/announcements')
 export class AnnouncementCreatorController {
   constructor(
     @Inject(IAnnouncementService)

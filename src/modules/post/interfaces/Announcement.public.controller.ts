@@ -11,7 +11,7 @@ import { IAnnouncementQueryService } from '@/modules/post/app/IAnnouncementQuery
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 
 @ApiTags('Location Announcements')
-@Controller('/public/location/announcements')
+@Controller('/public/announcements')
 export class AnnouncementPublicController {
   constructor(
     @Inject(IAnnouncementQueryService)
