@@ -15,6 +15,9 @@ jobs:
           ref: ${{ github.ref }}
           fetch-depth: 0
 
+      - name: Add PNPM to PATH
+        run: echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+
       - name: Allow only tags that point to commits in main
         run: |
           git fetch origin main --depth=1
