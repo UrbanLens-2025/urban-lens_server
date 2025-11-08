@@ -27,8 +27,8 @@ export class PointsHistoryEntity {
 
   @Column({
     name: 'transaction_type',
-    type: 'enum',
-    enum: PointsTransactionType,
+    type: 'varchar',
+    length: 50,
   })
   transactionType: PointsTransactionType;
 

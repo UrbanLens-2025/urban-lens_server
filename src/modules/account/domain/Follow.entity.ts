@@ -24,6 +24,7 @@ export class FollowEntity {
   @ManyToOne(() => AccountEntity, {
     nullable: false,
     onDelete: 'CASCADE',
+    createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'follower_id' })
   follower: AccountEntity;
@@ -33,8 +34,8 @@ export class FollowEntity {
 
   @Column({
     name: 'entity_type',
-    type: 'enum',
-    enum: FollowEntityType,
+    type: 'varchar',
+    length: 50,
   })
   entityType: FollowEntityType;
 

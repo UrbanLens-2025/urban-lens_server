@@ -26,7 +26,12 @@ export class PublicFileEntity {
   @Column({ name: 'file_url', type: 'varchar', length: 2000, nullable: true })
   fileUrl: string;
 
-  @Column({ name: 'status', type: 'enum', enum: PublicFileStatus })
+  @Column({
+    name: 'status',
+    type: 'varchar',
+    length: 50,
+    default: PublicFileStatus.AWAITING_UPLOAD,
+  })
   status: PublicFileStatus;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
@@ -40,7 +45,7 @@ export class PublicFileEntity {
   @Column({ name: 'created_by' })
   createdById: string;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 
   static fromFile(file: Express.Multer.File, userId: string) {

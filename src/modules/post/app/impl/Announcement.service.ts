@@ -1,15 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CoreService } from '@/common/core/Core.service';
 import { IAnnouncementService } from '@/modules/post/app/IAnnouncement.service';
-import { CreateAnnouncementDto } from '@/common/dto/posts/CreateAnnouncement.dto';
+import { CreateAnnouncementForLocationDto } from '@/common/dto/posts/CreateAnnouncementForLocation.dto';
 import { UpdateAnnouncementDto } from '@/common/dto/posts/UpdateAnnouncement.dto';
-import { GetAnnouncementByIdDto } from '@/common/dto/posts/GetAnnouncementById.dto';
 import { AnnouncementResponseDto } from '@/common/dto/posts/Announcement.response.dto';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { AnnouncementRepository } from '@/modules/post/infra/repository/Announcement.repository';
 import { AnnouncementEntity } from '@/modules/post/domain/Announcement.entity';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
-import { LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { CreateAnnouncementForEventDto } from '@/common/dto/posts/CreateAnnouncementForEvent.dto';
 
 @Injectable()
 export class AnnouncementService
@@ -22,8 +21,15 @@ export class AnnouncementService
   ) {
     super();
   }
+  createForEvent(
+    dto: CreateAnnouncementForEventDto,
+  ): Promise<AnnouncementResponseDto> {
+    throw new Error('Method not implemented.');
+  }
 
-  async create(dto: CreateAnnouncementDto): Promise<AnnouncementResponseDto> {
+  async createForLocation(
+    dto: CreateAnnouncementForLocationDto,
+  ): Promise<AnnouncementResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const repo = AnnouncementRepository(em);
 
@@ -70,5 +76,4 @@ export class AnnouncementService
       return this.mapTo(AnnouncementResponseDto, saved);
     });
   }
-
 }

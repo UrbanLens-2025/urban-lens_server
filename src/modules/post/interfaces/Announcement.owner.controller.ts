@@ -13,7 +13,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { IAnnouncementService } from '@/modules/post/app/IAnnouncement.service';
-import { CreateAnnouncementDto } from '@/common/dto/posts/CreateAnnouncement.dto';
+import { CreateAnnouncementForLocationDto } from '@/common/dto/posts/CreateAnnouncementForLocation.dto';
 import { UpdateAnnouncementDto } from '@/common/dto/posts/UpdateAnnouncement.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
@@ -41,8 +41,11 @@ export class AnnouncementOwnerController {
 
   @ApiOperation({ summary: 'Create a new announcement' })
   @Post()
-  create(@AuthUser() user: JwtTokenDto, @Body() dto: CreateAnnouncementDto) {
-    return this.announcementService.create({
+  create(
+    @AuthUser() user: JwtTokenDto,
+    @Body() dto: CreateAnnouncementForLocationDto,
+  ) {
+    return this.announcementService.createForLocation({
       ...dto,
       accountId: user.sub,
     });

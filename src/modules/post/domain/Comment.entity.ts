@@ -30,6 +30,7 @@ export class CommentEntity {
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     nullable: false,
     onDelete: 'CASCADE',
+    createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'author_id' })
   author: AccountEntity;
@@ -37,12 +38,14 @@ export class CommentEntity {
   @ManyToOne(() => PostEntity, (post) => post.postId, {
     nullable: false,
     onDelete: 'CASCADE',
+    createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'post_id' })
   post: PostEntity;
 
   @OneToMany(() => ReactEntity, (react) => react.entityId, {
     cascade: ['remove'],
+    createForeignKeyConstraints: false,
   })
   reacts: ReactEntity[];
 }

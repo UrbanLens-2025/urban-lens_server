@@ -28,7 +28,7 @@ export class PostEntity {
   @Column({ name: 'content', type: 'text', nullable: false })
   content: string;
 
-  @Column({ name: 'type', type: 'enum', enum: PostType, nullable: false })
+  @Column({ name: 'type', type: 'varchar', length: 50, nullable: false })
   type: PostType;
 
   @Column({ name: 'rating', type: 'int', nullable: true })
@@ -46,6 +46,7 @@ export class PostEntity {
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     nullable: false,
     onDelete: 'CASCADE',
+    createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'author_id' })
   author: AccountEntity;
@@ -61,19 +62,21 @@ export class PostEntity {
 
   @Column({
     name: 'visibility',
-    type: 'enum',
-    enum: Visibility,
+    type: 'varchar',
+    length: 50,
     nullable: true,
   })
   visibility: Visibility;
 
   @OneToMany(() => CommentEntity, (comment) => comment.post, {
     cascade: ['remove'],
+    createForeignKeyConstraints: false,
   })
   comments: CommentEntity[];
 
   @OneToMany(() => ReactEntity, (react) => react.entityId, {
     cascade: ['remove'],
+    createForeignKeyConstraints: false,
   })
   reacts: ReactEntity[];
 
