@@ -110,6 +110,11 @@ jobs:
           name: dist-and-config
           path: ./new-deployment/
 
+      - name: Add NodeJS and PNPM to PATH
+        run: |
+          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+          echo "$HOME/.nvm/versions/node/v22.21.1/bin" >> $GITHUB_PATH
+
       - name: List output directory
         run: ls -la ./new-deployment/
 
