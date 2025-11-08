@@ -41,10 +41,9 @@ export class TicketOrderQueryService
           createdBy: true,
           referencedTransaction: true,
           orderDetails: {
-            ticket: {
-              event: true,
-            },
+            ticket: true,
           },
+          event: true,
         },
       })
       .then((res) => this.mapTo(TicketOrderResponseDto, res));

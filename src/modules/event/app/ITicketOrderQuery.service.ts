@@ -40,6 +40,7 @@ export namespace ITicketOrderQueryService_QueryConfig {
         orderDetails: {
           ticket: true,
         },
+        event: true,
       },
     };
   }
