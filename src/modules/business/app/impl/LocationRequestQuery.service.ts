@@ -82,7 +82,9 @@ export class LocationRequestQueryService
               userProfile: true,
             },
             processedBy: true,
-            tags: true,
+            tags: {
+              tag: true,
+            },
             createdLocation: true,
           },
         })

@@ -1,10 +1,11 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
 import { LocationValidationDocumentsJson } from '@/common/json/LocationValidationDocuments.json';
 import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/LocationRequestTags.response.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
+import { TagResponseDto } from '@/common/dto/account/res/TagResponse.dto';
 
 @Exclude()
 export class LocationRequestResponseDto {
@@ -72,7 +73,19 @@ export class LocationRequestResponseDto {
 
   @Expose()
   @Type(() => LocationRequestTagsResponseDto)
-  tags: LocationRequestTagsResponseDto[];
+  @Transform(({ value }) => {
+    if (!value || !Array.isArray(value)) {
+      return undefined;
+    }
+
+    return value
+      .map(
+        (locationRequestTags: LocationRequestTagsResponseDto) =>
+          locationRequestTags?.tag,
+      )
+      .filter(Boolean);
+  })
+  tags: TagResponseDto[];
 
   @Expose()
   @Type(() => LocationResponseDto)
