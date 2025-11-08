@@ -37,6 +37,11 @@ import { TagScoreWorkerController } from '@/workers/TagScoreWorker.controller';
 import { TagScoreWorkerService } from '@/workers/TagScoreWorker.service';
 import { EmailWorkerController } from '@/workers/EmailWorker.controller';
 import { EmailWorkerService } from '@/workers/EmailWorker.service';
+import { PostReactionWorkerController } from '@/workers/PostReactionWorker.controller';
+import { PostReactionWorkerService } from '@/workers/PostReactionWorker.service';
+import { ReviewWorkerController } from '@/workers/ReviewWorker.controller';
+import { ReviewWorkerService } from '@/workers/ReviewWorker.service';
+import { JourneyModule } from './modules/journey/Journey.module';
 
 @Module({
   imports: [
@@ -87,12 +92,15 @@ import { EmailWorkerService } from '@/workers/EmailWorker.service';
     GamificationModule,
     UtilityModule,
     WalletModule,
+    JourneyModule,
   ],
   controllers: [
     AppController,
     TestController,
     TagScoreWorkerController,
     EmailWorkerController,
+    PostReactionWorkerController,
+    ReviewWorkerController,
   ],
   providers: [
     {
@@ -119,6 +127,8 @@ import { EmailWorkerService } from '@/workers/EmailWorker.service';
     AppService,
     TagScoreWorkerService,
     EmailWorkerService,
+    PostReactionWorkerService,
+    ReviewWorkerService,
   ],
 })
 export class AppModule {}

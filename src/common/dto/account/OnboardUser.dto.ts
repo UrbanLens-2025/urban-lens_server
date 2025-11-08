@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsDateString,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsUrl,
@@ -26,8 +27,12 @@ export class OnboardUserDto {
 
   @IsOptional()
   @IsArray()
-  @ApiProperty({ default: [1, 2] })
-  tagIds?: number[];
+  @IsInt({ each: true })
+  @ApiProperty({
+    default: [1, 2, 3],
+    description: 'Array of tag category IDs',
+  })
+  categoryIds?: number[];
 
   @IsOptional()
   @IsDateString()

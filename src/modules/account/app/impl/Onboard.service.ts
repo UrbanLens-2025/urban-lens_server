@@ -21,6 +21,7 @@ import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Ac
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
+import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 
 @Injectable()
 export class OnboardService extends CoreService implements IOnboardService {
@@ -51,22 +52,28 @@ export class OnboardService extends CoreService implements IOnboardService {
         throw new BadRequestException('User has already onboarded');
       }
 
-      // validate tags
-      if (dto.tagIds) {
-        const tags = await tagRepository.findBy({
-          id: In(dto.tagIds),
+      // validate and apply tag categories
+      let initialTagScores: Record<string, number> = {};
+
+      if (dto.categoryIds && dto.categoryIds.length > 0) {
+        const tagCategoryRepository = manager.getRepository(TagCategoryEntity);
+
+        const categories = await tagCategoryRepository.findBy({
+          id: In(dto.categoryIds),
         });
 
-        if (tags.length !== dto.tagIds.length) {
-          throw new BadRequestException('One or more tags are invalid');
+        if (categories.length !== dto.categoryIds.length) {
+          throw new BadRequestException('One or more categories are invalid');
         }
 
-        await userTagsRepository.save(
-          dto.tagIds.map((tagId) => ({
-            tagId,
-            accountId: account.id,
-          })),
-        );
+        // Merge all category weights into initial tag scores
+        for (const category of categories) {
+          const weights = category.tagScoreWeights || {};
+          for (const [tagKey, weight] of Object.entries(weights)) {
+            initialTagScores[tagKey] =
+              (initialTagScores[tagKey] || 0) + (weight as number);
+          }
+        }
       }
 
       // Get the lowest rank (smallest minPoints)
@@ -85,6 +92,7 @@ export class OnboardService extends CoreService implements IOnboardService {
         accountId: account.id,
         rankId: lowestRank.id,
         points: 0,
+        tagScores: initialTagScores,
         ...dto,
       });
 

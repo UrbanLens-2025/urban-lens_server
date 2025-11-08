@@ -38,10 +38,10 @@ export class TagScoreWorkerService {
 
         // JSONB update: increment existing score or set to new value
         updates.push(
-          `'${tagKey}', COALESCE((tag_scores->>'${tagKey}')::int, 0) + $${paramIndex}`,
+          `$${paramIndex}::text, COALESCE((tag_scores->>$${paramIndex + 1}::text)::int, 0) + $${paramIndex + 2}::int`,
         );
-        params.push(scoreIncrement);
-        paramIndex++;
+        params.push(tagKey, tagKey, scoreIncrement);
+        paramIndex += 3;
 
         this.logger.debug(
           `Tag ${tag.name} (ID: ${tag.id}): +${scoreIncrement} points (${tag.count} check-ins)`,

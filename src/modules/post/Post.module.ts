@@ -17,6 +17,14 @@ import { IAnnouncementQueryService } from '@/modules/post/app/IAnnouncementQuery
 import { AnnouncementQueryService } from '@/modules/post/app/impl/AnnouncementQuery.service';
 import { AnnouncementOwnerController } from '@/modules/post/interfaces/Announcement.owner.controller';
 import { AnnouncementPublicController } from '@/modules/post/interfaces/Announcement.public.controller';
+import { PostReactionPublisherListener } from '@/modules/post/app/listener/PostReactionPublisher.listener';
+import { ReviewPostPublisherListener } from '@/modules/post/app/listener/ReviewPostPublisher.listener';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserTagsEntity } from '@/modules/account/domain/UserTags.entity';
+import { PostEntity } from '@/modules/post/domain/Post.entity';
+import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
+import { ClientsModule } from '@nestjs/microservices';
+import { getRabbitMQConfig } from '@/config/rabbitmq.config';
 
 @Module({
   imports: [
@@ -25,6 +33,8 @@ import { AnnouncementPublicController } from '@/modules/post/interfaces/Announce
     FileStorageModule,
     BusinessInfraModule,
     AccountInfraModule,
+    TypeOrmModule.forFeature([UserTagsEntity, PostEntity, LocationTagsEntity]),
+    ClientsModule.register(getRabbitMQConfig()),
   ],
   controllers: [
     PostPublicController,
@@ -50,6 +60,8 @@ import { AnnouncementPublicController } from '@/modules/post/interfaces/Announce
       provide: IAnnouncementQueryService,
       useClass: AnnouncementQueryService,
     },
+    PostReactionPublisherListener,
+    ReviewPostPublisherListener,
   ],
 })
 export class PostModule {}
