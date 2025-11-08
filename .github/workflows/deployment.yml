@@ -15,6 +15,9 @@ jobs:
           ref: ${{ github.ref }}
           fetch-depth: 0
 
+      - name: Debug who am I
+        run: whoami
+
       - name: Add NodeJS and PNPM to PATH
         run: |
           echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
