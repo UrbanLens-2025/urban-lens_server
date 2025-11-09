@@ -93,7 +93,7 @@ export const envConfig = joi.object<Environment>({
   REDIS_PASSWORD: joi.string(),
   REDIS_URL: joi.string().required(),
 
-  RABBITMQ_URL: joi.string(),
+  RABBITMQ_URL: joi.string().required(),
   RABBITMQ_QUEUE: joi.string().default('urban-lens'),
 
   JWT_SECRET: joi.string().required(),
