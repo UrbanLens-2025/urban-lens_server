@@ -15,9 +15,14 @@ export const LocationRepositoryProvider = (ctx: DataSource | EntityManager) =>
   ctx.getRepository(LocationEntity).extend({
     findNearbyLocations(
       this: Repository<LocationEntity>,
-      payload: { latitude: number; longitude: number; radiusInMeters: number },
+      payload: {
+        latitude: number;
+        longitude: number;
+        radiusInMeters: number;
+        isVisible?: boolean;
+      },
     ) {
-      return this.createQueryBuilder('l')
+      const qb = this.createQueryBuilder('l')
         .addSelect(
           `
           ST_Distance(
@@ -33,13 +38,19 @@ export const LocationRepositoryProvider = (ctx: DataSource | EntityManager) =>
             ST_MakePoint(:lon, :lat)::geography,
             :radius
           )`,
-        )
-        .setParameters({
-          lat: payload.latitude,
-          lon: payload.longitude,
-          radius: payload.radiusInMeters,
+        );
+
+      if (payload.isVisible !== undefined && payload.isVisible !== null) {
+        qb.andWhere('l.isVisibleOnMap = :isVisible', {
+          isVisible: payload.isVisible,
         });
-      // .addOrderBy('"distanceMeters"', 'ASC');
+      }
+
+      return qb.setParameters({
+        lat: payload.latitude,
+        lon: payload.longitude,
+        radius: payload.radiusInMeters,
+      });
     },
 
     calculateDistanceTo(
