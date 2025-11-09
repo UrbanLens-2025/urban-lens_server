@@ -26,14 +26,6 @@ import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entit
 import { ClientsModule } from '@nestjs/microservices';
 import { getRabbitMQConfig } from '@/config/rabbitmq.config';
 import { AnnouncementCreatorController } from '@/modules/post/interfaces/Announcement.creator.controller';
-import { PostReactionPublisherListener } from '@/modules/post/app/listener/PostReactionPublisher.listener';
-import { ReviewPostPublisherListener } from '@/modules/post/app/listener/ReviewPostPublisher.listener';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserTagsEntity } from '@/modules/account/domain/UserTags.entity';
-import { PostEntity } from '@/modules/post/domain/Post.entity';
-import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
-import { ClientsModule } from '@nestjs/microservices';
-import { getRabbitMQConfig } from '@/config/rabbitmq.config';
 
 @Module({
   imports: [
