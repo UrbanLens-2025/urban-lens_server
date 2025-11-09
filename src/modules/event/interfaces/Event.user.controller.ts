@@ -23,6 +23,10 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
+import {
+  IEventAttendanceQueryService,
+  IEventAttendanceQueryService_QueryConfig,
+} from '@/modules/event/app/IEventAttendanceQuery.service';
 
 @ApiTags('Event')
 @ApiBearerAuth()
@@ -34,8 +38,11 @@ export class EventUserController {
     private readonly ticketOrderManagementService: ITicketOrderManagementService,
     @Inject(ITicketOrderQueryService)
     private readonly ticketOrderQueryService: ITicketOrderQueryService,
+    @Inject(IEventAttendanceQueryService)
+    private readonly eventAttendanceQueryService: IEventAttendanceQueryService,
   ) {}
 
+  @ApiOperation({ summary: 'Create ticket order for an event' })
   @Post('/:eventId/create-order')
   createOrder(
     @AuthUser() userDto: JwtTokenDto,
@@ -71,6 +78,21 @@ export class EventUserController {
     return this.ticketOrderQueryService.getMyOrderById({
       orderId,
       accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Get all my event attendance' })
+  @ApiPaginationQuery(
+    IEventAttendanceQueryService_QueryConfig.searchMyEventAttendance(),
+  )
+  @Get('/attendance/get-all')
+  getMyEventAttendance(
+    @AuthUser() userDto: JwtTokenDto,
+    @Paginate() query: PaginateQuery,
+  ) {
+    return this.eventAttendanceQueryService.searchMyEventAttendance({
+      accountId: userDto.sub,
+      query,
     });
   }
 }
