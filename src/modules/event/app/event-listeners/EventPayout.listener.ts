@@ -97,6 +97,8 @@ export class EventPayoutListener extends CoreService {
           status: ScheduledJobStatus.COMPLETED,
         },
       );
+
+      await eventRepository.update({ id: event.id }, { hasPaidOut: true });
     });
   }
 }
