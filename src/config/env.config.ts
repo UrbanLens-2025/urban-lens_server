@@ -28,8 +28,8 @@ export interface Environment {
   REDIS_PASSWORD: string;
   REDIS_URL: string;
 
-  RABBITMQ_URL?: string;
-  RABBITMQ_QUEUE?: string;
+  RABBITMQ_URL: string;
+  RABBITMQ_QUEUE: string;
 
   JWT_SECRET: string;
   JWT_EXPIRES_IN: string;
@@ -56,6 +56,10 @@ export interface Environment {
   PAYMENT_ALLOW_MOCK_HASH: boolean;
 
   GOOGLE_MAPS_API_KEY: string;
+
+  MILLIS_TO_EVENT_PAYOUT: number;
+
+  FETCH_SCHEDULED_JOBS_CRON_EXPRESSION: string;
 }
 
 export const envConfig = joi.object<Environment>({
@@ -89,7 +93,7 @@ export const envConfig = joi.object<Environment>({
   REDIS_PASSWORD: joi.string(),
   REDIS_URL: joi.string().required(),
 
-  RABBITMQ_URL: joi.string().optional(),
+  RABBITMQ_URL: joi.string().required(),
   RABBITMQ_QUEUE: joi.string().default('urban-lens'),
 
   JWT_SECRET: joi.string().required(),
@@ -118,4 +122,8 @@ export const envConfig = joi.object<Environment>({
   PAYMENT_ALLOW_MOCK_HASH: joi.boolean().default(false),
 
   GOOGLE_MAPS_API_KEY: joi.string().required(),
+
+  MILLIS_TO_EVENT_PAYOUT: joi.number().default(1000 * 60 * 60 * 24 * 7), // 7 days
+
+  FETCH_SCHEDULED_JOBS_CRON_EXPRESSION: joi.string().default('* * * * *'), // every minute
 });

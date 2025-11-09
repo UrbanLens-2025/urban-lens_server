@@ -1,7 +1,7 @@
 import { CoreService } from '@/common/core/Core.service';
 import { UpdateEventDto } from '@/common/dto/event/UpdateEvent.dto';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
-import { Inject, Injectable, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { UpdateResult } from 'typeorm';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
@@ -9,17 +9,31 @@ import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.ser
 import { PublishEventDto } from '@/common/dto/event/PublishEvent.dto';
 import { EventStatus } from '@/common/constants/EventStatus.constant';
 import { FinishEventDto } from '@/common/dto/event/FinishEvent.dto';
+import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
+import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob.service';
+import dayjs from 'dayjs';
+import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
+import { ConfigService } from '@nestjs/config';
+import { Environment } from '@/config/env.config';
 
 @Injectable()
 export class EventManagementService
   extends CoreService
   implements IEventManagementService
 {
+  private readonly MILLIS_TO_EVENT_PAYOUT: number;
+
   constructor(
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
+    @Inject(IScheduledJobService)
+    private readonly scheduledJobService: IScheduledJobService,
+    private readonly configService: ConfigService<Environment>,
   ) {
     super();
+    this.MILLIS_TO_EVENT_PAYOUT = this.configService.getOrThrow<number>(
+      'MILLIS_TO_EVENT_PAYOUT',
+    );
   }
   updateMyEvent(dto: UpdateEventDto): Promise<UpdateResult> {
     return this.ensureTransaction(null, async (em) => {
@@ -62,8 +76,47 @@ export class EventManagementService
       );
     });
   }
-  
-  finishEvent(dto: FinishEventDto): Promise<UpdateResult> {
-    throw new Error('Method not implemented.');
+
+  finishEvent(dto: FinishEventDto): Promise<EventResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const eventRepository = EventRepository(em);
+
+      const event = await eventRepository.findOneOrFail({
+        where: {
+          id: dto.eventId,
+          createdById: dto.accountId,
+        },
+      });
+
+      if (!event.canBeFinished()) {
+        throw new BadRequestException(
+          'Event cannot be finished. You can only finish events that are PUBLISHED and have started and ended.',
+        );
+      }
+
+      // TODO: Add more conditions here
+
+      // Trigger payout process to event owner after 1 week cooldown
+      const now = dayjs();
+      const executeAt = now
+        .add(this.MILLIS_TO_EVENT_PAYOUT, 'milliseconds')
+        .toDate();
+      const job = await this.scheduledJobService.createScheduledJob({
+        entityManager: em,
+        executeAt,
+        jobType: ScheduledJobType.EVENT_PAYOUT,
+        payload: {
+          eventId: event.id,
+        },
+      });
+
+      // save
+      event.status = EventStatus.FINISHED;
+      event.scheduledJobId = job.id;
+
+      return await eventRepository
+        .save(event)
+        .then((res) => this.mapTo(EventResponseDto, res));
+    });
   }
 }

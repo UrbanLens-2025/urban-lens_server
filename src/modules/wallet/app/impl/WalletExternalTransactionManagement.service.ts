@@ -308,7 +308,7 @@ export class WalletExternalTransactionManagementService
       case ExternalTransactionAfterFinishAction.TRANSFER_TO_ESCROW: {
         this.logger.debug('Transferring deposited funds to escrow wallet');
 
-        await this.walletTransactionHandlerService.transferFunds({
+        await this.walletTransactionHandlerService.transferFundsFromUserWallet({
           entityManager: em,
           destinationWalletId: DefaultSystemWallet.ESCROW,
           sourceWalletId: transaction.walletId,

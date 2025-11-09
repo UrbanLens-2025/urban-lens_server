@@ -1,18 +1,18 @@
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsPositive, IsUUID } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsPositive } from 'class-validator';
 import { CoreActionDto } from '@/common/dto/CoreAction.dto';
+import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
 
-export class TransferFundsDto extends CoreActionDto {
+export class TransferFundsFromSystemWalletDto extends CoreActionDto {
   // transient fields
-  ownerId: string;
   destinationWalletId: string;
 
   // request body
-  @ApiProperty()
+  @ApiProperty({ enum: DefaultSystemWallet })
+  @IsEnum([DefaultSystemWallet.ESCROW, DefaultSystemWallet.REVENUE])
   @IsNotEmpty()
-  @IsUUID()
-  sourceWalletId: string;
+  sourceWalletId: DefaultSystemWallet;
 
   @ApiProperty()
   @IsNotEmpty()

@@ -28,6 +28,8 @@ import { WalletModule } from '@/modules/wallet/Wallet.module';
 import { EventAttendanceCreationSubscriber } from '@/modules/event/infra/subscriber/EventAttendanceCreation.subscriber';
 import { EventAttendanceManagementService } from '@/modules/event/app/impl/EventAttendanceManagement.service';
 import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
+import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
+import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPayout.listener';
 
 @Module({
   imports: [
@@ -36,6 +38,7 @@ import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAtt
     FileStorageModule,
     LocationBookingModule,
     FileStorageModule,
+    ScheduledJobsModule,
   ],
   controllers: [
     EventRequestCreatorController,
@@ -85,6 +88,7 @@ import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAtt
       useClass: EventAttendanceManagementService,
     },
     EventAttendanceCreationSubscriber,
+    EventPayoutListener,
   ],
 })
 export class EventModule {}
