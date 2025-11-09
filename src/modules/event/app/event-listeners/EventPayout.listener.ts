@@ -49,6 +49,15 @@ export class EventPayoutListener extends CoreService {
         this.logger.warn(
           `Event with ID ${eventId} is not eligible for payout.`,
         );
+        await scheduledJobRepository.update(
+          {
+            id: dto.jobId,
+          },
+          {
+            status: ScheduledJobStatus.FAILED,
+          },
+        );
+
         return;
       }
 

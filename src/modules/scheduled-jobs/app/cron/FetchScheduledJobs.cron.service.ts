@@ -58,27 +58,32 @@ export class FetchScheduledJobsCronService
     this.logger.debug(
       `Fetching scheduled jobs for ${new Date().toDateString()}`,
     );
-    const scheduledJobRepository = ScheduledJobRepository(this.dataSource);
-    try {
-      const jobsToSchedule = await scheduledJobRepository.findDueJobs();
-      this.logger.debug(
-        'Found ' +
-          jobsToSchedule.length +
-          ` jobs to schedule with ids: ${jobsToSchedule.map((i) => i.id).join(', ')}`,
-      );
-      const promises = jobsToSchedule.map((job) =>
-        this.scheduledJobService.processScheduledJob(job),
-      );
-      await Promise.allSettled(promises);
-    } catch (error) {
-      if (error instanceof Error) {
-        this.logger.error(
-          `Failed to fetch scheduled jobs: ${error.message}`,
-          error.stack,
+    return this.ensureTransaction(null, async (em) => {
+      const scheduledJobRepository = ScheduledJobRepository(em);
+      try {
+        const jobsToSchedule = await scheduledJobRepository.findDueJobs();
+        this.logger.debug(
+          'Found ' +
+            jobsToSchedule.length +
+            ` jobs to schedule with ids: ${jobsToSchedule.map((i) => i.id).join(', ')}`,
         );
-      } else {
-        throw error; // only throw unknown errors
+        await scheduledJobRepository.updateToProcessing({
+          jobIds: jobsToSchedule.map((job) => job.id),
+        });
+        const promises = jobsToSchedule.map((job) =>
+          this.scheduledJobService.processScheduledJob(job),
+        );
+        await Promise.allSettled(promises);
+      } catch (error) {
+        if (error instanceof Error) {
+          this.logger.error(
+            `Failed to fetch scheduled jobs: ${error.message}`,
+            error.stack,
+          );
+        } else {
+          throw error; // only throw unknown errors
+        }
       }
-    }
+    });
   }
 }
