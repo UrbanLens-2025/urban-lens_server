@@ -13,8 +13,11 @@ import { LocationRequestApprovedListener } from '@/modules/notification/app/even
 import { LocationRequestNeedsMoreInfoListener } from '@/modules/notification/app/event-listeners/LocationRequestNeedsMoreInfo.listener';
 import { LocationRequestRejectedListener } from '@/modules/notification/app/event-listeners/LocationRequestRejected.listener';
 import { WalletDepositConfirmedListener } from '@/modules/notification/app/event-listeners/WalletDepositConfirmed.listener';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { Environment } from '@/config/env.config';
+import { ClientsModule } from '@nestjs/microservices';
+import { RabbitMQBaseClientConfig } from '@/config/rabbitmq.config';
+import { EmailConsumer } from '@/modules/notification/interfaces/consumers/Email.consumer';
+import { EmailSenderWorker } from '@/modules/notification/app/impl/EmailSender.worker';
+import { IEmailSenderWorker } from '@/modules/notification/app/IEmailSender.worker';
 
 @Module({
   imports: [
@@ -25,28 +28,9 @@ import { Environment } from '@/config/env.config';
     }),
     ClientsModule.registerAsync([
       {
-        name: 'RABBITMQ_CLIENT',
+        name: RabbitMQBaseClientConfig.SERVICE_NAME,
+        useClass: RabbitMQBaseClientConfig,
         imports: [ConfigModule],
-        useFactory: (configService: ConfigService<Environment>) => {
-          const rabbitMQUrl = configService.get('RABBITMQ_URL');
-          if (!rabbitMQUrl) {
-            return {
-              transport: Transport.RMQ,
-              options: {},
-            };
-          }
-          return {
-            transport: Transport.RMQ,
-            options: {
-              urls: [rabbitMQUrl],
-              queue: configService.get('RABBITMQ_QUEUE') || 'urban-lens',
-              queueOptions: {
-                durable: true,
-              },
-            },
-          };
-        },
-        inject: [ConfigService],
       },
     ]),
   ],
@@ -59,6 +43,10 @@ import { Environment } from '@/config/env.config';
       provide: IFirebaseNotificationService,
       useClass: FirebaseNotificationService,
     },
+    {
+      provide: IEmailSenderWorker,
+      useClass: EmailSenderWorker,
+    },
     LocationRequestApprovedListener,
     LocationRequestNeedsMoreInfoListener,
     LocationRequestRejectedListener,
@@ -67,6 +55,7 @@ import { Environment } from '@/config/env.config';
   controllers: [
     PushNotificationUserController,
     PushNotificationDevOnlyController,
+    EmailConsumer,
   ],
   exports: [IFirebaseNotificationService, IEmailNotificationService],
 })

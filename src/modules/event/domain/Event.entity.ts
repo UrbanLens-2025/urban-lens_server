@@ -118,4 +118,12 @@ export class EventEntity {
   public canCheckIn(): boolean {
     return this.status === EventStatus.PUBLISHED;
   }
+
+  public canBeFinished() {
+    const isCorrectStatus = this.status === EventStatus.PUBLISHED;
+    const now = new Date();
+    const isStartDateInPast = this.startDate && this.startDate < now;
+    const isEndDateInPast = this.endDate && this.endDate < now;
+    return isCorrectStatus && isStartDateInPast && isEndDateInPast;
+  }
 }
