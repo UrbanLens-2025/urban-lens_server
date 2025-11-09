@@ -82,19 +82,23 @@ export class EventPayoutListener extends CoreService {
       );
 
       // transfer to system
-      await this.walletTransactionCoordinator.transferFromEscrowToSystem({
-        entityManager: em,
-        amount: payoutAmountToSystem,
-        currency: SupportedCurrency.VND,
-      });
+      if (payoutAmountToSystem > 0) {
+        await this.walletTransactionCoordinator.transferFromEscrowToSystem({
+          entityManager: em,
+          amount: payoutAmountToSystem,
+          currency: SupportedCurrency.VND,
+        });
+      }
 
       // transfer to event creator
-      await this.walletTransactionCoordinator.transferFromEscrowToAccount({
-        entityManager: em,
-        amount: payoutAmountToEventCreator,
-        currency: SupportedCurrency.VND,
-        destinationAccountId: event.createdById,
-      });
+      if (payoutAmountToEventCreator > 0) {
+        await this.walletTransactionCoordinator.transferFromEscrowToAccount({
+          entityManager: em,
+          amount: payoutAmountToEventCreator,
+          currency: SupportedCurrency.VND,
+          destinationAccountId: event.createdById,
+        });
+      }
 
       // update the scheduled job as completed
       this.logger.log(`Payout for Event ID ${eventId} completed successfully.`);
