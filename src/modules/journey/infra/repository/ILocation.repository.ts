@@ -9,6 +9,11 @@ export interface ILocationRepository {
     longitude: number,
     radiusKm: number,
   ): Promise<LocationEntity[]>;
+
+  /**
+   * Find locations by IDs
+   */
+  findByIds(locationIds: string[]): Promise<LocationEntity[]>;
 }
 
 export const ILocationRepository = Symbol('ILocationRepository');

@@ -1,18 +1,28 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePersonalJourneyDto } from 'src/common/dto/journey/CreatePersonalJourney.dto';
 import {
+  AIInsightsDto,
   JourneyLocationDto,
   PersonalJourneyResponseDto,
 } from 'src/common/dto/journey/PersonalJourneyResponse.dto';
+import { AIJourneyResponseDto } from 'src/common/dto/journey/AIJourneyResponse.dto';
 import { IJourneyPlannerService } from '../IJourneyPlanner.service';
 import { ILocationRepository } from '../../infra/repository/ILocation.repository';
 import { IUserProfileRepository } from '../../infra/repository/IUserProfile.repository';
 import { GoogleMapsService } from '@/common/core/google-maps/GoogleMaps.service';
+import { OllamaService } from '@/common/core/ollama/Ollama.service';
 import { TravelMode } from '@googlemaps/google-maps-services-js';
 import {
   calculateDistance,
   estimateTravelTime,
 } from '@/common/utils/distance.util';
+import { generateFallbackActivity } from '@/common/utils/activity-suggestion.util';
 
 interface LocationCandidate {
   id: string;
@@ -42,6 +52,7 @@ export class JourneyPlannerService implements IJourneyPlannerService {
     @Inject(IUserProfileRepository)
     private readonly userProfileRepository: IUserProfileRepository,
     private readonly googleMapsService: GoogleMapsService,
+    private readonly ollamaService: OllamaService,
   ) {}
 
   async createPersonalJourney(
@@ -244,6 +255,7 @@ export class JourneyPlannerService implements IJourneyPlannerService {
     count: number,
     end?: RoutePoint,
     useGoogleMaps: boolean = false,
+    prioritizeDistance: boolean = false, // New parameter for AI journey
   ): Promise<LocationCandidate[]> {
     const route: LocationCandidate[] = [];
     const remaining = [...candidates];
@@ -271,6 +283,12 @@ export class JourneyPlannerService implements IJourneyPlannerService {
           );
 
           distances = results.map((r) => r.distanceKm);
+
+          if (prioritizeDistance) {
+            this.logger.debug(
+              `Distances from current: ${remaining.map((c, i) => `${c.name}: ${distances[i].toFixed(2)}km`).join(', ')}`,
+            );
+          }
         } catch (error) {
           this.logger.warn('Google Maps API failed, falling back to Haversine');
           distances = remaining.map((c) =>
@@ -298,11 +316,18 @@ export class JourneyPlannerService implements IJourneyPlannerService {
         const candidate = remaining[i];
         const distance = distances[i];
 
-        // Composite score: preference (70%) + distance penalty (30%)
-        // Closer locations and higher preference scores are favored
-        const distancePenalty = Math.max(0, 100 - distance * 10); // 10km = 0 points
-        const compositeScore =
-          candidate.preferenceScore * 0.7 + distancePenalty * 0.3;
+        let compositeScore: number;
+
+        if (prioritizeDistance) {
+          // For AI journey: Only optimize by distance (nearest neighbor)
+          compositeScore = -distance; // Negative so closer = higher score
+        } else {
+          // For algorithm journey: Balance preference and distance
+          // Composite score: preference (70%) + distance penalty (30%)
+          const distancePenalty = Math.max(0, 100 - distance * 10); // 10km = 0 points
+          compositeScore =
+            candidate.preferenceScore * 0.7 + distancePenalty * 0.3;
+        }
 
         if (compositeScore > bestScore) {
           bestScore = compositeScore;
@@ -311,6 +336,13 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       }
 
       const selected = remaining.splice(bestIndex, 1)[0];
+
+      if (prioritizeDistance) {
+        this.logger.debug(
+          `Selected ${selected.name} (distance: ${distances[bestIndex].toFixed(2)}km from current point)`,
+        );
+      }
+
       route.push(selected);
       current = {
         latitude: selected.latitude,
@@ -537,6 +569,313 @@ export class JourneyPlannerService implements IJourneyPlannerService {
 
     return {
       locations,
+      totalDistanceKm: Math.round(totalDistance * 100) / 100,
+      estimatedTotalTimeMinutes: totalTime,
+      averagePreferenceScore: Math.round(avgPreference * 10) / 10,
+      optimizationScore: Math.round(optimizationScore * 10) / 10,
+    };
+  }
+
+  /**
+   * Create AI-powered journey where AI queries database and plans route
+   */
+  async createAIPoweredJourney(
+    userId: string,
+    dto: CreatePersonalJourneyDto,
+  ): Promise<AIJourneyResponseDto> {
+    if (!this.ollamaService.isEnabled()) {
+      throw new BadRequestException(
+        'AI-powered journey is not available. Please set OLLAMA_ENABLED=true',
+      );
+    }
+
+    this.logger.log(
+      `Creating AI-powered journey for user ${userId} with ${dto.numberOfLocations} locations`,
+    );
+
+    // Get user preferences
+    const userProfile =
+      await this.userProfileRepository.findByAccountId(userId);
+    if (!userProfile) {
+      throw new NotFoundException('User profile not found');
+    }
+
+    const userTagScores = userProfile.tagScores || {};
+
+    // Call AI agent to query database and plan journey
+    const aiResponse = await this.ollamaService.generateJourneyWithDBAccess({
+      userId,
+      userPreferences: userTagScores,
+      currentLocation: {
+        latitude: dto.currentLatitude,
+        longitude: dto.currentLongitude,
+      },
+      numberOfLocations: dto.numberOfLocations,
+      maxRadiusKm: dto.maxRadiusKm || 10,
+    });
+
+    if (!aiResponse || !aiResponse.suggestedLocationIds) {
+      throw new BadRequestException(
+        'AI failed to generate journey. Please try the standard endpoint.',
+      );
+    }
+
+    this.logger.debug(
+      `AI suggested ${aiResponse.suggestedLocationIds.length} locations: ${aiResponse.suggestedLocationIds.join(', ')}`,
+    );
+
+    // Fetch suggested locations from database
+    let locations = await this.locationRepository.findByIds(
+      aiResponse.suggestedLocationIds,
+    );
+
+    if (locations.length === 0) {
+      throw new NotFoundException('No locations found for AI suggestions');
+    }
+
+    // If AI didn't return enough locations, fill with nearby ones
+    if (locations.length < dto.numberOfLocations) {
+      this.logger.warn(
+        `AI only returned ${locations.length}/${dto.numberOfLocations} locations. Filling with nearby locations...`,
+      );
+
+      const searchRadiusKm = dto.preferredAreaRadiusKm ?? dto.maxRadiusKm ?? 10;
+      const searchLat = dto.preferredAreaLatitude ?? dto.currentLatitude;
+      const searchLng = dto.preferredAreaLongitude ?? dto.currentLongitude;
+
+      const nearbyLocations = await this.locationRepository.findNearbyWithTags(
+        searchLat,
+        searchLng,
+        searchRadiusKm,
+      );
+
+      // Filter out already selected locations
+      const existingIds = new Set(locations.map((l) => l.id));
+      const additionalLocations = nearbyLocations
+        .filter((loc) => !existingIds.has(loc.id))
+        .slice(0, dto.numberOfLocations - locations.length);
+
+      locations = [...locations, ...additionalLocations];
+
+      this.logger.log(
+        `Added ${additionalLocations.length} additional locations. Total: ${locations.length}`,
+      );
+    }
+
+    // Calculate distances and times
+    const startPoint: RoutePoint = {
+      latitude: dto.currentLatitude,
+      longitude: dto.currentLongitude,
+    };
+
+    const endPoint = dto.endLatitude
+      ? {
+          latitude: dto.endLatitude,
+          longitude: dto.endLongitude!,
+        }
+      : null;
+
+    // Map locations to candidates
+    const candidates: LocationCandidate[] = locations.map((loc) => ({
+      id: loc.id,
+      name: loc.name,
+      description: loc.description,
+      addressLine: loc.addressLine,
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      imageUrl: loc.imageUrl || [],
+      preferenceScore: 75, // Default score for AI-selected locations
+      tags:
+        loc.tags?.map((t) => ({
+          id: t.tag.id,
+          displayName: t.tag.displayName,
+        })) || [],
+    }));
+
+    // Optimize route using greedy nearest neighbor algorithm
+    const useGoogleMaps = this.googleMapsService.isEnabled();
+    this.logger.debug(
+      `Optimizing route for ${candidates.length} AI-selected locations (distance-only)...`,
+    );
+    const optimizedRoute = await this.optimizeRoute(
+      startPoint,
+      candidates,
+      candidates.length, // Use all AI-selected locations
+      endPoint ?? undefined,
+      useGoogleMaps,
+      true, // prioritizeDistance = true for AI journey
+    );
+
+    // Calculate route with distances
+    const route = await this.calculateRouteMetrics(
+      startPoint,
+      optimizedRoute,
+      endPoint,
+      useGoogleMaps,
+    );
+
+    // Add AI-suggested activities to each location
+    this.logger.debug(
+      `AI locationActivities: ${JSON.stringify(aiResponse.locationActivities, null, 2)}`,
+    );
+    this.logger.debug(
+      `Route location IDs: ${route.locations.map((l) => `${l.name} (${l.id})`).join(', ')}`,
+    );
+
+    route.locations.forEach((loc) => {
+      if (
+        aiResponse.locationActivities &&
+        aiResponse.locationActivities[loc.id]
+      ) {
+        // Use AI suggestion if available
+        loc.suggestedActivity = aiResponse.locationActivities[loc.id];
+        this.logger.debug(
+          `✅ Matched AI activity for ${loc.name}: ${loc.suggestedActivity}`,
+        );
+      } else {
+        // Fallback: Generate activity based on tags
+        const location = candidates.find((c) => c.id === loc.id);
+        if (location) {
+          loc.suggestedActivity = generateFallbackActivity(
+            location.name,
+            location.tags.map((t) => t.displayName),
+          );
+          this.logger.debug(
+            `⚠️ Using fallback activity for ${loc.name}: ${loc.suggestedActivity}`,
+          );
+        }
+      }
+    });
+
+    return {
+      locations: route.locations,
+      totalDistanceKm: route.totalDistanceKm,
+      estimatedTotalTimeMinutes: route.estimatedTotalTimeMinutes,
+      averagePreferenceScore: route.averagePreferenceScore,
+      optimizationScore: route.optimizationScore,
+      aiInsights: {
+        reasoning: aiResponse.reasoning,
+        tips: aiResponse.tips,
+      },
+    };
+  }
+
+  /**
+   * Calculate route metrics for given locations
+   */
+  private async calculateRouteMetrics(
+    startPoint: RoutePoint,
+    locations: LocationCandidate[],
+    endPoint: RoutePoint | null,
+    useGoogleMaps: boolean,
+  ): Promise<{
+    locations: JourneyLocationDto[];
+    totalDistanceKm: number;
+    estimatedTotalTimeMinutes: number;
+    averagePreferenceScore: number;
+    optimizationScore: number;
+  }> {
+    let totalDistance = 0;
+    let totalTime = 0;
+    let currentPoint = startPoint;
+
+    const journeyLocations: JourneyLocationDto[] = [];
+
+    // Calculate distances between consecutive points
+    for (let i = 0; i < locations.length; i++) {
+      const location = locations[i];
+      const nextPoint: RoutePoint = {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        location,
+      };
+
+      let distance: number;
+      let travelTime: number;
+
+      if (useGoogleMaps) {
+        try {
+          const result = await this.googleMapsService.getDistance(
+            { lat: currentPoint.latitude, lng: currentPoint.longitude },
+            { lat: nextPoint.latitude, lng: nextPoint.longitude },
+            TravelMode.driving,
+          );
+          distance = result.distanceKm;
+          travelTime = result.durationMinutes;
+        } catch (error) {
+          this.logger.warn('Google Maps failed, using Haversine fallback');
+          distance = calculateDistance(
+            currentPoint.latitude,
+            currentPoint.longitude,
+            nextPoint.latitude,
+            nextPoint.longitude,
+          );
+          travelTime = estimateTravelTime(distance);
+        }
+      } else {
+        distance = calculateDistance(
+          currentPoint.latitude,
+          currentPoint.longitude,
+          nextPoint.latitude,
+          nextPoint.longitude,
+        );
+        travelTime = estimateTravelTime(distance);
+      }
+
+      totalDistance += distance;
+      totalTime += travelTime;
+
+      journeyLocations.push({
+        id: location.id,
+        name: location.name,
+        description: location.description,
+        addressLine: location.addressLine,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        imageUrl: location.imageUrl[0] || null,
+        preferenceScore: location.preferenceScore,
+        distanceFromPrevious: Math.round(distance * 100) / 100,
+        estimatedTravelTimeMinutes: Math.round(travelTime),
+        order: i + 1,
+        matchingTags: location.tags.map((t) => t.displayName),
+        suggestedActivity: undefined, // Will be filled by AI if available
+      });
+
+      currentPoint = nextPoint;
+    }
+
+    // Add distance to end point if specified
+    if (endPoint) {
+      const lastLoc = locations[locations.length - 1];
+      const distance = calculateDistance(
+        lastLoc.latitude,
+        lastLoc.longitude,
+        endPoint.latitude,
+        endPoint.longitude,
+      );
+      totalDistance += distance;
+      totalTime += estimateTravelTime(distance);
+    }
+
+    const avgPreference =
+      journeyLocations.length > 0
+        ? journeyLocations.reduce((sum, loc) => sum + loc.preferenceScore, 0) /
+          journeyLocations.length
+        : 0;
+
+    const preferenceVariance =
+      journeyLocations.length > 1
+        ? journeyLocations.reduce(
+            (sum, loc) =>
+              sum + Math.pow(loc.preferenceScore - avgPreference, 2),
+            0,
+          ) / journeyLocations.length
+        : 0;
+
+    const optimizationScore = totalDistance * 10 + preferenceVariance;
+
+    return {
+      locations: journeyLocations,
       totalDistanceKm: Math.round(totalDistance * 100) / 100,
       estimatedTotalTimeMinutes: totalTime,
       averagePreferenceScore: Math.round(avgPreference * 10) / 10,
