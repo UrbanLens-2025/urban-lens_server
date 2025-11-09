@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Inject,
-  Param,
-  ParseUUIDPipe,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IAnnouncementQueryService } from '@/modules/post/app/IAnnouncementQuery.service';
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
@@ -21,7 +14,7 @@ export class AnnouncementPublicController {
   @ApiOperation({ summary: 'Get visible announcement for event' })
   @Get('/event/:eventId')
   getVisibleAnnouncementsForEvent(
-    @Query('eventId', ParseUUIDPipe) eventId: string,
+    @Param('eventId', ParseUUIDPipe) eventId: string,
     @Paginate() query: PaginateQuery,
   ) {
     return this.announcementQueryService.getViewableAnnouncementsForEvent({
@@ -33,7 +26,7 @@ export class AnnouncementPublicController {
   @ApiOperation({ summary: 'Get visible announcement for location' })
   @Get('/location/:locationId')
   getVisibleAnnouncementsForLocation(
-    @Query('locationId', ParseUUIDPipe) locationId: string,
+    @Param('locationId', ParseUUIDPipe) locationId: string,
     @Paginate() query: PaginateQuery,
   ) {
     return this.announcementQueryService.getViewableAnnouncementsForLocation({
