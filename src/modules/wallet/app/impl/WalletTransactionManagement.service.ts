@@ -13,6 +13,7 @@ import {
 } from '@/modules/wallet/domain/events/FundsTransferred.event';
 import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTransaction.response.dto';
 import { TransferFundsFromSystemWalletDto } from '@/common/dto/wallet/TransferFundsFromSystemWallet.dto';
+import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
 
 @Injectable()
 export class WalletTransactionManagementService
@@ -127,6 +128,15 @@ export class WalletTransactionManagementService
   transferFundsFromSystemWallet(
     dto: TransferFundsFromSystemWalletDto,
   ): Promise<WalletTransactionResponseDto> {
+    if (
+      dto.sourceWalletId !== DefaultSystemWallet.ESCROW &&
+      dto.sourceWalletId !== DefaultSystemWallet.REVENUE
+    ) {
+      throw new BadRequestException(
+        'Invalid source or destination wallet for system transfer.',
+      );
+    }
+
     return this.ensureTransaction(dto.entityManager, async (em) => {
       const walletRepository = WalletRepository(em);
       const walletTransactionRepository = WalletTransactionRepository(em);
