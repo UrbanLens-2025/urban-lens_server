@@ -11,7 +11,7 @@ import {
 import { IsBefore } from '@/common/decorators/IsBefore.decorator';
 import { Type } from 'class-transformer';
 
-export class CreateAnnouncementDto {
+export class CreateAnnouncementForEventDto {
   @ApiProperty({ description: 'Title of the announcement' })
   @IsString()
   @IsNotEmpty()
@@ -50,7 +50,7 @@ export class CreateAnnouncementDto {
   @ApiProperty()
   @IsNotEmpty()
   @IsUUID()
-  locationId: string;
+  eventId: string;
 
   @ApiProperty()
   @IsBoolean()

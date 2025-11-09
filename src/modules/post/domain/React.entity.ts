@@ -30,7 +30,7 @@ export class ReactEntity {
   @Column({ name: 'entity_type' })
   entityType: ReactEntityType;
 
-  @Column({ name: 'type', type: 'enum', enum: ReactType })
+  @Column({ name: 'type', type: 'varchar', length: 50 })
   type: ReactType;
 
   @ManyToOne(() => AccountEntity, (account) => account.reacts, {

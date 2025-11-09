@@ -15,6 +15,14 @@ jobs:
           ref: ${{ github.ref }}
           fetch-depth: 0
 
+      - name: Debug who am I
+        run: whoami
+
+      - name: Add NodeJS and PNPM to PATH
+        run: |
+          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+          echo "$HOME/.nvm/versions/node/v22.21.1/bin" >> $GITHUB_PATH
+
       - name: Allow only tags that point to commits in main
         run: |
           git fetch origin main --depth=1
@@ -79,6 +87,7 @@ jobs:
       VNPAY_URL: ${{ secrets.VNPAY_URL }}
       RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
       RABBITMQ_QUEUE: ${{ secrets.RABBITMQ_QUEUE }}
+      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
 
       # PUBLIC VARIABLES
       DATABASE_ENABLE_SYNC: ${{ vars.DATABASE_ENABLE_SYNC }}
@@ -101,6 +110,11 @@ jobs:
         with:
           name: dist-and-config
           path: ./new-deployment/
+
+      - name: Add NodeJS and PNPM to PATH
+        run: |
+          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+          echo "$HOME/.nvm/versions/node/v22.21.1/bin" >> $GITHUB_PATH
 
       - name: List output directory
         run: ls -la ./new-deployment/

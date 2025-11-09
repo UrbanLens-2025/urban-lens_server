@@ -3,7 +3,7 @@ import { CreatorTypes } from '@/common/constants/CreatorType.constant';
 import { SocialLink } from '@/common/json/SocialLink.json';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
-@Entity('creator-profile')
+@Entity('creator_profile')
 export class CreatorProfileEntity {
   @PrimaryColumn({ name: 'account_id', type: 'uuid' })
   accountId: string;

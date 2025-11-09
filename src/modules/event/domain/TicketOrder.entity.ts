@@ -73,6 +73,7 @@ export class TicketOrderEntity {
   @ManyToOne(() => EventEntity, (event) => event.id, {
     createForeignKeyConstraints: false,
   })
+  @JoinColumn({ name: 'event_id' })
   event: EventEntity;
 
   @Column({ name: 'event_id', type: 'uuid' })

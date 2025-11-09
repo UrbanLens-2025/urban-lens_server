@@ -38,7 +38,7 @@ export class UserProfileEntity {
   @Column({ name: 'rank_id', type: 'uuid', nullable: true })
   rankId: string;
 
-  @Column({ name: 'rank', type: 'enum', enum: RankName, nullable: true })
+  @Column({ name: 'rank', type: 'varchar', length: 50, nullable: true })
   rank: RankName;
 
   @Column({ name: 'points', type: 'integer', default: 0 })

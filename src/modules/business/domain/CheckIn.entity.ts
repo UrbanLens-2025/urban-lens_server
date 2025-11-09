@@ -33,7 +33,9 @@ export class CheckInEntity {
   @Column({ name: 'location_id' })
   locationId: string;
 
-  @ManyToOne(() => LocationEntity, (location) => location.checkIns)
+  @ManyToOne(() => LocationEntity, (location) => location.checkIns, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn({ name: 'location_id' })
   location: LocationEntity;
 

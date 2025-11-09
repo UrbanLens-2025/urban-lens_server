@@ -13,14 +13,18 @@ export class UserTagsEntity {
   @PrimaryGeneratedColumn('identity')
   id: number;
 
-  @ManyToOne(() => AccountEntity, (account) => account.id, {})
+  @ManyToOne(() => AccountEntity, (account) => account.id, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;
 
   @Column({ name: 'account_id' })
   accountId: string;
 
-  @ManyToOne(() => TagEntity, (tag) => tag.id, {})
+  @ManyToOne(() => TagEntity, (tag) => tag.id, {
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn({ name: 'tag_id' })
   tag: TagEntity;
 

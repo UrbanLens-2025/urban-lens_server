@@ -12,7 +12,7 @@ export const EventRepository = (ctx: DataSource | EntityManager) =>
         .addSelect(
           `
           ST_Distance(
-            l.geom,
+            l.geom::geography,
             ST_MakePoint(:lon, :lat)::geography
           )`,
           'distanceMeters',
@@ -20,7 +20,7 @@ export const EventRepository = (ctx: DataSource | EntityManager) =>
         .where(
           `
           ST_DWithin(
-            l.geom,
+            l.geom::geography,
             ST_MakePoint(:lon, :lat)::geography,
             :radius
           )`,

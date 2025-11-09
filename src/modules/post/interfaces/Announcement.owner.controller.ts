@@ -13,7 +13,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { IAnnouncementService } from '@/modules/post/app/IAnnouncement.service';
-import { CreateAnnouncementDto } from '@/common/dto/posts/CreateAnnouncement.dto';
+import { CreateAnnouncementForLocationDto } from '@/common/dto/posts/CreateAnnouncementForLocation.dto';
 import { UpdateAnnouncementDto } from '@/common/dto/posts/UpdateAnnouncement.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
@@ -27,10 +27,10 @@ import {
   type PaginateQuery,
 } from 'nestjs-paginate';
 
-@ApiTags('Location Announcements')
+@ApiTags('Announcements')
 @ApiBearerAuth()
 @Roles(Role.BUSINESS_OWNER)
-@Controller('/owner/location/announcements')
+@Controller('/owner/announcements')
 export class AnnouncementOwnerController {
   constructor(
     @Inject(IAnnouncementService)
@@ -39,10 +39,13 @@ export class AnnouncementOwnerController {
     private readonly announcementQueryService: IAnnouncementQueryService,
   ) {}
 
-  @ApiOperation({ summary: 'Create a new announcement' })
+  @ApiOperation({ summary: 'Create a new announcement for a location' })
   @Post()
-  create(@AuthUser() user: JwtTokenDto, @Body() dto: CreateAnnouncementDto) {
-    return this.announcementService.create({
+  create(
+    @AuthUser() user: JwtTokenDto,
+    @Body() dto: CreateAnnouncementForLocationDto,
+  ) {
+    return this.announcementService.createForLocation({
       ...dto,
       accountId: user.sub,
     });
@@ -62,29 +65,33 @@ export class AnnouncementOwnerController {
     });
   }
 
-  @ApiOperation({ summary: 'List my announcements (owner, paginated)' })
-  @ApiPaginationQuery(IAnnouncementQueryService_QueryConfig.searchByLocation())
+  @ApiOperation({
+    summary: 'List my locations announcements',
+  })
+  @ApiPaginationQuery(
+    IAnnouncementQueryService_QueryConfig.getMyLocationsAnnouncements(),
+  )
   @Get('')
   getAll(
     @AuthUser() user: JwtTokenDto,
     @Paginate() query: PaginateQuery,
-    @Query('locationId') locationId?: string,
+    @Query('locationId', ParseUUIDPipe) locationId: string,
   ) {
-    return this.announcementQueryService.getAllAnnouncements({
+    return this.announcementQueryService.getMyLocationsAnnouncements({
       query,
       accountId: user.sub,
       locationId,
     });
   }
 
-  @ApiOperation({ summary: 'Get my announcement by ID (owner, shows all)' })
+  @ApiOperation({ summary: 'Get my location announcement by ID' })
   @Get('/:id')
   getById(
     @AuthUser() user: JwtTokenDto,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.announcementQueryService.getOwnerById({
-      id,
+    return this.announcementQueryService.getMyAnnouncementById({
+      announcementId: id,
       accountId: user.sub,
     });
   }

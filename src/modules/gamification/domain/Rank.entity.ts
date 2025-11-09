@@ -21,7 +21,7 @@ export class RankEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'name', type: 'enum', enum: RankName, nullable: false })
+  @Column({ name: 'name', type: 'varchar', length: 50, nullable: false })
   name: RankName;
 
   @Column({ name: 'min_points', type: 'int', nullable: false })

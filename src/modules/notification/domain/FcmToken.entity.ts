@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
-@Entity({ name: 'fcm-token' })
+@Entity({ name: 'fcm_token' })
 @Unique(['token'])
 export class FcmTokenEntity {
   @PrimaryGeneratedColumn('identity')
