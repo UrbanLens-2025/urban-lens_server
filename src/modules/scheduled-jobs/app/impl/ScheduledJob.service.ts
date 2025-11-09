@@ -35,9 +35,10 @@ export class ScheduledJobService
     });
   }
 
-  async processScheduledJob(
-    scheduledJob: ScheduledJobEntity,
-  ): Promise<any[]> {
-    return this.eventEmitter.emitAsync(scheduledJob.jobType, new ScheduledJobWrapperDto(scheduledJob.id, scheduledJob.payload));
+  async processScheduledJob(scheduledJob: ScheduledJobEntity): Promise<any[]> {
+    return this.eventEmitter.emitAsync(
+      scheduledJob.jobType,
+      new ScheduledJobWrapperDto(scheduledJob.id, scheduledJob.payload),
+    );
   }
 }

@@ -57,6 +57,8 @@ export interface Environment {
 
   GOOGLE_MAPS_API_KEY: string;
 
+  MILLIS_TO_EVENT_PAYOUT: number;
+
   FETCH_SCHEDULED_JOBS_CRON_EXPRESSION: string;
 }
 
@@ -120,6 +122,8 @@ export const envConfig = joi.object<Environment>({
   PAYMENT_ALLOW_MOCK_HASH: joi.boolean().default(false),
 
   GOOGLE_MAPS_API_KEY: joi.string().required(),
+
+  MILLIS_TO_EVENT_PAYOUT: joi.number().default(1000 * 60 * 60 * 24 * 7), // 7 days
 
   FETCH_SCHEDULED_JOBS_CRON_EXPRESSION: joi.string().default('* * * * *'), // every minute
 });

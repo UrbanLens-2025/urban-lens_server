@@ -57,6 +57,14 @@ export class WalletTransactionEntity {
   })
   status: WalletTransactionStatus;
 
+  @Column({
+    name: 'note',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  note?: string | null;
+
   public startTransfer(destinationWalletId?: string): WalletTransactionEntity {
     this.destinationWalletId = destinationWalletId ?? this.destinationWalletId;
     if (!this.destinationWalletId) {

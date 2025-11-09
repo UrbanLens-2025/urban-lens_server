@@ -1,15 +1,16 @@
 export enum ScheduledJobType {
-    EVENT_PAYOUT = 'EVENT_PAYOUT',
-    NOTIFY_EVENT_START = 'NOTIFY_EVENT_START',
+  EVENT_PAYOUT = 'event.payout',
+  NOTIFY_EVENT_START = 'event.notify_start',
 }
 
 export type ScheduledJobPayloadMap = {
-    [ScheduledJobType.EVENT_PAYOUT]: {
-        eventId: string;
-    },
-    [ScheduledJobType.NOTIFY_EVENT_START]: {
-        accountId: string;
-    }
-}
+  [ScheduledJobType.EVENT_PAYOUT]: {
+    eventId: string;
+  };
+  [ScheduledJobType.NOTIFY_EVENT_START]: {
+    accountId: string;
+  };
+};
 
-export type ScheduledJobPayload<T extends ScheduledJobType> = ScheduledJobPayloadMap[T];
+export type ScheduledJobPayload<T extends ScheduledJobType> =
+  ScheduledJobPayloadMap[T];

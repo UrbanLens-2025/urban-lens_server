@@ -17,7 +17,5 @@ export interface IScheduledJobService {
    * Process a scheduled job by pushing it to the message queue for processing
    * @param scheduledJob
    */
-  processScheduledJob(
-    scheduledJob: ScheduledJobEntity,
-  ): Promise<any[]>;
+  processScheduledJob(scheduledJob: ScheduledJobEntity): Promise<any[]>;
 }

@@ -16,6 +16,8 @@ import { SocialLink } from '@/common/json/SocialLink.json';
 import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
 import { EventRequestEntity } from '@/modules/event/domain/EventRequest.entity';
 import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
+import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
+import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
 
 @Entity({ name: EventEntity.TABLE_NAME })
 export class EventEntity {
@@ -100,10 +102,28 @@ export class EventEntity {
   @Column({ name: 'referenced_event_request_id', type: 'uuid' })
   referencedEventRequestId: string;
 
+  @Column({ name: 'has_paid_out', type: 'boolean', default: false })
+  hasPaidOut: boolean;
+
+  @ManyToOne(() => ScheduledJobEntity, (scheduledJob) => scheduledJob.id, {
+    createForeignKeyConstraints: false,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'scheduled_job_id' })
+  scheduledJob?: ScheduledJobEntity | null;
+
+  @Column({ name: 'scheduled_job_id', type: 'int', nullable: true })
+  scheduledJobId?: number | null;
+
   @OneToMany(() => EventTicketEntity, (eventTicket) => eventTicket.event, {
     createForeignKeyConstraints: false,
   })
   tickets: EventTicketEntity[];
+
+  @OneToMany(() => TicketOrderEntity, (ticketOrder) => ticketOrder.event, {
+    createForeignKeyConstraints: false,
+  })
+  ticketOrders: TicketOrderEntity[];
 
   //#region TRANSIENT FIELDS - Do NOT add @Column to these. These are NOT PERSISTED to the db.
 
@@ -125,5 +145,9 @@ export class EventEntity {
     const isStartDateInPast = this.startDate && this.startDate < now;
     const isEndDateInPast = this.endDate && this.endDate < now;
     return isCorrectStatus && isStartDateInPast && isEndDateInPast;
+  }
+
+  public canBePaidOut() {
+    return this.status === EventStatus.FINISHED && !this.hasPaidOut;
   }
 }
