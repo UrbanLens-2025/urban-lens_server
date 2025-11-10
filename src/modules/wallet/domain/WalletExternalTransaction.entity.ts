@@ -165,8 +165,27 @@ export class WalletExternalTransactionEntity {
     );
   }
 
-  public approveWithdraw(): WalletExternalTransactionEntity {
-    this.status = WalletExternalTransactionStatus.APPROVED;
+  public canBeCancelled(): boolean {
+    return (
+      this.status === WalletExternalTransactionStatus.PENDING &&
+      this.direction === WalletExternalTransactionDirection.WITHDRAW
+    );
+  }
+
+  public canCompleteProcessing(): boolean {
+    return (
+      this.status === WalletExternalTransactionStatus.PROCESSING &&
+      this.direction === WalletExternalTransactionDirection.WITHDRAW
+    );
+  }
+
+  public startProcessing(): WalletExternalTransactionEntity {
+    this.status = WalletExternalTransactionStatus.PROCESSING;
+    return this;
+  }
+
+  public completeProcessing(): WalletExternalTransactionEntity {
+    this.status = WalletExternalTransactionStatus.TRANSFERRED;
     return this;
   }
 

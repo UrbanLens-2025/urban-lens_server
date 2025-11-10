@@ -120,6 +120,21 @@ export class WalletPrivateController {
   }
 
   @ApiOperation({
+    summary: 'Cancel withdraw transaction',
+  })
+  @Post('/transactions/external/:transactionId/cancel')
+  cancelWithdrawTransaction(
+    @AuthUser() user: JwtTokenDto,
+    @Param('transactionId', ParseUUIDPipe) transactionId: string,
+  ) {
+    return this.externalTransactionManagementService.cancelWithdrawTransaction({
+      transactionId,
+      accountId: user.sub,
+      accountName: user.email,
+    });
+  }
+
+  @ApiOperation({
     summary: 'Get my INTERNAL wallet transactions list',
     description: 'Search and filter wallet transactions',
   })

@@ -3,8 +3,10 @@ import { WalletExternalTransactionResponseDto } from '@/common/dto/wallet/res/Wa
 import { ConfirmDepositTransactionDto } from '@/common/dto/wallet/ConfirmDepositTransaction.dto';
 import { UpdateResult } from 'typeorm';
 import { CreateWithdrawTransactionDto } from '@/common/dto/wallet/CreateWithdrawTransaction.dto';
-import { ApproveWithdrawTransactionDto } from '@/common/dto/wallet/ApproveWithdrawTransaction.dto';
+import { StartProcessingWithdrawTransactionDto } from '@/common/dto/wallet/StartProcessingWithdrawTransaction.dto';
+import { CompleteProcessingWithdrawTransactionDto } from '@/common/dto/wallet/CompleteProcessingWithdrawTransaction.dto';
 import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
+import { CancelWithdrawTransactionDto } from '@/common/dto/wallet/CancelWithdrawTransaction.dto';
 
 export const IWalletExternalTransactionManagementService = Symbol(
   'IWalletExternalTransactionManagementService',
@@ -23,10 +25,16 @@ export interface IWalletExternalTransactionManagementService {
   createWithdrawTransaction(
     dto: CreateWithdrawTransactionDto,
   ): Promise<WalletExternalTransactionResponseDto>;
-  approveWithdrawTransaction(
-    dto: ApproveWithdrawTransactionDto,
+  startProcessingWithdrawTransaction(
+    dto: StartProcessingWithdrawTransactionDto,
+  ): Promise<WalletExternalTransactionResponseDto>;
+  completeProcessingWithdrawTransaction(
+    dto: CompleteProcessingWithdrawTransactionDto,
   ): Promise<WalletExternalTransactionResponseDto>;
   rejectWithdrawTransaction(
     dto: RejectWithdrawTransactionDto,
+  ): Promise<WalletExternalTransactionResponseDto>;
+  cancelWithdrawTransaction(
+    dto: CancelWithdrawTransactionDto,
   ): Promise<WalletExternalTransactionResponseDto>;
 }

@@ -1,7 +1,15 @@
 import { Role } from '@/common/constants/Role.constant';
 import { Roles } from '@/common/Roles.decorator';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 import { IWalletQueryService } from '@/modules/wallet/app/IWalletQuery.service';
 import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
 import {
@@ -13,6 +21,10 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
+import { IWalletExternalTransactionManagementService } from '@/modules/wallet/app/IWalletExternalTransactionManagement.service';
+import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
+import { AuthUser } from '@/common/AuthUser.decorator';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
 @ApiTags('Wallet')
 @ApiBearerAuth()
@@ -24,6 +36,8 @@ export class WalletAdminController {
     private readonly walletQueryService: IWalletQueryService,
     @Inject(IWalletExternalTransactionQueryService)
     private readonly walletExternalTransactionQueryService: IWalletExternalTransactionQueryService,
+    @Inject(IWalletExternalTransactionManagementService)
+    private readonly walletExternalTransactionManagementService: IWalletExternalTransactionManagementService,
   ) {}
 
   @ApiOperation({
@@ -64,6 +78,53 @@ export class WalletAdminController {
   ) {
     return this.walletExternalTransactionQueryService.getAnyExternalTransactionById(
       { transactionId },
+    );
+  }
+
+  @ApiOperation({ summary: 'Start processing withdraw transaction' })
+  @Post('/transactions/external/:transactionId/start-processing')
+  startProcessingWithdrawTransaction(
+    @Param('transactionId', ParseUUIDPipe) transactionId: string,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.walletExternalTransactionManagementService.startProcessingWithdrawTransaction(
+      {
+        transactionId,
+        accountId: user.sub,
+        accountName: user.email,
+      },
+    );
+  }
+
+  @ApiOperation({ summary: 'Complete processing withdraw transaction' })
+  @Post('/transactions/external/:transactionId/complete-processing')
+  completeProcessingWithdrawTransaction(
+    @Param('transactionId', ParseUUIDPipe) transactionId: string,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.walletExternalTransactionManagementService.completeProcessingWithdrawTransaction(
+      {
+        transactionId,
+        accountId: user.sub,
+        accountName: user.email,
+      },
+    );
+  }
+
+  @ApiOperation({ summary: 'Reject withdraw transaction' })
+  @Post('/transactions/external/:transactionId/reject')
+  rejectWithdrawTransaction(
+    @Param('transactionId', ParseUUIDPipe) transactionId: string,
+    @Body() dto: RejectWithdrawTransactionDto,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.walletExternalTransactionManagementService.rejectWithdrawTransaction(
+      {
+        ...dto,
+        transactionId,
+        accountId: user.sub,
+        accountName: user.email,
+      }
     );
   }
 }
