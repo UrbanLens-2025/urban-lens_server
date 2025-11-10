@@ -3,22 +3,32 @@ import { WalletExternalTransactionResponseDto } from '@/common/dto/wallet/res/Wa
 import { WalletExternalTransactionEntity } from '@/modules/wallet/domain/WalletExternalTransaction.entity';
 import { GetExternalTransactionByIdDto } from '@/common/dto/wallet/GetExternalTransactionById.dto';
 import { GetExternalTransactionsByWalletIdDto } from '@/common/dto/wallet/GetExternalTransactionsByWalletId.dto';
+import { GetAllExternalTransactionsDto } from '@/common/dto/wallet/GetAllExternalTransactions.dto';
+import { GetAnyExternalTransactionByIdDto } from '@/common/dto/wallet/GetAnyExternalTransactionById.dto';
 
 export const IWalletExternalTransactionQueryService = Symbol(
   'IWalletExternalTransactionQueryService',
 );
 
 export interface IWalletExternalTransactionQueryService {
-  getExternalTransactionByWalletIdAndId(
+  getMyExternalTransactionById(
     dto: GetExternalTransactionByIdDto,
   ): Promise<WalletExternalTransactionResponseDto | null>;
-  getExternalTransactionsByWalletId(
+  getMyExternalTransactions(
     dto: GetExternalTransactionsByWalletIdDto,
   ): Promise<Paginated<WalletExternalTransactionResponseDto>>;
+
+  getAllExternalTransactions(
+    dto: GetAllExternalTransactionsDto,
+  ): Promise<Paginated<WalletExternalTransactionResponseDto>>;
+
+  getAnyExternalTransactionById(
+    dto: GetAnyExternalTransactionByIdDto,
+  ): Promise<WalletExternalTransactionResponseDto | null>;
 }
 
 export namespace IWalletExternalTransactionQueryService_QueryConfig {
-  export function getExternalTransactionsByWalletId(): PaginateConfig<WalletExternalTransactionEntity> {
+  export function getMyExternalTransactions(): PaginateConfig<WalletExternalTransactionEntity> {
     return {
       sortableColumns: ['createdAt', 'amount'],
       defaultSortBy: [['createdAt', 'DESC']],
@@ -28,6 +38,19 @@ export namespace IWalletExternalTransactionQueryService_QueryConfig {
         direction: true,
         provider: true,
       },
+    };
+  }
+
+  export function getAllExternalTransactions(): PaginateConfig<WalletExternalTransactionEntity> {
+    return {
+      sortableColumns: ['createdAt'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      filterableColumns: {
+        status: true,
+      },
+      relations: {
+        createdBy: true,
+      }
     };
   }
 }

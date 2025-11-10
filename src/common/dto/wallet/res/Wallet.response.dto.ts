@@ -18,6 +18,9 @@ export class WalletResponseDto {
   balance: number;
 
   @Expose()
+  lockedBalance: number;
+
+  @Expose()
   currency: string;
 
   @Expose()

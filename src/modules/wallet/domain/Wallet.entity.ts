@@ -53,6 +53,15 @@ export class WalletEntity {
   })
   balance: number;
 
+  @Column({
+    name: 'locked_balance',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
+  lockedBalance: number;
+
   @Column({ name: 'currency', type: 'varchar', length: 3 })
   currency: SupportedCurrency;
 
