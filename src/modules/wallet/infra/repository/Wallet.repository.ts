@@ -49,11 +49,35 @@ export const WalletRepository = (ctx: DataSource | EntityManager) =>
       });
     },
 
+    incrementLockedBalance(
+      this: Repository<WalletEntity>,
+      payload: {
+        amount: number;
+        walletId: string;
+      },
+    ) {
+      const query = this.createQueryBuilder('wallet')
+        .update()
+        .set({
+          balance: () => `"balance" - :amount`,
+          lockedBalance: () => `"locked_balance" + :amount`,
+        })
+        .setParameter('amount', payload.amount)
+        .whereInIds(payload.walletId)
+        .returning(['balance'])
+        .execute();
+
+      return query.then((result) => {
+        const rawResult = result.raw as { balance: string }[];
+        return Number(rawResult[0].balance) || 0;
+      });
+    },
+
     findByOwnedBy(
       this: Repository<WalletEntity>,
       payload: { ownedBy: string },
     ) {
-      return this.findOne({
+      return this.findOneOrFail({
         where: {
           ownedBy: payload.ownedBy,
         },

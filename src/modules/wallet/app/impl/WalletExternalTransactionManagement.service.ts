@@ -15,7 +15,7 @@ import { WalletExternalTransactionDirection } from '@/common/constants/WalletExt
 import { WalletExternalTransactionRepository } from '@/modules/wallet/infra/repository/WalletExternalTransaction.repository';
 import { WalletExternalTransactionStatus } from '@/common/constants/WalletExternalTransactionStatus.constant';
 import { ConfirmDepositTransactionDto } from '@/common/dto/wallet/ConfirmDepositTransaction.dto';
-import { EntityManager, In, UpdateResult } from 'typeorm';
+import { In, UpdateResult } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service';
@@ -28,9 +28,9 @@ import {
   WALLET_DEPOSIT_CONFIRMED,
   WalletDepositConfirmedEvent,
 } from '@/modules/wallet/domain/events/WalletDepositConfirmed.event';
-import { ExternalTransactionAfterFinishAction } from '@/common/constants/ExternalTransactionAfterFinishAction.constant';
-import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
-import { IWalletTransactionManagementService } from '@/modules/wallet/app/IWalletTransactionManagement.service';
+import { CreateWithdrawTransactionDto } from '@/common/dto/wallet/CreateWithdrawTransaction.dto';
+import { ApproveWithdrawTransactionDto } from '@/common/dto/wallet/ApproveWithdrawTransaction.dto';
+import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
 
 @Injectable()
 export class WalletExternalTransactionManagementService
@@ -50,8 +50,6 @@ export class WalletExternalTransactionManagementService
     private readonly paymentGatewayPort: IPaymentGatewayPort,
     @Inject(IWalletActionService)
     private readonly walletActionService: IWalletActionService,
-    @Inject(IWalletTransactionManagementService)
-    private readonly walletTransactionHandlerService: IWalletTransactionManagementService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     super();
@@ -76,9 +74,6 @@ export class WalletExternalTransactionManagementService
       const wallet = await walletRepository.findByOwnedBy({
         ownedBy: dto.accountId,
       });
-      if (!wallet) {
-        throw new BadRequestException('Wallet not found for account');
-      }
 
       // check if user has exceeded max pending deposit transactions
       const pendingCount = await externalTransactionRepository.count({
@@ -134,20 +129,13 @@ export class WalletExternalTransactionManagementService
               provider: paymentDetails.provider,
             });
 
-            await externalTransactionRepository.update(
-              {
-                id: transaction.id,
-              },
-              transaction,
-            );
+            return externalTransactionRepository.save(transaction);
           } catch (error) {
             throw new InternalServerErrorException(
               'Failed to create payment',
               error as Error,
             );
           }
-
-          return transaction;
         })
         // record auditing timeline
         .then(async (transaction) => {
@@ -294,29 +282,178 @@ export class WalletExternalTransactionManagementService
 
       this.logger.debug('Processing after action for deposit transaction');
 
-      await this.processAfterAction(transaction, em);
-
       return updateResult;
     });
   }
 
-  private async processAfterAction(
-    transaction: WalletExternalTransactionEntity,
-    em: EntityManager,
-  ) {
-    switch (transaction.afterFinishAction) {
-      case ExternalTransactionAfterFinishAction.TRANSFER_TO_ESCROW: {
-        this.logger.debug('Transferring deposited funds to escrow wallet');
+  createWithdrawTransaction(
+    dto: CreateWithdrawTransactionDto,
+  ): Promise<WalletExternalTransactionResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const walletRepository = WalletRepository(em);
+      const externalTransactionRepository =
+        WalletExternalTransactionRepository(em);
+      const externalTransactionTimelineRepository =
+        WalletExternalTransactionTimelineRepository(em);
 
-        await this.walletTransactionHandlerService.transferFundsFromUserWallet({
-          entityManager: em,
-          destinationWalletId: DefaultSystemWallet.ESCROW,
-          sourceWalletId: transaction.walletId,
-          ownerId: transaction.createdById,
-          amountToTransfer: transaction.amount,
-          currency: transaction.currency,
+      const wallet = await walletRepository
+        .findByOwnedBy({
+          ownedBy: dto.accountId,
+        })
+        .then((wal) => {
+          if (wal.balance < dto.amountToWithdraw) {
+            throw new BadRequestException('Insufficient wallet balance');
+          }
+          return wal;
+        })
+        .then((wal) => {
+          if (!wal.canUpdateBalance()) {
+            throw new BadRequestException(
+              'Wallet balance cannot be updated at this time',
+            );
+          }
+          return wal;
         });
-      }
-    }
+
+      const externalTransaction =
+        WalletExternalTransactionEntity.createWithdrawTransaction({
+          walletId: wallet.id,
+          createdById: dto.accountId,
+          amount: dto.amountToWithdraw,
+          currency: dto.currency,
+        });
+
+      return await externalTransactionRepository
+        .save(externalTransaction)
+        // lock funds in wallet
+        .then(async (transaction) => {
+          await this.walletActionService.lockFunds({
+            amount: dto.amountToWithdraw,
+            walletId: wallet.id,
+            entityManager: em,
+            currency: dto.currency,
+          });
+
+          return transaction;
+        })
+        // record auditing timeline
+        .then(async (transaction) => {
+          await externalTransactionTimelineRepository.save(
+            externalTransactionTimelineRepository.create({
+              transactionId: transaction.id,
+              action:
+                WalletExternalTransactionAction.CREATE_WITHDRAW_AND_LOCK_FUNDS,
+              actorType: WalletExternalTransactionActor.PRIVATE_USER,
+              actorId: dto.accountId,
+              actorName: dto.accountName,
+              statusChangedTo: WalletExternalTransactionStatus.PENDING,
+              note: 'Created withdraw transaction and locked funds in wallet',
+            }),
+          );
+          return transaction;
+        })
+        // map to dto
+        .then((res) => this.mapTo(WalletExternalTransactionResponseDto, res));
+    });
+  }
+
+  approveWithdrawTransaction(
+    dto: ApproveWithdrawTransactionDto,
+  ): Promise<WalletExternalTransactionResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const externalTransactionRepository =
+        WalletExternalTransactionRepository(em);
+      const externalTransactionTimelineRepository =
+        WalletExternalTransactionTimelineRepository(em);
+
+      const transaction = await externalTransactionRepository
+        .findOneOrFail({
+          where: {
+            id: dto.transactionId,
+          },
+        })
+        .then(function checkCanProcess(tx) {
+          if (!tx.canBeProcessed()) {
+            throw new BadRequestException(
+              'You are not allowed to process this withdraw transaction',
+            );
+          }
+          return tx;
+        });
+
+      transaction.approveWithdraw();
+
+      return await externalTransactionRepository
+        .save(transaction)
+        // auditing timeline
+        .then(async (tx) => {
+          await externalTransactionTimelineRepository.save(
+            externalTransactionTimelineRepository.create({
+              transactionId: tx.id,
+              action:
+                WalletExternalTransactionAction.APPROVE_WITHDRAW_TRANSACTION,
+              actorType: WalletExternalTransactionActor.ADMIN,
+              actorId: dto.accountId,
+              actorName: dto.accountName,
+              statusChangedTo: WalletExternalTransactionStatus.APPROVED,
+              note: `Approved withdraw transaction`,
+            }),
+          );
+
+          return tx;
+        })
+        // map to dto
+        .then((res) => this.mapTo(WalletExternalTransactionResponseDto, res));
+    });
+  }
+
+  rejectWithdrawTransaction(
+    dto: RejectWithdrawTransactionDto,
+  ): Promise<WalletExternalTransactionResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const externalTransactionRepository =
+        WalletExternalTransactionRepository(em);
+      const externalTransactionTimelineRepository =
+        WalletExternalTransactionTimelineRepository(em);
+
+      const transaction = await externalTransactionRepository
+        .findOneOrFail({
+          where: {
+            id: dto.transactionId,
+          },
+        })
+        .then(function checkCanProcess(tx) {
+          if (!tx.canBeProcessed()) {
+            throw new BadRequestException(
+              'You are not allowed to process this withdraw transaction',
+            );
+          }
+          return tx;
+        });
+
+      transaction.approveWithdraw();
+
+      return await externalTransactionRepository
+        .save(transaction)
+        // auditing timeline
+        .then(async (tx) => {
+          await externalTransactionTimelineRepository.save(
+            externalTransactionTimelineRepository.create({
+              transactionId: tx.id,
+              action:
+                WalletExternalTransactionAction.APPROVE_WITHDRAW_TRANSACTION,
+              actorType: WalletExternalTransactionActor.ADMIN,
+              actorId: dto.accountId,
+              actorName: dto.accountName,
+              statusChangedTo: WalletExternalTransactionStatus.REJECTED,
+              note: `Rejected withdraw transaction. Reason: ${dto.rejectionReason}`,
+            }),
+          );
+
+          return tx;
+        })
+        // map to dto
+        .then((res) => this.mapTo(WalletExternalTransactionResponseDto, res));
+    });
   }
 }

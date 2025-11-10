@@ -139,4 +139,39 @@ export class WalletExternalTransactionEntity {
     this.status = WalletExternalTransactionStatus.COMPLETED;
     return this;
   }
+
+  public static createWithdrawTransaction(dto: {
+    amount: number;
+    walletId: string;
+    createdById: string;
+    currency: SupportedCurrency;
+  }) {
+    const externalTransaction = new WalletExternalTransactionEntity();
+    externalTransaction.amount = dto.amount;
+    externalTransaction.walletId = dto.walletId;
+    externalTransaction.createdById = dto.createdById;
+    externalTransaction.currency = dto.currency;
+
+    externalTransaction.direction = WalletExternalTransactionDirection.WITHDRAW;
+    externalTransaction.status = WalletExternalTransactionStatus.PENDING;
+
+    return externalTransaction;
+  }
+
+  public canBeProcessed(): boolean {
+    return (
+      this.status === WalletExternalTransactionStatus.PENDING &&
+      this.direction === WalletExternalTransactionDirection.WITHDRAW
+    );
+  }
+
+  public approveWithdraw(): WalletExternalTransactionEntity {
+    this.status = WalletExternalTransactionStatus.APPROVED;
+    return this;
+  }
+
+  public rejectWithdraw(): WalletExternalTransactionEntity {
+    this.status = WalletExternalTransactionStatus.REJECTED;
+    return this;
+  }
 }

@@ -2,6 +2,9 @@ import { CreateDepositTransactionDto } from '@/common/dto/wallet/CreateDepositTr
 import { WalletExternalTransactionResponseDto } from '@/common/dto/wallet/res/WalletExternalTransaction.response.dto';
 import { ConfirmDepositTransactionDto } from '@/common/dto/wallet/ConfirmDepositTransaction.dto';
 import { UpdateResult } from 'typeorm';
+import { CreateWithdrawTransactionDto } from '@/common/dto/wallet/CreateWithdrawTransaction.dto';
+import { ApproveWithdrawTransactionDto } from '@/common/dto/wallet/ApproveWithdrawTransaction.dto';
+import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
 
 export const IWalletExternalTransactionManagementService = Symbol(
   'IWalletExternalTransactionManagementService',
@@ -15,4 +18,15 @@ export interface IWalletExternalTransactionManagementService {
   confirmDepositTransaction(
     dto: ConfirmDepositTransactionDto,
   ): Promise<UpdateResult>;
+
+  // Withdrawal Transactions
+  createWithdrawTransaction(
+    dto: CreateWithdrawTransactionDto,
+  ): Promise<WalletExternalTransactionResponseDto>;
+  approveWithdrawTransaction(
+    dto: ApproveWithdrawTransactionDto,
+  ): Promise<WalletExternalTransactionResponseDto>;
+  rejectWithdrawTransaction(
+    dto: RejectWithdrawTransactionDto,
+  ): Promise<WalletExternalTransactionResponseDto>;
 }

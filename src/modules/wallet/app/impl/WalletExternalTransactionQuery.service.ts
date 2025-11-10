@@ -10,13 +10,19 @@ import { WalletExternalTransactionResponseDto } from '@/common/dto/wallet/res/Wa
 import { paginate, Paginated } from 'nestjs-paginate';
 import { WalletExternalTransactionRepository } from '@/modules/wallet/infra/repository/WalletExternalTransaction.repository';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
+import { GetAllExternalTransactionsDto } from '@/common/dto/wallet/GetAllExternalTransactions.dto';
+import { GetAnyExternalTransactionByIdDto } from '@/common/dto/wallet/GetAnyExternalTransactionById.dto';
 
 @Injectable()
 export class WalletExternalTransactionQueryService
   extends CoreService
   implements IWalletExternalTransactionQueryService
 {
-  getExternalTransactionByWalletIdAndId(
+  constructor() {
+    super();
+  }
+
+  getMyExternalTransactionById(
     dto: GetExternalTransactionByIdDto,
   ): Promise<WalletExternalTransactionResponseDto | null> {
     const walletExternalTransactionRepository =
@@ -36,7 +42,7 @@ export class WalletExternalTransactionQueryService
       .then((res) => this.mapTo(WalletExternalTransactionResponseDto, res));
   }
 
-  async getExternalTransactionsByWalletId(
+  async getMyExternalTransactions(
     dto: GetExternalTransactionsByWalletIdDto,
   ): Promise<Paginated<WalletExternalTransactionResponseDto>> {
     const walletRepository = WalletRepository(this.dataSource);
@@ -50,12 +56,42 @@ export class WalletExternalTransactionQueryService
     }
 
     return paginate(dto.query, walletExternalTransactionRepository, {
-      ...IWalletExternalTransactionQueryService_QueryConfig.getExternalTransactionsByWalletId(),
+      ...IWalletExternalTransactionQueryService_QueryConfig.getMyExternalTransactions(),
       where: {
         walletId: wallet.id,
       },
     }).then((res) =>
       this.mapToPaginated(WalletExternalTransactionResponseDto, res),
     );
+  }
+
+  async getAllExternalTransactions(
+    dto: GetAllExternalTransactionsDto,
+  ): Promise<Paginated<WalletExternalTransactionResponseDto>> {
+    const walletExternalTransactionRepository =
+      WalletExternalTransactionRepository(this.dataSource);
+
+    return paginate(dto.query, walletExternalTransactionRepository, {
+      ...IWalletExternalTransactionQueryService_QueryConfig.getAllExternalTransactions(),
+    }).then((res) =>
+      this.mapToPaginated(WalletExternalTransactionResponseDto, res),
+    );
+  }
+
+  getAnyExternalTransactionById(
+    dto: GetAnyExternalTransactionByIdDto,
+  ): Promise<WalletExternalTransactionResponseDto | null> {
+    const walletExternalTransactionRepository =
+      WalletExternalTransactionRepository(this.dataSource);
+    return walletExternalTransactionRepository
+      .findOne({
+        where: {
+          id: dto.transactionId,
+        },
+        relations: {
+          timeline: true,
+        },
+      })
+      .then((res) => this.mapTo(WalletExternalTransactionResponseDto, res));
   }
 }
