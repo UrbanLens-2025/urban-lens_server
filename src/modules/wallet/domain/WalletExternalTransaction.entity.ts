@@ -15,6 +15,7 @@ import { WalletExternalTransactionTimelineEntity } from '@/modules/wallet/domain
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { SupportedPaymentProviders } from '@/common/constants/SupportedPaymentProviders.constant';
 import { ExternalTransactionAfterFinishAction } from '@/common/constants/ExternalTransactionAfterFinishAction.constant';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Entity({ name: WalletExternalTransactionEntity.TABLE_NAME })
 export class WalletExternalTransactionEntity {
@@ -82,6 +83,12 @@ export class WalletExternalTransactionEntity {
   @Column({ name: 'created_by', type: 'uuid' })
   createdById: string;
 
+  @ManyToOne(() => AccountEntity, (account) => account.id, {
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: AccountEntity;
+
   @Column({
     name: 'after_finish_action',
     type: 'varchar',
@@ -89,6 +96,30 @@ export class WalletExternalTransactionEntity {
     default: ExternalTransactionAfterFinishAction.NONE,
   })
   afterFinishAction: ExternalTransactionAfterFinishAction;
+
+  @Column({
+    name: 'withdraw_bank_name',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
+  withdrawBankName: string | null;
+
+  @Column({
+    name: 'withdraw_bank_account_number',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
+  withdrawBankAccountNumber: string | null;
+
+  @Column({
+    name: 'withdraw_bank_account_name',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  withdrawBankAccountName: string | null;
 
   @OneToMany(
     () => WalletExternalTransactionTimelineEntity,
@@ -145,12 +176,18 @@ export class WalletExternalTransactionEntity {
     walletId: string;
     createdById: string;
     currency: SupportedCurrency;
+    withdrawBankName: string;
+    withdrawBankAccountNumber: string;
+    withdrawBankAccountName: string;
   }) {
     const externalTransaction = new WalletExternalTransactionEntity();
     externalTransaction.amount = dto.amount;
     externalTransaction.walletId = dto.walletId;
     externalTransaction.createdById = dto.createdById;
     externalTransaction.currency = dto.currency;
+    externalTransaction.withdrawBankName = dto.withdrawBankName;
+    externalTransaction.withdrawBankAccountNumber = dto.withdrawBankAccountNumber;
+    externalTransaction.withdrawBankAccountName = dto.withdrawBankAccountName;
 
     externalTransaction.direction = WalletExternalTransactionDirection.WITHDRAW;
     externalTransaction.status = WalletExternalTransactionStatus.PENDING;

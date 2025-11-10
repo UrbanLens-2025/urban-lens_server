@@ -324,6 +324,9 @@ export class WalletExternalTransactionManagementService
           createdById: dto.accountId,
           amount: dto.amountToWithdraw,
           currency: dto.currency,
+          withdrawBankName: dto.withdrawBankName,
+          withdrawBankAccountNumber: dto.withdrawBankAccountNumber,
+          withdrawBankAccountName: dto.withdrawBankAccountName,
         });
 
       return await externalTransactionRepository

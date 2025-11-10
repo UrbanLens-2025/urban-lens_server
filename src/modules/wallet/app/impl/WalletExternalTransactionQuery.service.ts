@@ -90,6 +90,7 @@ export class WalletExternalTransactionQueryService
         },
         relations: {
           timeline: true,
+          createdBy: true,
         },
       })
       .then((res) => this.mapTo(WalletExternalTransactionResponseDto, res));

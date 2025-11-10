@@ -48,6 +48,9 @@ export namespace IWalletExternalTransactionQueryService_QueryConfig {
       filterableColumns: {
         status: true,
       },
+      relations: {
+        createdBy: true,
+      }
     };
   }
 }
