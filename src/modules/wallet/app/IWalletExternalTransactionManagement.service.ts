@@ -5,6 +5,7 @@ import { UpdateResult } from 'typeorm';
 import { CreateWithdrawTransactionDto } from '@/common/dto/wallet/CreateWithdrawTransaction.dto';
 import { StartProcessingWithdrawTransactionDto } from '@/common/dto/wallet/StartProcessingWithdrawTransaction.dto';
 import { CompleteProcessingWithdrawTransactionDto } from '@/common/dto/wallet/CompleteProcessingWithdrawTransaction.dto';
+import { MarkTransferFailedDto } from '@/common/dto/wallet/MarkTransferFailed.dto';
 import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
 import { CancelWithdrawTransactionDto } from '@/common/dto/wallet/CancelWithdrawTransaction.dto';
 
@@ -30,6 +31,9 @@ export interface IWalletExternalTransactionManagementService {
   ): Promise<WalletExternalTransactionResponseDto>;
   completeProcessingWithdrawTransaction(
     dto: CompleteProcessingWithdrawTransactionDto,
+  ): Promise<WalletExternalTransactionResponseDto>;
+  markTransferFailed(
+    dto: MarkTransferFailedDto,
   ): Promise<WalletExternalTransactionResponseDto>;
   rejectWithdrawTransaction(
     dto: RejectWithdrawTransactionDto,

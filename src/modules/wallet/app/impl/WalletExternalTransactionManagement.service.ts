@@ -31,6 +31,7 @@ import {
 import { CreateWithdrawTransactionDto } from '@/common/dto/wallet/CreateWithdrawTransaction.dto';
 import { StartProcessingWithdrawTransactionDto } from '@/common/dto/wallet/StartProcessingWithdrawTransaction.dto';
 import { CompleteProcessingWithdrawTransactionDto } from '@/common/dto/wallet/CompleteProcessingWithdrawTransaction.dto';
+import { MarkTransferFailedDto } from '@/common/dto/wallet/MarkTransferFailed.dto';
 import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
 import { CancelWithdrawTransactionDto } from '@/common/dto/wallet/CancelWithdrawTransaction.dto';
 
@@ -461,6 +462,64 @@ export class WalletExternalTransactionManagementService
           actorName: dto.accountName,
           statusChangedTo: WalletExternalTransactionStatus.TRANSFERRED,
           note: `Completed processing withdraw transaction. Funds permanently removed.`,
+        }),
+      );
+
+      return this.mapTo(WalletExternalTransactionResponseDto, transaction);
+    });
+  }
+
+  markTransferFailed(
+    dto: MarkTransferFailedDto,
+  ): Promise<WalletExternalTransactionResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const externalTransactionRepository =
+        WalletExternalTransactionRepository(em);
+      const externalTransactionTimelineRepository =
+        WalletExternalTransactionTimelineRepository(em);
+
+      // Atomic update: only update if status is PROCESSING
+      const transaction = await externalTransactionRepository.findOne({
+        where: {
+          id: dto.transactionId,
+          status: WalletExternalTransactionStatus.PROCESSING,
+        },
+      });
+
+      if (!transaction) {
+        throw new BadRequestException(
+          'Transaction is not in PROCESSING status. It may have been cancelled or already completed.',
+        );
+      }
+
+      if (!transaction.canMarkTransferFailed()) {
+        throw new BadRequestException(
+          'You are not allowed to mark this transaction as transfer failed',
+        );
+      }
+
+      transaction.markTransferFailed();
+
+      await externalTransactionRepository.save(transaction);
+
+      // Unlock funds since transfer failed
+      await this.walletActionService.unlockFunds({
+        entityManager: em,
+        walletId: transaction.walletId,
+        amount: transaction.amount,
+        currency: transaction.currency,
+      });
+
+      // Record timeline
+      await externalTransactionTimelineRepository.save(
+        externalTransactionTimelineRepository.create({
+          transactionId: transaction.id,
+          action: WalletExternalTransactionAction.MARK_TRANSFER_FAILED,
+          actorType: WalletExternalTransactionActor.ADMIN,
+          actorId: dto.accountId,
+          actorName: dto.accountName,
+          statusChangedTo: WalletExternalTransactionStatus.TRANSFER_FAILED,
+          note: `Transfer failed. Reason: ${dto.failureReason}. Funds unlocked.`,
         }),
       );
 

@@ -179,6 +179,13 @@ export class WalletExternalTransactionEntity {
     );
   }
 
+  public canMarkTransferFailed(): boolean {
+    return (
+      this.status === WalletExternalTransactionStatus.PROCESSING &&
+      this.direction === WalletExternalTransactionDirection.WITHDRAW
+    );
+  }
+
   public startProcessing(): WalletExternalTransactionEntity {
     this.status = WalletExternalTransactionStatus.PROCESSING;
     return this;
@@ -186,6 +193,11 @@ export class WalletExternalTransactionEntity {
 
   public completeProcessing(): WalletExternalTransactionEntity {
     this.status = WalletExternalTransactionStatus.TRANSFERRED;
+    return this;
+  }
+
+  public markTransferFailed(): WalletExternalTransactionEntity {
+    this.status = WalletExternalTransactionStatus.TRANSFER_FAILED;
     return this;
   }
 

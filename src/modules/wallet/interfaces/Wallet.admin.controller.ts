@@ -22,6 +22,7 @@ import {
   type PaginateQuery,
 } from 'nestjs-paginate';
 import { IWalletExternalTransactionManagementService } from '@/modules/wallet/app/IWalletExternalTransactionManagement.service';
+import { MarkTransferFailedDto } from '@/common/dto/wallet/MarkTransferFailed.dto';
 import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
@@ -109,6 +110,21 @@ export class WalletAdminController {
         accountName: user.email,
       },
     );
+  }
+
+  @ApiOperation({ summary: 'Mark transfer as failed' })
+  @Post('/transactions/external/:transactionId/mark-transfer-failed')
+  markTransferFailed(
+    @Param('transactionId', ParseUUIDPipe) transactionId: string,
+    @Body() dto: MarkTransferFailedDto,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.walletExternalTransactionManagementService.markTransferFailed({
+      ...dto,
+      transactionId,
+      accountId: user.sub,
+      accountName: user.email,
+    });
   }
 
   @ApiOperation({ summary: 'Reject withdraw transaction' })
