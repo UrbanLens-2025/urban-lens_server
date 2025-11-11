@@ -8,7 +8,13 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import {
@@ -25,6 +31,7 @@ import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { UpdateLocationDto } from '@/common/dto/business/UpdateLocation.dto';
 import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
 import { CreatePublicLocationDto } from '@/common/dto/business/CreatePublicLocation.dto';
+import { CreateBatchPublicLocationDto } from '@/common/dto/business/CreateBatchPublicLocation.dto';
 
 @ApiTags('Location')
 @Controller('/admin/locations')
@@ -81,5 +88,32 @@ export class LocationAdminController {
       ...dto,
       accountId: userDto.sub,
     });
+  }
+
+  @ApiOperation({ summary: 'Create many public locations' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: { $ref: getSchemaPath(CreatePublicLocationDto) },
+        },
+      },
+    },
+  })
+  @Post('/public/batch')
+  createManyPublicLocations(
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dtos: CreateBatchPublicLocationDto,
+  ) {
+    return Promise.allSettled(
+      dtos.items.map((dto) => {
+        return this.locationManagementService.createPublicLocation({
+          ...dto,
+          accountId: userDto.sub,
+        });
+      }),
+    );
   }
 }
