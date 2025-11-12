@@ -86,6 +86,9 @@ export class EventManagementService
           id: dto.eventId,
           createdById: dto.accountId,
         },
+        relations: {
+          ticketOrders: true,
+        },
       });
 
       if (!event.canBeFinished()) {
@@ -96,23 +99,35 @@ export class EventManagementService
 
       // TODO: Add more conditions here
 
-      // Trigger payout process to event owner after 1 week cooldown
-      const now = dayjs();
-      const executeAt = now
-        .add(this.MILLIS_TO_EVENT_PAYOUT, 'milliseconds')
-        .toDate();
-      const job = await this.scheduledJobService.createScheduledJob({
-        entityManager: em,
-        executeAt,
-        jobType: ScheduledJobType.EVENT_PAYOUT,
-        payload: {
-          eventId: event.id,
+      const totalRevenueFromTickets = event.ticketOrders.reduce(
+        (sum, order) => {
+          return sum + Number(order.totalPaymentAmount);
         },
-      });
+        0,
+      );
+
+      if (totalRevenueFromTickets > 0) {
+        // Trigger payout process to event owner after 1 week cooldown
+        const now = dayjs();
+        const executeAt = now
+          .add(this.MILLIS_TO_EVENT_PAYOUT, 'milliseconds')
+          .toDate();
+        const job = await this.scheduledJobService.createScheduledJob({
+          entityManager: em,
+          executeAt,
+          jobType: ScheduledJobType.EVENT_PAYOUT,
+          payload: {
+            eventId: event.id,
+          },
+        });
+        event.scheduledJobId = job.id;
+      } else {
+        event.hasPaidOut = true;
+        event.scheduledJobId = null;
+      }
 
       // save
       event.status = EventStatus.FINISHED;
-      event.scheduledJobId = job.id;
 
       return await eventRepository
         .save(event)
