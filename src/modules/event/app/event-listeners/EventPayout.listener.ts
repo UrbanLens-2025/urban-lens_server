@@ -72,6 +72,22 @@ export class EventPayoutListener extends CoreService {
         return sum + Number(order.totalPaymentAmount);
       }, 0);
 
+      if (totalRevenueFromTickets === 0) {
+        this.logger.log(
+          `No revenue generated for Event ID ${eventId}. Skipping payout process.`,
+        );
+        await scheduledJobRepository.update(
+          {
+            id: dto.jobId,
+          },
+          {
+            status: ScheduledJobStatus.COMPLETED,
+          },
+        );
+        await eventRepository.update({ id: event.id }, { hasPaidOut: true });
+        return;
+      }
+
       const payoutAmountToSystem =
         totalRevenueFromTickets * this.SYSTEM_CUT_PERCENTAGE;
       const payoutAmountToEventCreator =
