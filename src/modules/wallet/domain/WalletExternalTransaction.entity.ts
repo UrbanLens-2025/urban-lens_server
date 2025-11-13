@@ -145,7 +145,8 @@ export class WalletExternalTransactionEntity {
     externalTransaction.expiresAt = dayjs().add(15, 'minutes').toDate();
 
     externalTransaction.direction = WalletExternalTransactionDirection.DEPOSIT;
-    externalTransaction.status = WalletExternalTransactionStatus.READY_FOR_PAYMENT;
+    externalTransaction.status =
+      WalletExternalTransactionStatus.READY_FOR_PAYMENT;
 
     return externalTransaction;
   }
@@ -188,7 +189,8 @@ export class WalletExternalTransactionEntity {
     externalTransaction.createdById = dto.createdById;
     externalTransaction.currency = dto.currency;
     externalTransaction.withdrawBankName = dto.withdrawBankName;
-    externalTransaction.withdrawBankAccountNumber = dto.withdrawBankAccountNumber;
+    externalTransaction.withdrawBankAccountNumber =
+      dto.withdrawBankAccountNumber;
     externalTransaction.withdrawBankAccountName = dto.withdrawBankAccountName;
 
     externalTransaction.direction = WalletExternalTransactionDirection.WITHDRAW;
@@ -204,10 +206,17 @@ export class WalletExternalTransactionEntity {
     );
   }
 
-  public canBeCancelled(): boolean {
+  public canBeCancelledWithdraw(): boolean {
     return (
       this.status === WalletExternalTransactionStatus.PENDING &&
       this.direction === WalletExternalTransactionDirection.WITHDRAW
+    );
+  }
+
+  public canBeCancelledDeposit(): boolean {
+    return (
+      this.status === WalletExternalTransactionStatus.READY_FOR_PAYMENT &&
+      this.direction === WalletExternalTransactionDirection.DEPOSIT
     );
   }
 
@@ -243,5 +252,12 @@ export class WalletExternalTransactionEntity {
   public rejectWithdraw(): WalletExternalTransactionEntity {
     this.status = WalletExternalTransactionStatus.REJECTED;
     return this;
+  }
+
+  public canStartPaymentSession(): boolean {
+    return (
+      this.status === WalletExternalTransactionStatus.READY_FOR_PAYMENT &&
+      this.direction === WalletExternalTransactionDirection.DEPOSIT
+    );
   }
 }
