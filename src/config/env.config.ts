@@ -55,7 +55,11 @@ export interface Environment {
   PAYMENT_MOCK_HASH: string;
   PAYMENT_ALLOW_MOCK_HASH: boolean;
 
-  GOOGLE_MAPS_API_KEY: string;
+  GOOGLE_MAPS_API_KEY?: string;
+
+  OLLAMA_ENABLED: boolean;
+  OLLAMA_HOST?: string;
+  OLLAMA_MODEL?: string;
 
   MILLIS_TO_EVENT_PAYOUT: number;
 
@@ -121,7 +125,11 @@ export const envConfig = joi.object<Environment>({
     .default('MOCK_SECURE_HASH_FOR_TESTING_PURPOSES'),
   PAYMENT_ALLOW_MOCK_HASH: joi.boolean().default(false),
 
-  GOOGLE_MAPS_API_KEY: joi.string().required(),
+  GOOGLE_MAPS_API_KEY: joi.string().optional(),
+
+  OLLAMA_ENABLED: joi.boolean().default(false),
+  OLLAMA_HOST: joi.string().default('http://localhost:11434'),
+  OLLAMA_MODEL: joi.string().default('llama3.2'),
 
   MILLIS_TO_EVENT_PAYOUT: joi.number().default(1000 * 60 * 60 * 24 * 7), // 7 days
 

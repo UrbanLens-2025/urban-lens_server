@@ -18,6 +18,8 @@ import { EventRepository } from '@/modules/event/infra/repository/Event.reposito
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { EventStatus } from '@/common/constants/EventStatus.constant';
 import { EventTagsRepository } from '@/modules/event/infra/repository/EventTags.repository';
+import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
+import { CategoryType } from '@/common/constants/CategoryType.constant';
 
 @Injectable()
 export class EventRequestManagementService
@@ -42,11 +44,25 @@ export class EventRequestManagementService
       const tagRepository = TagRepositoryProvider(em);
       const eventRequestTagRepository = EventRequestTagsRepository(em);
 
-      // validate tags
-      const tags = await tagRepository.countSelectableTagsById(dto.tagIds);
-      if (tags !== dto.tagIds.length) {
+      // Convert categories to tags
+      const finalTagIds = await mergeTagsWithCategories(
+        [], // No manual tags
+        dto.categoryIds,
+        CategoryType.EVENT,
+        this.dataSource,
+      );
+
+      if (finalTagIds.length === 0) {
         throw new BadRequestException(
-          'One or more tags are invalid. Please check tag visibility.',
+          'Selected categories do not contain any valid tags',
+        );
+      }
+
+      // validate tags
+      const tags = await tagRepository.countSelectableTagsById(finalTagIds);
+      if (tags !== finalTagIds.length) {
+        throw new BadRequestException(
+          'One or more tags from categories are invalid. Please check tag visibility.',
         );
       }
 
@@ -79,7 +95,7 @@ export class EventRequestManagementService
             savedEventRequest.tags =
               await eventRequestTagRepository.persistEntities({
                 eventRequestId: savedEventRequest.id,
-                tagIds: dto.tagIds,
+                tagIds: finalTagIds,
               });
             return savedEventRequest;
           })

@@ -11,11 +11,14 @@ interface Tag {
   group_name: string;
 }
 
+type CategoryType = 'USER' | 'LOCATION' | 'EVENT' | 'ALL';
+
 interface TagCategory {
   name: string;
   description: string;
   color: string;
   icon: string;
+  applicableTypes: CategoryType[]; // Changed from single to array
   tagScoreWeights: Record<string, number>;
 }
 
@@ -76,8 +79,23 @@ async function generateTagCategories() {
         END IF;
       END $$;
       
+      -- Add applicable_types column if not exists
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_schema = '${schema}' 
+          AND table_name = 'tag_category' 
+          AND column_name = 'applicable_types'
+        ) THEN
+          ALTER TABLE ${schema}.tag_category ADD COLUMN applicable_types JSONB DEFAULT '["USER"]'::jsonb;
+        END IF;
+      END $$;
+      
       CREATE INDEX IF NOT EXISTS idx_tag_category_weights 
       ON ${schema}.tag_category USING gin(tag_score_weights);
+      CREATE INDEX IF NOT EXISTS idx_tag_category_applicable_types 
+      ON ${schema}.tag_category USING gin(applicable_types);
     `);
     console.log('✅ Table created/updated');
 
@@ -105,12 +123,13 @@ async function generateTagCategories() {
 
       await client.query(
         `
-        INSERT INTO ${schema}.tag_category (name, description, color, icon, tag_score_weights)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO ${schema}.tag_category (name, description, color, icon, applicable_types, tag_score_weights)
+        VALUES ($1, $2, $3, $4, $5, $6)
         ON CONFLICT (name) DO UPDATE SET
           description = EXCLUDED.description,
           color = EXCLUDED.color,
           icon = EXCLUDED.icon,
+          applicable_types = EXCLUDED.applicable_types,
           tag_score_weights = EXCLUDED.tag_score_weights,
           updated_at = CURRENT_TIMESTAMP
         `,
@@ -119,6 +138,7 @@ async function generateTagCategories() {
           category.description,
           category.color,
           category.icon,
+          JSON.stringify(category.applicableTypes),
           JSON.stringify(category.tagScoreWeights),
         ],
       );
@@ -128,14 +148,17 @@ async function generateTagCategories() {
 
     // Verify results
     const verifyResult = await client.query(
-      `SELECT id, name, description, color, icon, tag_score_weights FROM ${schema}.tag_category ORDER BY id`,
+      `SELECT id, name, description, color, icon, applicable_types, tag_score_weights FROM ${schema}.tag_category ORDER BY id`,
     );
 
     console.log(
       `\n\n✅ Successfully created ${verifyResult.rows.length} tag categories:`,
     );
     verifyResult.rows.forEach((row) => {
-      console.log(`\n[${row.id}] ${row.icon} ${row.name}`);
+      const types = Array.isArray(row.applicable_types)
+        ? row.applicable_types.join(', ')
+        : JSON.stringify(row.applicable_types);
+      console.log(`\n[${row.id}] ${row.icon} ${row.name} (${types})`);
       console.log(`   ${row.description}`);
       console.log(`   Color: ${row.color}`);
       console.log(`   Weights:`, row.tag_score_weights);
@@ -336,13 +359,15 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
   });
 
   // Generate categories with positive and negative weights
+  // All categories are USER type by default (for user preferences/onboarding)
   if (quietTags.length > 0) {
     categories.push({
-      name: 'Thích yên tĩnh',
+      name: 'Quiet & Peaceful',
       description:
-        'Ưa thích những địa điểm yên tĩnh, thư giãn, gần thiên nhiên',
+        'Prefer quiet, peaceful places close to nature and relaxation',
       color: '#4CAF50',
       icon: '🌿',
+      applicableTypes: ['USER', 'LOCATION'], // For user preferences and location categorization
       tagScoreWeights: {
         ...createWeights(quietTags, 10),
         ...createWeights(natureTags.slice(0, 3), 8),
@@ -353,10 +378,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (livelyTags.length > 0) {
     categories.push({
-      name: 'Thích sôi động',
-      description: 'Ưa thích những địa điểm sôi động, vui vẻ, đông người',
+      name: 'Lively & Energetic',
+      description: 'Prefer lively, energetic, and crowded venues',
       color: '#FF5722',
       icon: '🎉',
+      applicableTypes: ['USER', 'LOCATION', 'EVENT'], // Suitable for all contexts
       tagScoreWeights: {
         ...createWeights(livelyTags, 10),
         ...createWeights(musicTags.slice(0, 2), 8),
@@ -368,11 +394,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (natureTags.length > 0) {
     categories.push({
-      name: 'Ưa thiên nhiên',
-      description:
-        'Yêu thích cảnh quan thiên nhiên, không gian xanh, hoạt động ngoài trời',
+      name: 'Nature Lover',
+      description: 'Love nature, green spaces, and outdoor activities',
       color: '#8BC34A',
       icon: '🌳',
+      applicableTypes: ['USER', 'LOCATION', 'EVENT'], // Parks, outdoor events, hiking
       tagScoreWeights: {
         ...createWeights(natureTags, 10),
         ...createWeights(sportTags.slice(0, 2), 7),
@@ -385,10 +411,12 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (cultureTags.length > 0) {
     categories.push({
-      name: 'Thích văn hóa - lịch sử',
-      description: 'Quan tâm đến văn hóa, lịch sử, di tích, bảo tàng',
+      name: 'Culture & History',
+      description:
+        'Interested in culture, history, heritage sites, and museums',
       color: '#795548',
       icon: '🏛️',
+      applicableTypes: ['USER', 'LOCATION', 'EVENT'], // Museums, heritage sites, cultural events
       tagScoreWeights: {
         ...createWeights(cultureTags, 10),
         ...createWeights(artTags.slice(0, 2), 8),
@@ -400,10 +428,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (foodTags.length > 0) {
     categories.push({
-      name: 'Thích ẩm thực',
-      description: 'Đam mê khám phá ẩm thực, quán ăn, cafe',
+      name: 'Foodie',
+      description: 'Passionate about exploring food, restaurants, and cafés',
       color: '#FF9800',
       icon: '🍜',
+      applicableTypes: ['USER', 'LOCATION', 'EVENT'], // Restaurants, cafes, food festivals
       tagScoreWeights: {
         ...createWeights(foodTags, 10),
         ...createWeights(shoppingTags.slice(0, 2), 6),
@@ -415,10 +444,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (sportTags.length > 0) {
     categories.push({
-      name: 'Thích hoạt động thể thao',
-      description: 'Yêu thích các hoạt động thể thao, vận động, năng động',
+      name: 'Sports & Fitness',
+      description: 'Love sports activities, fitness, and active lifestyle',
       color: '#2196F3',
       icon: '💪',
+      applicableTypes: ['USER', 'LOCATION', 'EVENT'], // Gyms, stadiums, sports events
       tagScoreWeights: {
         ...createWeights(sportTags, 10),
         ...createWeights(natureTags.slice(0, 2), 8),
@@ -429,10 +459,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (artTags.length > 0) {
     categories.push({
-      name: 'Thích nghệ thuật',
-      description: 'Yêu thích nghệ thuật, triển lãm, không gian sáng tạo',
+      name: 'Art Enthusiast',
+      description: 'Love art, exhibitions, and creative spaces',
       color: '#9C27B0',
       icon: '🎨',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(artTags, 10),
         ...createWeights(cultureTags.slice(0, 2), 8),
@@ -444,11 +475,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (shoppingTags.length > 0) {
     categories.push({
-      name: 'Thích mua sắm',
-      description:
-        'Yêu thích mua sắm, khám phá các cửa hàng, chợ, trung tâm thương mại',
+      name: 'Shopping Lover',
+      description: 'Enjoy shopping, exploring stores, markets, and malls',
       color: '#E91E63',
       icon: '🛍️',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(shoppingTags, 10),
         ...createWeights(foodTags.slice(0, 2), 7),
@@ -460,10 +491,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
   // New categories
   if (musicTags.length > 0) {
     categories.push({
-      name: 'Yêu âm nhạc',
-      description: 'Đam mê âm nhạc, hòa nhạc, biểu diễn trực tiếp',
+      name: 'Music Lover',
+      description: 'Passionate about music, concerts, and live performances',
       color: '#F44336',
       icon: '🎵',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(musicTags, 10),
         ...createWeights(livelyTags.slice(0, 2), 8),
@@ -475,10 +507,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (techTags.length > 0) {
     categories.push({
-      name: 'Đam mê công nghệ',
-      description: 'Yêu thích công nghệ, startup, không gian làm việc hiện đại',
+      name: 'Tech Enthusiast',
+      description: 'Love technology, startups, and modern workspaces',
       color: '#607D8B',
       icon: '💻',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(techTags, 10),
         ...createWeights(modernTags.slice(0, 2), 8),
@@ -490,10 +523,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (romanticTags.length > 0) {
     categories.push({
-      name: 'Tìm không gian lãng mạn',
-      description: 'Ưa thích những địa điểm lãng mạn, sang trọng, view đẹp',
+      name: 'Romantic Seeker',
+      description: 'Prefer romantic, luxurious venues with great views',
       color: '#E91E63',
       icon: '💕',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(romanticTags, 10),
         ...createWeights(foodTags.slice(0, 2), 8),
@@ -506,10 +540,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (familyTags.length > 0) {
     categories.push({
-      name: 'Thân thiện gia đình',
-      description: 'Phù hợp cho gia đình, trẻ em, thú cưng',
+      name: 'Family Friendly',
+      description: 'Suitable for families, children, and pets',
       color: '#FFEB3B',
       icon: '👨‍👩‍👧‍👦',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(familyTags, 10),
         ...createWeights(natureTags.slice(0, 2), 8),
@@ -522,10 +557,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (vintageTags.length > 0) {
     categories.push({
-      name: 'Phong cách cổ điển',
-      description: 'Yêu thích phong cách vintage, retro, bohemian',
+      name: 'Vintage Style',
+      description: 'Love vintage, retro, and bohemian styles',
       color: '#8D6E63',
       icon: '📻',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(vintageTags, 10),
         ...createWeights(artTags.slice(0, 2), 8),
@@ -538,10 +574,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (modernTags.length > 0) {
     categories.push({
-      name: 'Phong cách hiện đại',
-      description: 'Ưa thích thiết kế hiện đại, tối giản, công nghiệp',
+      name: 'Modern Style',
+      description: 'Prefer modern, minimalist, and industrial design',
       color: '#9E9E9E',
       icon: '🏢',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(modernTags, 10),
         ...createWeights(techTags.slice(0, 2), 8),
@@ -553,10 +590,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (socialTags.length > 0) {
     categories.push({
-      name: 'Thích giao lưu - networking',
-      description: 'Yêu thích các sự kiện gặp gỡ, workshop, networking',
+      name: 'Social Butterfly',
+      description: 'Enjoy networking events, workshops, and meetups',
       color: '#00BCD4',
       icon: '🤝',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(socialTags, 10),
         ...createWeights(techTags.slice(0, 2), 8),
@@ -568,10 +606,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (entertainmentTags.length > 0) {
     categories.push({
-      name: 'Thích giải trí',
-      description: 'Yêu thích game, phim ảnh, các hoạt động giải trí',
+      name: 'Entertainment Seeker',
+      description: 'Love games, movies, and entertainment activities',
       color: '#FFC107',
       icon: '🎮',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(entertainmentTags, 10),
         ...createWeights(livelyTags.slice(0, 2), 7),
@@ -583,10 +622,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (vegetarianTags.length > 0) {
     categories.push({
-      name: 'Ăn chay - Healthy lifestyle',
-      description: 'Ưa thích đồ ăn chay, lối sống lành mạnh',
+      name: 'Healthy Lifestyle',
+      description: 'Prefer vegetarian food and healthy living',
       color: '#8BC34A',
       icon: '🥗',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(vegetarianTags, 10),
         ...createWeights(sportTags.slice(0, 2), 8),
@@ -598,10 +638,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
 
   if (sightseeingTags.length > 0) {
     categories.push({
-      name: 'Thích tham quan du lịch',
-      description: 'Yêu thích khám phá, tham quan các địa điểm mới',
+      name: 'Travel & Sightseeing',
+      description: 'Love exploring and discovering new places',
       color: '#03A9F4',
       icon: '📸',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: {
         ...createWeights(sightseeingTags, 10),
         ...createWeights(cultureTags.slice(0, 2), 8),
@@ -615,10 +656,11 @@ function analyzeAndGenerateCategories(tags: Tag[]): TagCategory[] {
   if (categories.length === 0 && tags.length > 0) {
     const topTags = tags.slice(0, 5).map((t) => t.id);
     categories.push({
-      name: 'Khám phá đa dạng',
-      description: 'Thích khám phá nhiều loại địa điểm khác nhau',
+      name: 'Diverse Explorer',
+      description: 'Enjoy exploring diverse types of places',
       color: '#9C27B0',
       icon: '🌟',
+      applicableTypes: ['USER', 'LOCATION'], // User preference and location type
       tagScoreWeights: createWeights(topTags, 8),
     });
   }

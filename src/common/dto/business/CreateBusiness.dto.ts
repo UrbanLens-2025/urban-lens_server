@@ -1,5 +1,5 @@
-import { BusinessCategory } from '@/common/constants/Business.constant';
 import { ApiProperty } from '@nestjs/swagger';
+import { BusinessCategory } from '@/common/constants/Business.constant';
 import {
   ArrayNotEmpty,
   IsArray,

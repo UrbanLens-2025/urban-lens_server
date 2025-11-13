@@ -52,4 +52,21 @@ export class LocationRepository implements ILocationRepository {
 
     return query.getMany();
   }
+
+  async findByIds(locationIds: string[]): Promise<LocationEntity[]> {
+    if (locationIds.length === 0) {
+      return [];
+    }
+
+    return this.locationRepo
+      .createQueryBuilder('location')
+      .leftJoinAndSelect('location.tags', 'tags')
+      .leftJoinAndSelect('tags.tag', 'tag')
+      .leftJoinAndSelect('location.analytics', 'analytics')
+      .where('location.id IN (:...ids)', { ids: locationIds })
+      .andWhere('location.isVisibleOnMap = :isVisibleOnMap', {
+        isVisibleOnMap: true,
+      })
+      .getMany();
+  }
 }

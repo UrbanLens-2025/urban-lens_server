@@ -136,6 +136,18 @@ export class ReviewWorkerController {
       Array.from(tagScoresMap.values()),
     );
 
+    // Aggregate location ratings for analytics update
+    const locationReviews = new Map<string, number[]>();
+    batch.forEach((message) => {
+      if (!locationReviews.has(message.locationId)) {
+        locationReviews.set(message.locationId, []);
+      }
+      locationReviews.get(message.locationId)!.push(message.rating);
+    });
+
+    // Update location analytics
+    await this.reviewService.updateLocationAnalytics(locationReviews);
+
     this.logger.log('='.repeat(60));
     this.logger.log(`✅ Review batch processed for user ${userId}\n`);
 

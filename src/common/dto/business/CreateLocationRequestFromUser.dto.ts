@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsPositive,
@@ -61,10 +62,14 @@ export class CreateLocationRequestFromUserDto {
   @IsNotEmpty({ each: true })
   locationImageUrls: string[] = [];
 
-  @ApiProperty({ isArray: true, type: Number, example: [1, 2, 3] })
+  @ApiProperty({
+    isArray: true,
+    type: Number,
+    example: [55, 56, 57],
+    description: 'Array of category IDs (LOCATION type categories)',
+  })
   @IsArray()
   @ArrayNotEmpty()
-  @IsNumber({}, { each: true })
-  @IsNotEmpty({ each: true })
-  tagIds: number[];
+  @IsInt({ each: true })
+  categoryIds: number[];
 }

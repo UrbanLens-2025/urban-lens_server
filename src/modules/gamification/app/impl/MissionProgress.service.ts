@@ -1,6 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { IMissionProgressService } from '../IMissionProgress.service';
-import { LocationMissionMetric } from '../../domain/LocationMission.entity';
 import { LocationMissionRepository } from '@/modules/gamification/infra/repository/LocationMission.repository';
 import { UserMissionProgressRepository } from '@/modules/gamification/infra/repository/UserMissionProgress.repository';
 import { IUserPointsService } from '../IUserPoints.service';
@@ -18,10 +17,13 @@ export class MissionProgressService implements IMissionProgressService {
     private readonly checkInMissionService: ICheckInMissionService,
   ) {}
 
+  /**
+   * Update mission progress for check-in
+   * Now only tracks check-ins, no other metrics
+   */
   async updateMissionProgress(
     userId: string,
     locationId: string,
-    metric: LocationMissionMetric,
     referenceId?: string,
   ): Promise<void> {
     try {
@@ -36,12 +38,11 @@ export class MissionProgressService implements IMissionProgressService {
         return;
       }
 
-      // Tìm các mission active cho location này với metric tương ứng
+      // Tìm các mission active cho location này
       const now = new Date();
       const missions = await this.locationMissionRepository.repo
         .createQueryBuilder('mission')
         .where('mission.locationId = :locationId', { locationId })
-        .andWhere('mission.metric = :metric', { metric })
         .andWhere('mission.startDate <= :now', { now })
         .andWhere('mission.endDate >= :now', { now })
         .getMany();
@@ -70,12 +71,8 @@ export class MissionProgressService implements IMissionProgressService {
           continue;
         }
 
-        // Cập nhật progress
-        const progressIncrement = this.calculateProgressIncrement(metric);
-        const newProgress = Math.min(
-          userProgress.progress + progressIncrement,
-          mission.target,
-        );
+        // Cập nhật progress (mỗi check-in = +1)
+        const newProgress = Math.min(userProgress.progress + 1, mission.target);
         const isCompleted = newProgress >= mission.target;
 
         userProgress.progress = newProgress;
@@ -87,7 +84,7 @@ export class MissionProgressService implements IMissionProgressService {
           await this.userPointsService.addPoints(
             userId,
             mission.reward,
-            this.getTransactionType(metric),
+            PointsTransactionType.LOCATION_MISSION,
             `Completed mission: ${mission.title}`,
             mission.id,
           );
@@ -95,38 +92,6 @@ export class MissionProgressService implements IMissionProgressService {
       }
     } catch (error) {
       console.error('Error updating mission progress:', error);
-    }
-  }
-
-  private calculateProgressIncrement(metric: LocationMissionMetric): number {
-    switch (metric) {
-      case LocationMissionMetric.LIKE_POSTS:
-      case LocationMissionMetric.COMMENT_POSTS:
-      case LocationMissionMetric.JOIN_EVENTS:
-      case LocationMissionMetric.SHARE_POSTS:
-      case LocationMissionMetric.FOLLOW_LOCATION:
-        return 1; // Mỗi action = +1
-      default:
-        return 0;
-    }
-  }
-
-  private getTransactionType(
-    metric: LocationMissionMetric,
-  ): PointsTransactionType {
-    switch (metric) {
-      case LocationMissionMetric.LIKE_POSTS:
-        return PointsTransactionType.CREATE_COMMENT; // Sử dụng existing type
-      case LocationMissionMetric.COMMENT_POSTS:
-        return PointsTransactionType.CREATE_COMMENT;
-      case LocationMissionMetric.JOIN_EVENTS:
-        return PointsTransactionType.CHECK_IN; // Sử dụng existing type
-      case LocationMissionMetric.SHARE_POSTS:
-        return PointsTransactionType.CREATE_BLOG; // Sử dụng existing type
-      case LocationMissionMetric.FOLLOW_LOCATION:
-        return PointsTransactionType.CHECK_IN; // Sử dụng existing type
-      default:
-        return PointsTransactionType.ADMIN_ADJUSTMENT;
     }
   }
 }

@@ -13,7 +13,6 @@ import { UserProfileRepository } from '@/modules/account/infra/repository/UserPr
 import { IUserPointsService } from '../IUserPoints.service';
 import { PointsTransactionType } from '@/modules/gamification/domain/PointsHistory.entity';
 import { ICheckInMissionService } from '../ICheckInMission.service';
-import { LocationMissionMetric } from '@/modules/gamification/domain/LocationMission.entity';
 import { UserMissionProgressEntity } from '@/modules/gamification/domain/UserMissionProgress.entity';
 import { LocationMissionLogEntity } from '@/modules/gamification/domain/LocationMissionLog.entity';
 import { OneTimeQRCodeRepository } from '@/modules/gamification/infra/repository/OneTimeQRCode.repository';
@@ -128,12 +127,8 @@ export class QRCodeScanService implements IQRCodeScanService {
         };
       }
 
-      // Update progress based on mission type
-      const progressIncrement = this.calculateProgressIncrement(mission.metric);
-      const newProgress = Math.min(
-        userProgress.progress + progressIncrement,
-        mission.target,
-      );
+      // Update progress (each scan = +1)
+      const newProgress = Math.min(userProgress.progress + 1, mission.target);
       const isCompleted = newProgress >= mission.target;
 
       // Update user progress
@@ -179,7 +174,6 @@ export class QRCodeScanService implements IQRCodeScanService {
             missionId: mission.id,
             missionTitle: mission.title,
             missionDescription: mission.description,
-            missionMetric: mission.metric,
             missionTarget: mission.target,
             missionReward: mission.reward,
             currentProgress: newProgress,
@@ -301,26 +295,6 @@ export class QRCodeScanService implements IQRCodeScanService {
     );
   }
 
-  private calculateProgressIncrement(
-    metric: LocationMissionMetric,
-    referenceId?: string,
-  ): number {
-    switch (metric) {
-      case LocationMissionMetric.ORDER_COUNT:
-        return 1; // Mỗi lần quét QR = +1
-      case LocationMissionMetric.LIKE_POSTS:
-      case LocationMissionMetric.COMMENT_POSTS:
-      case LocationMissionMetric.JOIN_EVENTS:
-      case LocationMissionMetric.SHARE_POSTS:
-      case LocationMissionMetric.FOLLOW_LOCATION:
-        // Social actions được xử lý tự động qua events
-        // QR scan chỉ dành cho ORDER_COUNT
-        return 0;
-      default:
-        return 0;
-    }
-  }
-
   private async handleOneTimeQRScan(
     userId: string,
     oneTimeQR: OneTimeQRCodeEntity,
@@ -375,18 +349,15 @@ export class QRCodeScanService implements IQRCodeScanService {
 
       orderCountMissions = [mission];
     } else {
-      // QR code for all ORDER_COUNT missions at location
+      // QR code for all missions at location
       orderCountMissions = await this.locationMissionRepository.repo.find({
         where: {
           locationId: oneTimeQR.locationId,
-          metric: LocationMissionMetric.ORDER_COUNT,
         },
       });
 
       if (orderCountMissions.length === 0) {
-        throw new BadRequestException(
-          'No ORDER_COUNT missions available at this location',
-        );
+        throw new BadRequestException('No missions available at this location');
       }
     }
 
@@ -395,7 +366,6 @@ export class QRCodeScanService implements IQRCodeScanService {
       missionId: string;
       missionTitle: string;
       missionDescription?: string;
-      missionMetric?: LocationMissionMetric;
       missionTarget?: number;
       missionReward?: number;
       currentProgress: number;
@@ -465,7 +435,6 @@ export class QRCodeScanService implements IQRCodeScanService {
         missionId: mission.id,
         missionTitle: mission.title,
         missionDescription: mission.description,
-        missionMetric: mission.metric,
         missionTarget: mission.target,
         missionReward: mission.reward,
         currentProgress: newProgress,
@@ -494,7 +463,6 @@ export class QRCodeScanService implements IQRCodeScanService {
         missionId: r.missionId,
         missionTitle: r.missionTitle,
         missionDescription: r.missionDescription || '',
-        missionMetric: r.missionMetric || LocationMissionMetric.ORDER_COUNT,
         missionTarget: r.missionTarget || 0,
         missionReward: r.missionReward || 0,
         currentProgress: r.currentProgress,

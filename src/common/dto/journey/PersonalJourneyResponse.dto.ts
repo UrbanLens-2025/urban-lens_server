@@ -73,6 +73,33 @@ export class JourneyLocationDto {
     example: ['coffee', 'cozy', 'work-friendly'],
   })
   matchingTags: string[];
+
+  @ApiProperty({
+    description: 'AI-suggested activity at this location',
+    example: 'Thưởng thức cà phê và làm việc trong không gian yên tĩnh',
+    required: false,
+  })
+  suggestedActivity?: string;
+}
+
+export class AIInsightsDto {
+  @ApiProperty({
+    description: 'AI-generated reasoning for location selection',
+    example:
+      'Các địa điểm này phù hợp với sở thích yên tĩnh của bạn. Bắt đầu với cafe có không gian xanh...',
+    required: false,
+  })
+  reasoning?: string;
+
+  @ApiProperty({
+    description: 'Practical tips for the journey',
+    example: [
+      'Nên đi vào buổi sáng để tránh đông người',
+      'Mang theo nước uống vì thời tiết nóng',
+    ],
+    required: false,
+  })
+  tips?: string[];
 }
 
 export class PersonalJourneyResponseDto {
@@ -105,4 +132,12 @@ export class PersonalJourneyResponseDto {
     example: 145.8,
   })
   optimizationScore: number;
+
+  @ApiProperty({
+    description:
+      'AI-generated insights (only available if OLLAMA_ENABLED=true)',
+    type: AIInsightsDto,
+    required: false,
+  })
+  aiInsights?: AIInsightsDto;
 }

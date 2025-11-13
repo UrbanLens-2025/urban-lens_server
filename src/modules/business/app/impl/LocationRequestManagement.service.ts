@@ -7,6 +7,8 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
+import { CategoryType } from '@/common/constants/CategoryType.constant';
 import { LocationRequestResponseDto } from '@/common/dto/business/res/LocationRequest.response.dto';
 import { LocationRequestRepository } from '@/modules/business/infra/repository/LocationRequest.repository';
 import { BusinessRepositoryProvider } from '@/modules/account/infra/repository/Business.repository';
@@ -69,14 +71,27 @@ export class LocationRequestManagementService
         );
       }
 
-      // validate tags
-      const tagCountInDb = await tagRepository.countSelectableTagsById(
-        dto.tagIds,
+      // Convert categories to tags
+      const finalTagIds = await mergeTagsWithCategories(
+        [], // No manual tags
+        dto.categoryIds,
+        CategoryType.LOCATION,
+        this.dataSource,
       );
 
-      if (tagCountInDb !== dto.tagIds.length) {
+      if (finalTagIds.length === 0) {
         throw new BadRequestException(
-          'One or more provided tags are invalid/not selectable',
+          'Selected categories do not contain any valid tags',
+        );
+      }
+
+      // validate tags
+      const tagCountInDb =
+        await tagRepository.countSelectableTagsById(finalTagIds);
+
+      if (tagCountInDb !== finalTagIds.length) {
+        throw new BadRequestException(
+          'One or more tags from categories are invalid/not selectable',
         );
       }
 
@@ -94,7 +109,7 @@ export class LocationRequestManagementService
           // create tags
           .then(async (e) => {
             e.tags = await locationRequestTagRepository.persistEntities({
-              tagIds: dto.tagIds,
+              tagIds: finalTagIds,
               locationRequestId: e.id,
             });
 
@@ -123,14 +138,27 @@ export class LocationRequestManagementService
         );
       }
 
-      // validate tags
-      const tagCountInDb = await tagRepository.countSelectableTagsById(
-        dto.tagIds,
+      // Convert categories to tags
+      const finalTagIds = await mergeTagsWithCategories(
+        [], // No manual tags
+        dto.categoryIds,
+        CategoryType.LOCATION,
+        this.dataSource,
       );
 
-      if (tagCountInDb !== dto.tagIds.length) {
+      if (finalTagIds.length === 0) {
         throw new BadRequestException(
-          'One or more provided tags are invalid/not selectable',
+          'Selected categories do not contain any valid tags',
+        );
+      }
+
+      // validate tags
+      const tagCountInDb =
+        await tagRepository.countSelectableTagsById(finalTagIds);
+
+      if (tagCountInDb !== finalTagIds.length) {
+        throw new BadRequestException(
+          'One or more tags from categories are invalid/not selectable',
         );
       }
 
@@ -151,7 +179,7 @@ export class LocationRequestManagementService
           // create tags
           .then(async (e) => {
             e.tags = await locationRequestTagRepository.persistEntities({
-              tagIds: dto.tagIds,
+              tagIds: finalTagIds,
               locationRequestId: e.id,
             });
 

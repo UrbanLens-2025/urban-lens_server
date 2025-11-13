@@ -126,7 +126,7 @@ export class OnboardService extends CoreService implements IOnboardService {
       });
 
       if (account.hasOnboarded) {
-        throw new BadRequestException('User has already onboarded');
+        throw new BadRequestException('Creator has already onboarded');
       }
 
       const creatorProfile = this.mapTo_Raw(CreatorProfileEntity, dto);
