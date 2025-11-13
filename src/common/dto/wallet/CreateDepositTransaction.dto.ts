@@ -28,8 +28,6 @@ export class CreateDepositTransactionDto {
   @IsNotEmpty()
   returnUrl: string;
 
-  afterAction: ExternalTransactionAfterFinishAction;
-
   // Transient field
   accountId: string;
   ipAddress: string;

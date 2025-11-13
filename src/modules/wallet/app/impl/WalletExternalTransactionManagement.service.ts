@@ -34,6 +34,9 @@ import { CompleteProcessingWithdrawTransactionDto } from '@/common/dto/wallet/Co
 import { MarkTransferFailedDto } from '@/common/dto/wallet/MarkTransferFailed.dto';
 import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
 import { CancelWithdrawTransactionDto } from '@/common/dto/wallet/CancelWithdrawTransaction.dto';
+import { CreatePaymentForDepositTransactionDto } from '@/common/dto/wallet/CreatePaymentForDepositTransaction.dto';
+import { PaymentProviderResponseDto } from '@/common/dto/wallet/res/PaymentProvider.response.dto';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class WalletExternalTransactionManagementService
@@ -103,43 +106,14 @@ export class WalletExternalTransactionManagementService
           currency: dto.currency,
           createdById: dto.accountId,
         });
-      externalTransaction.afterFinishAction = dto.afterAction;
 
       return await externalTransactionRepository
         .save(externalTransaction)
         // TODO: emit event and send delayed message for expired transactions
-        // create payment
         .then(async (transaction) => {
-          const now = new Date();
-          const expiresAt = new Date(
-            now.getTime() + this.PAYMENT_EXPIRATION_MINUTES * 60000,
-          );
-
-          try {
-            const paymentDetails =
-              await this.paymentGatewayPort.createPaymentUrl({
-                transactionId: transaction.id,
-                currency: dto.currency,
-                amount: dto.amount,
-                ipAddress: dto.ipAddress,
-                returnUrl: dto.returnUrl,
-                expiresAt: expiresAt,
-              });
-
-            transaction.addPayment({
-              paymentUrl: paymentDetails.paymentUrl,
-              expiresAt,
-              provider: paymentDetails.provider,
-            });
-
-            return externalTransactionRepository.save(transaction);
-          } catch (error) {
-            throw new InternalServerErrorException(
-              'Failed to create payment',
-              error as Error,
-            );
-          }
+          return transaction;
         })
+        // create payment used to be here, but now we're gonna split it into 2 steps: Create order -> Create payment
         // record auditing timeline
         .then(async (transaction) => {
           await externalTransactionTimelineRepository.save(
@@ -152,7 +126,7 @@ export class WalletExternalTransactionManagementService
               actorName: dto.accountName,
               statusChangedTo:
                 WalletExternalTransactionStatus.READY_FOR_PAYMENT,
-              note: `Created deposit transaction and initiated payment with ${transaction.provider}`,
+              note: `Created deposit transaction`,
             }),
           );
           return transaction;
@@ -164,12 +138,55 @@ export class WalletExternalTransactionManagementService
     });
   }
 
+  startPaymentSessionForDepositTransaction(
+    dto: CreatePaymentForDepositTransactionDto,
+  ): Promise<PaymentProviderResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const externalTransactionRepository =
+        WalletExternalTransactionRepository(em);
+      const transaction = await externalTransactionRepository.findOneOrFail({
+        where: {
+          id: dto.transactionId,
+          direction: WalletExternalTransactionDirection.DEPOSIT,
+          status: WalletExternalTransactionStatus.READY_FOR_PAYMENT,
+          createdById: dto.accountId, // you can only start payment session for your own transaction
+        },
+      });
+
+      const paymentExpiresAt =
+        transaction.expiresAt ?? dayjs().add(15, 'minutes').toDate();
+      const paymentDetails = await this.paymentGatewayPort.createPaymentUrl({
+        amount: transaction.amount,
+        currency: transaction.currency,
+        expiresAt: paymentExpiresAt,
+        ipAddress: dto.ip,
+        returnUrl: dto.returnUrl,
+        transactionId: transaction.id,
+      });
+
+      transaction.addPayment({
+        expiresAt: paymentExpiresAt,
+        paymentUrl: paymentDetails.paymentUrl,
+        provider: paymentDetails.provider,
+        paymentDetails: paymentDetails.checkoutFields,
+      });
+
+      await externalTransactionRepository.save(transaction);
+
+      return paymentDetails;
+    });
+  }
+
   confirmDepositTransaction(
     dto: ConfirmDepositTransactionDto,
   ): Promise<UpdateResult> {
     return this.ensureTransaction(null, async (em) => {
       const confirmationResponse =
-        this.paymentGatewayPort.processPaymentConfirmation(dto.queryParams);
+        this.paymentGatewayPort.processPaymentConfirmation(
+          dto.queryParams,
+          dto.requestBody,
+        );
+
       const externalTransactionTimelineRepository =
         WalletExternalTransactionTimelineRepository(em);
 

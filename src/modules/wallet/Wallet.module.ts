@@ -21,6 +21,7 @@ import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWall
 import { WalletTransactionCoordinatorService } from '@/modules/wallet/app/impl/WalletTransactionCoordinator.service';
 import { IWalletTransactionQueryService } from '@/modules/wallet/app/IWalletTransactionQuery.service';
 import { WalletTransactionQueryService } from '@/modules/wallet/app/impl/WalletTransactionQuery.service';
+import { SEPayPaymentGatewayAdapter } from '@/modules/wallet/infra/adapter/SEPayPaymentGateway.adapter';
 
 @Module({
   imports: [WalletInfraModule],
@@ -49,7 +50,7 @@ import { WalletTransactionQueryService } from '@/modules/wallet/app/impl/WalletT
     },
     {
       provide: IPaymentGatewayPort,
-      useClass: VNPayPaymentGatewayAdapter,
+      useClass: SEPayPaymentGatewayAdapter,
     },
     {
       provide: IWalletTransactionManagementService,

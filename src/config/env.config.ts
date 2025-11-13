@@ -64,6 +64,8 @@ export interface Environment {
   MILLIS_TO_EVENT_PAYOUT: number;
 
   FETCH_SCHEDULED_JOBS_CRON_EXPRESSION: string;
+
+  WEBHOOK_API_KEY: string;
 }
 
 export const envConfig = joi.object<Environment>({
@@ -134,4 +136,6 @@ export const envConfig = joi.object<Environment>({
   MILLIS_TO_EVENT_PAYOUT: joi.number().default(1000 * 60 * 60 * 24 * 7), // 7 days
 
   FETCH_SCHEDULED_JOBS_CRON_EXPRESSION: joi.string().default('* * * * *'), // every minute
+
+  WEBHOOK_API_KEY: joi.string().required(),
 });
