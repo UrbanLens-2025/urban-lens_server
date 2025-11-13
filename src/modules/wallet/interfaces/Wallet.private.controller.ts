@@ -141,29 +141,14 @@ export class WalletPrivateController {
   }
 
   @ApiOperation({
-    summary: 'Cancel withdraw transaction',
+    summary: 'Cancel external transaction (deposit or withdraw)',
   })
   @Post('/transactions/external/:transactionId/cancel')
-  cancelWithdrawTransaction(
+  cancelExternalTransaction(
     @AuthUser() user: JwtTokenDto,
     @Param('transactionId', ParseUUIDPipe) transactionId: string,
   ) {
-    return this.externalTransactionManagementService.cancelWithdrawTransaction({
-      transactionId,
-      accountId: user.sub,
-      accountName: user.email,
-    });
-  }
-
-  @ApiOperation({
-    summary: 'Cancel deposit transaction',
-  })
-  @Post('/transactions/external/:transactionId/cancel-deposit')
-  cancelDepositTransaction(
-    @AuthUser() user: JwtTokenDto,
-    @Param('transactionId', ParseUUIDPipe) transactionId: string,
-  ) {
-    return this.externalTransactionManagementService.cancelDepositTransaction({
+    return this.externalTransactionManagementService.cancelExternalTransaction({
       transactionId,
       accountId: user.sub,
       accountName: user.email,

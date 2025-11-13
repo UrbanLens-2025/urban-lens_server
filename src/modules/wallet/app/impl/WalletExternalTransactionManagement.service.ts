@@ -33,8 +33,7 @@ import { StartProcessingWithdrawTransactionDto } from '@/common/dto/wallet/Start
 import { CompleteProcessingWithdrawTransactionDto } from '@/common/dto/wallet/CompleteProcessingWithdrawTransaction.dto';
 import { MarkTransferFailedDto } from '@/common/dto/wallet/MarkTransferFailed.dto';
 import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
-import { CancelWithdrawTransactionDto } from '@/common/dto/wallet/CancelWithdrawTransaction.dto';
-import { CancelDepositTransactionDto } from '@/common/dto/wallet/CancelDepositTransaction.dto';
+import { CancelExternalTransactionDto } from '@/common/dto/wallet/CancelExternalTransaction.dto';
 import { CreatePaymentForDepositTransactionDto } from '@/common/dto/wallet/CreatePaymentForDepositTransaction.dto';
 import { PaymentProviderResponseDto } from '@/common/dto/wallet/res/PaymentProvider.response.dto';
 import dayjs from 'dayjs';
@@ -333,8 +332,8 @@ export class WalletExternalTransactionManagementService
     });
   }
 
-  cancelDepositTransaction(
-    dto: CancelDepositTransactionDto,
+  cancelExternalTransaction(
+    dto: CancelExternalTransactionDto,
   ): Promise<WalletExternalTransactionResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const externalTransactionRepository =
@@ -342,56 +341,115 @@ export class WalletExternalTransactionManagementService
       const externalTransactionTimelineRepository =
         WalletExternalTransactionTimelineRepository(em);
 
-      const transaction = await externalTransactionRepository
-        .findOneOrFail({
+      const transaction = await externalTransactionRepository.findOneOrFail({
+        where: {
+          id: dto.transactionId,
+        },
+      });
+
+      // Branch based on transaction direction
+      if (
+        transaction.direction === WalletExternalTransactionDirection.DEPOSIT
+      ) {
+        // Validate deposit cancellation
+        if (!transaction.canBeCancelledDeposit()) {
+          throw new BadRequestException(
+            'You cannot cancel this deposit transaction',
+          );
+        }
+
+        // Atomic update: only update if status is READY_FOR_PAYMENT, direction is DEPOSIT, and createdById matches
+        const updateResult = await externalTransactionRepository.update(
+          {
+            id: dto.transactionId,
+            createdById: dto.accountId,
+          },
+          {
+            status: WalletExternalTransactionStatus.CANCELLED,
+          },
+        );
+
+        if (updateResult.affected === 0) {
+          throw new BadRequestException(
+            'Cannot cancel: transaction is not in READY_FOR_PAYMENT status, already finalized, or you are not the owner.',
+          );
+        }
+
+        // No fund unlocking needed for deposits (they don't lock funds)
+
+        // Record timeline
+        await externalTransactionTimelineRepository.save(
+          externalTransactionTimelineRepository.create({
+            transactionId: transaction.id,
+            action: WalletExternalTransactionAction.CANCEL_DEPOSIT_TRANSACTION,
+            actorType: WalletExternalTransactionActor.PRIVATE_USER,
+            actorId: dto.accountId,
+            actorName: dto.accountName,
+            statusChangedTo: WalletExternalTransactionStatus.CANCELLED,
+            note: `Cancelled deposit transaction.`,
+          }),
+        );
+      } else if (
+        transaction.direction === WalletExternalTransactionDirection.WITHDRAW
+      ) {
+        // Validate withdraw cancellation
+        if (!transaction.canBeCancelledWithdraw()) {
+          throw new BadRequestException(
+            'You cannot cancel this withdraw transaction',
+          );
+        }
+
+        // Atomic update: only update if status is PENDING and createdById matches
+        const updateResult = await externalTransactionRepository.update(
+          {
+            id: dto.transactionId,
+            createdById: dto.accountId,
+          },
+          {
+            status: WalletExternalTransactionStatus.CANCELLED,
+          },
+        );
+
+        if (updateResult.affected === 0) {
+          throw new BadRequestException(
+            'Cannot cancel: transaction is being processed, already finalized, or you are not the owner.',
+          );
+        }
+
+        // Unlock funds
+        await this.walletActionService.unlockFunds({
+          entityManager: em,
+          walletId: transaction.walletId,
+          amount: transaction.amount,
+          currency: transaction.currency,
+        });
+
+        // Record timeline
+        await externalTransactionTimelineRepository.save(
+          externalTransactionTimelineRepository.create({
+            transactionId: transaction.id,
+            action: WalletExternalTransactionAction.CANCEL_WITHDRAW_TRANSACTION,
+            actorType: WalletExternalTransactionActor.PRIVATE_USER,
+            actorId: dto.accountId,
+            actorName: dto.accountName,
+            statusChangedTo: WalletExternalTransactionStatus.CANCELLED,
+            note: `Cancelled withdraw transaction. Funds unlocked.`,
+          }),
+        );
+      } else {
+        throw new BadRequestException('Invalid transaction direction');
+      }
+
+      // Fetch updated transaction for response
+      const updatedTransaction = await externalTransactionRepository.findOneOrFail(
+        {
           where: {
             id: dto.transactionId,
           },
-        })
-        .then((res) => {
-          if (!res.canBeCancelledDeposit()) {
-            throw new BadRequestException(
-              'You cannot cancel this deposit transaction',
-            );
-          }
-          return res;
-        });
-
-      // Atomic update: only update if status is READY_FOR_PAYMENT, direction is DEPOSIT, and createdById matches
-      const updateResult = await externalTransactionRepository.update(
-        {
-          id: dto.transactionId,
-          status: WalletExternalTransactionStatus.READY_FOR_PAYMENT,
-          direction: WalletExternalTransactionDirection.DEPOSIT,
-          createdById: dto.accountId,
-        },
-        {
-          status: WalletExternalTransactionStatus.CANCELLED,
         },
       );
 
-      if (updateResult.affected === 0) {
-        throw new BadRequestException(
-          'Cannot cancel: transaction is not in READY_FOR_PAYMENT status, already finalized, or you are not the owner.',
-        );
-      }
-
-      // No fund unlocking needed for deposits (they don't lock funds)
-
-      // Record timeline
-      await externalTransactionTimelineRepository.save(
-        externalTransactionTimelineRepository.create({
-          transactionId: transaction.id,
-          action: WalletExternalTransactionAction.CANCEL_DEPOSIT_TRANSACTION,
-          actorType: WalletExternalTransactionActor.PRIVATE_USER,
-          actorId: dto.accountId,
-          actorName: dto.accountName,
-          statusChangedTo: WalletExternalTransactionStatus.CANCELLED,
-          note: `Cancelled deposit transaction.`,
-        }),
-      );
-
-      return this.mapTo(WalletExternalTransactionResponseDto, transaction);
+      return this.mapTo(WalletExternalTransactionResponseDto, updatedTransaction);
     });
   }
 
@@ -712,70 +770,4 @@ export class WalletExternalTransactionManagementService
     });
   }
 
-  cancelWithdrawTransaction(
-    dto: CancelWithdrawTransactionDto,
-  ): Promise<WalletExternalTransactionResponseDto> {
-    return this.ensureTransaction(null, async (em) => {
-      const externalTransactionRepository =
-        WalletExternalTransactionRepository(em);
-      const externalTransactionTimelineRepository =
-        WalletExternalTransactionTimelineRepository(em);
-
-      const transaction = await externalTransactionRepository
-        .findOneOrFail({
-          where: {
-            id: dto.transactionId,
-          },
-        })
-        .then((res) => {
-          if (!res.canBeCancelledWithdraw()) {
-            throw new BadRequestException(
-              'You cannot cancel this withdraw transaction',
-            );
-          }
-          return res;
-        });
-
-      // Atomic update: only update if status is PENDING and createdById matches
-      const updateResult = await externalTransactionRepository.update(
-        {
-          id: dto.transactionId,
-          status: WalletExternalTransactionStatus.PENDING,
-          createdById: dto.accountId,
-        },
-        {
-          status: WalletExternalTransactionStatus.CANCELLED,
-        },
-      );
-
-      if (updateResult.affected === 0) {
-        throw new BadRequestException(
-          'Cannot cancel: transaction is being processed, already finalized, or you are not the owner.',
-        );
-      }
-
-      // Unlock funds
-      await this.walletActionService.unlockFunds({
-        entityManager: em,
-        walletId: transaction.walletId,
-        amount: transaction.amount,
-        currency: transaction.currency,
-      });
-
-      // Record timeline
-      await externalTransactionTimelineRepository.save(
-        externalTransactionTimelineRepository.create({
-          transactionId: transaction.id,
-          action: WalletExternalTransactionAction.CANCEL_WITHDRAW_TRANSACTION,
-          actorType: WalletExternalTransactionActor.PRIVATE_USER,
-          actorId: dto.accountId,
-          actorName: dto.accountName,
-          statusChangedTo: WalletExternalTransactionStatus.CANCELLED,
-          note: `Cancelled withdraw transaction. Funds unlocked.`,
-        }),
-      );
-
-      return this.mapTo(WalletExternalTransactionResponseDto, transaction);
-    });
-  }
 }
