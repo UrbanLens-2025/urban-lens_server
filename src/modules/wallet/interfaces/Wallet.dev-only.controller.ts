@@ -24,7 +24,7 @@ import { DataSource, In } from 'typeorm';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { IWalletTransactionManagementService } from '@/modules/wallet/app/IWalletTransactionManagement.service';
-import { TransferFundsDto } from '@/common/dto/wallet/TransferFunds.dto';
+import { TransferFundsFromUserWalletDto } from '@/common/dto/wallet/TransferFundsFromUserWallet.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
@@ -80,10 +80,10 @@ export class WalletDevOnlyController {
   @ApiOperation({ summary: 'Transfer funds to escrow wallet' })
   @Post('/transfer-to-escrow')
   async transferToEscrow(
-    @Body() dto: TransferFundsDto,
+    @Body() dto: TransferFundsFromUserWalletDto,
     @AuthUser() userDto: JwtTokenDto,
   ) {
-    return this.walletTransactionHandlerService.transferFunds({
+    return this.walletTransactionHandlerService.transferFundsFromUserWallet({
       ...dto,
       ownerId: userDto.sub,
       destinationWalletId: DefaultSystemWallet.ESCROW,

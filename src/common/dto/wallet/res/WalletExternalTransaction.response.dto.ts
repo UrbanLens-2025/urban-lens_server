@@ -3,6 +3,7 @@ import { WalletExternalTransactionDirection } from '@/common/constants/WalletExt
 import { WalletExternalTransactionStatus } from '@/common/constants/WalletExternalTransactionStatus.constant';
 import { WalletResponseDto } from '@/common/dto/wallet/res/Wallet.response.dto';
 import { WalletExternalTransactionTimelineResponseDto } from '@/common/dto/wallet/res/WalletExternalTransactionTimeline.response.dto';
+import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 
 export class WalletExternalTransactionResponseDto {
   @Expose()
@@ -51,7 +52,20 @@ export class WalletExternalTransactionResponseDto {
   createdById: string;
 
   @Expose()
+  @Type(() => AccountResponseDto)
+  createdBy: AccountResponseDto;
+
+  @Expose()
   updatedById: string | null;
+
+  @Expose()
+  withdrawBankName: string | null;
+
+  @Expose()
+  withdrawBankAccountNumber: string | null;
+
+  @Expose()
+  withdrawBankAccountName: string | null;
 
   @Expose()
   @Type(() => WalletResponseDto)

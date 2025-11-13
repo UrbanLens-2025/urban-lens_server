@@ -9,8 +9,4 @@ export class SendEmailDto {
   template: EmailTemplates;
 
   context: Record<string, any>;
-
-  @IsOptional()
-  @IsBoolean()
-  shouldPersist?: boolean = false;
 }

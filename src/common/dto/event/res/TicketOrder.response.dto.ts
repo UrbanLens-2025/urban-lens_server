@@ -4,6 +4,7 @@ import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTransaction.response.dto';
 import { TicketOrderDetailsResponseDto } from '@/common/dto/event/res/TicketOrderDetails.response.dto';
+import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 
 @Exclude()
 export class TicketOrderResponseDto {
@@ -36,6 +37,9 @@ export class TicketOrderResponseDto {
   @Expose()
   referencedTransactionId: string | null;
 
+  @Expose()
+  eventId: string;
+
   // -- Relations --
 
   @Expose()
@@ -49,4 +53,8 @@ export class TicketOrderResponseDto {
   @Expose()
   @Type(() => TicketOrderDetailsResponseDto)
   orderDetails?: TicketOrderDetailsResponseDto[];
+
+  @Expose()
+  @Type(() => EventResponseDto)
+  event?: EventResponseDto;
 }

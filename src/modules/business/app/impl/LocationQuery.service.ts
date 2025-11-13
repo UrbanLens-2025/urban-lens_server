@@ -30,13 +30,9 @@ export class LocationQueryService
         latitude: dto.latitude,
         longitude: dto.longitude,
         radiusInMeters: dto.radiusMeters,
+        isVisible: true,
       }),
-      {
-        ...ILocationQueryService_QueryConfig.getNearbyVisibleLocationsByCoordinates(),
-        where: {
-          isVisibleOnMap: true,
-        },
-      },
+      ILocationQueryService_QueryConfig.getNearbyVisibleLocationsByCoordinates(),
     ).then((locations) => {
       return this.mapToPaginated(LocationWithDistanceResponseDto, locations);
     });

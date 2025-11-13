@@ -34,13 +34,9 @@ export class EventQueryService
         latitude: dto.latitude,
         longitude: dto.longitude,
         radiusInMeters: dto.radiusInMeters,
+        status: EventStatus.PUBLISHED,
       }),
-      {
-        ...IEventQueryService_QueryConfig.searchNearbyPublishedEventsByCoordinates(),
-        where: {
-          status: EventStatus.PUBLISHED,
-        },
-      },
+      IEventQueryService_QueryConfig.searchNearbyPublishedEventsByCoordinates(),
     ).then((res) => this.mapToPaginated(EventResponseDto, res));
   }
 

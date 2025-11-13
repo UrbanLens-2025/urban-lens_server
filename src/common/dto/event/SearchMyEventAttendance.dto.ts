@@ -1,7 +1,6 @@
-import { PaginateQuery } from "nestjs-paginate";
+import { PaginateQuery } from 'nestjs-paginate';
 
 export class SearchMyEventAttendanceDto {
-    accountId: string;
-    query: PaginateQuery;
-    eventId: string;
+  accountId: string;
+  query: PaginateQuery;
 }

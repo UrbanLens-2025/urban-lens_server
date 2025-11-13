@@ -27,6 +27,7 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
+import { CreateWithdrawTransactionDto } from '@/common/dto/wallet/CreateWithdrawTransaction.dto';
 
 @ApiTags('Wallet')
 @ApiBearerAuth()
@@ -59,19 +60,17 @@ export class WalletPrivateController {
     summary: 'Get my EXTERNAL transactions list',
   })
   @ApiPaginationQuery(
-    IWalletExternalTransactionQueryService_QueryConfig.getExternalTransactionsByWalletId(),
+    IWalletExternalTransactionQueryService_QueryConfig.getMyExternalTransactions(),
   )
   @Get('/transactions/external')
   getMyExternalTransactions(
     @AuthUser() user: JwtTokenDto,
     @Paginate() query: PaginateQuery,
   ) {
-    return this.externalTransactionQueryService.getExternalTransactionsByWalletId(
-      {
-        accountId: user.sub,
-        query,
-      },
-    );
+    return this.externalTransactionQueryService.getMyExternalTransactions({
+      accountId: user.sub,
+      query,
+    });
   }
 
   @ApiOperation({
@@ -82,12 +81,10 @@ export class WalletPrivateController {
     @AuthUser() user: JwtTokenDto,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.externalTransactionQueryService.getExternalTransactionByWalletIdAndId(
-      {
-        accountId: user.sub,
-        transactionId: id,
-      },
-    );
+    return this.externalTransactionQueryService.getMyExternalTransactionById({
+      accountId: user.sub,
+      transactionId: id,
+    });
   }
 
   @ApiOperation({
@@ -104,6 +101,36 @@ export class WalletPrivateController {
       accountId: user.sub,
       accountName: user.email,
       ipAddress,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Create withdraw transaction to external account',
+  })
+  @Post('/external/withdraw')
+  withdrawToExternalAccount(
+    @AuthUser() user: JwtTokenDto,
+    @Body() dto: CreateWithdrawTransactionDto,
+  ) {
+    return this.externalTransactionManagementService.createWithdrawTransaction({
+      ...dto,
+      accountId: user.sub,
+      accountName: user.email,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Cancel withdraw transaction',
+  })
+  @Post('/transactions/external/:transactionId/cancel')
+  cancelWithdrawTransaction(
+    @AuthUser() user: JwtTokenDto,
+    @Param('transactionId', ParseUUIDPipe) transactionId: string,
+  ) {
+    return this.externalTransactionManagementService.cancelWithdrawTransaction({
+      transactionId,
+      accountId: user.sub,
+      accountName: user.email,
     });
   }
 

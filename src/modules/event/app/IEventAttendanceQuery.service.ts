@@ -13,22 +13,23 @@ export interface IEventAttendanceQueryService {
     dto: SearchEventAttendanceDto,
   ): Promise<Paginated<EventAttendanceResponseDto>>;
 
-  searchMyEventAttendance(dto: SearchMyEventAttendanceDto): Promise<Paginated<EventAttendanceResponseDto>>;
+  searchMyEventAttendance(
+    dto: SearchMyEventAttendanceDto,
+  ): Promise<Paginated<EventAttendanceResponseDto>>;
 }
 
 export namespace IEventAttendanceQueryService_QueryConfig {
-
   export function searchMyEventAttendance(): PaginateConfig<EventAttendanceEntity> {
     return {
       sortableColumns: ['createdAt', 'updatedAt'],
       defaultSortBy: [['createdAt', 'DESC']],
-      searchableColumns: [],
       filterableColumns: {
         status: true,
       },
       relations: {
         ticket: true,
-      }
+        event: true,
+      },
     };
   }
 
@@ -52,4 +53,3 @@ export namespace IEventAttendanceQueryService_QueryConfig {
     };
   }
 }
-

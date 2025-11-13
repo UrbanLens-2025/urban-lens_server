@@ -21,7 +21,6 @@ export class EventAttendanceQueryService
     return paginate(dto.query, EventAttendanceRepository(this.dataSource), {
       ...IEventAttendanceQueryService_QueryConfig.searchMyEventAttendance(),
       where: {
-        eventId: dto.eventId,
         ownerId: dto.accountId,
       },
     }).then((res) => this.mapToPaginated(EventAttendanceResponseDto, res));

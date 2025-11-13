@@ -1,13 +1,19 @@
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
+import { EventStatus } from '@/common/constants/EventStatus.constant';
 
 export const EventRepository = (ctx: DataSource | EntityManager) =>
   ctx.getRepository(EventEntity).extend({
     findNearbyLocations(
       this: Repository<EventEntity>,
-      payload: { latitude: number; longitude: number; radiusInMeters: number },
+      payload: {
+        latitude: number;
+        longitude: number;
+        radiusInMeters: number;
+        status?: EventStatus;
+      },
     ) {
-      return this.createQueryBuilder('e')
+      const qb = this.createQueryBuilder('e')
         .leftJoinAndSelect('e.location', 'l')
         .addSelect(
           `
@@ -24,12 +30,19 @@ export const EventRepository = (ctx: DataSource | EntityManager) =>
             ST_MakePoint(:lon, :lat)::geography,
             :radius
           )`,
-        )
-        .setParameters({
-          lat: payload.latitude,
-          lon: payload.longitude,
-          radius: payload.radiusInMeters,
+        );
+
+      if (payload.status) {
+        qb.andWhere('e.status = :status', {
+          status: payload.status,
         });
+      }
+
+      return qb.setParameters({
+        lat: payload.latitude,
+        lon: payload.longitude,
+        radius: payload.radiusInMeters,
+      });
     },
   });
 

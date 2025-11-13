@@ -243,4 +243,16 @@ export class EventCreatorController {
       eventId: eventId,
     });
   }
+
+  @ApiOperation({ summary: 'Finish my event' })
+  @Post('/:eventId/finish')
+  finishMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+  ) {
+    return this.eventManagementService.finishEvent({
+      eventId,
+      accountId: userDto.sub,
+    });
+  }
 }
