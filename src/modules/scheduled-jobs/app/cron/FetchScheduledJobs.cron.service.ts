@@ -58,18 +58,32 @@ export class FetchScheduledJobsCronService
     this.logger.debug(
       `Fetching scheduled jobs for ${new Date().toDateString()}`,
     );
-    return this.ensureTransaction(null, async (em) => {
+
+    // Transaction 1: Only for fetching and updating job status
+    const jobsToSchedule = await this.ensureTransaction(null, async (em) => {
       const scheduledJobRepository = ScheduledJobRepository(em);
+      const jobs = await scheduledJobRepository.findDueJobs();
+
+      if (jobs.length === 0) {
+        return [];
+      }
+
+      this.logger.debug(
+        'Found ' +
+          jobs.length +
+          ` jobs to schedule with ids: ${jobs.map((i) => i.id).join(', ')}`,
+      );
+
+      await scheduledJobRepository.updateToProcessing({
+        jobIds: jobs.map((job) => job.id),
+      });
+
+      return jobs;
+    });
+
+    // Process jobs outside transaction (each listener creates its own transaction)
+    if (jobsToSchedule.length > 0) {
       try {
-        const jobsToSchedule = await scheduledJobRepository.findDueJobs();
-        this.logger.debug(
-          'Found ' +
-            jobsToSchedule.length +
-            ` jobs to schedule with ids: ${jobsToSchedule.map((i) => i.id).join(', ')}`,
-        );
-        await scheduledJobRepository.updateToProcessing({
-          jobIds: jobsToSchedule.map((job) => job.id),
-        });
         const promises = jobsToSchedule.map((job) =>
           this.scheduledJobService.processScheduledJob(job),
         );
@@ -77,13 +91,13 @@ export class FetchScheduledJobsCronService
       } catch (error) {
         if (error instanceof Error) {
           this.logger.error(
-            `Failed to fetch scheduled jobs: ${error.message}`,
+            `Failed to process scheduled jobs: ${error.message}`,
             error.stack,
           );
         } else {
-          throw error; // only throw unknown errors
+          throw error;
         }
       }
-    });
+    }
   }
 }
