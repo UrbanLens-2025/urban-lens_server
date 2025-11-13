@@ -133,9 +133,26 @@ export class WalletExternalTransactionManagementService
           return transaction;
         })
         // map to dto
-        .then((transaction) =>
-          this.mapTo(WalletExternalTransactionResponseDto, transaction),
-        );
+        .then((transaction) => {
+          return this.mapTo(WalletExternalTransactionResponseDto, transaction);
+        })
+        // add payment details to response
+        .then(async (res) => {
+          const paymentDetails = await this.paymentGatewayPort.createPaymentUrl(
+            {
+              amount: res.amount,
+              currency: dto.currency,
+              expiresAt: res.expiresAt ?? dayjs().add(15, 'minutes').toDate(),
+              ipAddress: dto.ipAddress,
+              returnUrl: dto.returnUrl,
+              transactionId: res.id,
+            },
+          );
+
+          res.customMetadata = paymentDetails;
+
+          return res;
+        });
     });
   }
 
