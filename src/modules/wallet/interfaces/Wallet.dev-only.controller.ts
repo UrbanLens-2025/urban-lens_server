@@ -48,27 +48,27 @@ export class WalletDevOnlyController {
 
   /**
    * @deprecated
-   * @param amount 
-   * @param transactionNo 
-   * @param transactionId 
-   * @returns 
+   * @param amount
+   * @param transactionNo
+   * @param transactionId
+   * @returns
    */
-  @ApiOperation({ summary: 'Mock confirm payment from VNPay' })
-  @Get('/vnpay/mock-confirm-payment')
+  @ApiOperation({ summary: 'Mock confirm payment' })
+  @Get('/mock-confirm-payment')
   mockConfirmPayment(
     @Query('amount') amount: number,
-    @Query('vnpay-transaction-number') transactionNo: number,
+    @Query('transaction-number') transactionNo: number,
     @Query('transaction-id') transactionId: string,
   ) {
+    const payload = this.paymentGatewayPort.createMockProcessPaymentConfirmationPayload({
+      amount,
+      transactionNo: transactionNo,
+      transactionId,
+    });
     return this.walletExternalTransactionManagementService.confirmDepositTransaction(
       {
-        queryParams:
-          this.paymentGatewayPort.createMockProcessPaymentConfirmationPayload({
-            amount,
-            transactionNo: transactionNo,
-            transactionId,
-          }),
-          requestBody: null,
+        queryParams: payload,
+        requestBody: payload,
       },
     );
   }
