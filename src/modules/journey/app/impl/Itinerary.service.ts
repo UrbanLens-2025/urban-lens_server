@@ -35,6 +35,9 @@ export class ItineraryService implements IItineraryService {
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         endDate: dto.endDate ? new Date(dto.endDate) : undefined,
         source: ItinerarySource.MANUAL,
+        album: dto.album || [],
+        thumbnailUrl: dto.thumbnailUrl,
+        locationWishlist: dto.locationWishlist || [],
       });
 
       const savedItinerary = await manager.save(itinerary);
@@ -92,6 +95,9 @@ export class ItineraryService implements IItineraryService {
           prompt: dto.prompt,
           modelInfo: 'Ollama',
         },
+        album: [],
+        thumbnailUrl: undefined,
+        locationWishlist: [],
       });
 
       const savedItinerary = await manager.save(itinerary);
@@ -173,6 +179,11 @@ export class ItineraryService implements IItineraryService {
       if (dto.startDate !== undefined)
         updateData.startDate = new Date(dto.startDate);
       if (dto.endDate !== undefined) updateData.endDate = new Date(dto.endDate);
+      if (dto.album !== undefined) updateData.album = dto.album;
+      if (dto.thumbnailUrl !== undefined)
+        updateData.thumbnailUrl = dto.thumbnailUrl;
+      if (dto.locationWishlist !== undefined)
+        updateData.locationWishlist = dto.locationWishlist;
 
       if (Object.keys(updateData).length > 0) {
         await manager.update(ItineraryEntity, itineraryId, updateData);

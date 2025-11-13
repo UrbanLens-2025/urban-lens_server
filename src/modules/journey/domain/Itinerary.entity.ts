@@ -50,6 +50,25 @@ export class ItineraryEntity {
   @Column({ name: 'ai_metadata', type: 'jsonb', nullable: true })
   aiMetadata?: AIMetadata;
 
+  @Column({
+    name: 'album',
+    type: 'text',
+    array: true,
+    default: [],
+  })
+  album: string[];
+
+  @Column({ name: 'thumbnail_url', type: 'text', nullable: true })
+  thumbnailUrl?: string;
+
+  @Column({
+    name: 'location_wishlist',
+    type: 'uuid',
+    array: true,
+    default: [],
+  })
+  locationWishlist: string[];
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 

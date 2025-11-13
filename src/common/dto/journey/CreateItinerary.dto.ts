@@ -87,6 +87,37 @@ export class CreateItineraryDto {
   @IsOptional()
   endDate?: string;
 
+  @ApiPropertyOptional({
+    description: 'Array of image URLs for the itinerary album',
+    type: [String],
+    example: [
+      'https://example.com/image1.jpg',
+      'https://example.com/image2.jpg',
+    ],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  album?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Thumbnail image URL for the itinerary',
+    example: 'https://example.com/thumbnail.jpg',
+  })
+  @IsString()
+  @IsOptional()
+  thumbnailUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Array of location IDs in wishlist',
+    type: [String],
+    example: ['fa5c272f-4e3b-43f0-830d-9c16a4c7408f'],
+  })
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  @IsOptional()
+  locationWishlist?: string[];
+
   @ApiProperty({
     description: 'List of locations in order',
     type: [ItineraryLocationDto],
