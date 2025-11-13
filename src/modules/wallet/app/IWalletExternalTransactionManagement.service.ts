@@ -8,6 +8,7 @@ import { CompleteProcessingWithdrawTransactionDto } from '@/common/dto/wallet/Co
 import { MarkTransferFailedDto } from '@/common/dto/wallet/MarkTransferFailed.dto';
 import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
 import { CancelWithdrawTransactionDto } from '@/common/dto/wallet/CancelWithdrawTransaction.dto';
+import { CancelDepositTransactionDto } from '@/common/dto/wallet/CancelDepositTransaction.dto';
 import { PaymentProviderResponseDto } from '@/common/dto/wallet/res/PaymentProvider.response.dto';
 import { CreatePaymentForDepositTransactionDto } from '@/common/dto/wallet/CreatePaymentForDepositTransaction.dto';
 
@@ -26,6 +27,9 @@ export interface IWalletExternalTransactionManagementService {
   confirmDepositTransaction(
     dto: ConfirmDepositTransactionDto,
   ): Promise<UpdateResult>;
+  cancelDepositTransaction(
+    dto: CancelDepositTransactionDto,
+  ): Promise<WalletExternalTransactionResponseDto>;
 
   // Withdrawal Transactions
   createWithdrawTransaction(

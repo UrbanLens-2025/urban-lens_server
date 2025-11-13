@@ -115,12 +115,14 @@ export class WalletPrivateController {
     @Ip() ipAddress: string,
     @Body() dto: CreatePaymentForDepositTransactionDto,
   ) {
-    return this.externalTransactionManagementService.startPaymentSessionForDepositTransaction({
-      ...dto,
-      ip: ipAddress,
-      transactionId,
-      accountId: user.sub,
-    });
+    return this.externalTransactionManagementService.startPaymentSessionForDepositTransaction(
+      {
+        ...dto,
+        ip: ipAddress,
+        transactionId,
+        accountId: user.sub,
+      },
+    );
   }
 
   @ApiOperation({
@@ -147,6 +149,21 @@ export class WalletPrivateController {
     @Param('transactionId', ParseUUIDPipe) transactionId: string,
   ) {
     return this.externalTransactionManagementService.cancelWithdrawTransaction({
+      transactionId,
+      accountId: user.sub,
+      accountName: user.email,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Cancel deposit transaction',
+  })
+  @Post('/transactions/external/:transactionId/cancel-deposit')
+  cancelDepositTransaction(
+    @AuthUser() user: JwtTokenDto,
+    @Param('transactionId', ParseUUIDPipe) transactionId: string,
+  ) {
+    return this.externalTransactionManagementService.cancelDepositTransaction({
       transactionId,
       accountId: user.sub,
       accountName: user.email,
