@@ -137,18 +137,14 @@ export class WalletExternalTransactionManagementService
         })
         // add payment details to response
         .then(async (res) => {
-          const paymentDetails = await this.paymentGatewayPort.createPaymentUrl(
-            {
-              amount: res.amount,
-              currency: dto.currency,
-              expiresAt: res.expiresAt ?? dayjs().add(15, 'minutes').toDate(),
-              ipAddress: dto.ipAddress,
-              returnUrl: dto.returnUrl,
-              transactionId: res.id,
-            },
-          );
-
-          res.customMetadata = paymentDetails;
+          res.customMetadata = await this.paymentGatewayPort.createPaymentUrl({
+            amount: res.amount,
+            currency: dto.currency,
+            expiresAt: externalTransaction.expiresAt!, // cannot be null since its set during creation
+            ipAddress: dto.ipAddress,
+            returnUrl: dto.returnUrl,
+            transactionId: res.id,
+          });
 
           return res;
         });
@@ -441,15 +437,17 @@ export class WalletExternalTransactionManagementService
       }
 
       // Fetch updated transaction for response
-      const updatedTransaction = await externalTransactionRepository.findOneOrFail(
-        {
+      const updatedTransaction =
+        await externalTransactionRepository.findOneOrFail({
           where: {
             id: dto.transactionId,
           },
-        },
-      );
+        });
 
-      return this.mapTo(WalletExternalTransactionResponseDto, updatedTransaction);
+      return this.mapTo(
+        WalletExternalTransactionResponseDto,
+        updatedTransaction,
+      );
     });
   }
 
@@ -769,5 +767,4 @@ export class WalletExternalTransactionManagementService
       return this.mapTo(WalletExternalTransactionResponseDto, transaction);
     });
   }
-
 }

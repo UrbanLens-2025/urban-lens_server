@@ -3,4 +3,3 @@ export class CancelExternalTransactionDto {
   accountId: string;
   accountName: string;
 }
-
