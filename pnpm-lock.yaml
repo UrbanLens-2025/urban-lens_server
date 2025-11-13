@@ -143,6 +143,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      sepay-pg-node:
+        specifier: ^1.0.0
+        version: 1.0.0
       swagger-themes:
         specifier: ^1.4.3
         version: 1.4.3
@@ -5360,6 +5363,10 @@ packages:
   send@1.2.0:
     resolution: {integrity: sha512-uaW0WwXKpL9blXE2o0bRhoL2EGXIrZxQ2ZQ4mgcfoBxdFmQold+qWsD2jLrfZ0trjKL6vOw0j//eAwcALFjKSw==}
     engines: {node: '>= 18'}
+
+  sepay-pg-node@1.0.0:
+    resolution: {integrity: sha512-MeU0o3vf6IQRecSxrDYDbcDQUg625jZVR+aLSPDhBKAbjttfapCFoJ6vro7BFngIW3ylIMSf+Y5safC7iRJmJQ==}
+    engines: {node: '>=16.0.0'}
 
   serialize-javascript@6.0.2:
     resolution: {integrity: sha512-Saa1xPByTTq2gdeFZYLLo+RFE35NHZkAbqZeWNd3BpzppeVisAqpDjcp8dyf6uIvEqJRd46jemmyA4iFIeVk8g==}
@@ -13089,6 +13096,12 @@ snapshots:
       statuses: 2.0.2
     transitivePeerDependencies:
       - supports-color
+
+  sepay-pg-node@1.0.0:
+    dependencies:
+      axios: 1.13.2
+    transitivePeerDependencies:
+      - debug
 
   serialize-javascript@6.0.2:
     dependencies:

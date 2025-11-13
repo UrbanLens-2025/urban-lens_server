@@ -46,6 +46,13 @@ export class WalletDevOnlyController {
     private readonly dataSource: DataSource,
   ) {}
 
+  /**
+   * @deprecated
+   * @param amount 
+   * @param transactionNo 
+   * @param transactionId 
+   * @returns 
+   */
   @ApiOperation({ summary: 'Mock confirm payment from VNPay' })
   @Get('/vnpay/mock-confirm-payment')
   mockConfirmPayment(
@@ -61,6 +68,7 @@ export class WalletDevOnlyController {
             transactionNo: transactionNo,
             transactionId,
           }),
+          requestBody: null,
       },
     );
   }

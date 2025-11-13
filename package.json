@@ -71,6 +71,7 @@
     "qs": "^6.14.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sepay-pg-node": "^1.0.0",
     "swagger-themes": "^1.4.3",
     "typeorm": "^0.3.26"
   },

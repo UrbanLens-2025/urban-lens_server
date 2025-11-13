@@ -28,6 +28,7 @@ import {
   type PaginateQuery,
 } from 'nestjs-paginate';
 import { CreateWithdrawTransactionDto } from '@/common/dto/wallet/CreateWithdrawTransaction.dto';
+import { CreatePaymentForDepositTransactionDto } from '@/common/dto/wallet/CreatePaymentForDepositTransaction.dto';
 
 @ApiTags('Wallet')
 @ApiBearerAuth()
@@ -88,7 +89,7 @@ export class WalletPrivateController {
   }
 
   @ApiOperation({
-    summary: 'Deposit money from external account',
+    summary: 'Create EXTERNAL transaction to DEPOSIT money',
   })
   @Post('/external/deposit')
   depositFromExternalAccount(
@@ -101,6 +102,24 @@ export class WalletPrivateController {
       accountId: user.sub,
       accountName: user.email,
       ipAddress,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Start payment session for deposit transaction',
+  })
+  @Post('/external/deposit/:transactionId/payment')
+  startPaymentSessionForDepositTransaction(
+    @AuthUser() user: JwtTokenDto,
+    @Param('transactionId', ParseUUIDPipe) transactionId: string,
+    @Ip() ipAddress: string,
+    @Body() dto: CreatePaymentForDepositTransactionDto,
+  ) {
+    return this.externalTransactionManagementService.startPaymentSessionForDepositTransaction({
+      ...dto,
+      ip: ipAddress,
+      transactionId,
+      accountId: user.sub,
     });
   }
 
