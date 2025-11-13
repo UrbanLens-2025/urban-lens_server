@@ -9,16 +9,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-export enum LocationMissionMetric {
-  ORDER_COUNT = 'order_count',
-  LIKE_POSTS = 'like_posts',
-  COMMENT_POSTS = 'comment_posts',
-  JOIN_EVENTS = 'join_events',
-  SHARE_POSTS = 'share_posts',
-  FOLLOW_LOCATION = 'follow_location',
-  COUNT = 'count',
-}
-
 @Entity({ name: LocationMissionEntity.TABLE_NAME })
 export class LocationMissionEntity {
   public static readonly TABLE_NAME = 'location_missions';
@@ -41,9 +31,6 @@ export class LocationMissionEntity {
 
   @Column({ name: 'description' })
   description: string;
-
-  @Column({ name: 'metric', type: 'varchar', length: 50 })
-  metric: LocationMissionMetric;
 
   @Column({ name: 'target' })
   target: number;

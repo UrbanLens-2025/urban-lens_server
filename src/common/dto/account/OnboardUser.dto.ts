@@ -30,7 +30,8 @@ export class OnboardUserDto {
   @IsInt({ each: true })
   @ApiProperty({
     default: [1, 2, 3],
-    description: 'Array of tag category IDs',
+    description: 'Array of tag category IDs (optional)',
+    required: false,
   })
   categoryIds?: number[];
 

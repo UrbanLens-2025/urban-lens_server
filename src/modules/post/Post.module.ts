@@ -36,8 +36,6 @@ import { AnnouncementCreatorController } from '@/modules/post/interfaces/Announc
     AccountInfraModule,
     TypeOrmModule.forFeature([UserTagsEntity, PostEntity, LocationTagsEntity]),
     ClientsModule.register(getRabbitMQConfig()),
-    TypeOrmModule.forFeature([UserTagsEntity, PostEntity, LocationTagsEntity]),
-    ClientsModule.register(getRabbitMQConfig()),
   ],
   controllers: [
     PostPublicController,

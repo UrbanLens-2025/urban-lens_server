@@ -84,5 +84,5 @@ export class LocationResponseDto {
 
   @Expose()
   @Type(() => LocationAnalyticsResponseDto)
-  analytics: LocationAnalyticsResponseDto;
+  analytics?: LocationAnalyticsResponseDto;
 }

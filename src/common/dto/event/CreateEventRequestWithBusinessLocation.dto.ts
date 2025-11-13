@@ -65,12 +65,16 @@ export class CreateEventRequestWithBusinessLocationDto {
   @MaxLength(624)
   specialRequirements: string;
 
-  @ApiProperty({ isArray: true, type: Number, example: [1, 2, 3] })
+  @ApiProperty({
+    isArray: true,
+    type: Number,
+    example: [65, 66, 67],
+    description: 'Array of category IDs (EVENT type categories)',
+  })
   @IsArray()
   @ArrayNotEmpty()
-  @IsNumber({}, { each: true })
-  @IsNotEmpty({ each: true })
-  tagIds: number[];
+  @IsInt({ each: true })
+  categoryIds: number[];
 
   @ApiProperty({
     type: [SocialLink],

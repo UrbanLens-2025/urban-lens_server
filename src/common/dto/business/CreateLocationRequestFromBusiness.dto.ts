@@ -3,8 +3,10 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsPositive,
   IsUrl,
   MaxLength,
@@ -94,10 +96,14 @@ export class CreateLocationRequestFromBusinessDto {
   @Type(() => LocationValidationDocumentsDto)
   locationValidationDocuments: LocationValidationDocumentsDto[];
 
-  @ApiProperty({ isArray: true, type: Number, example: [1, 2, 3] })
+  @ApiProperty({
+    isArray: true,
+    type: Number,
+    example: [55, 56, 57],
+    description: 'Array of category IDs (LOCATION type categories)',
+  })
   @IsArray()
   @ArrayNotEmpty()
-  @IsNumber({}, { each: true })
-  @IsNotEmpty({ each: true })
-  tagIds: number[];
+  @IsInt({ each: true })
+  categoryIds: number[];
 }

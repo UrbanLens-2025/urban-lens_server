@@ -1,42 +1,27 @@
 services:
-  #  ubl-db:
-  #    image: postgres:17.5
-  #    container_name: ubl-db
-  #    environment:
-  #      - POSTGRES_USER=${DATABASE_USER}
-  #      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-  #      - POSTGRES_DB=${DATABASE_NAME}
-  #    ports:
-  #      - "5432:5432"
-  #    volumes:
-  #      - ubl_db_data:/var/lib/postgresql/data
-  #    networks:
-  #      - ubl-network
-  #    restart: on-failure
-  #    healthcheck:
-  #      test: [ "CMD-SHELL", "pg_isready" ]
-  #      interval: 10s
-  #      timeout: 5s
-  #      retries: 5
-  ubl-redis:
-    image: redis:8.2.1
-    container_name: ubl-redis
+  ubl-db:
+    image: postgis/postgis:17-3.5
+    platform: linux/amd64
+    container_name: ubl-db_postgis
+    environment:
+      - POSTGRES_USER=ubl_user
+      - POSTGRES_PASSWORD=drp1vgz*uhd-gvy8KDA
+      - POSTGRES_DB=ubl_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - ubl-network
     restart: on-failure
-    command: redis-server --requirepass 123456 --appendonly yes
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ['CMD-SHELL', 'pg_isready']
       interval: 10s
       timeout: 5s
       retries: 5
-    volumes:
-      - redis_data:/data
-    networks:
-      - ubl-network
-    ports:
-      - '6379:6379'
-
   ubl-rabbitmq:
     image: rabbitmq:3.13-management
+    platform: linux/amd64
     container_name: ubl-rabbitmq
     restart: on-failure
     environment:
@@ -55,10 +40,26 @@ services:
     ports:
       - '5672:5672' # AMQP port
       - '15672:15672' # Management UI
-
+  ubl-redis:
+    image: redis:8.2.1
+    platform: linux/amd64
+    container_name: ubl-redis
+    restart: on-failure
+    command: redis-server --requirepass vD6hC@hKD@BP4bBhRVXkW --appendonly yes
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', 'vD6hC@hKD@BP4bBhRVXkW', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+    networks:
+      - ubl-network
 networks:
   ubl-network:
 volumes:
-  #  ubl_db_data:
-  redis_data:
+  db_data:
   rabbitmq_data:
+  redis_data:

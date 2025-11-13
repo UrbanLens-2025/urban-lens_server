@@ -33,10 +33,6 @@ import { GamificationInfraModule } from './infra/Gamification.infra.module';
 import { PostCreatedListener } from './app/event-listeners/PostCreated.listener';
 import { CommentCreatedListener } from './app/event-listeners/CommentCreated.listener';
 import { CheckInCreatedListener } from './app/event-listeners/CheckInCreated.listener';
-import { PostLikedListener } from './app/event-listeners/PostLiked.listener';
-import { PostCommentedListener } from './app/event-listeners/PostCommented.listener';
-import { EventJoinedListener } from './app/event-listeners/EventJoined.listener';
-import { LocationFollowedListener } from './app/event-listeners/LocationFollowed.listener';
 import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
 import { PostInfraModule } from '@/modules/post/infra/Post.infra.module';
 import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.module';
@@ -104,10 +100,6 @@ import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.mod
     PostCreatedListener,
     CommentCreatedListener,
     CheckInCreatedListener,
-    PostLikedListener,
-    PostCommentedListener,
-    EventJoinedListener,
-    LocationFollowedListener,
   ],
   exports: [IRankService, IUserPointsService],
 })

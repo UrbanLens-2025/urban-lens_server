@@ -1,5 +1,4 @@
 import { Exclude, Expose } from 'class-transformer';
-import { LocationMissionMetric } from '@/modules/gamification/domain/LocationMission.entity';
 
 @Exclude()
 export class QRCodeScanResponseDto {
@@ -17,9 +16,6 @@ export class QRCodeScanResponseDto {
 
   @Expose()
   missionDescription: string;
-
-  @Expose()
-  missionMetric: LocationMissionMetric;
 
   @Expose()
   missionTarget: number;
@@ -47,7 +43,6 @@ export class QRCodeScanResponseDto {
     missionId: string;
     missionTitle: string;
     missionDescription: string;
-    missionMetric: LocationMissionMetric;
     missionTarget: number;
     missionReward: number;
     currentProgress: number;

@@ -13,66 +13,66 @@ export function generateFallbackActivity(
       (t) => t.includes('café') || t.includes('cafe') || t.includes('coffee'),
     )
   ) {
-    return 'Thưởng thức đồ uống và thư giãn trong không gian yên tĩnh';
+    return 'Enjoy beverages and relax in a peaceful atmosphere';
   }
 
   // Restaurant/Food
   if (tagLower.some((t) => t.includes('restaurant') || t.includes('food'))) {
-    return 'Thưởng thức ẩm thực địa phương và khám phá món ăn đặc sản';
+    return 'Savor local cuisine and discover specialty dishes';
   }
 
   // Park/Nature
   if (tagLower.some((t) => t.includes('park') || t.includes('nature'))) {
-    return 'Dạo bộ, tập thể dục và tận hưởng không khí trong lành';
+    return 'Walk, exercise, and enjoy the fresh air';
   }
 
   // Museum/History
   if (tagLower.some((t) => t.includes('museum') || t.includes('history'))) {
-    return 'Tham quan và tìm hiểu về lịch sử, văn hóa địa phương';
+    return 'Explore and learn about local history and culture';
   }
 
   // Gallery/Art
   if (tagLower.some((t) => t.includes('gallery') || t.includes('art'))) {
-    return 'Khám phá nghệ thuật và chụp ảnh các tác phẩm độc đáo';
+    return 'Discover art and photograph unique masterpieces';
   }
 
   // Bar/Nightlife
   if (tagLower.some((t) => t.includes('bar') || t.includes('nightlife'))) {
-    return 'Thưởng thức đồ uống và trải nghiệm không khí sôi động';
+    return 'Enjoy drinks and experience the vibrant atmosphere';
   }
 
   // Gym/Fitness
   if (tagLower.some((t) => t.includes('gym') || t.includes('fitness'))) {
-    return 'Tập luyện thể thao và rèn luyện sức khỏe';
+    return 'Work out and maintain your health';
   }
 
   // Rooftop/View
   if (tagLower.some((t) => t.includes('rooftop') || t.includes('view'))) {
-    return 'Ngắm cảnh thành phố và chụp ảnh panorama tuyệt đẹp';
+    return 'Admire city views and capture stunning panoramas';
   }
 
   // Bookstore
   if (tagLower.some((t) => t.includes('bookstore') || t.includes('book'))) {
-    return 'Đọc sách và khám phá các tác phẩm văn học thú vị';
+    return 'Read books and explore interesting literature';
   }
 
   // Coworking
   if (
     tagLower.some((t) => t.includes('coworking') || t.includes('workspace'))
   ) {
-    return 'Làm việc trong không gian chuyên nghiệp và giao lưu networking';
+    return 'Work in a professional space and network';
   }
 
   // Shopping/Market
   if (tagLower.some((t) => t.includes('shopping') || t.includes('market'))) {
-    return 'Mua sắm và khám phá các sản phẩm địa phương';
+    return 'Shop and discover local products';
   }
 
   // Concert/Music
   if (tagLower.some((t) => t.includes('concert') || t.includes('music'))) {
-    return 'Thưởng thức âm nhạc và tận hưởng không khí nghệ thuật';
+    return 'Enjoy music and experience the artistic atmosphere';
   }
 
   // Default fallback
-  return `Khám phá và trải nghiệm ${locationName}`;
+  return `Explore and experience ${locationName}`;
 }

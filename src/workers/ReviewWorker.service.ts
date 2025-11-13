@@ -110,4 +110,76 @@ export class ReviewWorkerService {
       score: row.score,
     }));
   }
+
+  /**
+   * Update location analytics after receiving reviews
+   * Updates total_reviews and average_rating for each location
+   */
+  async updateLocationAnalytics(
+    locationReviews: Map<string, number[]>,
+  ): Promise<void> {
+    if (locationReviews.size === 0) {
+      this.logger.debug('No location analytics to update');
+      return;
+    }
+
+    try {
+      for (const [locationId, ratings] of locationReviews.entries()) {
+        // Calculate new average rating from all reviews for this location
+        const [result] = await this.dataSource.query(
+          `
+          SELECT 
+            COUNT(*) as total_reviews,
+            AVG(rating) as average_rating
+          FROM "${this.schema}"."posts"
+          WHERE location_id = $1 
+            AND type = 'REVIEW'
+            AND rating IS NOT NULL
+          `,
+          [locationId],
+        );
+
+        const totalReviews = parseInt(result.total_reviews, 10);
+        const averageRating = result.average_rating
+          ? parseFloat(result.average_rating)
+          : 0;
+
+        // Upsert location_analytics
+        await this.dataSource.query(
+          `
+          INSERT INTO "${this.schema}"."location_analytics" (
+            location_id, 
+            total_reviews, 
+            average_rating,
+            total_posts,
+            total_check_ins,
+            created_at,
+            updated_at
+          )
+          VALUES ($1, $2, $3, 0, 0, NOW(), NOW())
+          ON CONFLICT (location_id) 
+          DO UPDATE SET
+            total_reviews = $2,
+            average_rating = $3,
+            updated_at = NOW()
+          `,
+          [locationId, totalReviews, averageRating],
+        );
+
+        this.logger.log(
+          `📊 Updated location analytics for ${locationId}: ${totalReviews} reviews, avg rating: ${averageRating.toFixed(2)}`,
+        );
+      }
+
+      this.logger.log(
+        `✅ Updated analytics for ${locationReviews.size} locations`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to update location analytics: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
 }

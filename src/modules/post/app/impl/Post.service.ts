@@ -45,6 +45,7 @@ import {
   PostReactedEvent,
 } from '@/modules/post/domain/events/PostReacted.event';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
+import { LocationAnalyticsEntity } from '@/modules/business/domain/LocationAnalytics.entity';
 import { EntityManager } from 'typeorm';
 
 interface RawPost {
@@ -537,47 +538,90 @@ export class PostService
     entityType: AnalyticEntityType,
     transactionalEntityManager: EntityManager,
   ): Promise<void> {
-    const analyticRepo =
-      transactionalEntityManager.getRepository(AnalyticEntity);
     const postRepo = transactionalEntityManager.getRepository(PostEntity);
 
-    // Find or create analytic record for the entity
-    let analytic = await analyticRepo.findOne({
-      where: { entityId, entityType },
-    });
+    // For LOCATION, update location_analytics table
+    if (entityType === AnalyticEntityType.LOCATION) {
+      const locationAnalyticsRepo = transactionalEntityManager.getRepository(
+        LocationAnalyticsEntity,
+      );
 
-    if (!analytic) {
-      analytic = analyticRepo.create({
-        entityId,
-        entityType,
+      const reviews = await postRepo.find({
+        where: {
+          locationId: entityId,
+          type: PostType.REVIEW,
+        },
       });
+
+      const totalReviews = reviews.length;
+      let averageRating = 0;
+
+      if (totalReviews > 0) {
+        const totalRating = reviews.reduce(
+          (sum, review) => sum + (review.rating || 0),
+          0,
+        );
+        averageRating = parseFloat((totalRating / totalReviews).toFixed(2));
+      }
+
+      // Upsert location_analytics
+      let locationAnalytics = await locationAnalyticsRepo.findOne({
+        where: { locationId: entityId },
+      });
+
+      if (!locationAnalytics) {
+        locationAnalytics = locationAnalyticsRepo.create({
+          locationId: entityId,
+          totalReviews,
+          averageRating,
+          totalPosts: 0,
+          totalCheckIns: 0,
+        });
+      } else {
+        locationAnalytics.totalReviews = totalReviews;
+        locationAnalytics.averageRating = averageRating;
+      }
+
+      await locationAnalyticsRepo.save(locationAnalytics);
+    }
+    // For EVENT, keep using analytic table (or implement event_analytics if needed)
+    else if (entityType === AnalyticEntityType.EVENT) {
+      const analyticRepo =
+        transactionalEntityManager.getRepository(AnalyticEntity);
+
+      let analytic = await analyticRepo.findOne({
+        where: { entityId, entityType },
+      });
+
+      if (!analytic) {
+        analytic = analyticRepo.create({
+          entityId,
+          entityType,
+        });
+      }
+
+      const reviews = await postRepo.find({
+        where: {
+          eventId: entityId,
+          type: PostType.REVIEW,
+        },
+      });
+
+      analytic.totalReviews = reviews.length;
+
+      if (reviews.length > 0) {
+        const totalRating = reviews.reduce(
+          (sum, review) => sum + (review.rating || 0),
+          0,
+        );
+        const avgRating = totalRating / reviews.length;
+        analytic.avgRating = parseFloat(avgRating.toFixed(2));
+      } else {
+        analytic.avgRating = 0;
+      }
+
       await analyticRepo.save(analytic);
     }
-
-    const locationField =
-      entityType === AnalyticEntityType.LOCATION ? 'locationId' : 'eventId';
-    const reviews = await postRepo.find({
-      where: {
-        [locationField]: entityId,
-        type: PostType.REVIEW,
-      },
-    });
-
-    analytic.totalReviews = reviews.length;
-
-    if (reviews.length > 0) {
-      const totalRating = reviews.reduce(
-        (sum, review) => sum + (review.rating || 0),
-        0,
-      );
-      const avgRating = totalRating / reviews.length;
-
-      analytic.avgRating = parseFloat(avgRating.toFixed(2));
-    } else {
-      analytic.avgRating = 0;
-    }
-
-    await analyticRepo.save(analytic);
   }
 
   async getPostById(postId: string, userId?: string): Promise<any> {

@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -10,7 +9,6 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { LocationMissionMetric } from '@/modules/gamification/domain/LocationMission.entity';
 
 export class CreateLocationMissionDto {
   @IsNotEmpty()
@@ -30,19 +28,10 @@ export class CreateLocationMissionDto {
   description: string;
 
   @IsNotEmpty()
-  @IsEnum(LocationMissionMetric)
-  @ApiProperty({
-    description: 'Mission metric type',
-    enum: LocationMissionMetric,
-    example: LocationMissionMetric.ORDER_COUNT,
-  })
-  metric: LocationMissionMetric;
-
-  @IsNotEmpty()
   @IsNumber()
   @Min(1)
   @ApiProperty({
-    description: 'Target value to complete mission',
+    description: 'Target check-ins to complete mission',
     example: 5,
   })
   target: number;

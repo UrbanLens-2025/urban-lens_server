@@ -70,15 +70,20 @@ export class JourneyPlannerService implements IJourneyPlannerService {
 
     const userTagScores = userProfile.tagScores || {};
     const tagScoreCount = Object.keys(userTagScores).length;
+    const hasNoPreferences = tagScoreCount === 0;
     const hasLimitedPreferences = tagScoreCount < 3;
 
     this.logger.debug(
       `User tag scores (${tagScoreCount} tags): ${JSON.stringify(userTagScores)}`,
     );
 
-    if (hasLimitedPreferences) {
+    if (hasNoPreferences) {
+      this.logger.warn(
+        '⚠️  User has NO tag preferences! Will use rating + popularity based ranking',
+      );
+    } else if (hasLimitedPreferences) {
       this.logger.log(
-        'User has limited tag preferences, will prioritize locations with high ratings',
+        'User has limited tag preferences, will prioritize locations with high ratings & popularity',
       );
     }
 
@@ -94,12 +99,31 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       `Search center: (${searchCenter.latitude}, ${searchCenter.longitude}), radius: ${searchRadiusKm}km`,
     );
 
-    // 3. Find candidate locations
-    const candidates = await this.locationRepository.findNearbyWithTags(
+    // 3. Find candidate locations with auto-expanding radius
+    let candidates = await this.locationRepository.findNearbyWithTags(
       searchCenter.latitude,
       searchCenter.longitude,
       searchRadiusKm,
     );
+
+    // If not enough locations, gradually expand radius
+    let currentRadius = searchRadiusKm;
+    const maxExpandedRadius = 20; // Maximum 20km
+    while (
+      candidates.length < dto.numberOfLocations &&
+      currentRadius < maxExpandedRadius
+    ) {
+      currentRadius = Math.min(currentRadius * 1.5, maxExpandedRadius);
+      this.logger.debug(
+        `Not enough locations (${candidates.length}), expanding search radius to ${currentRadius.toFixed(1)}km...`,
+      );
+
+      candidates = await this.locationRepository.findNearbyWithTags(
+        searchCenter.latitude,
+        searchCenter.longitude,
+        currentRadius,
+      );
+    }
 
     if (candidates.length === 0) {
       throw new NotFoundException(
@@ -107,7 +131,9 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       );
     }
 
-    this.logger.debug(`Found ${candidates.length} candidate locations`);
+    this.logger.debug(
+      `Found ${candidates.length} candidate locations within ${currentRadius.toFixed(1)}km`,
+    );
 
     // 4. Score locations based on user preferences
     const scoredCandidates = this.scoreLocations(
@@ -176,7 +202,11 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       longitude: number;
       imageUrl: string[];
       tags?: Array<{ tag: { id: number; displayName: string } }>;
-      analytics?: { averageRating: number; totalReviews: number };
+      analytics?: {
+        averageRating: number;
+        totalReviews: number;
+        totalCheckIns: number;
+      };
     }>,
     userTagScores: Record<string, number>,
     prioritizeRating: boolean = false,
@@ -205,32 +235,60 @@ export class JourneyPlannerService implements IJourneyPlannerService {
         matchCount > 0 ? Math.min(100, (totalScore / matchCount) * 2) : 0;
 
       // Get rating-based score (0-100)
-      const averageRating = location.analytics?.averageRating || 0;
-      const totalReviews = location.analytics?.totalReviews || 0;
+      // Convert to numbers since DB might return bigint/string
+      const averageRating = Number(location.analytics?.averageRating || 0);
+      const totalReviews = Number(location.analytics?.totalReviews || 0);
+      const totalCheckIns = Number(location.analytics?.totalCheckIns || 0);
       const ratingScore = (averageRating / 5) * 100;
+
+      // Calculate popularity score based on check-ins (0-100)
+      // More check-ins = higher popularity
+      // Use logarithmic scale: log10(checkIns + 1) * 20
+      // 1 check-in ≈ 6 points, 10 ≈ 20 points, 100 ≈ 40 points, 1000 ≈ 60 points
+      const popularityScore = Math.min(100, Math.log10(totalCheckIns + 1) * 20);
 
       // Blend scores based on user preference data availability
       let preferenceScore: number;
+      let scoringMethod: string;
 
       if (prioritizeRating) {
-        // User has limited tag history → prioritize rating
-        if (totalReviews > 0) {
-          // 70% rating, 30% tag match
-          preferenceScore = ratingScore * 0.7 + tagScore * 0.3;
+        // User has limited/no tag history → prioritize rating & popularity
+        if (totalReviews > 0 || totalCheckIns > 0) {
+          // 50% rating, 30% popularity, 20% tag match
+          preferenceScore =
+            ratingScore * 0.5 + popularityScore * 0.3 + tagScore * 0.2;
+          scoringMethod = 'rating+popularity';
         } else {
-          // No reviews → use tag score only (might be 0)
-          preferenceScore = tagScore || 50; // Default 50 if no data
+          // No data at all → use tag score or very low default
+          preferenceScore = tagScore > 0 ? tagScore : 20; // Low score for unknown locations
+          scoringMethod = 'fallback';
         }
       } else {
         // User has good tag history → prioritize tag match
         if (tagScore > 0) {
-          // 70% tag match, 30% rating boost
-          preferenceScore = tagScore * 0.7 + ratingScore * 0.3;
+          // 70% tag match, 20% rating, 10% popularity
+          preferenceScore =
+            tagScore * 0.7 + ratingScore * 0.2 + popularityScore * 0.1;
+          scoringMethod = 'tag-based';
         } else {
-          // No tag match → fallback to rating
-          preferenceScore = ratingScore;
+          // No tag match → fallback to rating + popularity
+          if (totalReviews > 0 || totalCheckIns > 0) {
+            // 60% rating, 40% popularity
+            preferenceScore = ratingScore * 0.6 + popularityScore * 0.4;
+            scoringMethod = 'rating+popularity (no match)';
+          } else {
+            // No data at all → very low score
+            preferenceScore = 20;
+            scoringMethod = 'unknown';
+          }
         }
       }
+
+      this.logger.debug(
+        `${location.name}: score=${preferenceScore.toFixed(1)} [${scoringMethod}] ` +
+          `(tag=${tagScore.toFixed(0)}, rating=${ratingScore.toFixed(0)}, pop=${popularityScore.toFixed(0)}, ` +
+          `reviews=${totalReviews}, checkIns=${totalCheckIns})`,
+      );
 
       return {
         id: location.id,
@@ -515,42 +573,8 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       };
     });
 
-    // If end point is specified, add final leg
-    if (end) {
-      let finalDistance: number;
-      let finalTime: number;
-
-      if (useGoogleMaps) {
-        try {
-          const result = await this.googleMapsService.getDistance(
-            { lat: prevPoint.latitude, lng: prevPoint.longitude },
-            { lat: end.latitude, lng: end.longitude },
-            TravelMode.driving,
-          );
-          finalDistance = result.distanceKm;
-          finalTime = result.durationMinutes;
-        } catch (error) {
-          finalDistance = this.calculateDistance(
-            prevPoint.latitude,
-            prevPoint.longitude,
-            end.latitude,
-            end.longitude,
-          );
-          finalTime = Math.ceil((finalDistance / 30) * 60);
-        }
-      } else {
-        finalDistance = this.calculateDistance(
-          prevPoint.latitude,
-          prevPoint.longitude,
-          end.latitude,
-          end.longitude,
-        );
-        finalTime = Math.ceil((finalDistance / 30) * 60);
-      }
-
-      totalDistance += finalDistance;
-      totalTime += finalTime;
-    }
+    // Note: endPoint is used for route optimization but NOT included in totalDistance
+    // totalDistance only includes distances between locations in the journey
 
     // Calculate optimization score (lower is better)
     // Factors: total distance + variance in preference scores
@@ -639,9 +663,15 @@ export class JourneyPlannerService implements IJourneyPlannerService {
         `AI only returned ${locations.length}/${dto.numberOfLocations} locations. Filling with nearby locations...`,
       );
 
-      const searchRadiusKm = dto.preferredAreaRadiusKm ?? dto.maxRadiusKm ?? 10;
+      // Use larger radius for fallback search (1.5x original or minimum 5km)
+      const baseRadius = dto.preferredAreaRadiusKm ?? dto.maxRadiusKm ?? 10;
+      const searchRadiusKm = Math.max(baseRadius * 1.5, 5);
       const searchLat = dto.preferredAreaLatitude ?? dto.currentLatitude;
       const searchLng = dto.preferredAreaLongitude ?? dto.currentLongitude;
+
+      this.logger.debug(
+        `Searching for additional locations with radius ${searchRadiusKm}km from (${searchLat}, ${searchLng})`,
+      );
 
       const nearbyLocations = await this.locationRepository.findNearbyWithTags(
         searchLat,
@@ -649,17 +679,53 @@ export class JourneyPlannerService implements IJourneyPlannerService {
         searchRadiusKm,
       );
 
-      // Filter out already selected locations
+      this.logger.debug(`Found ${nearbyLocations.length} nearby locations`);
+
+      // Filter out already selected locations and score them
       const existingIds = new Set(locations.map((l) => l.id));
-      const additionalLocations = nearbyLocations
-        .filter((loc) => !existingIds.has(loc.id))
-        .slice(0, dto.numberOfLocations - locations.length);
+      const candidateLocations = nearbyLocations.filter(
+        (loc) => !existingIds.has(loc.id),
+      );
+
+      // Score candidates by rating + popularity
+      const scoredCandidates = candidateLocations
+        .map((loc) => {
+          const avgRating = Number(loc.analytics?.averageRating || 0);
+          const totalReviews = Number(loc.analytics?.totalReviews || 0);
+          const totalCheckIns = Number(loc.analytics?.totalCheckIns || 0);
+
+          const ratingScore = (avgRating / 5) * 100;
+          const popularityScore = Math.min(
+            100,
+            Math.log10(totalCheckIns + 1) * 20,
+          );
+
+          // 60% rating, 40% popularity
+          const score =
+            totalReviews > 0 || totalCheckIns > 0
+              ? ratingScore * 0.6 + popularityScore * 0.4
+              : 20;
+
+          return { location: loc, score };
+        })
+        .sort((a, b) => b.score - a.score);
+
+      const needed = dto.numberOfLocations - locations.length;
+      const additionalLocations = scoredCandidates
+        .slice(0, needed)
+        .map((c) => c.location);
 
       locations = [...locations, ...additionalLocations];
 
       this.logger.log(
-        `Added ${additionalLocations.length} additional locations. Total: ${locations.length}`,
+        `Added ${additionalLocations.length} additional locations (scored by rating+popularity). Total: ${locations.length}`,
       );
+
+      if (locations.length < dto.numberOfLocations) {
+        this.logger.warn(
+          `⚠️  Could only find ${locations.length} locations within ${searchRadiusKm}km radius. User requested ${dto.numberOfLocations}.`,
+        );
+      }
     }
 
     // Calculate distances and times
@@ -675,22 +741,47 @@ export class JourneyPlannerService implements IJourneyPlannerService {
         }
       : null;
 
-    // Map locations to candidates
-    const candidates: LocationCandidate[] = locations.map((loc) => ({
-      id: loc.id,
-      name: loc.name,
-      description: loc.description,
-      addressLine: loc.addressLine,
-      latitude: loc.latitude,
-      longitude: loc.longitude,
-      imageUrl: loc.imageUrl || [],
-      preferenceScore: 75, // Default score for AI-selected locations
-      tags:
-        loc.tags?.map((t) => ({
-          id: t.tag.id,
-          displayName: t.tag.displayName,
-        })) || [],
-    }));
+    // Map locations to candidates with real preference scores
+    const candidates: LocationCandidate[] = locations.map((loc) => {
+      // Calculate preference score based on analytics
+      // Convert to numbers since DB might return bigint/string
+      const averageRating = Number(loc.analytics?.averageRating || 0);
+      const totalReviews = Number(loc.analytics?.totalReviews || 0);
+      const totalCheckIns = Number(loc.analytics?.totalCheckIns || 0);
+
+      const ratingScore = (averageRating / 5) * 100;
+      const popularityScore = Math.min(100, Math.log10(totalCheckIns + 1) * 20);
+
+      // For AI journey: 60% rating, 40% popularity (no tag matching)
+      let preferenceScore: number;
+      if (totalReviews > 0 || totalCheckIns > 0) {
+        preferenceScore = ratingScore * 0.6 + popularityScore * 0.4;
+      } else {
+        // Unknown location with no data
+        preferenceScore = 30; // Low but not zero
+      }
+
+      this.logger.debug(
+        `AI location ${loc.name}: score=${preferenceScore.toFixed(1)} ` +
+          `(rating=${averageRating.toFixed(1)}★/${totalReviews} reviews, checkIns=${totalCheckIns})`,
+      );
+
+      return {
+        id: loc.id,
+        name: loc.name,
+        description: loc.description,
+        addressLine: loc.addressLine,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        imageUrl: loc.imageUrl || [],
+        preferenceScore: Math.round(preferenceScore * 10) / 10,
+        tags:
+          loc.tags?.map((t) => ({
+            id: t.tag.id,
+            displayName: t.tag.displayName,
+          })) || [],
+      };
+    });
 
     // Optimize route using greedy nearest neighbor algorithm
     const useGoogleMaps = this.googleMapsService.isEnabled();
@@ -844,18 +935,9 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       currentPoint = nextPoint;
     }
 
-    // Add distance to end point if specified
-    if (endPoint) {
-      const lastLoc = locations[locations.length - 1];
-      const distance = calculateDistance(
-        lastLoc.latitude,
-        lastLoc.longitude,
-        endPoint.latitude,
-        endPoint.longitude,
-      );
-      totalDistance += distance;
-      totalTime += estimateTravelTime(distance);
-    }
+    // Note: endPoint is used for route optimization but NOT included in totalDistance
+    // totalDistance only includes distances between locations in the journey
+    // If you want to include distance to endPoint, add it separately to response
 
     const avgPreference =
       journeyLocations.length > 0

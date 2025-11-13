@@ -131,10 +131,10 @@ export class OllamaService {
               .join(', ')}`,
           );
 
-          // Send result back to AI
+          // Send result back to AI with format reminder
           conversationHistory.push({
             role: 'user',
-            content: `Tool result (${toolResult.length || 0} items):\n${JSON.stringify(toolResult, null, 2)}`,
+            content: `Tool result (${toolResult.length || 0} items):\n${JSON.stringify(toolResult, null, 2)}\n\nNow provide your final response using EXACTLY this format:\n\nREASONING: [your reasoning in Vietnamese]\nTIPS:\n- [tip 1]\n- [tip 2]\n- [tip 3]\nLOCATION_IDS: [comma-separated UUIDs from the id field above]\nACTIVITIES:\n[uuid]: [activity description]\n[uuid]: [activity description]\n...\n\nREMEMBER: Copy exact UUIDs from "id" field in the results above!`,
           });
         } else {
           // AI finished, return final response
@@ -268,7 +268,10 @@ To use the tool, respond EXACTLY like this:
 TOOL_CALL: query_nearby_locations
 PARAMETERS: {"latitude": 10.762622, "longitude": 106.660172, "radiusKm": 5, "limit": 20}
 
-After receiving query results, provide your final response:
+⚠️ CRITICAL FORMAT REQUIREMENT ⚠️
+After receiving query results, you MUST provide your final response in THIS EXACT FORMAT.
+DO NOT use markdown, bullets with numbers, or conversational text.
+ONLY use this structure:
 
 REASONING: [2-3 sentences in Vietnamese]
 TIPS:
@@ -283,9 +286,24 @@ uuid3: [activity for location 3 based on its name]
 uuid4: [activity for location 4 based on its name]
 uuid5: [activity for location 5 based on its name]
 
+❌ WRONG FORMATS (DO NOT USE):
+1. **Museum Name**: - suggestion 1 - suggestion 2
+2. "These suggestions..." or any conversational closing
+3. Markdown formatting with ** or numbered lists
+
+✅ CORRECT FORMAT (USE THIS):
+REASONING: ...
+TIPS:
+- ...
+LOCATION_IDS: uuid1, uuid2, ...
+ACTIVITIES:
+uuid1: activity description
+uuid2: activity description
+
 CRITICAL REQUIREMENTS:
 - Call the tool ONLY ONCE
-- After getting results, provide final response immediately
+- After getting results, provide final response immediately in the correct format
+- DO NOT write conversational responses or use markdown
 - Select EXACTLY the requested number of locations
 - COPY the exact UUID (id field) from query results - DO NOT modify or reorder
 - Format: "uuid: activity description" (one line per location)
@@ -637,7 +655,19 @@ Start by querying nearby locations within the radius.`;
         currentSection = 'activities';
       } else if (trimmed.startsWith('LOCATION_IDS:')) {
         const idsStr = trimmed.replace('LOCATION_IDS:', '').trim();
-        locationIds = idsStr.split(',').map((id) => id.trim());
+        locationIds = idsStr
+          .split(',')
+          .map((id) => id.trim())
+          .filter((id) => {
+            // Validate UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            const uuidRegex =
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            const isValid = uuidRegex.test(id);
+            if (!isValid) {
+              this.logger.warn(`⚠️ Invalid UUID format: "${id}" - skipping`);
+            }
+            return isValid;
+          });
       } else if (trimmed.startsWith('-') && currentSection === 'tips') {
         tips.push(trimmed.replace(/^-\s*/, ''));
       } else if (currentSection === 'activities' && trimmed.includes(':')) {

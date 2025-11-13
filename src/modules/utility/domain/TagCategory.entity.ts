@@ -1,4 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { CategoryType } from '@/common/constants/CategoryType.constant';
 
 /**
  * TagCategory represents a predefined preference profile
@@ -24,6 +25,18 @@ export class TagCategoryEntity {
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   icon?: string;
+
+  /**
+   * Applicable types - defines which entities this category can be used for
+   * Array can include: USER, LOCATION, EVENT
+   * Example: ['USER', 'LOCATION'] means this category can be used for both user onboarding and location categorization
+   */
+  @Column({
+    name: 'applicable_types',
+    type: 'jsonb',
+    default: () => '\'["USER"]\'',
+  })
+  applicableTypes: CategoryType[];
 
   /**
    * JSONB mapping of tag_id to score weight

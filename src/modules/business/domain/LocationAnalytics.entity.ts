@@ -21,7 +21,7 @@ export class LocationAnalyticsEntity {
   @JoinColumn({ name: 'location_id' })
   location: LocationEntity;
 
-  @Column({ name: 'location_id', type: 'uuid' })
+  @Column({ name: 'location_id', type: 'uuid', unique: true })
   locationId: string;
 
   @Column({ name: 'total_posts', type: 'bigint', default: 0 })
