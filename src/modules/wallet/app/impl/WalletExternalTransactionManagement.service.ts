@@ -111,7 +111,7 @@ export class WalletExternalTransactionManagementService
       return await externalTransactionRepository
         .save(externalTransaction)
         // TODO: emit event and send delayed message for expired transactions
-        .then(async (transaction) => {
+        .then((transaction) => {
           return transaction;
         })
         // create payment used to be here, but now we're gonna split it into 2 steps: Create order -> Create payment

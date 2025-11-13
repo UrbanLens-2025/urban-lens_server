@@ -3,4 +3,3 @@ export class CancelDepositTransactionDto {
   accountId: string;
   accountName: string;
 }
-
