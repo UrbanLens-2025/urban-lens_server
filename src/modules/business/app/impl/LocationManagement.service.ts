@@ -15,6 +15,9 @@ import { ForceUpdateLocationDto } from '@/common/dto/business/ForceUpdateLocatio
 import { CreatePublicLocationDto } from '@/common/dto/business/CreatePublicLocation.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
+import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
+import { CategoryType } from '@/common/constants/CategoryType.constant';
+import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 
 @Injectable()
 export class LocationManagementService
@@ -157,10 +160,58 @@ export class LocationManagementService
       const locationRepository = LocationRepositoryProvider(em);
       const locationTagRepository = LocationTagsRepository(em);
       const tagRepository = TagRepositoryProvider(em);
+      const categoryRepository = em.getRepository(TagCategoryEntity);
+
+      // Validate categories exist
+      const categories = await categoryRepository.find({
+        where: {
+          id: In(dto.categoryIds),
+        },
+      });
+
+      if (categories.length !== dto.categoryIds.length) {
+        const foundIds = categories.map((c) => c.id);
+        const missingIds = dto.categoryIds.filter(
+          (id) => !foundIds.includes(id),
+        );
+        throw new BadRequestException(
+          `One or more categories not found: ${missingIds.join(', ')}`,
+        );
+      }
+
+      // Validate categories have LOCATION type
+      const invalidCategories = categories.filter(
+        (c) =>
+          !c.applicableTypes?.includes(CategoryType.LOCATION) &&
+          !c.applicableTypes?.includes(CategoryType.ALL),
+      );
+
+      if (invalidCategories.length > 0) {
+        const invalidNames = invalidCategories.map((c) => c.name).join(', ');
+        throw new BadRequestException(
+          `The following categories are not applicable for LOCATION type: ${invalidNames}`,
+        );
+      }
+
+      // Convert categories to tags
+      const finalTagIds = await mergeTagsWithCategories(
+        [], // No manual tags, only from categories
+        dto.categoryIds,
+        CategoryType.LOCATION,
+        this.dataSource,
+      );
+
+      if (finalTagIds.length === 0) {
+        const categoryNames = categories.map((c) => c.name).join(', ');
+        throw new BadRequestException(
+          `Selected categories (${categoryNames}) do not contain any valid tags with positive scores. Please ensure categories have tag_score_weights configured.`,
+        );
+      }
 
       // validate tags
-      const countTags = await tagRepository.countSelectableTagsById(dto.tagIds);
-      if (countTags !== dto.tagIds.length) {
+      const countTags =
+        await tagRepository.countSelectableTagsById(finalTagIds);
+      if (countTags !== finalTagIds.length) {
         throw new BadRequestException(
           'One or more tags are invalid or not selectable',
         );
@@ -169,19 +220,25 @@ export class LocationManagementService
       const newLocation = this.mapTo_safe(LocationEntity, dto);
       newLocation.ownershipType = LocationOwnershipType.PUBLIC_PLACE;
 
-      return (
-        locationRepository
-          .save(newLocation)
-          // save tags
-          .then(async (res) => {
-            res.tags = await locationTagRepository.persistEntities({
-              locationId: res.id,
-              tagIds: dto.tagIds,
-            });
-            return res;
-          })
-          .then((res) => this.mapTo(LocationResponseDto, res))
-      );
+      const savedLocation = await locationRepository.save(newLocation);
+
+      // save tags
+      await locationTagRepository.persistEntities({
+        locationId: savedLocation.id,
+        tagIds: finalTagIds,
+      });
+
+      // Reload location with tags and tag relations
+      const locationWithTags = await locationRepository.findOne({
+        where: { id: savedLocation.id },
+        relations: ['tags', 'tags.tag'],
+      });
+
+      if (!locationWithTags) {
+        throw new BadRequestException('Failed to create location');
+      }
+
+      return this.mapTo(LocationResponseDto, locationWithTags);
     });
   }
 }

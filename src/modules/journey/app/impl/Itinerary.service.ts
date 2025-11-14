@@ -1,5 +1,6 @@
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,6 +14,7 @@ import { ItineraryRepository } from '../../infra/Itinerary.repository';
 import { ItineraryLocationRepository } from '../../infra/ItineraryLocation.repository';
 import { IItineraryService } from '../IItinerary.service';
 import { ItinerarySource } from '@/common/constants/ItinerarySource.constant';
+import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 
 @Injectable()
 export class ItineraryService implements IItineraryService {
@@ -20,6 +22,8 @@ export class ItineraryService implements IItineraryService {
     private readonly itineraryRepository: ItineraryRepository,
     private readonly itineraryLocationRepository: ItineraryLocationRepository,
     private readonly dataSource: DataSource,
+    @Inject(IFileStorageService)
+    private readonly fileStorageService: IFileStorageService,
   ) {}
 
   async createItinerary(
@@ -27,6 +31,14 @@ export class ItineraryService implements IItineraryService {
     dto: CreateItineraryDto,
   ): Promise<ItineraryEntity> {
     return this.dataSource.transaction(async (manager) => {
+      // Confirm upload for thumbnail if provided
+      if (dto.thumbnailUrl) {
+        await this.fileStorageService.confirmUpload(
+          [dto.thumbnailUrl],
+          manager,
+        );
+      }
+
       // Create itinerary (manual source)
       const itinerary = manager.create(ItineraryEntity, {
         userId,
@@ -35,7 +47,7 @@ export class ItineraryService implements IItineraryService {
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         endDate: dto.endDate ? new Date(dto.endDate) : undefined,
         source: ItinerarySource.MANUAL,
-        album: dto.album || [],
+        album: [], // Album is always empty when creating itinerary
         thumbnailUrl: dto.thumbnailUrl,
         locationWishlist: dto.locationWishlist || [],
       });
@@ -81,6 +93,14 @@ export class ItineraryService implements IItineraryService {
     dto: CreateItineraryFromAIDto,
   ): Promise<ItineraryEntity> {
     return this.dataSource.transaction(async (manager) => {
+      // Confirm upload for thumbnail if provided
+      if (dto.thumbnailUrl) {
+        await this.fileStorageService.confirmUpload(
+          [dto.thumbnailUrl],
+          manager,
+        );
+      }
+
       // Create itinerary with AI source
       const itinerary = manager.create(ItineraryEntity, {
         userId,
@@ -95,8 +115,8 @@ export class ItineraryService implements IItineraryService {
           prompt: dto.prompt,
           modelInfo: 'Ollama',
         },
-        album: [],
-        thumbnailUrl: undefined,
+        album: [], // Album is always empty when creating itinerary
+        thumbnailUrl: dto.thumbnailUrl,
         locationWishlist: [],
       });
 
@@ -171,6 +191,19 @@ export class ItineraryService implements IItineraryService {
     const itinerary = await this.getItineraryById(userId, itineraryId);
 
     return this.dataSource.transaction(async (manager) => {
+      // Confirm upload for album images if album is being updated
+      if (dto.album !== undefined && dto.album.length > 0) {
+        await this.fileStorageService.confirmUpload(dto.album, manager);
+      }
+
+      // Confirm upload for thumbnail if thumbnailUrl is being updated
+      if (dto.thumbnailUrl !== undefined) {
+        await this.fileStorageService.confirmUpload(
+          [dto.thumbnailUrl],
+          manager,
+        );
+      }
+
       // Update itinerary basic info
       const updateData: Partial<ItineraryEntity> = {};
       if (dto.title !== undefined) updateData.title = dto.title;
@@ -211,8 +244,17 @@ export class ItineraryService implements IItineraryService {
         }
       }
 
-      // Fetch complete itinerary with relations
-      const result = await this.itineraryRepository.findById(itineraryId);
+      // Fetch complete itinerary with relations using manager to get updated data
+      const result = await manager.getRepository(ItineraryEntity).findOne({
+        where: { id: itineraryId },
+        relations: ['locations', 'locations.location'],
+        order: {
+          locations: {
+            order: 'ASC',
+          },
+        },
+      });
+
       if (!result) {
         throw new NotFoundException('Failed to update itinerary');
       }

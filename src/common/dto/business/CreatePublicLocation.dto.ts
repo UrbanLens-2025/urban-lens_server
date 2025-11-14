@@ -3,6 +3,7 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsBoolean,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsPositive,
@@ -68,10 +69,14 @@ export class CreatePublicLocationDto {
   @IsNotEmpty()
   isVisibleOnMap: boolean;
 
-  @ApiProperty({ isArray: true, type: Number, example: [1, 2, 3] })
+  @ApiProperty({
+    isArray: true,
+    type: Number,
+    example: [55, 56, 57],
+    description: 'Array of category IDs (LOCATION type categories)',
+  })
   @IsArray()
   @ArrayNotEmpty()
-  @IsNumber({}, { each: true })
-  @IsNotEmpty({ each: true })
-  tagIds: number[];
+  @IsInt({ each: true })
+  categoryIds: number[];
 }

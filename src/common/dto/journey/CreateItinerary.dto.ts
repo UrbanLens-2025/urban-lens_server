@@ -88,19 +88,6 @@ export class CreateItineraryDto {
   endDate?: string;
 
   @ApiPropertyOptional({
-    description: 'Array of image URLs for the itinerary album',
-    type: [String],
-    example: [
-      'https://example.com/image1.jpg',
-      'https://example.com/image2.jpg',
-    ],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  album?: string[];
-
-  @ApiPropertyOptional({
     description: 'Thumbnail image URL for the itinerary',
     example: 'https://example.com/thumbnail.jpg',
   })
