@@ -1,21 +1,23 @@
 import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
 import { CreateScheduledJobDto } from '@/common/dto/scheduled-job/CreateScheduledJob.dto';
 import { ScheduledJobResponseDto } from '@/common/dto/scheduled-job/res/ScheduledJob.response.dto';
-import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
 
 export const IScheduledJobService = Symbol('IScheduledJobService');
 export interface IScheduledJobService {
   /**
-   * Create a new scheduled job in the database
+   * Create a new scheduled job in the database (used for long-running jobs: Jobs that run more than 1 day in the future)
+   *
+   * This method saves the job to the database, where a cron job will pick it up and execute it.
    * @param dto
    */
-  createScheduledJob<T extends ScheduledJobType>(
+  createLongRunningScheduledJob<T extends ScheduledJobType>(
     dto: CreateScheduledJobDto<T>,
   ): Promise<ScheduledJobResponseDto>;
 
   /**
-   * Process a scheduled job by pushing it to the message queue for processing
-   * @param scheduledJob
+   * Create and immediately execute a short-running scheduled job (used for short-running jobs: Jobs that run within a few minutes or hours)
+   *
+   * This method pushes the job to a queue with delay.
    */
-  processScheduledJob(scheduledJob: ScheduledJobEntity): Promise<any[]>;
+  createShortRunningScheduledJob(): Promise<void>;
 }

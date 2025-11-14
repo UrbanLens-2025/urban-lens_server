@@ -105,6 +105,13 @@ export class EventEntity {
   @Column({ name: 'has_paid_out', type: 'boolean', default: false })
   hasPaidOut: boolean;
 
+  @Column({
+    name: 'paid_out_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  paidOutAt?: Date | null;
+
   @ManyToOne(() => ScheduledJobEntity, (scheduledJob) => scheduledJob.id, {
     createForeignKeyConstraints: false,
     nullable: true,

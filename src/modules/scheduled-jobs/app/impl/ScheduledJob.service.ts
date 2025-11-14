@@ -7,24 +7,23 @@ import { ScheduledJobRepository } from '@/modules/scheduled-jobs/infra/repositor
 import { Injectable } from '@nestjs/common';
 import { ScheduledJobResponseDto } from '@/common/dto/scheduled-job/res/ScheduledJob.response.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ScheduledJobWrapperDto } from '@/common/dto/scheduled-job/ScheduledJobWrapper.dto';
 
 @Injectable()
 export class ScheduledJobService
   extends CoreService
   implements IScheduledJobService
 {
-  constructor(private readonly eventEmitter: EventEmitter2) {
+  constructor() {
     super();
   }
 
-  createScheduledJob<T extends ScheduledJobType>(
+  createLongRunningScheduledJob<T extends ScheduledJobType>(
     dto: CreateScheduledJobDto<T>,
   ): Promise<ScheduledJobResponseDto> {
     return this.ensureTransaction(dto.entityManager, async (em) => {
       const scheduledJobRepository = ScheduledJobRepository(em);
 
-      const scheduledJob = new ScheduledJobEntity();
+      const scheduledJob = this.mapTo_safe(ScheduledJobEntity, dto);
       scheduledJob.jobType = dto.jobType;
       scheduledJob.executeAt = dto.executeAt;
       scheduledJob.payload = dto.payload;
@@ -35,10 +34,7 @@ export class ScheduledJobService
     });
   }
 
-  async processScheduledJob(scheduledJob: ScheduledJobEntity): Promise<any[]> {
-    return this.eventEmitter.emitAsync(
-      scheduledJob.jobType,
-      new ScheduledJobWrapperDto(scheduledJob.id, scheduledJob.payload),
-    );
+  createShortRunningScheduledJob(): Promise<void> {
+    throw new Error('Method not implemented.');
   }
 }
