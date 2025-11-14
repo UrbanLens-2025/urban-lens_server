@@ -236,13 +236,6 @@ export class LocationBookingManagementService
 
       booking.referencedTransactionId = transaction.id;
       booking.status = LocationBookingStatus.PAYMENT_RECEIVED;
-      await locationBookingRepository.update(
-        { id: booking.id },
-        {
-          referencedTransactionId: booking.referencedTransactionId,
-          status: booking.status,
-        },
-      );
 
       // schedule job for payout to business after event completion
       if (booking.amountToPay > 0) {
@@ -270,6 +263,8 @@ export class LocationBookingManagementService
         booking.paidOutAt = new Date();
         booking.scheduledPayoutJobId = null;
       }
+
+      await locationBookingRepository.update({ id: booking.id }, booking);
 
       return this.mapTo(LocationBookingResponseDto, booking);
     });
