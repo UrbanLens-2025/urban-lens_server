@@ -18,9 +18,11 @@ import { ILocationBookingQueryService } from '@/modules/location-booking/app/ILo
 import { LocationBookingQueryService } from '@/modules/location-booking/app/impl/LocationBookingQuery.service';
 import { WalletModule } from '@/modules/wallet/Wallet.module';
 import { LocationBookingConfigCreatorController } from '@/modules/location-booking/interfaces/LocationBookingConfig.creator.controller';
+import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
+import { BookingPayoutListener } from '@/modules/location-booking/app/event-listener/BookingPayout.listener';
 
 @Module({
-  imports: [LocationReservationInfraModule, WalletModule],
+  imports: [LocationReservationInfraModule, ScheduledJobsModule, WalletModule],
   controllers: [
     LocationAvailabilityOwnerController,
     LocationAvailabilityCreatorController,
@@ -51,6 +53,7 @@ import { LocationBookingConfigCreatorController } from '@/modules/location-booki
       provide: ILocationBookingQueryService,
       useClass: LocationBookingQueryService,
     },
+    BookingPayoutListener,
   ],
   exports: [ILocationBookingManagementService],
 })

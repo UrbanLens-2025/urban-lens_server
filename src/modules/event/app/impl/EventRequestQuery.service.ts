@@ -37,7 +37,9 @@ export class EventRequestQueryService
           createdById: dto.accountId,
         },
         relations: {
-          referencedLocationBooking: true,
+          referencedLocationBooking: {
+            location: true,
+          },
           tags: true,
           createdBy: true,
         },

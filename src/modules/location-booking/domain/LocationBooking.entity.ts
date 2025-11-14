@@ -16,6 +16,8 @@ import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.
 import { EventRequestEntity } from '@/modules/event/domain/EventRequest.entity';
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
+import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
+import { isNotBlank } from '@/common/utils/is-not-blank.util';
 
 @Entity({ name: LocationBookingEntity.TABLE_NAME })
 export class LocationBookingEntity {
@@ -100,6 +102,22 @@ export class LocationBookingEntity {
   )
   referencedEventRequest?: EventRequestEntity | null;
 
+  @ManyToOne(() => ScheduledJobEntity, (scheduledJob) => scheduledJob.id, {
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'scheduled_payout_job_id' })
+  scheduledPayoutJob?: ScheduledJobEntity | null;
+
+  @Column({ name: 'scheduled_payout_job_id', type: 'bigint', nullable: true })
+  scheduledPayoutJobId?: number | null;
+
+  @Column({
+    name: 'paid_out_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  paidOutAt?: Date | null;
+
   // domain functions
 
   public canBeProcessed(): boolean {
@@ -112,6 +130,13 @@ export class LocationBookingEntity {
       this.status === LocationBookingStatus.APPROVED &&
       !!this.softLockedUntil &&
       now < this.softLockedUntil
+    );
+  }
+
+  public canBePaidOut(): boolean {
+    return (
+      this.status === LocationBookingStatus.PAYMENT_RECEIVED &&
+      isNotBlank(this.paidOutAt)
     );
   }
 }

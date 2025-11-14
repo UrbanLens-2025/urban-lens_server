@@ -18,7 +18,6 @@ export class ScheduledJobsDevOnlyController {
   createScheduledJob(
     @Body() dto: CreateScheduledJobDto<ScheduledJobType>,
   ): Promise<ScheduledJobResponseDto> {
-    return this.scheduledJobService.createScheduledJob(dto);
+    return this.scheduledJobService.createLongRunningScheduledJob(dto);
   }
 }
-

@@ -112,18 +112,20 @@ export class EventManagementService
         const executeAt = now
           .add(this.MILLIS_TO_EVENT_PAYOUT, 'milliseconds')
           .toDate();
-        const job = await this.scheduledJobService.createScheduledJob({
-          entityManager: em,
-          executeAt,
-          jobType: ScheduledJobType.EVENT_PAYOUT,
-          payload: {
-            eventId: event.id,
-          },
-        });
+        const job =
+          await this.scheduledJobService.createLongRunningScheduledJob({
+            entityManager: em,
+            executeAt,
+            jobType: ScheduledJobType.EVENT_PAYOUT,
+            payload: {
+              eventId: event.id,
+            },
+          });
         event.scheduledJobId = job.id;
       } else {
         event.hasPaidOut = true;
         event.scheduledJobId = null;
+        event.paidOutAt = new Date();
       }
 
       // save

@@ -1,11 +1,16 @@
 import { CoreActionDto } from '@/common/dto/CoreAction.dto';
-import { IsDate, IsDateString, IsEnum, IsNotEmpty, IsObject } from 'class-validator';
-import { type ScheduledJobPayload, ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
+import { IsDate, IsEnum, IsNotEmpty, IsObject } from 'class-validator';
+import {
+  type ScheduledJobPayload,
+  ScheduledJobType,
+} from '@/common/constants/ScheduledJobType.constant';
 import { IsAfterToday } from '@/common/decorators/IsAfterToday.decorator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
-export class CreateScheduledJobDto<T extends ScheduledJobType> extends CoreActionDto {
+export class CreateScheduledJobDto<
+  T extends ScheduledJobType,
+> extends CoreActionDto {
   @IsEnum(ScheduledJobType)
   @IsNotEmpty()
   @ApiProperty({ enum: ScheduledJobType })

@@ -1,6 +1,7 @@
 export enum ScheduledJobType {
   EVENT_PAYOUT = 'event.payout',
   NOTIFY_EVENT_START = 'event.notify_start',
+  LOCATION_BOOKING_PAYOUT = 'location_booking.payout',
 }
 
 export type ScheduledJobPayloadMap = {
@@ -9,6 +10,9 @@ export type ScheduledJobPayloadMap = {
   };
   [ScheduledJobType.NOTIFY_EVENT_START]: {
     accountId: string;
+  };
+  [ScheduledJobType.LOCATION_BOOKING_PAYOUT]: {
+    locationBookingId: string;
   };
 };
 

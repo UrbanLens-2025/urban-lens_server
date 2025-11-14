@@ -46,7 +46,8 @@ export class WalletTransactionCoordinatorService
         });
 
       // check if sufficient balance
-      const sufficientBalance = sourceWallet.balance >= dto.amountToTransfer;
+      const sufficientBalance =
+        sourceWallet.balance >= Number(dto.amountToTransfer);
 
       if (sufficientBalance) {
         /**
@@ -59,7 +60,7 @@ export class WalletTransactionCoordinatorService
             destinationWalletId: DefaultSystemWallet.ESCROW,
             sourceWalletId: sourceWallet.id,
             ownerId: dto.fromAccountId,
-            amountToTransfer: dto.amountToTransfer,
+            amountToTransfer: Number(dto.amountToTransfer),
             currency: dto.currency,
           },
         );
