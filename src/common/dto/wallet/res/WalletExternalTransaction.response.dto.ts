@@ -74,4 +74,7 @@ export class WalletExternalTransactionResponseDto {
   @Expose()
   @Type(() => WalletExternalTransactionTimelineResponseDto)
   timeline?: WalletExternalTransactionTimelineResponseDto[];
+
+  @Expose()
+  customMetadata?: Record<string, any> | null;
 }

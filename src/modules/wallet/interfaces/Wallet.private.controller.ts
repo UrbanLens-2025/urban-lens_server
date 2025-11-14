@@ -28,6 +28,7 @@ import {
   type PaginateQuery,
 } from 'nestjs-paginate';
 import { CreateWithdrawTransactionDto } from '@/common/dto/wallet/CreateWithdrawTransaction.dto';
+import { CreatePaymentForDepositTransactionDto } from '@/common/dto/wallet/CreatePaymentForDepositTransaction.dto';
 
 @ApiTags('Wallet')
 @ApiBearerAuth()
@@ -88,7 +89,7 @@ export class WalletPrivateController {
   }
 
   @ApiOperation({
-    summary: 'Deposit money from external account',
+    summary: 'Create EXTERNAL transaction to DEPOSIT money',
   })
   @Post('/external/deposit')
   depositFromExternalAccount(
@@ -102,6 +103,26 @@ export class WalletPrivateController {
       accountName: user.email,
       ipAddress,
     });
+  }
+
+  @ApiOperation({
+    summary: 'Start payment session for deposit transaction',
+  })
+  @Post('/external/deposit/:transactionId/payment')
+  startPaymentSessionForDepositTransaction(
+    @AuthUser() user: JwtTokenDto,
+    @Param('transactionId', ParseUUIDPipe) transactionId: string,
+    @Ip() ipAddress: string,
+    @Body() dto: CreatePaymentForDepositTransactionDto,
+  ) {
+    return this.externalTransactionManagementService.startPaymentSessionForDepositTransaction(
+      {
+        ...dto,
+        ip: ipAddress,
+        transactionId,
+        accountId: user.sub,
+      },
+    );
   }
 
   @ApiOperation({
@@ -120,14 +141,14 @@ export class WalletPrivateController {
   }
 
   @ApiOperation({
-    summary: 'Cancel withdraw transaction',
+    summary: 'Cancel external transaction (deposit or withdraw)',
   })
   @Post('/transactions/external/:transactionId/cancel')
-  cancelWithdrawTransaction(
+  cancelExternalTransaction(
     @AuthUser() user: JwtTokenDto,
     @Param('transactionId', ParseUUIDPipe) transactionId: string,
   ) {
-    return this.externalTransactionManagementService.cancelWithdrawTransaction({
+    return this.externalTransactionManagementService.cancelExternalTransaction({
       transactionId,
       accountId: user.sub,
       accountName: user.email,

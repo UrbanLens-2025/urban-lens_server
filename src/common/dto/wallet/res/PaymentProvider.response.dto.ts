@@ -6,4 +6,6 @@ export class PaymentProviderResponseDto {
   paymentUrl: string;
   @Expose()
   provider: SupportedPaymentProviders;
+  @Expose()
+  checkoutFields?: Record<string, unknown> | null;
 }

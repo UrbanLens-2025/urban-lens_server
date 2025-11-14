@@ -16,6 +16,7 @@ import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant
 import { SupportedPaymentProviders } from '@/common/constants/SupportedPaymentProviders.constant';
 import { ExternalTransactionAfterFinishAction } from '@/common/constants/ExternalTransactionAfterFinishAction.constant';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
+import dayjs from 'dayjs';
 
 @Entity({ name: WalletExternalTransactionEntity.TABLE_NAME })
 export class WalletExternalTransactionEntity {
@@ -141,9 +142,11 @@ export class WalletExternalTransactionEntity {
     externalTransaction.walletId = dto.walletId;
     externalTransaction.createdById = dto.createdById;
     externalTransaction.currency = dto.currency;
+    externalTransaction.expiresAt = dayjs().add(15, 'minutes').toDate();
 
     externalTransaction.direction = WalletExternalTransactionDirection.DEPOSIT;
-    externalTransaction.status = WalletExternalTransactionStatus.PENDING;
+    externalTransaction.status =
+      WalletExternalTransactionStatus.READY_FOR_PAYMENT;
 
     return externalTransaction;
   }
@@ -152,11 +155,11 @@ export class WalletExternalTransactionEntity {
     paymentUrl: string;
     expiresAt: Date;
     provider: SupportedPaymentProviders;
+    paymentDetails?: Record<string, unknown> | null;
   }) {
     this.paymentUrl = dto.paymentUrl;
     this.expiresAt = dto.expiresAt;
     this.provider = dto.provider;
-    this.status = WalletExternalTransactionStatus.READY_FOR_PAYMENT;
     return this;
   }
 
@@ -186,7 +189,8 @@ export class WalletExternalTransactionEntity {
     externalTransaction.createdById = dto.createdById;
     externalTransaction.currency = dto.currency;
     externalTransaction.withdrawBankName = dto.withdrawBankName;
-    externalTransaction.withdrawBankAccountNumber = dto.withdrawBankAccountNumber;
+    externalTransaction.withdrawBankAccountNumber =
+      dto.withdrawBankAccountNumber;
     externalTransaction.withdrawBankAccountName = dto.withdrawBankAccountName;
 
     externalTransaction.direction = WalletExternalTransactionDirection.WITHDRAW;
@@ -202,10 +206,17 @@ export class WalletExternalTransactionEntity {
     );
   }
 
-  public canBeCancelled(): boolean {
+  public canBeCancelledWithdraw(): boolean {
     return (
       this.status === WalletExternalTransactionStatus.PENDING &&
       this.direction === WalletExternalTransactionDirection.WITHDRAW
+    );
+  }
+
+  public canBeCancelledDeposit(): boolean {
+    return (
+      this.status === WalletExternalTransactionStatus.READY_FOR_PAYMENT &&
+      this.direction === WalletExternalTransactionDirection.DEPOSIT
     );
   }
 
@@ -241,5 +252,12 @@ export class WalletExternalTransactionEntity {
   public rejectWithdraw(): WalletExternalTransactionEntity {
     this.status = WalletExternalTransactionStatus.REJECTED;
     return this;
+  }
+
+  public canStartPaymentSession(): boolean {
+    return (
+      this.status === WalletExternalTransactionStatus.READY_FOR_PAYMENT &&
+      this.direction === WalletExternalTransactionDirection.DEPOSIT
+    );
   }
 }

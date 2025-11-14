@@ -1,7 +1,12 @@
 export class PaymentProviderConfirmationResponseDto {
+
+  constructor(props: Partial<PaymentProviderConfirmationResponseDto>) {
+    Object.assign(this, props);
+  }
+
   success: boolean;
   amount: number;
-  bankCode: string;
+  bankCode: string | null;
   bankTransactionNo: string | null;
   cardType: string | null;
   payDate: number | null;
@@ -10,4 +15,6 @@ export class PaymentProviderConfirmationResponseDto {
   transactionId: string | null;
 
   rawResponse: Record<string, string | number | null>;
+
+
 }

@@ -10,7 +10,7 @@ export interface IPaymentGatewayPort {
   ): Promise<PaymentProviderResponseDto>;
 
   processPaymentConfirmation(
-    queryParams: Record<string, unknown>,
+    queryParams?: Record<string, unknown> | null, requestBody?: Record<string, unknown> | null,
   ): PaymentProviderConfirmationResponseDto;
 
   createMockProcessPaymentConfirmationPayload(

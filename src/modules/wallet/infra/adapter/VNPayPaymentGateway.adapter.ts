@@ -1,6 +1,6 @@
 import { CoreService } from '@/common/core/Core.service';
 import { IPaymentGatewayPort } from '@/modules/wallet/app/ports/IPaymentGateway.port';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PaymentProviderResponseDto } from '@/common/dto/wallet/res/PaymentProvider.response.dto';
 import { CreatePaymentLinkDto } from '@/common/dto/wallet/CreatePaymentLink.dto';
 import { SupportedPaymentProviders } from '@/common/constants/SupportedPaymentProviders.constant';
@@ -78,8 +78,12 @@ export class VNPayPaymentGatewayAdapter
   }
 
   processPaymentConfirmation(
-    queryParams: Record<string, unknown>,
+    queryParams?: Record<string, unknown>, requestBody?: Record<string, unknown>,
   ): PaymentProviderConfirmationResponseDto {
+    if(!queryParams) {
+      throw new BadRequestException('Query params are required');
+    }
+    
     const vnp_TmnCode = String(queryParams['vnp_TmnCode']) || '';
 
     const vnp_Amount = Number(queryParams['vnp_Amount']) || 0;
@@ -122,7 +126,7 @@ export class VNPayPaymentGatewayAdapter
       // TODO validate hash. for now, we skip hash validation
     }
 
-    const response = new PaymentProviderConfirmationResponseDto();
+    const response = new PaymentProviderConfirmationResponseDto({});
     response.success = vnp_ResponseCode === 0;
     response.amount = vnp_Amount / 100;
     response.bankCode = vnp_BankCode;
