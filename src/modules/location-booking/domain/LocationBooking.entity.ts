@@ -136,7 +136,7 @@ export class LocationBookingEntity {
   public canBePaidOut(): boolean {
     return (
       this.status === LocationBookingStatus.PAYMENT_RECEIVED &&
-      isNotBlank(this.paidOutAt)
+      !isNotBlank(this.paidOutAt)
     );
   }
 }
