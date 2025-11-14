@@ -52,7 +52,7 @@ export class LocationBookingManagementService
   ) {
     super();
     this.MILLIS_TO_EVENT_PAYOUT = 1000 * 60 * 60 * 24 * 7; // TODO 7 days
-    this.MAX_TIME_TO_PAY_MINUTES = 1000 * 60 * 60 * 12; // TODO 24 hours
+    this.MAX_TIME_TO_PAY_MINUTES = 60 * 12; // 12 hours
   }
   createBooking_ForBusinessLocation(
     dto: CreateBookingForBusinessLocationDto,
