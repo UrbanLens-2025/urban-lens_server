@@ -9,9 +9,16 @@ import { ItineraryController } from './api/Itinerary.controller';
 import { GoogleMapsModule } from '@/common/core/google-maps/GoogleMaps.module';
 import { TokenModule } from '@/common/core/token/token.module';
 import { OllamaModule } from '@/common/core/ollama/Ollama.module';
+import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 
 @Module({
-  imports: [JourneyInfraModule, GoogleMapsModule, TokenModule, OllamaModule],
+  imports: [
+    JourneyInfraModule,
+    GoogleMapsModule,
+    TokenModule,
+    OllamaModule,
+    FileStorageModule,
+  ],
   controllers: [JourneyPlannerController, ItineraryController],
   providers: [
     {

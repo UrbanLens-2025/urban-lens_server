@@ -41,6 +41,14 @@ export class CreateItineraryFromAIDto {
   @IsOptional()
   endDate?: string;
 
+  @ApiPropertyOptional({
+    description: 'Thumbnail image URL for the itinerary',
+    example: 'https://example.com/thumbnail.jpg',
+  })
+  @IsString()
+  @IsOptional()
+  thumbnailUrl?: string;
+
   @ApiProperty({
     description: 'Location IDs from AI journey response (in order)',
     type: [String],
