@@ -8,6 +8,8 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ScheduledJobWrapperDto } from '@/common/dto/scheduled-job/ScheduledJobWrapper.dto';
+import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
+import { ScheduledJobStatus } from '@/common/constants/ScheduledJobStatus.constant';
 
 @Injectable()
 export class FetchScheduledJobsCronService
@@ -93,7 +95,31 @@ export class FetchScheduledJobsCronService
         ),
       );
       const result = await Promise.allSettled(promises);
-      // TODO handle failure case
+
+      const failedJobs: ScheduledJobEntity[] = [];
+      result.forEach((j, index) => {
+        const job = jobsToSchedule[index];
+        if (j.status === 'rejected') {
+          this.logger.error(
+            `Failed to process scheduled job with id ${job.id}: ${j.reason}`,
+          );
+
+          failedJobs.push(job);
+        }
+      });
+
+      // Transaction 2: Update failed jobs status
+      if (failedJobs.length > 0) {
+        await this.ensureTransaction(null, async (em) => {
+          const scheduledJobRepository = ScheduledJobRepository(em);
+          await scheduledJobRepository.update(
+            failedJobs.map((job) => job.id),
+            {
+              status: ScheduledJobStatus.FAILED,
+            },
+          );
+        });
+      }
     }
   }
 }
