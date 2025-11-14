@@ -94,7 +94,7 @@ export class WalletExternalTransactionManagementService
       });
       if (pendingCount >= this.MAX_PENDING_DEPOSIT_TRANSACTIONS) {
         throw new BadRequestException(
-          'Exceeded maximum pending deposit transactions',
+          `You are only allowed to have a maximum of ${this.MAX_PENDING_DEPOSIT_TRANSACTIONS} pending deposit transactions at a time. Please complete or cancel existing transactions before creating a new one.`,
         );
       }
 

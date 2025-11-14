@@ -1,14 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsString,
-  IsUrl,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
-import { ExternalTransactionAfterFinishAction } from '@/common/constants/ExternalTransactionAfterFinishAction.constant';
 
 export class CreateDepositTransactionDto {
   @ApiProperty({ example: 100000 })
@@ -24,7 +16,6 @@ export class CreateDepositTransactionDto {
 
   @ApiProperty({ example: 'http://google.com' })
   @IsString()
-  @IsUrl()
   @IsNotEmpty()
   returnUrl: string;
 
