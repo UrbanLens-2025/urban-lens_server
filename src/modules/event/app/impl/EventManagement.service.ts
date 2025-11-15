@@ -35,14 +35,21 @@ export class EventManagementService
       'MILLIS_TO_EVENT_PAYOUT',
     );
   }
+
   updateMyEvent(dto: UpdateEventDto): Promise<UpdateResult> {
     return this.ensureTransaction(null, async (em) => {
       const eventRepository = EventRepository(em);
 
-      await eventRepository.findOneByOrFail({
+      const event = await eventRepository.findOneByOrFail({
         id: dto.eventId,
         createdById: dto.accountId,
       });
+
+      if (!event.canBeUpdated()) {
+        throw new BadRequestException(
+          'Event cannot be updated. You can only update events that are DRAFT.',
+        );
+      }
 
       // Confirm uploads for image URLs
       await this.fileStorageService.confirmUpload(
@@ -64,9 +71,9 @@ export class EventManagementService
         createdById: dto.accountId,
       });
 
-      if (event.status !== EventStatus.DRAFT) {
+      if (!event.canBePublished()) {
         throw new BadRequestException(
-          `Event cannot be published. Current status: ${event.status}`,
+          'Event is missing required information to be published. Requires: Location, Display Name, Start Date, End Date.',
         );
       }
 

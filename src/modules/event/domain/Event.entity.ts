@@ -157,4 +157,19 @@ export class EventEntity {
   public canBePaidOut() {
     return this.status === EventStatus.FINISHED && !this.hasPaidOut;
   }
+
+  public canBePublished() {
+    const correctStatus = this.status === EventStatus.DRAFT;
+    const hasLocation = this.locationId !== null;
+    const hasDisplayName = this.displayName !== null;
+    const hasDates = this.startDate !== null && this.endDate !== null;
+    return correctStatus && hasLocation && hasDisplayName && hasDates;
+  }
+
+  canBeUpdated() {
+    const correctStatus =
+      this.status === EventStatus.DRAFT ||
+      this.status === EventStatus.PUBLISHED;
+    return correctStatus;
+  }
 }
