@@ -8,12 +8,19 @@ import {
   Query,
 } from '@nestjs/common';
 import { IQRCodeScanService } from '../app/IQRCodeScan.service';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ScanQRCodeDto } from '@/common/dto/gamification/ScanQRCode.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
+import { UserQRScanHistoryResponseDto } from '@/common/dto/gamification/QRScanHistory.response.dto';
 
 @ApiTags('QR Code Scan (User)')
 @ApiBearerAuth()
@@ -35,26 +42,16 @@ export class QRCodeScanUserController {
   }
 
   @ApiOperation({
-    summary: 'Get user mission progress',
-    description: 'Get progress for a specific mission',
+    summary: 'Get QR scan history',
+    description: 'Get history of QR codes scanned by the user',
   })
-  @Get('/progress/:missionId')
-  getUserMissionProgress(
-    @Param('missionId') missionId: string,
-    @AuthUser() user: JwtTokenDto,
-  ) {
-    return this.qrCodeScanService.getUserMissionProgress(user.sub, missionId);
-  }
-
-  @ApiOperation({
-    summary: 'Get user missions',
-    description: 'Get all missions for the current user',
+  @ApiResponse({
+    status: 200,
+    description: 'List of QR scans',
+    type: [UserQRScanHistoryResponseDto],
   })
-  @Get('/missions')
-  getUserMissions(
-    @AuthUser() user: JwtTokenDto,
-    @Query('locationId') locationId?: string,
-  ) {
-    return this.qrCodeScanService.getUserMissions(user.sub, locationId);
+  @Get('/history')
+  getUserScanHistory(@AuthUser() user: JwtTokenDto) {
+    return this.qrCodeScanService.getUserScanHistory(user.sub);
   }
 }

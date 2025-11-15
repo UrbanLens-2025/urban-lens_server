@@ -22,6 +22,40 @@ export class LocationVoucherUserController {
   ) {}
 
   @ApiOperation({
+    summary: 'Get all free available vouchers',
+    description:
+      'Get all free vouchers (price = 0 points) that are currently active and available for redemption',
+  })
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt', 'startDate', 'endDate'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title', 'voucherCode'],
+    filterableColumns: {
+      voucherType: true,
+      locationId: true,
+    },
+  })
+  @Get('/free')
+  getFreeAvailableVouchers(
+    @Paginate() query: PaginateQuery,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.locationVoucherService.getFreeAvailableVouchers(query);
+  }
+
+  @ApiOperation({
+    summary: 'Get voucher by ID',
+    description: 'Get a specific voucher by its ID',
+  })
+  @Get('/voucher/:voucherId')
+  getVoucherById(
+    @Param('voucherId') voucherId: string,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.locationVoucherService.getVoucherById(voucherId);
+  }
+
+  @ApiOperation({
     summary: 'Get available vouchers by location',
     description:
       'Get all available vouchers for exchange at a specific location',
@@ -44,17 +78,5 @@ export class LocationVoucherUserController {
       locationId,
       query,
     );
-  }
-
-  @ApiOperation({
-    summary: 'Get voucher by ID',
-    description: 'Get a specific voucher by its ID',
-  })
-  @Get('/voucher/:voucherId')
-  getVoucherById(
-    @Param('voucherId') voucherId: string,
-    @AuthUser() user: JwtTokenDto,
-  ) {
-    return this.locationVoucherService.getVoucherById(voucherId);
   }
 }

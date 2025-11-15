@@ -11,7 +11,12 @@ import {
 } from '@nestjs/common';
 import { ILocationMissionService } from '../app/ILocationMission.service';
 import { IQRCodeScanService } from '../app/IQRCodeScan.service';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CreateLocationMissionDto } from '@/common/dto/gamification/CreateLocationMission.dto';
 import { UpdateLocationMissionDto } from '@/common/dto/gamification/UpdateLocationMission.dto';
 import { GenerateOneTimeQRCodeDto } from '@/common/dto/gamification/GenerateOneTimeQRCode.dto';
@@ -24,6 +29,7 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
+import { BusinessQRScanHistoryResponseDto } from '@/common/dto/gamification/QRScanHistory.response.dto';
 
 @ApiTags('Location Mission (Business Owner)')
 @ApiBearerAuth()
@@ -146,5 +152,20 @@ export class LocationMissionBusinessController {
       user.sub,
       dto,
     );
+  }
+
+  @ApiOperation({
+    summary: 'Get QR scan history for business',
+    description:
+      'Get history of all QR codes scanned at locations owned by the business',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of QR scans at business locations',
+    type: [BusinessQRScanHistoryResponseDto],
+  })
+  @Get('/scan-history')
+  getBusinessScanHistory(@AuthUser() user: JwtTokenDto) {
+    return this.qrCodeScanService.getBusinessScanHistory(user.sub);
   }
 }

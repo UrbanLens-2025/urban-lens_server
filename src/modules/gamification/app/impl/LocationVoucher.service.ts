@@ -66,13 +66,23 @@ export class LocationVoucherService implements ILocationVoucherService {
       let pricePoint: number;
 
       if (voucherType === LocationVoucherType.PUBLIC) {
-        // Public vouchers default to 0 price point
-        pricePoint = dto.pricePoint !== undefined ? dto.pricePoint : 0;
+        // Public vouchers must have price point = 0
+        if (dto.pricePoint !== undefined && dto.pricePoint !== 0) {
+          throw new BadRequestException(
+            'Public vouchers must have price point = 0 (free)',
+          );
+        }
+        pricePoint = 0;
       } else {
-        // Mission-only vouchers require explicit price point
+        // Mission-only vouchers require explicit price point and must be > 0
         if (dto.pricePoint === undefined) {
           throw new BadRequestException(
             'Price point is required for mission-only vouchers',
+          );
+        }
+        if (dto.pricePoint <= 0) {
+          throw new BadRequestException(
+            'Price point must be greater than 0 for mission-only vouchers',
           );
         }
         pricePoint = dto.pricePoint;
@@ -204,22 +214,24 @@ export class LocationVoucherService implements ILocationVoucherService {
 
       // Handle price point based on voucher type
       const updatedVoucherType = dto.voucherType ?? voucher.voucherType;
+      const finalPricePoint =
+        dto.pricePoint !== undefined ? dto.pricePoint : voucher.pricePoint;
 
-      if (
-        updatedVoucherType === LocationVoucherType.PUBLIC &&
-        dto.pricePoint === undefined
-      ) {
-        // If changing to public and no price point specified, set to 0
+      if (updatedVoucherType === LocationVoucherType.PUBLIC) {
+        // Public vouchers must have price point = 0
+        if (dto.pricePoint !== undefined && dto.pricePoint !== 0) {
+          throw new BadRequestException(
+            'Public vouchers must have price point = 0 (free)',
+          );
+        }
         dto.pricePoint = 0;
-      } else if (
-        updatedVoucherType === LocationVoucherType.MISSION_ONLY &&
-        dto.pricePoint === undefined &&
-        (!voucher.pricePoint || voucher.pricePoint === 0)
-      ) {
-        // If changing to mission-only and no price point specified, require it
-        throw new BadRequestException(
-          'Price point is required for mission-only vouchers',
-        );
+      } else {
+        // Mission-only vouchers require price point > 0
+        if (finalPricePoint === undefined || finalPricePoint <= 0) {
+          throw new BadRequestException(
+            'Price point must be greater than 0 for mission-only vouchers',
+          );
+        }
       }
 
       // Update voucher
@@ -317,6 +329,33 @@ export class LocationVoucherService implements ILocationVoucherService {
         searchableColumns: ['title', 'voucherCode'],
         filterableColumns: {
           voucherType: true,
+        },
+      });
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async getFreeAvailableVouchers(
+    query: PaginateQuery,
+  ): Promise<Paginated<any>> {
+    try {
+      const now = new Date();
+      const queryBuilder = this.locationVoucherRepository.repo
+        .createQueryBuilder('voucher')
+        .leftJoinAndSelect('voucher.location', 'location')
+        .where('voucher.pricePoint = 0') // Free vouchers only
+        .andWhere('voucher.startDate <= :now', { now })
+        .andWhere('voucher.endDate >= :now', { now })
+        .andWhere('voucher.maxQuantity > 0');
+
+      return paginate(query, queryBuilder, {
+        sortableColumns: ['createdAt', 'startDate', 'endDate'],
+        defaultSortBy: [['createdAt', 'DESC']],
+        searchableColumns: ['title', 'voucherCode'],
+        filterableColumns: {
+          voucherType: true,
+          locationId: true,
         },
       });
     } catch (error) {
