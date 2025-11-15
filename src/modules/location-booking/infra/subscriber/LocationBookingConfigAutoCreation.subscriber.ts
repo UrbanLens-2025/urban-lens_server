@@ -22,7 +22,7 @@ export class LocationBookingConfigAutoCreationSubscriber
   }
 
   listenTo() {
-    return LocationBookingEntity;
+    return LocationEntity;
   }
 
   async afterInsert(event: InsertEvent<LocationEntity>): Promise<any> {
