@@ -1,4 +1,3 @@
-import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
