@@ -9,6 +9,7 @@ export const LocationBookingDateRepository = (
     findBookedDatesByDateRange(
       this: Repository<LocationBookingDateEntity>,
       payload: {
+        locationId: string;
         startDate: Date;
         endDate: Date;
       },
@@ -17,6 +18,9 @@ export const LocationBookingDateRepository = (
         .leftJoinAndSelect('booking_date.booking', 'booking')
         .where('booking.status = :status', {
           status: LocationBookingStatus.PAYMENT_RECEIVED,
+        })
+        .andWhere('booking.locationId = :locationId', {
+          locationId: payload.locationId,
         })
         .andWhere('booking_date.start_date_time <= :endDate', {
           endDate: payload.endDate,
