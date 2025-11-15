@@ -63,4 +63,21 @@ export class LocationBookingConfigEntity {
 
   @Column({ name: 'min_gap_between_bookings_minutes', type: 'int' })
   minGapBetweenBookingsMinutes: number;
+
+  public static createDefault(
+    locationId: string,
+    createdById: string,
+  ): LocationBookingConfigEntity {
+    // note to self: instantiate a new entity object so the result has all needed helper functions. Don't just use {} as LocationBookingConfig
+    const config = new LocationBookingConfigEntity();
+    config.locationId = locationId;
+    config.allowBooking = false; // default to false. user must explicitly set
+    config.baseBookingPrice = 100000;
+    config.currency = SupportedCurrency.VND;
+    config.maxBookingDurationMinutes = 240;
+    config.minBookingDurationMinutes = 60;
+    config.minGapBetweenBookingsMinutes = 15;
+    config.createdById = createdById;
+    return config;
+  }
 }

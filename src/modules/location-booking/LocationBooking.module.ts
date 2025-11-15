@@ -18,8 +18,10 @@ import { ILocationBookingQueryService } from '@/modules/location-booking/app/ILo
 import { LocationBookingQueryService } from '@/modules/location-booking/app/impl/LocationBookingQuery.service';
 import { WalletModule } from '@/modules/wallet/Wallet.module';
 import { LocationBookingConfigCreatorController } from '@/modules/location-booking/interfaces/LocationBookingConfig.creator.controller';
+import { LocationBookingConfigDevOnlyController } from '@/modules/location-booking/interfaces/LocationBookingConfig.dev-only.controller';
 import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
 import { BookingPayoutListener } from '@/modules/location-booking/app/event-listener/BookingPayout.listener';
+import { LocationBookingConfigAutoCreationSubscriber } from '@/modules/location-booking/infra/subscriber/LocationBookingConfigAutoCreation.subscriber';
 
 @Module({
   imports: [LocationReservationInfraModule, ScheduledJobsModule, WalletModule],
@@ -31,6 +33,7 @@ import { BookingPayoutListener } from '@/modules/location-booking/app/event-list
     LocationBookingOwnerController,
     LocationBookingCreatorController,
     LocationBookingConfigCreatorController,
+    LocationBookingConfigDevOnlyController,
   ],
   providers: [
     {
@@ -54,6 +57,7 @@ import { BookingPayoutListener } from '@/modules/location-booking/app/event-list
       useClass: LocationBookingQueryService,
     },
     BookingPayoutListener,
+    LocationBookingConfigAutoCreationSubscriber,
   ],
   exports: [ILocationBookingManagementService],
 })

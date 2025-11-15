@@ -7,8 +7,6 @@ import {
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
 import { WalletEntity } from '@/modules/wallet/domain/Wallet.entity';
-import { WalletType } from '@/common/constants/WalletType.constant';
-import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 
 @EventSubscriber()
 export class AccountSubscriber
@@ -27,13 +25,7 @@ export class AccountSubscriber
     if (!userId) return;
 
     const walletRepository = WalletRepository(event.manager);
-    const wallet = new WalletEntity();
-    wallet.ownedBy = userId;
-    wallet.walletType = WalletType.USER;
-    wallet.currency = SupportedCurrency.VND;
-    wallet.balance = 0;
-    wallet.totalTransactions = 0;
-    wallet.createdById = userId;
+    const wallet = WalletEntity.createDefault(userId);
     await walletRepository.save(wallet);
   }
 }

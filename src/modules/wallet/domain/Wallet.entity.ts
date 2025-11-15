@@ -107,4 +107,15 @@ export class WalletEntity {
   public canUpdateBalance(): boolean {
     return !this.isLocked;
   }
+
+  public static createDefault(ownedBy: string): WalletEntity {
+    const wallet = new WalletEntity();
+    wallet.ownedBy = ownedBy;
+    wallet.walletType = WalletType.USER;
+    wallet.currency = SupportedCurrency.VND;
+    wallet.balance = 0;
+    wallet.totalTransactions = 0;
+    wallet.createdById = ownedBy;
+    return wallet;
+  }
 }
