@@ -600,13 +600,12 @@ export class WalletExternalTransactionManagementService
         .findOneOrFail({
           where: {
             id: dto.transactionId,
-            status: WalletExternalTransactionStatus.PROCESSING,
           },
         })
         .then((res) => {
           if (!res.canCompleteProcessing()) {
             throw new BadRequestException(
-              'You are not allowed to complete this withdraw transaction',
+              'You are not allowed to complete this withdraw transaction. You have to start processing first.',
             );
           }
           return res;
