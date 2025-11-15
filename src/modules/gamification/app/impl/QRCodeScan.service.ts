@@ -223,17 +223,43 @@ export class QRCodeScanService implements IQRCodeScanService {
     try {
       const query = this.userMissionProgressRepository.repo
         .createQueryBuilder('progress')
+        .leftJoinAndSelect('progress.mission', 'mission')
+        .leftJoinAndSelect('mission.location', 'location')
         .where('progress.userProfileId = :userId', { userId });
 
       if (locationId) {
-        query.andWhere(
-          'progress.missionId IN (SELECT id FROM location_missions WHERE locationId = :locationId)',
-          { locationId },
-        );
+        query.andWhere('mission.locationId = :locationId', { locationId });
       }
 
       const missions = await query
-        .orderBy('progress.createdAt', 'DESC')
+        .orderBy('progress.completed', 'ASC')
+        .addOrderBy('mission.createdAt', 'DESC')
+        .getMany();
+
+      return missions;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async getMyMissionsInProgress(
+    userId: string,
+    locationId?: string,
+  ): Promise<any[]> {
+    try {
+      const query = this.userMissionProgressRepository.repo
+        .createQueryBuilder('progress')
+        .leftJoinAndSelect('progress.mission', 'mission')
+        .leftJoinAndSelect('mission.location', 'location')
+        .where('progress.userProfileId = :userId', { userId })
+        .andWhere('progress.completed = :completed', { completed: false });
+
+      if (locationId) {
+        query.andWhere('mission.locationId = :locationId', { locationId });
+      }
+
+      const missions = await query
+        .orderBy('mission.createdAt', 'DESC')
         .getMany();
 
       return missions;
@@ -557,6 +583,49 @@ export class QRCodeScanService implements IQRCodeScanService {
       ) {
         throw error;
       }
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async getUserScanHistory(userId: string): Promise<any[]> {
+    try {
+      const scannedQRCodes =
+        await this.oneTimeQRCodeRepository.findScannedByUser(userId);
+
+      return scannedQRCodes.map((qr) => ({
+        id: qr.id,
+        locationId: qr.locationId,
+        qrCodeData: qr.qrCodeData,
+        scannedAt: qr.scannedAt,
+        referenceId: qr.referenceId,
+        businessOwnerId: qr.businessOwnerId,
+        createdAt: qr.createdAt,
+        location: qr.location || null,
+      }));
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async getBusinessScanHistory(businessOwnerId: string): Promise<any[]> {
+    try {
+      const scannedQRCodes =
+        await this.oneTimeQRCodeRepository.findScannedAtBusinessLocations(
+          businessOwnerId,
+        );
+
+      return scannedQRCodes.map((qr) => ({
+        id: qr.id,
+        locationId: qr.locationId,
+        qrCodeData: qr.qrCodeData,
+        scannedBy: qr.scannedBy,
+        scannedAt: qr.scannedAt,
+        referenceId: qr.referenceId,
+        createdAt: qr.createdAt,
+        scannedByUser: qr.scannedByUser || null,
+        location: qr.location || null,
+      }));
+    } catch (error) {
       throw new BadRequestException(error.message);
     }
   }

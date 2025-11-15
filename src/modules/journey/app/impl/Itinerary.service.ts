@@ -122,7 +122,6 @@ export class ItineraryService implements IItineraryService {
 
       const savedItinerary = await manager.save(itinerary);
 
-      // Create itinerary locations from locationIds
       if (dto.locationIds && dto.locationIds.length > 0) {
         const locations = dto.locationIds.map((locationId, index) =>
           manager.create(ItineraryLocationEntity, {

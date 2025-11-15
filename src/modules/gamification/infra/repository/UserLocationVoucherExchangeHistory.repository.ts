@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, IsNull, Repository } from 'typeorm';
 import { UserLocationVoucherExchangeHistoryEntity } from '../../domain/UserLocationVoucherExchangeHistory.entity';
 
 @Injectable()
@@ -17,7 +17,17 @@ export class UserLocationVoucherExchangeHistoryRepository {
   ): Promise<UserLocationVoucherExchangeHistoryEntity[]> {
     return this.repo.find({
       where: { userProfileId },
-      relations: ['voucher'],
+      relations: ['voucher', 'voucher.location'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findAvailableByUser(
+    userProfileId: string,
+  ): Promise<UserLocationVoucherExchangeHistoryEntity[]> {
+    return this.repo.find({
+      where: { userProfileId, usedAt: IsNull() },
+      relations: ['voucher', 'voucher.location'],
       order: { createdAt: 'DESC' },
     });
   }

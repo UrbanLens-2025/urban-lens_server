@@ -11,9 +11,15 @@ export interface IQRCodeScanService {
 
   getUserMissions(userId: string, locationId?: string): Promise<any[]>;
 
+  getMyMissionsInProgress(userId: string, locationId?: string): Promise<any[]>;
+
   generateOneTimeQRCode(
     locationId: string,
     businessOwnerId: string,
     dto: GenerateOneTimeQRCodeDto,
   ): Promise<OneTimeQRCodeResponseDto>;
+
+  getUserScanHistory(userId: string): Promise<any[]>;
+
+  getBusinessScanHistory(businessOwnerId: string): Promise<any[]>;
 }

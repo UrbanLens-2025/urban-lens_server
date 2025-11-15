@@ -143,7 +143,8 @@ export class VoucherExchangeService implements IVoucherExchangeService {
   async getUserVouchers(
     userProfileId: string,
   ): Promise<UserLocationVoucherExchangeHistoryEntity[]> {
-    return this.userLocationVoucherExchangeHistoryRepository.findByUser(
+    // Only return vouchers that haven't been used yet
+    return this.userLocationVoucherExchangeHistoryRepository.findAvailableByUser(
       userProfileId,
     );
   }
@@ -185,7 +186,6 @@ export class VoucherExchangeService implements IVoucherExchangeService {
     message: string;
   }> {
     try {
-      // Get exchange history record (user's voucher)
       const exchangeRecord =
         await this.userLocationVoucherExchangeHistoryRepository.repo.findOne({
           where: { id: exchangeHistoryId, userProfileId },

@@ -46,4 +46,22 @@ export class OneTimeQRCodeRepository {
       .andWhere('is_used = false')
       .execute();
   }
+
+  async findScannedByUser(userId: string): Promise<OneTimeQRCodeEntity[]> {
+    return this.repo.find({
+      where: { scannedBy: userId, isUsed: true },
+      relations: ['location'],
+      order: { scannedAt: 'DESC' },
+    });
+  }
+
+  async findScannedAtBusinessLocations(
+    businessOwnerId: string,
+  ): Promise<OneTimeQRCodeEntity[]> {
+    return this.repo.find({
+      where: { businessOwnerId, isUsed: true },
+      relations: ['scannedByUser', 'scannedByUser.account', 'location'],
+      order: { scannedAt: 'DESC' },
+    });
+  }
 }

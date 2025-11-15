@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
+import { LocationEntity } from '@/modules/business/domain/Location.entity';
 
 @Entity('one_time_qr_codes')
 export class OneTimeQRCodeEntity {
@@ -83,6 +84,12 @@ export class OneTimeQRCodeEntity {
     name: 'updated_at',
   })
   updatedAt: Date;
+
+  @ManyToOne(() => LocationEntity, {
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'location_id' })
+  location: LocationEntity;
 
   @ManyToOne(() => UserProfileEntity, {
     createForeignKeyConstraints: false,

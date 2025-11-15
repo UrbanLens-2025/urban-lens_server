@@ -12,6 +12,7 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiProperty,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
@@ -20,6 +21,8 @@ import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import type { IVoucherExchangeService } from '../app/IVoucherExchange.service';
 import { IsNotEmpty, IsUUID, IsString } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { UserVoucherResponseDto } from '@/common/dto/gamification/UserVoucher.response.dto';
 
 export class ExchangeVoucherDto {
   @ApiProperty({
@@ -137,13 +140,22 @@ export class VoucherExchangeUserController {
     summary: 'Get user vouchers',
     description: 'Get all vouchers owned by the current user',
   })
+  @ApiResponse({
+    status: 200,
+    description: 'List of user vouchers',
+    type: [UserVoucherResponseDto],
+  })
   @Get('/vouchers')
-  async getUserVouchers(@AuthUser() user: JwtTokenDto) {
+  async getUserVouchers(
+    @AuthUser() user: JwtTokenDto,
+  ): Promise<UserVoucherResponseDto[]> {
     const vouchers = await this.voucherExchangeService.getUserVouchers(
       user.sub,
     );
 
-    return vouchers;
+    return plainToInstance(UserVoucherResponseDto, vouchers, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @ApiOperation({
