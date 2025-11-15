@@ -31,21 +31,28 @@ import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant
 import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
 import { PayForBookingDto } from '@/common/dto/location-booking/PayForBooking.dto';
 import { LocationBookingConfigRepository } from '@/modules/location-booking/infra/repository/LocationBookingConfig.repository';
+import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob.service';
+import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
 
 @Injectable()
 export class LocationBookingManagementService
   extends CoreService
   implements ILocationBookingManagementService
 {
-  private readonly MAX_TIME_TO_PAY_MINUTES: number = 720; // 12 hours
+  private readonly MAX_TIME_TO_PAY_MINUTES: number; // 12 hours
+  private readonly MILLIS_TO_EVENT_PAYOUT: number;
 
   constructor(
     private readonly configService: ConfigService<Environment>,
     private readonly eventEmitter: EventEmitter2,
     @Inject(IWalletTransactionCoordinatorService)
     private readonly walletTransactionCoordinatorService: IWalletTransactionCoordinatorService,
+    @Inject(IScheduledJobService)
+    private readonly scheduledJobService: IScheduledJobService,
   ) {
     super();
+    this.MILLIS_TO_EVENT_PAYOUT = 1000 * 60 * 60 * 24 * 7; // TODO 7 days
+    this.MAX_TIME_TO_PAY_MINUTES = 60 * 12; // 12 hours
   }
   createBooking_ForBusinessLocation(
     dto: CreateBookingForBusinessLocationDto,
@@ -229,13 +236,35 @@ export class LocationBookingManagementService
 
       booking.referencedTransactionId = transaction.id;
       booking.status = LocationBookingStatus.PAYMENT_RECEIVED;
-      await locationBookingRepository.update(
-        { id: booking.id },
-        {
-          referencedTransactionId: booking.referencedTransactionId,
-          status: booking.status,
-        },
-      );
+
+      // schedule job for payout to business after event completion
+      if (booking.amountToPay > 0) {
+        const maximumBookingDate = booking.dates.reduce((max, curr) => {
+          const currEnd = dayjs(curr.endDateTime);
+          return currEnd.isAfter(max) ? currEnd : max;
+        }, dayjs(0));
+
+        const executeAt = maximumBookingDate.add(
+          this.MILLIS_TO_EVENT_PAYOUT,
+          'milliseconds',
+        );
+        const job =
+          await this.scheduledJobService.createLongRunningScheduledJob({
+            entityManager: em,
+            executeAt: executeAt.toDate(),
+            jobType: ScheduledJobType.LOCATION_BOOKING_PAYOUT,
+            payload: {
+              locationBookingId: booking.id,
+            },
+          });
+        booking.scheduledPayoutJobId = job.id;
+      } else {
+        // in the case the booking was free
+        booking.paidOutAt = new Date();
+        booking.scheduledPayoutJobId = null;
+      }
+
+      await locationBookingRepository.update({ id: booking.id }, booking);
 
       return this.mapTo(LocationBookingResponseDto, booking);
     });

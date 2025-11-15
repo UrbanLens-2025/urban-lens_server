@@ -127,7 +127,10 @@ export class EventPayoutListener extends CoreService {
         },
       );
 
-      await eventRepository.update({ id: event.id }, { hasPaidOut: true });
+      await eventRepository.update(
+        { id: event.id },
+        { hasPaidOut: true, paidOutAt: new Date() },
+      );
     });
   }
 }

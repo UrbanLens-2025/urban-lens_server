@@ -6,6 +6,10 @@ import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ScheduledJobWrapperDto } from '@/common/dto/scheduled-job/ScheduledJobWrapper.dto';
+import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
+import { ScheduledJobStatus } from '@/common/constants/ScheduledJobStatus.constant';
 
 @Injectable()
 export class FetchScheduledJobsCronService
@@ -18,6 +22,7 @@ export class FetchScheduledJobsCronService
   constructor(
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly configService: ConfigService<Environment>,
+    private readonly eventEmitter: EventEmitter2,
     @Inject(IScheduledJobService)
     private readonly scheduledJobService: IScheduledJobService,
   ) {
@@ -83,20 +88,37 @@ export class FetchScheduledJobsCronService
 
     // Process jobs outside transaction (each listener creates its own transaction)
     if (jobsToSchedule.length > 0) {
-      try {
-        const promises = jobsToSchedule.map((job) =>
-          this.scheduledJobService.processScheduledJob(job),
-        );
-        await Promise.allSettled(promises);
-      } catch (error) {
-        if (error instanceof Error) {
+      const promises = jobsToSchedule.map((job) =>
+        this.eventEmitter.emitAsync(
+          job.jobType,
+          new ScheduledJobWrapperDto(job.id, job.payload),
+        ),
+      );
+      const result = await Promise.allSettled(promises);
+
+      const failedJobs: ScheduledJobEntity[] = [];
+      result.forEach((j, index) => {
+        const job = jobsToSchedule[index];
+        if (j.status === 'rejected') {
           this.logger.error(
-            `Failed to process scheduled jobs: ${error.message}`,
-            error.stack,
+            `Failed to process scheduled job with id ${job.id}: ${j.reason}`,
           );
-        } else {
-          throw error;
+
+          failedJobs.push(job);
         }
+      });
+
+      // Transaction 2: Update failed jobs status
+      if (failedJobs.length > 0) {
+        await this.ensureTransaction(null, async (em) => {
+          const scheduledJobRepository = ScheduledJobRepository(em);
+          await scheduledJobRepository.update(
+            failedJobs.map((job) => job.id),
+            {
+              status: ScheduledJobStatus.FAILED,
+            },
+          );
+        });
       }
     }
   }

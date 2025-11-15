@@ -5,7 +5,6 @@ import {
   IsNumber,
   IsOptional,
   IsPositive,
-  IsUrl,
   IsUUID,
 } from 'class-validator';
 import { VNPayBankCode } from '@/common/constants/VNPayBankCode.constant';
@@ -21,7 +20,6 @@ export class CreatePaymentLinkDto {
   ipAddress: string;
 
   @IsNotEmpty()
-  @IsUrl()
   returnUrl: string;
 
   @IsPositive()
