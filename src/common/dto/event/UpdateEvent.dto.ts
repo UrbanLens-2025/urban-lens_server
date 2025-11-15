@@ -43,11 +43,13 @@ export class UpdateEventDto {
   @IsOptional()
   @IsDate()
   @IsBefore('endDate')
-  startTime?: Date;
+  @Type(() => Date)
+  startDate?: Date;
 
   @ApiPropertyOptional({ example: new Date().toISOString() })
   @IsOptional()
   @IsDate()
+  @Type(() => Date)
   endDate?: Date;
 
   @ApiPropertyOptional({ example: 'Refund policy details here' })
