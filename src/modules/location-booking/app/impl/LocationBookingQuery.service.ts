@@ -69,6 +69,8 @@ export class LocationBookingQueryService
 
     return locationBookingDateRepository
       .findBookedDatesByDateRange({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        locationId: dto.locationId,
         startDate: dto.startDate,
         endDate: dto.endDate,
       })
