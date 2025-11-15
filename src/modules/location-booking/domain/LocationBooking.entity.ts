@@ -34,12 +34,13 @@ export class LocationBookingEntity {
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     createForeignKeyConstraints: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'account_id' })
-  createdBy: AccountEntity;
+  createdBy?: AccountEntity | null;
 
-  @Column({ name: 'account_id', type: 'uuid' })
-  createdById: string;
+  @Column({ name: 'account_id', type: 'uuid', nullable: true })
+  createdById?: string | null;
 
   @Column({
     name: 'booking_object',
