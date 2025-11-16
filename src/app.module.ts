@@ -42,6 +42,8 @@ import { ReviewWorkerService } from '@/workers/ReviewWorker.service';
 import { JourneyModule } from './modules/journey/Journey.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
+import { DelayedMessageProvider } from '@/common/core/delayed-message/DelayedMessage.provider';
+import { DelayedMessageModule } from '@/common/core/delayed-message/DelayedMessage.module';
 
 @Module({
   imports: [
@@ -95,6 +97,7 @@ import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.modu
     WalletModule,
     JourneyModule,
     ScheduledJobsModule,
+    DelayedMessageModule,
   ],
   controllers: [
     AppController,
