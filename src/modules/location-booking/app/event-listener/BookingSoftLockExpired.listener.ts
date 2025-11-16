@@ -65,7 +65,7 @@ export class BookingSoftLockExpiredListener extends CoreService {
       } catch (error) {
         event.nack();
         this.logger.error(
-          'Error handling location booking payment expired event',
+          `Error handling location booking payment expired event for booking ${locationBookingId}`,
           error,
         );
         return;
