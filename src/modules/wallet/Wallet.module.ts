@@ -21,6 +21,7 @@ import { WalletTransactionCoordinatorService } from '@/modules/wallet/app/impl/W
 import { IWalletTransactionQueryService } from '@/modules/wallet/app/IWalletTransactionQuery.service';
 import { WalletTransactionQueryService } from '@/modules/wallet/app/impl/WalletTransactionQuery.service';
 import { SEPayPaymentGatewayAdapter } from '@/modules/wallet/infra/adapter/SEPayPaymentGateway.adapter';
+import { ExternalTransactionExpiredListener } from '@/modules/wallet/app/event-listener/ExternalTransactionExpired.listener';
 
 @Module({
   imports: [WalletInfraModule],
@@ -64,6 +65,7 @@ import { SEPayPaymentGatewayAdapter } from '@/modules/wallet/infra/adapter/SEPay
       useClass: WalletTransactionQueryService,
     },
     WalletSeederHelper,
+    ExternalTransactionExpiredListener,
   ],
   exports: [WalletInfraModule, IWalletTransactionCoordinatorService],
 })
