@@ -49,7 +49,7 @@ export class ExternalTransactionExpiredListener extends CoreService {
       } catch (error) {
         event.nack();
         this.logger.error(
-          'Error handling external transaction expired event',
+          `Error handling external transaction expired event for transaction ${transactionId}`,
           error,
         );
         return;
