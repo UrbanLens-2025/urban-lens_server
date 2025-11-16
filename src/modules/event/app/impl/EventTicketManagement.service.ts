@@ -2,10 +2,12 @@ import { CoreService } from '@/common/core/Core.service';
 import { EventTicketResponseDto } from '@/common/dto/event/res/EventTicket.response.dto';
 import { AddTicketToEventDto } from '@/common/dto/event/AddTicketToEvent.dto';
 import { UpdateEventTicketDto } from '@/common/dto/event/UpdateEventTicket.dto';
+import { DeleteEventTicketDto } from '@/common/dto/event/DeleteEventTicket.dto';
 import { IEventTicketManagementService } from '@/modules/event/app/IEventTicketManagement.service';
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { EventTicketRepository } from '@/modules/event/infra/repository/EventTicket.repository';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
+import { TicketOrderDetailsRepository } from '@/modules/event/infra/repository/TicketOrderDetails.repository';
 import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 
@@ -78,6 +80,47 @@ export class EventTicketManagementService
       const savedTicket = await eventTicketRepository.save(ticket);
 
       return this.mapTo(EventTicketResponseDto, savedTicket);
+    });
+  }
+
+  deleteEventTicket(dto: DeleteEventTicketDto): Promise<void> {
+    return this.ensureTransaction(null, async (em) => {
+      const eventTicketRepository = EventTicketRepository(em);
+      const eventRepository = EventRepository(em);
+      const ticketOrderDetailsRepository = TicketOrderDetailsRepository(em);
+
+      // find ticket and validate ownership through event
+      const ticket = await eventTicketRepository.findOneOrFail({
+        where: { id: dto.ticketId },
+        relations: { event: true },
+      });
+
+      // validate event ownership
+      const event = await eventRepository.findOneByOrFail({
+        id: ticket.eventId,
+        createdById: dto.accountId,
+      });
+
+      // check if event can be updated
+      if (!event.canBeUpdated()) {
+        throw new BadRequestException(
+          'Event cannot be updated. You can only delete tickets from events that are DRAFT or PUBLISHED.',
+        );
+      }
+
+      // check if ticket has any orders
+      const orderCount = await ticketOrderDetailsRepository.count({
+        where: { ticketId: dto.ticketId },
+      });
+
+      if (orderCount > 0) {
+        throw new BadRequestException(
+          'Cannot delete ticket. This ticket has existing orders.',
+        );
+      }
+
+      // delete ticket
+      await eventTicketRepository.remove(ticket);
     });
   }
 }

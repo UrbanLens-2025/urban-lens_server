@@ -189,6 +189,19 @@ export class EventCreatorController {
     });
   }
 
+  @ApiOperation({ summary: 'Delete a ticket from my event' })
+  @Delete('/:eventId/tickets/:ticketId')
+  deleteTicketForMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @Param('ticketId', ParseUUIDPipe) ticketId: string,
+    @AuthUser() userDto: JwtTokenDto,
+  ) {
+    return this.eventTicketManagementService.deleteEventTicket({
+      ticketId,
+      accountId: userDto.sub,
+    });
+  }
+
   @ApiOperation({ summary: 'Publish my event' })
   @Post('/:eventId/publish')
   publishMyEvent(

@@ -24,6 +24,8 @@ import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { ProcessBookingDto } from '@/common/dto/location-booking/ProcessBooking.dto';
+import { GetBookedDatesByDateRangeDto } from '@/common/dto/location-booking/GetBookedDatesByDateRange.dto';
+import { BookedDatesResponseDto } from '@/common/dto/location-booking/res/BookedDate.response.dto';
 
 @ApiTags('Location Bookings')
 @ApiBearerAuth()
@@ -76,5 +78,17 @@ export class LocationBookingOwnerController {
       accountId: userDto.sub,
       bookingId: locationBookingId,
     });
+  }
+
+  @ApiOperation({
+    summary: 'Get booked dates by date range',
+    description:
+      'Returns all booked dates with PAYMENT_RECEIVED status that overlap with the specified date range',
+  })
+  @Get('/booked-dates')
+  getBookedDatesByDateRange(
+    @Query() dto: GetBookedDatesByDateRangeDto,
+  ): Promise<BookedDatesResponseDto> {
+    return this.locationBookingQueryService.getBookedDatesByDateRange(dto);
   }
 }
