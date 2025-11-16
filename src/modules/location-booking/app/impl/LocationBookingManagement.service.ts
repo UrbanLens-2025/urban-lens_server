@@ -161,7 +161,7 @@ export class LocationBookingManagementService
 
       booking.status = dto.status;
       booking.softLockedUntil = dayjs(now)
-        .add(this.MAX_TIME_TO_PAY_MS, 'minutes')
+        .add(this.MAX_TIME_TO_PAY_MS, 'milliseconds')
         .toDate();
       const updateResult = await locationBookingRepository.update(
         { id: booking.id },
