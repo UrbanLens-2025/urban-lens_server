@@ -17,7 +17,6 @@ import {
   Channel,
   ChannelModel,
   connect,
-  Connection,
   ConsumeMessage,
 } from 'amqplib';
 
