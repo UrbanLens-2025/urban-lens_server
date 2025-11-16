@@ -23,14 +23,8 @@ export class ItineraryLocationEntity {
   @Column({ name: 'order', type: 'integer' })
   order: number;
 
-  @Column({ name: 'activity', type: 'text', nullable: true })
-  activity?: string;
-
   @Column({ name: 'notes', type: 'text', nullable: true })
   notes?: string;
-
-  @Column({ name: 'visit_date', type: 'date', nullable: true })
-  visitDate?: Date;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;

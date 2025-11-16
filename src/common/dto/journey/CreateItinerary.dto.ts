@@ -30,28 +30,12 @@ export class ItineraryLocationDto {
   order: number;
 
   @ApiPropertyOptional({
-    description: 'Suggested activity at this location',
-    example: 'Thưởng thức cà phê và làm việc trong không gian yên tĩnh',
-  })
-  @IsString()
-  @IsOptional()
-  activity?: string;
-
-  @ApiPropertyOptional({
     description: 'Personal notes for this location',
     example: 'Nhớ đặt chỗ trước',
   })
   @IsString()
   @IsOptional()
   notes?: string;
-
-  @ApiPropertyOptional({
-    description: 'Planned visit date (ISO 8601)',
-    example: '2025-11-15',
-  })
-  @IsDateString()
-  @IsOptional()
-  visitDate?: string;
 }
 
 export class CreateItineraryDto {
@@ -96,16 +80,6 @@ export class CreateItineraryDto {
   thumbnailUrl?: string;
 
   @ApiPropertyOptional({
-    description: 'Array of location IDs in wishlist',
-    type: [String],
-    example: ['fa5c272f-4e3b-43f0-830d-9c16a4c7408f'],
-  })
-  @IsArray()
-  @IsUUID(undefined, { each: true })
-  @IsOptional()
-  locationWishlist?: string[];
-
-  @ApiProperty({
     description: 'List of locations in order',
     type: [ItineraryLocationDto],
   })
