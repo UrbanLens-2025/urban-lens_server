@@ -26,23 +26,10 @@ export class ItineraryLocationResponseDto {
   order: number;
 
   @ApiPropertyOptional({
-    description: 'Suggested activity at this location',
-    example: 'Thưởng thức cà phê và làm việc trong không gian yên tĩnh',
-  })
-  @Expose()
-  activity?: string;
-
-  @ApiPropertyOptional({
     description: 'Personal notes for this location',
   })
   @Expose()
   notes?: string;
-
-  @ApiPropertyOptional({
-    description: 'Planned visit date',
-  })
-  @Expose()
-  visitDate?: Date;
 
   @ApiProperty({
     description: 'Location details',

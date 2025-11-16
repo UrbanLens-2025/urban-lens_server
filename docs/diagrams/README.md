@@ -40,6 +40,22 @@ Mỗi file tương ứng với một feature cụ thể, bao gồm cả **Class 
   - Use Voucher (Business Owner)
   - Get Free Available Vouchers
 
+### 5. **[Location Feature](./05-location-feature.md)**
+
+- Class Diagram: Location, Tag, TagCategory, LocationTag, Analytics
+- Sequence Diagrams:
+  - Create Public Location
+  - Create Business Location
+  - Get Location by Id
+
+### 6. **[Event Feature](./06-event-feature.md)**
+
+- Class Diagram: Event, EventParticipant, Account, Location
+- Sequence Diagrams:
+  - Create Event
+  - Join Event
+  - List Upcoming Events
+
 ---
 
 ## 📖 Cách xem Diagrams

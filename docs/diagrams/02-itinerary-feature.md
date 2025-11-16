@@ -34,9 +34,7 @@ classDiagram
         +UUID itineraryId
         +UUID locationId
         +Integer order
-        +String activity
         +String notes
-        +Date visitDate
     }
 
     class LocationEntity {
@@ -179,7 +177,7 @@ sequenceDiagram
     alt Locations provided
         loop For each location
             ItineraryService->>DataSource: create(ItineraryLocationEntity)
-            Note over DataSource: order, activity, notes, visitDate
+            Note over DataSource: order, notes
         end
         ItineraryService->>DataSource: save(locations)
         DataSource-->>ItineraryService: savedLocations
@@ -270,7 +268,7 @@ sequenceDiagram
     alt Location IDs provided
         loop For each locationId
             ItineraryService->>DataSource: create(ItineraryLocationEntity)
-            Note over DataSource: order = index + 1<br/>activity from dto.locationActivities
+            Note over DataSource: order = index + 1
         end
         ItineraryService->>DataSource: save(locations)
         DataSource-->>ItineraryService: savedLocations

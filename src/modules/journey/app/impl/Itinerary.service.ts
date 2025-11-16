@@ -49,7 +49,8 @@ export class ItineraryService implements IItineraryService {
         source: ItinerarySource.MANUAL,
         album: [], // Album is always empty when creating itinerary
         thumbnailUrl: dto.thumbnailUrl,
-        locationWishlist: dto.locationWishlist || [],
+        // For manual creation, wishlist should be empty
+        locationWishlist: [],
       });
 
       const savedItinerary = await manager.save(itinerary);
@@ -61,9 +62,7 @@ export class ItineraryService implements IItineraryService {
             itineraryId: savedItinerary.id,
             locationId: loc.locationId,
             order: loc.order,
-            activity: loc.activity,
             notes: loc.notes,
-            visitDate: loc.visitDate ? new Date(loc.visitDate) : undefined,
           }),
         );
 
@@ -117,7 +116,7 @@ export class ItineraryService implements IItineraryService {
         },
         album: [], // Album is always empty when creating itinerary
         thumbnailUrl: dto.thumbnailUrl,
-        locationWishlist: [],
+        locationWishlist: dto.locationWishlist || [],
       });
 
       const savedItinerary = await manager.save(itinerary);
@@ -128,7 +127,6 @@ export class ItineraryService implements IItineraryService {
             itineraryId: savedItinerary.id,
             locationId,
             order: index + 1,
-            activity: dto.locationActivities?.[locationId],
           }),
         );
 
@@ -233,9 +231,7 @@ export class ItineraryService implements IItineraryService {
               itineraryId,
               locationId: loc.locationId,
               order: loc.order,
-              activity: loc.activity,
               notes: loc.notes,
-              visitDate: loc.visitDate ? new Date(loc.visitDate) : undefined,
             }),
           );
 

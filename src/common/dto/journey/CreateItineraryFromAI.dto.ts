@@ -49,6 +49,20 @@ export class CreateItineraryFromAIDto {
   @IsOptional()
   thumbnailUrl?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'Array of location IDs in wishlist (AI suggested or user-provided)',
+    type: [String],
+    example: [
+      'fa5c272f-4e3b-43f0-830d-9c16a4c7408f',
+      'b433956a-137b-408c-a5c0-3ddb700a36e1',
+    ],
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
+  locationWishlist?: string[];
+
   @ApiProperty({
     description: 'Location IDs from AI journey response (in order)',
     type: [String],
