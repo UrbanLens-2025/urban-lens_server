@@ -33,18 +33,21 @@ import { PayForBookingDto } from '@/common/dto/location-booking/PayForBooking.dt
 import { LocationBookingConfigRepository } from '@/modules/location-booking/infra/repository/LocationBookingConfig.repository';
 import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob.service';
 import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
+import { DelayedMessageProvider } from '@/common/core/delayed-message/DelayedMessage.provider';
+import { DelayedMessageKeys } from '@/common/constants/DelayedMessageKeys.constant';
 
 @Injectable()
 export class LocationBookingManagementService
   extends CoreService
   implements ILocationBookingManagementService
 {
-  private readonly MAX_TIME_TO_PAY_MINUTES: number; // 12 hours
+  private readonly MAX_TIME_TO_PAY_MS: number; // 12 hours
   private readonly MILLIS_TO_EVENT_PAYOUT: number;
 
   constructor(
     private readonly configService: ConfigService<Environment>,
     private readonly eventEmitter: EventEmitter2,
+    private readonly delayedMessageProvider: DelayedMessageProvider,
     @Inject(IWalletTransactionCoordinatorService)
     private readonly walletTransactionCoordinatorService: IWalletTransactionCoordinatorService,
     @Inject(IScheduledJobService)
@@ -52,7 +55,9 @@ export class LocationBookingManagementService
   ) {
     super();
     this.MILLIS_TO_EVENT_PAYOUT = 1000 * 60 * 60 * 24 * 7; // TODO 7 days
-    this.MAX_TIME_TO_PAY_MINUTES = 60 * 12; // 12 hours
+    this.MAX_TIME_TO_PAY_MS = this.configService.getOrThrow<number>(
+      'LOCATION_BOOKING_MAX_TIME_TO_PAY_MS',
+    ); // 12 hours
   }
   createBooking_ForBusinessLocation(
     dto: CreateBookingForBusinessLocationDto,
@@ -156,7 +161,7 @@ export class LocationBookingManagementService
 
       booking.status = dto.status;
       booking.softLockedUntil = dayjs(now)
-        .add(this.MAX_TIME_TO_PAY_MINUTES, 'minutes')
+        .add(this.MAX_TIME_TO_PAY_MS, 'minutes')
         .toDate();
       const updateResult = await locationBookingRepository.update(
         { id: booking.id },
@@ -165,6 +170,21 @@ export class LocationBookingManagementService
           softLockedUntil: booking.softLockedUntil,
         },
       );
+
+      // this message will unlock the booking after the max time to pay
+      const result = this.delayedMessageProvider.sendDelayedMessage({
+        delayMs: this.MAX_TIME_TO_PAY_MS,
+        routingKey: DelayedMessageKeys.LOCATION_BOOKING_SOFT_LOCK_EXPIRED,
+        message: {
+          locationBookingId: booking.id,
+        },
+      });
+
+      if (!result) {
+        throw new InternalServerErrorException(
+          'Failed to send delayed message for location booking payment expired',
+        );
+      }
 
       // update parent object based on booking type
       switch (booking.bookingObject) {
