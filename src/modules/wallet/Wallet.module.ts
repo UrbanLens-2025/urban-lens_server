@@ -8,7 +8,6 @@ import { IWalletExternalTransactionManagementService } from '@/modules/wallet/ap
 import { WalletExternalTransactionManagementService } from '@/modules/wallet/app/impl/WalletExternalTransactionManagement.service';
 import { WalletPrivateController } from '@/modules/wallet/interfaces/Wallet.private.controller';
 import { IPaymentGatewayPort } from '@/modules/wallet/app/ports/IPaymentGateway.port';
-import { VNPayPaymentGatewayAdapter } from '@/modules/wallet/infra/adapter/VNPayPaymentGateway.adapter';
 import { WalletDevOnlyController } from '@/modules/wallet/interfaces/Wallet.dev-only.controller';
 import { WalletExternalTransactionWebhook } from '@/modules/wallet/interfaces/webhooks/WalletExternalTransaction.webhook';
 import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service';
