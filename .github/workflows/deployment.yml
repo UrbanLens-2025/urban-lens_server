@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: [ self-hosted, Linux, X64 ]
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,8 +56,8 @@ jobs:
           retention-days: 1
 
   deploy:
-    runs-on: [ self-hosted, Linux, X64 ]
-    needs: [ build ]
+    runs-on: [self-hosted, Linux, X64]
+    needs: [build]
     environment: Prod
     env:
       # PRIVATE VARIABLES
@@ -99,13 +99,14 @@ jobs:
       JWT_EXPIRES_IN: ${{ vars.JWT_EXPIRES_IN }}
       LOG_LEVELS: ${{ vars.LOG_LEVELS }}
       MAX_PENDING_DEPOSIT_TRANSACTIONS: ${{ vars.MAX_PENDING_DEPOSIT_TRANSACTIONS }}
-      PAYMENT_EXPIRATION_MINUTES: ${{vars.PAYMENT_EXPIRATION_MINUTES}}
+      PAYMENT_EXPIRATION_MS: ${{ vars.PAYMENT_EXPIRATION_MS }}
       PAYMENT_ALLOW_MOCK_HASH: ${{vars.PAYMENT_ALLOW_MOCK_HASH}}
       PAYMENT_MOCK_HASH: ${{vars.PAYMENT_MOCK_HASH}}
       NODE_ENV: ${{ vars.NODE_ENV }}
       PORT: ${{ vars.PORT }}
       MILLIS_TO_EVENT_PAYOUT: ${{ vars.MILLIS_TO_EVENT_PAYOUT }}
       FETCH_SCHEDULED_JOBS_CRON_EXPRESSION: ${{ vars.FETCH_SCHEDULED_JOBS_CRON_EXPRESSION }}
+      LOCATION_BOOKING_MAX_TIME_TO_PAY_MS: ${{ vars.LOCATION_BOOKING_MAX_TIME_TO_PAY_MS }}
 
     steps:
       - name: Download build artifact
@@ -156,7 +157,7 @@ jobs:
           sudo cp -r ./new-deployment/* /var/www/urbanlens-${{ env.TARGET }}/
           sudo chown -R $USER:$USER /var/www/urbanlens-${{ env.TARGET }}/
           cd /var/www/urbanlens-${{ env.TARGET }}/
-          pnpm install --prod --silent      
+          pnpm install --prod --silent
 
       - name: Start standby instance (on standby port)
         run: |
@@ -187,7 +188,7 @@ jobs:
           if [ "${{ env.CURRENT }}" != "none" ]; then
             pm2 stop urbanlens-${{ env.CURRENT }} || true
           fi
-          
+
           # start new on 8080
           cd /var/www/urbanlens-${{ env.TARGET }}/
           pm2 delete urbanlens-${{ env.TARGET }} || true

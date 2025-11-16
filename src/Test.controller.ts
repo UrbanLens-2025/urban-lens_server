@@ -12,13 +12,19 @@ import {
 import { AppService } from '@/app.service';
 import * as Sentry from '@sentry/nestjs';
 import { sepayClient } from '@/config/sepay.config';
-import qs from 'qs';
+import { DelayedMessageProvider } from '@/common/core/delayed-message/DelayedMessage.provider';
+import { DelayedMessageKeys } from '@/common/constants/DelayedMessageKeys.constant';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @ApiTags('_Test')
 @ApiBearerAuth()
 @Controller()
 export class TestController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly delayedMessageProvider: DelayedMessageProvider,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   @Get('/public/hello-world')
   getHelloWorld() {
@@ -77,7 +83,7 @@ export class TestController {
   }
 
   @Get('/public/test-sepay')
-  async testSepay() {
+  testSepay() {
     const checkoutURL = sepayClient.checkout.initCheckoutUrl();
     const checkoutFields = sepayClient.checkout.initOneTimePaymentFields({
       currency: 'VND',
@@ -90,6 +96,6 @@ export class TestController {
     return {
       checkoutURL,
       checkoutFields,
-    }
+    };
   }
 }
