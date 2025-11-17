@@ -69,6 +69,12 @@ export class ItineraryEntity {
   })
   locationWishlist: string[];
 
+  @Column({ name: 'total_distance_km', type: 'double precision', default: 0 })
+  totalDistanceKm: number;
+
+  @Column({ name: 'total_travel_minutes', type: 'integer', default: 0 })
+  totalTravelMinutes: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 

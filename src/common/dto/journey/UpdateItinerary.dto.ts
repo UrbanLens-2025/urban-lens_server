@@ -3,9 +3,12 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
+  IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { ItineraryLocationDto } from './CreateItinerary.dto';
@@ -83,4 +86,22 @@ export class UpdateItineraryDto {
   @Type(() => ItineraryLocationDto)
   @IsOptional()
   locations?: ItineraryLocationDto[];
+
+  @ApiPropertyOptional({
+    description: 'Total travel distance across all segments (km)',
+    example: 12.7,
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  totalDistanceKm?: number;
+
+  @ApiPropertyOptional({
+    description: 'Total travel time across all segments (minutes)',
+    example: 45,
+  })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  totalTravelMinutes?: number;
 }
