@@ -260,4 +260,9 @@ export class WalletExternalTransactionEntity {
       this.direction === WalletExternalTransactionDirection.DEPOSIT
     );
   }
+
+  public markAsExpired(): WalletExternalTransactionEntity {
+    this.status = WalletExternalTransactionStatus.EXPIRED;
+    return this;
+  }
 }

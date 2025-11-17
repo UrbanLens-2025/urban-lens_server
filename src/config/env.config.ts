@@ -50,7 +50,7 @@ export interface Environment {
 
   MAX_PENDING_DEPOSIT_TRANSACTIONS: number;
   MAX_PENDING_EVENT_REQUESTS: number;
-  PAYMENT_EXPIRATION_MINUTES: number;
+  PAYMENT_EXPIRATION_MS: number;
 
   PAYMENT_MOCK_HASH: string;
   PAYMENT_ALLOW_MOCK_HASH: boolean;
@@ -66,6 +66,8 @@ export interface Environment {
   FETCH_SCHEDULED_JOBS_CRON_EXPRESSION: string;
 
   WEBHOOK_API_KEY: string;
+
+  LOCATION_BOOKING_MAX_TIME_TO_PAY_MS: number;
 }
 
 export const envConfig = joi.object<Environment>({
@@ -121,7 +123,7 @@ export const envConfig = joi.object<Environment>({
 
   MAX_PENDING_DEPOSIT_TRANSACTIONS: joi.number().default(5),
   MAX_PENDING_EVENT_REQUESTS: joi.number().default(10),
-  PAYMENT_EXPIRATION_MINUTES: joi.number().default(10),
+  PAYMENT_EXPIRATION_MS: joi.number().default(1000 * 60 * 5),
   PAYMENT_MOCK_HASH: joi
     .string()
     .default('MOCK_SECURE_HASH_FOR_TESTING_PURPOSES'),
@@ -138,4 +140,6 @@ export const envConfig = joi.object<Environment>({
   FETCH_SCHEDULED_JOBS_CRON_EXPRESSION: joi.string().default('* * * * *'), // every minute
 
   WEBHOOK_API_KEY: joi.string().required(),
+
+  LOCATION_BOOKING_MAX_TIME_TO_PAY_MS: joi.number().default(1000 * 60 * 60 * 12), // 12 hours
 });

@@ -20,7 +20,7 @@ services:
       timeout: 5s
       retries: 5
   ubl-rabbitmq:
-    image: rabbitmq:3.13-management
+    image: sangdang1/urbanlens-rabbitmq:3.13
     platform: linux/amd64
     container_name: ubl-rabbitmq
     restart: on-failure

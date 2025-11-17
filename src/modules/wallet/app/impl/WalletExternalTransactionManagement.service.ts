@@ -37,6 +37,8 @@ import { CancelExternalTransactionDto } from '@/common/dto/wallet/CancelExternal
 import { CreatePaymentForDepositTransactionDto } from '@/common/dto/wallet/CreatePaymentForDepositTransaction.dto';
 import { PaymentProviderResponseDto } from '@/common/dto/wallet/res/PaymentProvider.response.dto';
 import dayjs from 'dayjs';
+import { DelayedMessageProvider } from '@/common/core/delayed-message/DelayedMessage.provider';
+import { DelayedMessageKeys } from '@/common/constants/DelayedMessageKeys.constant';
 
 @Injectable()
 export class WalletExternalTransactionManagementService
@@ -48,7 +50,7 @@ export class WalletExternalTransactionManagementService
   );
 
   private readonly MAX_PENDING_DEPOSIT_TRANSACTIONS: number;
-  private readonly PAYMENT_EXPIRATION_MINUTES: number;
+  private readonly PAYMENT_EXPIRATION_MS: number;
 
   constructor(
     private readonly configService: ConfigService<Environment>,
@@ -57,12 +59,13 @@ export class WalletExternalTransactionManagementService
     @Inject(IWalletActionService)
     private readonly walletActionService: IWalletActionService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly delayedMessageProvider: DelayedMessageProvider,
   ) {
     super();
     this.MAX_PENDING_DEPOSIT_TRANSACTIONS =
       this.configService.getOrThrow<number>('MAX_PENDING_DEPOSIT_TRANSACTIONS');
-    this.PAYMENT_EXPIRATION_MINUTES = this.configService.getOrThrow<number>(
-      'PAYMENT_EXPIRATION_MINUTES',
+    this.PAYMENT_EXPIRATION_MS = this.configService.getOrThrow<number>(
+      'PAYMENT_EXPIRATION_MS',
     );
   }
 
@@ -109,8 +112,22 @@ export class WalletExternalTransactionManagementService
 
       return await externalTransactionRepository
         .save(externalTransaction)
-        // TODO: emit event and send delayed message for expired transactions
+        // emit event and send delayed message for expired transactions
         .then((transaction) => {
+          const result = this.delayedMessageProvider.sendDelayedMessage({
+            routingKey: DelayedMessageKeys.TRANSACTION_EXPIRED,
+            delayMs: this.PAYMENT_EXPIRATION_MS,
+            message: {
+              transactionId: transaction.id,
+            },
+          });
+
+          if (!result) {
+            throw new InternalServerErrorException(
+              'Failed to send delayed message for expired transaction',
+            );
+          }
+
           return transaction;
         })
         // create payment used to be here, but now we're gonna split it into 2 steps: Create order -> Create payment

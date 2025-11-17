@@ -3,4 +3,5 @@ export enum EventRequestStatus {
   PROCESSED = 'PROCESSED',
   CONFIRMED = 'CONFIRMED',
   CANCELLED = 'CANCELLED',
+  FAILED = 'FAILED',
 }
