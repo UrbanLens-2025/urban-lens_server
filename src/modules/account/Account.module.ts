@@ -20,6 +20,11 @@ import { AccountHelper } from '@/modules/account/app/helper/Account.helper';
 import { AccountAdminController } from '@/modules/account/interfaces/Account.admin.controller';
 import { AccountQueryService } from '@/modules/account/app/impl/AccountQuery.service';
 import { AccountPrivateController } from '@/modules/account/interfaces/Account.private.controller';
+import { IFavoriteLocationManagementService } from '@/modules/account/app/IFavoriteLocationManagement.service';
+import { FavoriteLocationManagementService } from '@/modules/account/app/impl/FavoriteLocationManagement.service';
+import { IFavoriteLocationQueryService } from '@/modules/account/app/IFavoriteLocationQuery.service';
+import { FavoriteLocationQueryService } from '@/modules/account/app/impl/FavoriteLocationQuery.service';
+import { FavoriteLocationPrivateController } from '@/modules/account/interfaces/FavoriteLocation.private.controller';
 
 @Module({
   imports: [
@@ -37,6 +42,7 @@ import { AccountPrivateController } from '@/modules/account/interfaces/Account.p
     AccountOwnerController,
     AccountPrivateController,
     FollowUserController,
+    FavoriteLocationPrivateController,
   ],
   providers: [
     {
@@ -54,6 +60,14 @@ import { AccountPrivateController } from '@/modules/account/interfaces/Account.p
     {
       provide: IFollowService,
       useClass: FollowService,
+    },
+    {
+      provide: IFavoriteLocationManagementService,
+      useClass: FavoriteLocationManagementService,
+    },
+    {
+      provide: IFavoriteLocationQueryService,
+      useClass: FavoriteLocationQueryService,
     },
     AccountHelper,
   ],
