@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -36,6 +37,24 @@ export class ItineraryLocationDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Travel distance from previous point to this point (km)',
+    example: 1.25,
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  travelDistanceKm?: number;
+
+  @ApiPropertyOptional({
+    description: 'Travel time from previous point to this point (minutes)',
+    example: 6,
+  })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  travelDurationMinutes?: number;
 }
 
 export class CreateItineraryDto {
@@ -78,6 +97,24 @@ export class CreateItineraryDto {
   @IsString()
   @IsOptional()
   thumbnailUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Total travel distance across all segments (km)',
+    example: 12.7,
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  totalDistanceKm?: number;
+
+  @ApiPropertyOptional({
+    description: 'Total travel time across all segments (minutes)',
+    example: 45,
+  })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  totalTravelMinutes?: number;
 
   @ApiPropertyOptional({
     description: 'List of locations in order',

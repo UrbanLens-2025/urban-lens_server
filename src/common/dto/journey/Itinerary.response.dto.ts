@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { ItinerarySource } from '@/common/constants/ItinerarySource.constant';
 import { LocationResponseDto } from '../business/res/Location.response.dto';
 
@@ -30,6 +30,25 @@ export class ItineraryLocationResponseDto {
   })
   @Expose()
   notes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Travel distance from previous point to this point (km)',
+    example: 2.3,
+  })
+  @Expose()
+  @Transform(({ value }) => (value === null || value === undefined ? 0 : value))
+  @Type(() => Number)
+  travelDistanceKm?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Estimated travel time from previous point to this point (minutes)',
+    example: 8,
+  })
+  @Expose()
+  @Transform(({ value }) => (value === null || value === undefined ? 0 : value))
+  @Type(() => Number)
+  travelDurationMinutes?: number;
 
   @ApiProperty({
     description: 'Location details',
@@ -138,6 +157,20 @@ export class ItineraryResponseDto {
   @Expose()
   @Type(() => ItineraryLocationResponseDto)
   locations: ItineraryLocationResponseDto[];
+
+  @ApiProperty({
+    description: 'Total travel distance across all segments (km)',
+    example: 12.7,
+  })
+  @Expose()
+  totalDistanceKm: number;
+
+  @ApiProperty({
+    description: 'Total travel time across all segments (minutes)',
+  })
+  @Expose()
+  @Type(() => Number)
+  totalTravelMinutes: number;
 
   @ApiProperty({
     description: 'Created at timestamp',

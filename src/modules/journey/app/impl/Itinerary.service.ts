@@ -15,6 +15,7 @@ import { ItineraryLocationRepository } from '../../infra/ItineraryLocation.repos
 import { IItineraryService } from '../IItinerary.service';
 import { ItinerarySource } from '@/common/constants/ItinerarySource.constant';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
+// import { GoogleMapsService } from '@/common/core/google-maps/GoogleMaps.service';
 
 @Injectable()
 export class ItineraryService implements IItineraryService {
@@ -39,6 +40,22 @@ export class ItineraryService implements IItineraryService {
         );
       }
 
+      // Calculate totals from locations if not provided
+      const totalDistanceKm =
+        dto.totalDistanceKm !== undefined
+          ? dto.totalDistanceKm
+          : dto.locations?.reduce(
+              (acc, loc) => acc + (loc.travelDistanceKm || 0),
+              0,
+            ) || 0;
+      const totalTravelMinutes =
+        dto.totalTravelMinutes !== undefined
+          ? dto.totalTravelMinutes
+          : dto.locations?.reduce(
+              (acc, loc) => acc + (loc.travelDurationMinutes || 0),
+              0,
+            ) || 0;
+
       // Create itinerary (manual source)
       const itinerary = manager.create(ItineraryEntity, {
         userId,
@@ -51,6 +68,8 @@ export class ItineraryService implements IItineraryService {
         thumbnailUrl: dto.thumbnailUrl,
         // For manual creation, wishlist should be empty
         locationWishlist: [],
+        totalDistanceKm: Number(totalDistanceKm.toFixed(2)),
+        totalTravelMinutes: Math.trunc(totalTravelMinutes),
       });
 
       const savedItinerary = await manager.save(itinerary);
@@ -63,6 +82,14 @@ export class ItineraryService implements IItineraryService {
             locationId: loc.locationId,
             order: loc.order,
             notes: loc.notes,
+            travelDistanceKm:
+              loc.travelDistanceKm !== undefined
+                ? Number(loc.travelDistanceKm)
+                : undefined,
+            travelDurationMinutes:
+              loc.travelDurationMinutes !== undefined
+                ? Math.trunc(loc.travelDurationMinutes)
+                : undefined,
           }),
         );
 
@@ -83,7 +110,7 @@ export class ItineraryService implements IItineraryService {
       if (!result) {
         throw new NotFoundException('Failed to create itinerary');
       }
-      return result;
+      return result as ItineraryEntity;
     });
   }
 
@@ -99,6 +126,26 @@ export class ItineraryService implements IItineraryService {
           manager,
         );
       }
+
+      // Aggregate totals from DTO if provided (FE/AI sends metrics)
+      // Support both AI format (distanceFromPrevious, estimatedTravelTimeMinutes) and entity format
+      const summedDistance =
+        (dto.locations?.reduce(
+          (acc, cur: any) =>
+            acc +
+            (Number(cur.travelDistanceKm ?? cur.distanceFromPrevious ?? 0) ||
+              0),
+          0,
+        ) as number) || 0;
+      const summedMinutes =
+        (dto.locations?.reduce(
+          (acc: number, cur: any) =>
+            acc +
+            (Number(
+              cur.travelDurationMinutes ?? cur.estimatedTravelTimeMinutes ?? 0,
+            ) || 0),
+          0,
+        ) as number) || 0;
 
       // Create itinerary with AI source
       const itinerary = manager.create(ItineraryEntity, {
@@ -117,17 +164,43 @@ export class ItineraryService implements IItineraryService {
         album: [], // Album is always empty when creating itinerary
         thumbnailUrl: dto.thumbnailUrl,
         locationWishlist: dto.locationWishlist || [],
+        totalDistanceKm:
+          dto.totalDistanceKm !== undefined
+            ? dto.totalDistanceKm
+            : Number(summedDistance.toFixed(2)),
+        totalTravelMinutes:
+          dto.totalTravelMinutes !== undefined
+            ? dto.totalTravelMinutes
+            : (dto as any).estimatedTotalTimeMinutes !== undefined
+              ? Math.trunc((dto as any).estimatedTotalTimeMinutes)
+              : Math.trunc(summedMinutes),
       });
 
       const savedItinerary = await manager.save(itinerary);
 
-      if (dto.locationIds && dto.locationIds.length > 0) {
-        const locations = dto.locationIds.map((locationId, index) =>
-          manager.create(ItineraryLocationEntity, {
-            itineraryId: savedItinerary.id,
-            locationId,
-            order: index + 1,
-          }),
+      if (dto.locations && dto.locations.length > 0) {
+        const locations = dto.locations.map(
+          (loc: any) =>
+            manager.create(ItineraryLocationEntity, {
+              itineraryId: savedItinerary.id,
+              locationId: loc.locationId,
+              order: Number(loc.order),
+              notes: loc.notes,
+              // Map AI format (distanceFromPrevious) or entity format (travelDistanceKm)
+              travelDistanceKm:
+                typeof loc.travelDistanceKm !== 'undefined'
+                  ? Number(loc.travelDistanceKm)
+                  : typeof loc.distanceFromPrevious !== 'undefined'
+                    ? Number(loc.distanceFromPrevious)
+                    : undefined,
+              // Map AI format (estimatedTravelTimeMinutes) or entity format (travelDurationMinutes)
+              travelDurationMinutes:
+                typeof loc.travelDurationMinutes !== 'undefined'
+                  ? Math.trunc(Number(loc.travelDurationMinutes))
+                  : typeof loc.estimatedTravelTimeMinutes !== 'undefined'
+                    ? Math.trunc(Number(loc.estimatedTravelTimeMinutes))
+                    : undefined,
+            }) as ItineraryLocationEntity,
         );
 
         await manager.save(locations);
@@ -146,7 +219,7 @@ export class ItineraryService implements IItineraryService {
       if (!result) {
         throw new NotFoundException('Failed to create itinerary from AI');
       }
-      return result;
+      return result as ItineraryEntity;
     });
   }
 
@@ -214,6 +287,12 @@ export class ItineraryService implements IItineraryService {
         updateData.thumbnailUrl = dto.thumbnailUrl;
       if (dto.locationWishlist !== undefined)
         updateData.locationWishlist = dto.locationWishlist;
+      if (dto.totalDistanceKm !== undefined) {
+        updateData.totalDistanceKm = Number(dto.totalDistanceKm.toFixed(2));
+      }
+      if (dto.totalTravelMinutes !== undefined) {
+        updateData.totalTravelMinutes = Math.trunc(dto.totalTravelMinutes);
+      }
 
       if (Object.keys(updateData).length > 0) {
         await manager.update(ItineraryEntity, itineraryId, updateData);
@@ -232,6 +311,14 @@ export class ItineraryService implements IItineraryService {
               locationId: loc.locationId,
               order: loc.order,
               notes: loc.notes,
+              travelDistanceKm:
+                loc.travelDistanceKm !== undefined
+                  ? Number(loc.travelDistanceKm)
+                  : undefined,
+              travelDurationMinutes:
+                loc.travelDurationMinutes !== undefined
+                  ? Math.trunc(loc.travelDurationMinutes)
+                  : undefined,
             }),
           );
 
@@ -253,7 +340,7 @@ export class ItineraryService implements IItineraryService {
       if (!result) {
         throw new NotFoundException('Failed to update itinerary');
       }
-      return result;
+      return result as ItineraryEntity;
     });
   }
 
@@ -267,4 +354,6 @@ export class ItineraryService implements IItineraryService {
       await manager.delete(ItineraryEntity, itineraryId);
     });
   }
+
+  // Travel metrics calculation will be implemented separately using Google Maps service
 }

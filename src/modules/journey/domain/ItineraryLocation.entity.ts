@@ -26,6 +26,16 @@ export class ItineraryLocationEntity {
   @Column({ name: 'notes', type: 'text', nullable: true })
   notes?: string;
 
+  @Column({
+    name: 'travel_distance_km',
+    type: 'double precision',
+    nullable: true,
+  })
+  travelDistanceKm?: number;
+
+  @Column({ name: 'travel_duration_minutes', type: 'integer', nullable: true })
+  travelDurationMinutes?: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 
