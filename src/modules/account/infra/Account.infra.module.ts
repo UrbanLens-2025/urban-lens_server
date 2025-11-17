@@ -11,6 +11,7 @@ import { FollowRepository } from '@/modules/account/infra/repository/Follow.repo
 import { FollowEntity } from '@/modules/account/domain/Follow.entity';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { AccountRepository } from '@/modules/account/infra/repository/Account.repository';
+import { FavoriteLocationEntity } from '@/modules/account/domain/FavoriteLocation.entity';
 
 const repositories = [
   UserTagsRepository,
@@ -29,6 +30,7 @@ const repositories = [
       CreatorProfileEntity,
       FollowEntity,
       AccountEntity,
+      FavoriteLocationEntity,
     ]),
   ],
   providers: repositories,
