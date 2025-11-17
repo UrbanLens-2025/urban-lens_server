@@ -8,6 +8,7 @@ export interface Environment {
   PORT: number;
   ENABLE_ACCOUNT_SEEDING: boolean;
   ENABLE_WALLET_SEEDING: boolean;
+  ENABLE_REPORT_REASON_SEEDING: boolean;
 
   DATABASE_HOST: string;
   DATABASE_PORT: number;
@@ -85,6 +86,7 @@ export const envConfig = joi.object<Environment>({
   PORT: joi.number().default(3000),
   ENABLE_ACCOUNT_SEEDING: joi.boolean().default(false),
   ENABLE_WALLET_SEEDING: joi.boolean().default(false),
+  ENABLE_REPORT_REASON_SEEDING: joi.boolean().default(false),
 
   DATABASE_HOST: joi.string().required(),
   DATABASE_PORT: joi.number().required(),
