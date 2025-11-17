@@ -93,40 +93,45 @@ export const envConfig = joi.object<Environment>({
   DATABASE_NAME: joi.string().required(),
   DATABASE_ENABLE_SYNC: joi.boolean().default(false),
   DATABASE_SCHEMA: joi.string().default('public'),
-  DATABASE_LOG_LEVELS: joi.custom((value, helpers) => {
-    const valueString = value as string;
-    if (valueString === 'false') {
-      return false;
-    }
-    if (valueString === 'all') {
-      return 'all';
-    }
-    const parts = valueString.split(',').map((i) => i.trim());
-    const arraySchema = joi
-      .array()
-      .items(
-        joi
-          .string()
-          .valid(
-            'query',
-            'schema',
-            'error',
-            'warn',
-            'info',
-            'log',
-            'migration',
-          ),
-      )
-      .min(1)
-      .unique();
-    const validationResult = arraySchema.validate(parts);
-    if (validationResult.error) {
-      return helpers.error('any.invalid', {
-        message: validationResult.error.message,
-      });
-    }
-    return parts;
-  }).default(false),
+  DATABASE_LOG_LEVELS: joi
+    .custom((value, helpers) => {
+      const valueString = value as string | null | undefined;
+      if (!valueString) {
+        return false;
+      }
+      if (valueString === 'false') {
+        return false;
+      }
+      if (valueString === 'all') {
+        return 'all';
+      }
+      const parts = valueString.split(',').map((i) => i.trim());
+      const arraySchema = joi
+        .array()
+        .items(
+          joi
+            .string()
+            .valid(
+              'query',
+              'schema',
+              'error',
+              'warn',
+              'info',
+              'log',
+              'migration',
+            ),
+        )
+        .min(1)
+        .unique();
+      const validationResult = arraySchema.validate(parts);
+      if (validationResult.error) {
+        return helpers.error('any.invalid', {
+          message: validationResult.error.message,
+        });
+      }
+      return parts;
+    })
+    .default(false),
 
   MAILER_HOST: joi.string().required(),
   MAILER_PORT: joi.number().required(),
