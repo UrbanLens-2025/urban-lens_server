@@ -126,7 +126,7 @@ export const envConfig = joi.object<Environment>({
       });
     }
     return parts;
-  }),
+  }).default(false),
 
   MAILER_HOST: joi.string().required(),
   MAILER_PORT: joi.number().required(),
