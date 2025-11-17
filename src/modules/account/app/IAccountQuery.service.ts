@@ -4,6 +4,8 @@ import { LeaderboardResponseDto } from '@/common/dto/account/res/Leaderboard.res
 import { PaginateConfig, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
+import { GetAccountByIdDto } from '@/common/dto/account/GetAccountById.dto';
 
 export const IAccountQueryService = Symbol('IAccountQueryService');
 export interface IAccountQueryService {
@@ -12,6 +14,8 @@ export interface IAccountQueryService {
   searchBusinesses(
     query: PaginateQuery,
   ): Promise<Paginated<BusinessResponseDto>>;
+  getAllAccounts(query: PaginateQuery): Promise<Paginated<AccountResponseDto>>;
+  getAccountById(dto: GetAccountByIdDto): Promise<AccountResponseDto>;
 }
 
 export namespace IAccountQueryService_QueryConfig {
@@ -25,6 +29,19 @@ export namespace IAccountQueryService_QueryConfig {
       },
       relations: {
         account: true,
+      },
+    };
+  }
+
+  export function getAllAccounts(): PaginateConfig<AccountEntity> {
+    return {
+      sortableColumns: ['createdAt', 'email', 'firstName', 'lastName'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      searchableColumns: ['email', 'firstName', 'lastName', 'phoneNumber'],
+      filterableColumns: {
+        role: true,
+        hasOnboarded: true,
+        isLocked: true,
       },
     };
   }
