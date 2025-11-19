@@ -54,6 +54,9 @@ export class AccountEntity {
   @Column({ name: 'role', type: 'varchar', length: 50, default: Role.USER })
   role: Role;
 
+  /**
+   * Locked accounts cannot login
+   */
   @Column({ name: 'is_locked', type: 'boolean', default: false })
   isLocked: boolean;
 

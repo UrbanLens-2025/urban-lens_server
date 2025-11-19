@@ -5,4 +5,3 @@ export const IAccountManagementService = Symbol('IAccountManagementService');
 export interface IAccountManagementService {
   toggleAccountLock(dto: ToggleAccountLockDto): Promise<UpdateResult>;
 }
-
