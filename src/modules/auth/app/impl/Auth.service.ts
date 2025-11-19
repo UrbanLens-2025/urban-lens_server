@@ -13,6 +13,8 @@ import { LoginDto } from '@/common/dto/auth/Login.dto';
 import { AccountRepository } from '@/modules/account/infra/repository/Account.repository';
 import { UserLoginResponseDto } from '@/common/dto/auth/res/UserLoginResponse.dto';
 import { CoreService } from '@/common/core/Core.service';
+import { ExistsByEmailResponseDto } from '@/common/dto/auth/res/ExistsByEmailResponse.dto';
+import { ExistsByEmailDto } from '@/common/dto/auth/ExistsByEmail.dto';
 import { RegisterResponseDto } from '@/common/dto/auth/res/RegisterResponse.dto';
 import { randomUUID } from 'crypto';
 import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
@@ -47,6 +49,17 @@ export class AuthService extends CoreService implements IAuthService {
     super();
   }
 
+  async existsByEmail(
+    dto: ExistsByEmailDto,
+  ): Promise<ExistsByEmailResponseDto> {
+    const exists = await this.accountRepository.repo.existsBy({
+      email: dto.email,
+    });
+    const response = new ExistsByEmailResponseDto();
+    response.exists = exists;
+    return response;
+  }
+
   async resendOtp(dto: RegisterResendOtpDto): Promise<RegisterResponseDto> {
     const existingRegistration =
       await this.redisRegisterConfirmRepository.getByEmail(dto.email);
@@ -71,7 +84,7 @@ export class AuthService extends CoreService implements IAuthService {
 
     this.LOGGER.debug(`Resending OTP code: ${otpCode} for email: ${dto.email}`);
 
-    this.emailNotificationService.sendEmail({
+    await this.emailNotificationService.sendEmail({
       to: dto.email,
       template: EmailTemplates.CONFIRM_OTP,
       context: {
@@ -117,7 +130,7 @@ export class AuthService extends CoreService implements IAuthService {
       `Generated OTP code: ${otpCode} for email: ${createAuthDto.email}`,
     );
 
-    this.emailNotificationService.sendEmail({
+    await this.emailNotificationService.sendEmail({
       to: createAuthDto.email,
       template: EmailTemplates.CONFIRM_OTP,
       context: {
@@ -168,7 +181,7 @@ export class AuthService extends CoreService implements IAuthService {
 
     const user = await this.accountRepository.repo.save(userEntity);
 
-    this.emailNotificationService.sendEmail({
+    await this.emailNotificationService.sendEmail({
       to: user.email,
       template: EmailTemplates.WELCOME,
       context: {

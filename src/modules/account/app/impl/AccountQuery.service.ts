@@ -17,6 +17,7 @@ import { UserProfileRepositoryProvider } from '@/modules/account/infra/repositor
 import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { BusinessRepositoryProvider } from '@/modules/account/infra/repository/Business.repository';
+import { GetAccountByIdDto } from '@/common/dto/account/GetAccountById.dto';
 
 @Injectable({})
 export class AccountQueryService
@@ -102,5 +103,27 @@ export class AccountQueryService
       rankings,
       myRank,
     };
+  }
+
+  getAllAccounts(query: PaginateQuery): Promise<Paginated<AccountResponseDto>> {
+    return paginate(query, AccountRepositoryProvider(this.dataSource), {
+      ...IAccountQueryService_QueryConfig.getAllAccounts(),
+    }).then((res) => this.mapToPaginated(AccountResponseDto, res));
+  }
+
+  async getAccountById(dto: GetAccountByIdDto): Promise<AccountResponseDto> {
+    const accountRepository = AccountRepositoryProvider(this.dataSource);
+    return await accountRepository
+      .findOneOrFail({
+        where: {
+          id: dto.accountId,
+        },
+        relations: {
+          userProfile: true,
+          businessProfile: true,
+          creatorProfile: true,
+        },
+      })
+      .then((res) => this.mapTo(AccountResponseDto, res));
   }
 }

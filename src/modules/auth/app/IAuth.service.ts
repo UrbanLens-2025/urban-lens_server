@@ -7,9 +7,13 @@ import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ChangePasswordDto } from '@/common/dto/auth/ChangePassword.dto';
 import { UpdateResult } from 'typeorm';
+import { ExistsByEmailDto } from '@/common/dto/auth/ExistsByEmail.dto';
+import { ExistsByEmailResponseDto } from '@/common/dto/auth/res/ExistsByEmailResponse.dto';
 
 export const IAuthService = Symbol('IAuthService');
 export interface IAuthService {
+  existsByEmail(dto: ExistsByEmailDto): Promise<ExistsByEmailResponseDto>;
+
   resendOtp(dto: RegisterResendOtpDto): Promise<RegisterResponseDto>;
 
   register(dto: RegisterDto): Promise<RegisterResponseDto>;

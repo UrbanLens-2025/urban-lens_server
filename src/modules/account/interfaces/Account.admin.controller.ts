@@ -23,6 +23,9 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
+import { IAccountManagementService } from '@/modules/account/app/IAccountManagement.service';
+import { ToggleAccountLockDto } from '@/common/dto/account/ToggleAccountLock.dto';
+import { GetAccountByIdDto } from '@/common/dto/account/GetAccountById.dto';
 
 @ApiTags('Account')
 @ApiBearerAuth()
@@ -34,6 +37,8 @@ export class AccountAdminController {
     private readonly accountQueryService: IAccountQueryService,
     @Inject(IAccountProfileManagementService)
     private readonly accountProfileManagementService: IAccountProfileManagementService,
+    @Inject(IAccountManagementService)
+    private readonly accountManagementService: IAccountManagementService,
   ) {}
 
   @ApiOperation({
@@ -63,5 +68,36 @@ export class AccountAdminController {
       updateStatusDto,
       admin.sub,
     );
+  }
+
+  @ApiOperation({
+    summary: 'Get all accounts with pagination and filters',
+    description:
+      'Filter by role, hasOnboarded, isLocked. Search by email, firstName, lastName, phoneNumber',
+  })
+  @Get()
+  @ApiPaginationQuery(IAccountQueryService_QueryConfig.getAllAccounts())
+  getAllAccounts(@Paginate() query: PaginateQuery) {
+    return this.accountQueryService.getAllAccounts(query);
+  }
+
+  @ApiOperation({
+    summary: 'Get account by ID',
+    description: 'Get any account by ID, including admin accounts',
+  })
+  @Get('/:id')
+  getAccountById(@Param('id', ParseUUIDPipe) accountId: string) {
+    const dto: GetAccountByIdDto = { accountId };
+    return this.accountQueryService.getAccountById(dto);
+  }
+
+  @ApiOperation({
+    summary: 'Toggle account lock status',
+    description: 'Lock or unlock an account',
+  })
+  @Put('/:id/toggle-lock')
+  toggleAccountLock(@Param('id', ParseUUIDPipe) accountId: string) {
+    const dto: ToggleAccountLockDto = { accountId };
+    return this.accountManagementService.toggleAccountLock(dto);
   }
 }
