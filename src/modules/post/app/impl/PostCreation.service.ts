@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { EntityManager } from 'typeorm';
 import { CoreService } from '@/common/core/Core.service';
 import { IPostCreationService } from '@/modules/post/app/IPostCreation.service';
 import { CreatePostDto } from '@/common/dto/post/CreatePost.dto';
@@ -230,7 +231,7 @@ export class PostCreationService
   private async updateEntityRating(
     entityId: string,
     entityType: AnalyticEntityType,
-    em: any,
+    em: EntityManager,
   ): Promise<void> {
     const postRepo = PostRepositoryProvider(em);
 
@@ -327,40 +328,23 @@ export class PostCreationService
       throw new NotFoundException('Post not found');
     }
 
-    const result = await this.ensureTransaction(null, async (em) => {
+    return this.ensureTransaction(null, async (em) => {
       const commentRepository = CommentRepositoryProvider(em);
       const comment = commentRepository.create({
         author: { id: dto.authorId },
         post: { postId: dto.postId },
         content: dto.content,
       });
-      const savedComment = await commentRepository.save(comment);
+      return commentRepository.save(comment);
+    }).then((savedComment) => {
+      // Emit comment created event for gamification
+      const commentCreatedEvent = new CommentCreatedEvent();
+      commentCreatedEvent.commentId = savedComment.commentId;
+      commentCreatedEvent.authorId = dto.authorId ?? '';
+      commentCreatedEvent.postId = dto.postId;
+      this.eventEmitter.emit(COMMENT_CREATED_EVENT, commentCreatedEvent);
 
-      // Create analytic for comment
-      const analyticRepository = em.getRepository(AnalyticEntity);
-      const analytic = analyticRepository.create({
-        entityId: savedComment.commentId,
-        entityType: AnalyticEntityType.COMMENT,
-      });
-      await analyticRepository.save(analytic);
-
-      // Update totalComments of post
-      await analyticRepository.increment(
-        { entityId: dto.postId, entityType: AnalyticEntityType.POST },
-        'totalComments',
-        1,
-      );
-
-      return savedComment;
+      return this.mapTo(CommentResponseDto, savedComment);
     });
-
-    // Emit comment created event for gamification
-    const commentCreatedEvent = new CommentCreatedEvent();
-    commentCreatedEvent.commentId = result.commentId;
-    commentCreatedEvent.authorId = dto.authorId ?? '';
-    commentCreatedEvent.postId = dto.postId;
-    this.eventEmitter.emit(COMMENT_CREATED_EVENT, commentCreatedEvent);
-
-    return this.mapTo(CommentResponseDto, result);
   }
 }
