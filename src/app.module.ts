@@ -43,12 +43,11 @@ import { JourneyModule } from './modules/journey/Journey.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
 import { DelayedMessageModule } from '@/common/core/delayed-message/DelayedMessage.module';
-import { DevtoolsModule } from '@nestjs/devtools-integration';
 @Module({
   imports: [
-    DevtoolsModule.register({
-      http: process.env.NODE_ENV !== 'production', // Enable HTTP integration in non-production environments
-    }),
+    // DevtoolsModule.register({
+    //   http: process.env.NODE_ENV !== 'production', // Enable HTTP integration in non-production environments
+    // }),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env.development',
