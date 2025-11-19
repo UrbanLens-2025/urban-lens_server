@@ -26,6 +26,12 @@ import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entit
 import { ClientsModule } from '@nestjs/microservices';
 import { getRabbitMQConfig } from '@/config/rabbitmq.config';
 import { AnnouncementCreatorController } from '@/modules/post/interfaces/Announcement.creator.controller';
+import { IPostCreationService } from '@/modules/post/app/IPostCreation.service';
+import { PostCreationService } from '@/modules/post/app/impl/PostCreation.service';
+import { IPostQueryService } from '@/modules/post/app/IPostQuery.service';
+import { PostQueryService } from '@/modules/post/app/impl/PostQuery.service';
+import { IPostManagementService } from '@/modules/post/app/IPostManagement.service';
+import { PostManagementService } from '@/modules/post/app/impl/PostManagement.service';
 
 @Module({
   imports: [
@@ -53,6 +59,18 @@ import { AnnouncementCreatorController } from '@/modules/post/interfaces/Announc
     {
       provide: ICommentService,
       useClass: CommentService,
+    },
+    {
+      provide: IPostCreationService,
+      useClass: PostCreationService,
+    },
+    {
+      provide: IPostQueryService,
+      useClass: PostQueryService,
+    },
+    {
+      provide: IPostManagementService,
+      useClass: PostManagementService,
     },
     {
       provide: IAnnouncementService,

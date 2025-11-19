@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { AnalyticEntity } from '../../domain/Analytic.entity';
+import { EntityManager, DataSource, Repository } from 'typeorm';
+import { AnalyticEntity } from '@/modules/analytic/domain/Analytic.entity';
 
 @Injectable()
 export class AnalyticRepository {
@@ -10,3 +10,11 @@ export class AnalyticRepository {
     public readonly repo: Repository<AnalyticEntity>,
   ) {}
 }
+
+export const AnalyticRepositoryProvider = (ctx: DataSource | EntityManager) => {
+  return ctx.getRepository(AnalyticEntity).extend({});
+};
+
+export type AnalyticRepositoryProvider = ReturnType<
+  typeof AnalyticRepositoryProvider
+>;

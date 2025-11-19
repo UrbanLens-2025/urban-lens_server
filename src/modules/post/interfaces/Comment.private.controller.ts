@@ -8,21 +8,36 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ICommentService } from '../app/IComment.service';
+import { IPostCreationService } from '../app/IPostCreation.service';
+import { IPostQueryService } from '../app/IPostQuery.service';
+import { IPostManagementService } from '../app/IPostManagement.service';
 import { CreateCommentRequestDto } from '@/common/dto/post/CreateComment.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
-import type { PaginationParams } from '@/common/services/base.service';
 import { ReactCommentRequestDto } from '@/common/dto/post/ReactComment.dto';
 import { OptionalAuth } from '@/common/decorators/OptionalAuth.decorator';
+import { GetCommentsByPostIdDto } from '@/common/dto/post/GetCommentsByPostId.dto';
+import { GetCommentReactionsDto } from '@/common/dto/post/GetCommentReactions.dto';
+import { DeleteCommentRequestDto } from '@/common/dto/post/DeleteComment.dto';
+import {
+  ApiPaginationQuery,
+  Paginate,
+  type PaginateQuery,
+} from 'nestjs-paginate';
+import { IPostQueryService_QueryConfig } from '../app/IPostQuery.service';
 
 @ApiTags('Comment')
 @ApiBearerAuth()
 @Controller('/private/comment')
 export class CommentPrivateController {
   constructor(
-    @Inject(ICommentService) private readonly commentService: ICommentService,
+    @Inject(IPostCreationService)
+    private readonly postCreationService: IPostCreationService,
+    @Inject(IPostQueryService)
+    private readonly postQueryService: IPostQueryService,
+    @Inject(IPostManagementService)
+    private readonly postManagementService: IPostManagementService,
   ) {}
 
   @ApiOperation({ summary: 'Create a new comment' })
@@ -33,17 +48,21 @@ export class CommentPrivateController {
     @AuthUser() user: JwtTokenDto,
   ) {
     dto.authorId = user.sub;
-    return this.commentService.createComment(dto);
+    return this.postCreationService.createComment(dto);
   }
 
   @ApiOperation({ summary: 'Get comments by post id' })
   @Get('post/:postId')
   @OptionalAuth()
+  @ApiPaginationQuery(IPostQueryService_QueryConfig.getCommentsByPostId())
   getCommentsByPostId(
     @Param('postId') postId: string,
-    @Query() params: PaginationParams,
+    @Query() dto: GetCommentsByPostIdDto,
+    @Paginate() query: PaginateQuery,
   ) {
-    return this.commentService.getCommentsByPostId(postId, params);
+    dto.postId = postId;
+    dto.query = query;
+    return this.postQueryService.getCommentsByPostId(dto);
   }
 
   @ApiOperation({ summary: 'Delete a comment by id' })
@@ -53,7 +72,8 @@ export class CommentPrivateController {
     @Param('commentId') commentId: string,
     @AuthUser() user: JwtTokenDto,
   ) {
-    return this.commentService.deleteComment({ commentId, userId: user.sub });
+    const dto: DeleteCommentRequestDto = { commentId, userId: user.sub };
+    return this.postManagementService.deleteComment(dto);
   }
 
   @ApiOperation({ summary: 'React a comment' })
@@ -64,26 +84,34 @@ export class CommentPrivateController {
     @AuthUser() user: JwtTokenDto,
   ) {
     dto.userId = user.sub;
-    return this.commentService.reactComment(dto);
+    return this.postManagementService.reactComment(dto);
   }
 
   @ApiOperation({ summary: 'Get upvotes of a comment' })
   @Get(':commentId/upvotes')
   @OptionalAuth()
+  @ApiPaginationQuery(IPostQueryService_QueryConfig.getUpvotesOfComment())
   getUpvotesOfComment(
     @Param('commentId') commentId: string,
-    @Query() query: PaginationParams,
+    @Query() dto: GetCommentReactionsDto,
+    @Paginate() query: PaginateQuery,
   ) {
-    return this.commentService.getUpvotesOfComment(commentId, query);
+    dto.commentId = commentId;
+    dto.query = query;
+    return this.postQueryService.getUpvotesOfComment(dto);
   }
 
   @ApiOperation({ summary: 'Get downvotes of a comment' })
   @Get(':commentId/downvotes')
   @OptionalAuth()
+  @ApiPaginationQuery(IPostQueryService_QueryConfig.getDownvotesOfComment())
   getDownvotesOfComment(
     @Param('commentId') commentId: string,
-    @Query() query: PaginationParams,
+    @Query() dto: GetCommentReactionsDto,
+    @Paginate() query: PaginateQuery,
   ) {
-    return this.commentService.getDownvotesOfComment(commentId, query);
+    dto.commentId = commentId;
+    dto.query = query;
+    return this.postQueryService.getDownvotesOfComment(dto);
   }
 }

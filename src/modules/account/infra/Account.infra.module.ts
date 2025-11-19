@@ -12,6 +12,7 @@ import { FollowEntity } from '@/modules/account/domain/Follow.entity';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { AccountRepository } from '@/modules/account/infra/repository/Account.repository';
 import { FavoriteLocationEntity } from '@/modules/account/domain/FavoriteLocation.entity';
+import { UserPostsUpdaterSubscriber } from '@/modules/account/infra/subscriber/UserPostsUpdater.subscriber';
 
 const repositories = [
   UserTagsRepository,
@@ -33,7 +34,7 @@ const repositories = [
       FavoriteLocationEntity,
     ]),
   ],
-  providers: repositories,
+  providers: [...repositories, UserPostsUpdaterSubscriber],
   exports: repositories,
 })
 export class AccountInfraModule {}

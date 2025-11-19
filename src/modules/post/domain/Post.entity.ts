@@ -32,7 +32,7 @@ export class PostEntity {
   type: PostType;
 
   @Column({ name: 'rating', type: 'int', nullable: true })
-  rating: number;
+  rating?: number | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
@@ -43,6 +43,9 @@ export class PostEntity {
   @Column({ name: 'image_urls', type: 'text', array: true, default: [] })
   imageUrls: string[];
 
+  @Column({ name: 'video_urls', type: 'text', array: true, default: [] })
+  videoUrls: string[];
+
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     nullable: false,
     onDelete: 'CASCADE',
@@ -51,7 +54,7 @@ export class PostEntity {
   @JoinColumn({ name: 'author_id' })
   author: AccountEntity;
 
-  @Column({ name: 'author_id' })
+  @Column({ name: 'author_id', type: 'uuid', nullable: false })
   authorId: string;
 
   @Column({ name: 'location_id', type: 'uuid', nullable: true })
@@ -88,4 +91,16 @@ export class PostEntity {
 
   @Column({ name: 'is_hidden', type: 'boolean', default: false })
   isHidden: boolean;
+
+  public turnIntoBlog(): PostEntity {
+    this.type = PostType.BLOG;
+    this.rating = undefined;
+    this.visibility = Visibility.PUBLIC;
+    return this;
+  }
+
+  public turnIntoLocationReview() {
+    this.type = PostType.REVIEW;
+    return this;
+  }
 }
