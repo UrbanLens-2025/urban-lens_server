@@ -93,7 +93,8 @@ export class OnboardService extends CoreService implements IOnboardService {
         rankId: lowestRank.id,
         points: 0,
         tagScores: initialTagScores,
-        ...dto,
+        bio: dto.bio,
+        dob: dto.dob,
       });
 
       account.hasOnboarded = true;
