@@ -9,32 +9,26 @@ import { LocationBookingConfigRepository } from '@/modules/location-booking/infr
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
 import { Injectable } from '@nestjs/common';
+import { CreateDefaultLocationBookingConfigDto } from '@/common/dto/location-booking/CreateDefaultLocationBookingConfig.dto';
 
 @Injectable()
 export class LocationBookingConfigManagementService
   extends CoreService
   implements ILocationBookingConfigManagementService
 {
-  addConfig(
-    dto: AddLocationBookingConfigDto,
-  ): Promise<LocationBookingConfigResponseDto> {
-    return this.ensureTransaction(null, async (manager) => {
+  async createDefaultLocationBookingConfig(
+    dto: CreateDefaultLocationBookingConfigDto,
+  ): Promise<void> {
+    return this.ensureTransaction(dto.entityManager, async (manager) => {
       const locationBookingConfigRepository =
         LocationBookingConfigRepository(manager);
-      const locationRepository = LocationRepositoryProvider(manager);
 
-      const location = await locationRepository.findOneByOrFail({
-        id: dto.locationId,
-        businessId: dto.accountId,
-      });
+      const locationBookingConfig = LocationBookingConfigEntity.createDefault(
+        dto.locationId,
+        dto.businessId,
+      );
 
-      const newConfig = this.mapTo_safe(LocationBookingConfigEntity, dto);
-      newConfig.createdById = dto.accountId;
-      newConfig.location = location;
-
-      return locationBookingConfigRepository
-        .save(newConfig)
-        .then((res) => this.mapTo(LocationBookingConfigResponseDto, res));
+      await locationBookingConfigRepository.save(locationBookingConfig);
     });
   }
 

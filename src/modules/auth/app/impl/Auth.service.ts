@@ -33,6 +33,7 @@ import {
   USER_REGISTRATION_CONFIRMED,
   UserRegistrationConfirmedEvent,
 } from '@/modules/auth/app/events/UserRegistrationConfirmed.event';
+import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service';
 
 @Injectable()
 export class AuthService extends CoreService implements IAuthService {
@@ -44,6 +45,8 @@ export class AuthService extends CoreService implements IAuthService {
     private readonly tokenService: TokenService,
     @Inject(IEmailNotificationService)
     private readonly emailNotificationService: IEmailNotificationService,
+    @Inject(IWalletActionService)
+    private readonly walletActionService: IWalletActionService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     super();
@@ -179,7 +182,14 @@ export class AuthService extends CoreService implements IAuthService {
       userEntity.hasOnboarded = false;
     }
 
-    const user = await this.accountRepository.repo.save(userEntity);
+    const user = await this.accountRepository.repo
+      .save(userEntity)
+      .then(async (res) => {
+        await this.walletActionService.createDefaultWallet({
+          userId: res.id,
+        });
+        return res;
+      });
 
     await this.emailNotificationService.sendEmail({
       to: user.email,

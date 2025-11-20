@@ -38,6 +38,7 @@ import { LocationRequestType } from '@/common/constants/LocationRequestType.cons
 import { CreateLocationRequestFromUserDto } from '@/common/dto/business/CreateLocationRequestFromUser.dto';
 import { UserProfileRepositoryProvider } from '@/modules/account/infra/repository/UserProfile.repository';
 import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
+import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
 
 @Injectable()
 export class LocationRequestManagementService
@@ -48,6 +49,8 @@ export class LocationRequestManagementService
     private readonly eventEmitter: EventEmitter2,
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
+    @Inject(ILocationManagementService)
+    private readonly locationManagementService: ILocationManagementService,
   ) {
     super();
   }
@@ -335,7 +338,10 @@ export class LocationRequestManagementService
           // if approved, convert to location
           .then(async (res) => {
             if (dto.status === LocationRequestStatus.APPROVED) {
-              await this.convertLocationRequestToLocation(em, locationRequest);
+              await this.locationManagementService.convertLocationRequestToLocationEntity(
+                em,
+                locationRequest,
+              );
             }
             return res;
           })
@@ -362,71 +368,6 @@ export class LocationRequestManagementService
             return res;
           })
       );
-    });
-  }
-
-  private async convertLocationRequestToLocation(
-    em: EntityManager,
-    locationRequest: LocationRequestEntity,
-  ) {
-    const locationRepository = LocationRepositoryProvider(em);
-    const locationRequestTagsRepository = LocationRequestTagsRepository(em);
-    const locationTagsRepository = LocationTagsRepository(em);
-
-    const location = new LocationEntity();
-
-    switch (locationRequest.type) {
-      case LocationRequestType.BUSINESS_OWNED: {
-        location.ownershipType = LocationOwnershipType.OWNED_BY_BUSINESS;
-        location.name = locationRequest.name;
-        location.description = locationRequest.description;
-        location.addressLine = locationRequest.addressLine;
-        location.addressLevel1 = locationRequest.addressLevel1;
-        location.addressLevel2 = locationRequest.addressLevel2;
-        location.latitude = locationRequest.latitude;
-        location.longitude = locationRequest.longitude;
-        location.imageUrl = locationRequest.locationImageUrls;
-        location.businessId = locationRequest.createdById;
-        location.sourceLocationRequestId = locationRequest.id;
-        location.radiusMeters = locationRequest.radiusMeters;
-        location.isVisibleOnMap = false; // default not visible. User must update to make it visible
-        break;
-      }
-      case LocationRequestType.USER_SUGGESTED: {
-        location.ownershipType = LocationOwnershipType.PUBLIC_PLACE;
-        location.name = locationRequest.name;
-        location.description = locationRequest.description;
-        location.addressLine = locationRequest.addressLine;
-        location.addressLevel1 = locationRequest.addressLevel1;
-        location.addressLevel2 = locationRequest.addressLevel2;
-        location.latitude = locationRequest.latitude;
-        location.longitude = locationRequest.longitude;
-        location.imageUrl = locationRequest.locationImageUrls;
-        location.sourceLocationRequestId = locationRequest.id;
-        location.radiusMeters = locationRequest.radiusMeters;
-        location.isVisibleOnMap = false; // default not visible. User must update to make it visible
-        break;
-      }
-      default: {
-        throw new InternalServerErrorException(
-          'Location Request Type not supported for mapping to Location',
-        );
-      }
-    }
-
-    return locationRepository.save(location).then(async (savedLocation) => {
-      const locationRequestTags = await locationRequestTagsRepository.find({
-        where: {
-          locationRequestId: locationRequest.id,
-        },
-      });
-
-      savedLocation.tags = await locationTagsRepository.persistEntities({
-        tagIds: locationRequestTags.map((t) => t.tagId),
-        locationId: savedLocation.id,
-      });
-
-      return savedLocation;
     });
   }
 }

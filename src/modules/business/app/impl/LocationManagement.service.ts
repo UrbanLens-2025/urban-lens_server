@@ -1,8 +1,13 @@
 import { CoreService } from '@/common/core/Core.service';
 import { UpdateLocationDto } from '@/common/dto/business/UpdateLocation.dto';
 import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { In, UpdateResult } from 'typeorm';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { EntityManager, In, UpdateResult } from 'typeorm';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { AddLocationTagDto } from '@/common/dto/business/AddLocationTag.dto';
@@ -18,12 +23,27 @@ import { LocationOwnershipType } from '@/common/constants/LocationType.constant'
 import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
 import { CategoryType } from '@/common/constants/CategoryType.constant';
 import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
+import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
+import { LocationRequestTagsRepository } from '@/modules/business/infra/repository/LocationRequestTags.repository';
+import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
+import { ILocationAnalyticsService } from '@/modules/business/app/ILocationAnalytics.service';
+import { ILocationBookingConfigManagementService } from '@/modules/location-booking/app/ILocationBookingConfigManagement.service';
+import { CreateLocationEntityDto } from '@/common/dto/business/CreateLocationEntity.dto';
 
 @Injectable()
 export class LocationManagementService
   extends CoreService
   implements ILocationManagementService
 {
+  constructor(
+    @Inject(ILocationAnalyticsService)
+    private readonly locationAnalyticsService: ILocationAnalyticsService,
+    @Inject(ILocationBookingConfigManagementService)
+    private readonly locationBookingConfigManagementService: ILocationBookingConfigManagementService,
+  ) {
+    super();
+  }
+
   addTag(dto: AddLocationTagDto): Promise<LocationTagsResponseDto[]> {
     return this.ensureTransaction(null, async (em) => {
       const locationRepository = LocationRepositoryProvider(em);
@@ -240,5 +260,93 @@ export class LocationManagementService
 
       return this.mapTo(LocationResponseDto, locationWithTags);
     });
+  }
+
+  convertLocationRequestToLocationEntity(
+    em: EntityManager,
+    locationRequest: LocationRequestEntity,
+  ): Promise<LocationEntity> {
+    const locationRepository = LocationRepositoryProvider(em);
+    const locationRequestTagsRepository = LocationRequestTagsRepository(em);
+    const locationTagsRepository = LocationTagsRepository(em);
+
+    const location = new LocationEntity();
+
+    switch (locationRequest.type) {
+      case LocationRequestType.BUSINESS_OWNED: {
+        location.ownershipType = LocationOwnershipType.OWNED_BY_BUSINESS;
+        location.name = locationRequest.name;
+        location.description = locationRequest.description;
+        location.addressLine = locationRequest.addressLine;
+        location.addressLevel1 = locationRequest.addressLevel1;
+        location.addressLevel2 = locationRequest.addressLevel2;
+        location.latitude = locationRequest.latitude;
+        location.longitude = locationRequest.longitude;
+        location.imageUrl = locationRequest.locationImageUrls;
+        location.businessId = locationRequest.createdById;
+        location.sourceLocationRequestId = locationRequest.id;
+        location.radiusMeters = locationRequest.radiusMeters;
+        location.isVisibleOnMap = false; // default not visible. User must update to make it visible
+        break;
+      }
+      case LocationRequestType.USER_SUGGESTED: {
+        location.ownershipType = LocationOwnershipType.PUBLIC_PLACE;
+        location.name = locationRequest.name;
+        location.description = locationRequest.description;
+        location.addressLine = locationRequest.addressLine;
+        location.addressLevel1 = locationRequest.addressLevel1;
+        location.addressLevel2 = locationRequest.addressLevel2;
+        location.latitude = locationRequest.latitude;
+        location.longitude = locationRequest.longitude;
+        location.imageUrl = locationRequest.locationImageUrls;
+        location.sourceLocationRequestId = locationRequest.id;
+        location.radiusMeters = locationRequest.radiusMeters;
+        location.isVisibleOnMap = false; // default not visible. User must update to make it visible
+        break;
+      }
+      default: {
+        throw new InternalServerErrorException(
+          'Location Request Type not supported for mapping to Location',
+        );
+      }
+    }
+
+    return (
+      locationRepository
+        .save(location)
+        // transfer tags to new location
+        .then(async (savedLocation) => {
+          const locationRequestTags = await locationRequestTagsRepository.find({
+            where: {
+              locationRequestId: locationRequest.id,
+            },
+          });
+
+          savedLocation.tags = await locationTagsRepository.persistEntities({
+            tagIds: locationRequestTags.map((t) => t.tagId),
+            locationId: savedLocation.id,
+          });
+
+          return savedLocation;
+        })
+        // create location booking config
+        .then(async (savedLocation) => {
+          await this.locationBookingConfigManagementService.createDefaultLocationBookingConfig(
+            {
+              locationId: savedLocation.id,
+              businessId: savedLocation.businessId,
+            },
+          );
+          return savedLocation;
+        })
+        // create analytics
+        .then(async (savedLocation) => {
+          await this.locationAnalyticsService.createLocationAnalyticsEntity({
+            locationId: savedLocation.id,
+            entityManager: em,
+          });
+          return savedLocation;
+        })
+    );
   }
 }
