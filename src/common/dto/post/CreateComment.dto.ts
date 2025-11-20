@@ -18,7 +18,6 @@ export class CreateCommentRequestDto {
   })
   postId: string;
 
-  @IsString()
-  @IsOptional()
-  authorId?: string;
+  // transient
+  authorId: string;
 }

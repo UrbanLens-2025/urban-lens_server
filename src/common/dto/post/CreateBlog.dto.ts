@@ -1,5 +1,6 @@
+import { Visibility } from '@/modules/post/domain/Post.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class CreateBlogDto {
   // transient fields
@@ -16,9 +17,13 @@ export class CreateBlogDto {
 
   @IsArray()
   @IsOptional()
+  @IsUrl({}, { each: true })
   @ApiProperty({
-    description: 'The ids of the images',
-    example: ['1', '2', '3'],
+    description: 'The URLs of the images',
+    example: [
+      'https://example.com/image1.jpg',
+      'https://example.com/image2.jpg',
+    ],
   })
   imageUrls?: string[];
 
@@ -29,4 +34,13 @@ export class CreateBlogDto {
     example: ['1', '2', '3'],
   })
   videoIds?: string[];
+
+  @IsNotEmpty({ message: 'Visibility is required for blog posts' })
+  @IsEnum(Visibility)
+  @ApiProperty({
+    description: 'The visibility of the post (required for blog posts)',
+    example: Visibility.PUBLIC,
+    enum: Visibility,
+  })
+  visibility: Visibility;
 }

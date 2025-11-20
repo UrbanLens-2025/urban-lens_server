@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -35,6 +36,11 @@ import {
 import { PostResponseDto } from '@/common/dto/post/res/PostResponse.dto';
 import { CreateLocationReviewDto } from '@/common/dto/post/CreateLocationReview.dto';
 import { CreateBlogDto } from '@/common/dto/post/CreateBlog.dto';
+import { CreateEventReviewDto } from '@/common/dto/post/CreateEventReview.dto';
+import { ReactCommentRequestDto } from '@/common/dto/post/ReactComment.dto';
+import { ReactPostDto } from '@/common/dto/post/ReactPost.dto';
+import { ReactRepositoryProvider } from '@/modules/post/infra/repository/React.repository';
+import { ReactEntityType, ReactType } from '@/modules/post/domain/React.entity';
 
 @Injectable()
 export class PostCreationService
@@ -48,7 +54,6 @@ export class PostCreationService
   ) {
     super();
   }
-
   createBlog(dto: CreateBlogDto): Promise<PostResponseDto> {
     const post = this.mapTo_safe(PostEntity, dto);
     post.turnIntoBlog();
@@ -99,8 +104,13 @@ export class PostCreationService
         em,
       );
 
-      return postRepository.save(post).then((savedPost) => {
-        // recalculate rating here.
+      return postRepository.save(post).then(async (savedPost) => {
+        // TODO recalculate rating here.
+        await this.updateEntityRating(
+          dto.locationId,
+          AnalyticEntityType.LOCATION,
+          em,
+        );
         return savedPost;
       });
     })
@@ -115,117 +125,8 @@ export class PostCreationService
       .then((savedPost) => this.mapTo(PostResponseDto, savedPost));
   }
 
-  async createPost(dto: CreatePostDto): Promise<string> {
-    if (dto.type === PostType.BLOG && !dto.visibility) {
-      throw new BadRequestException('Visibility is required for blog posts');
-    }
-
-    if (dto.type === PostType.REVIEW) {
-      if (!dto.locationId && !dto.eventId) {
-        throw new BadRequestException(
-          'Review posts must have either locationId or eventId',
-        );
-      }
-      if (!dto.rating) {
-        throw new BadRequestException('Rating is required for review posts');
-      }
-    }
-
-    // Clear rating for blog posts
-    if (dto.type === PostType.BLOG) {
-      dto.rating = undefined;
-    }
-
-    // Check if user has checked in at location (for review posts)
-    let isVerified = false;
-    if (dto.type === PostType.REVIEW && dto.locationId) {
-      const checkInRepository = CheckInRepositoryProvider(this.dataSource);
-      const checkIn = await checkInRepository.findOne({
-        where: {
-          userProfileId: dto.authorId,
-          locationId: dto.locationId,
-        },
-      });
-      isVerified = !!checkIn;
-    }
-
-    const result = await this.ensureTransaction(null, async (em) => {
-      // Confirm upload for images if provided
-      if (dto.imageUrls && dto.imageUrls.length > 0) {
-        await this.fileStorageService.confirmUpload(dto.imageUrls, em);
-      }
-
-      // Confirm upload for videos if provided
-      if (dto.videoIds && dto.videoIds.length > 0) {
-        await this.fileStorageService.confirmUpload(dto.videoIds, em);
-      }
-
-      const postRepository = PostRepositoryProvider(em);
-      const post = postRepository.create({
-        ...dto,
-        isVerified,
-      });
-      const savedPost = await postRepository.save(post);
-
-      // Create post analytic
-      // const analyticRepository = em.getRepository(AnalyticEntity);
-      // const analytic = analyticRepository.create({
-      //   entityId: savedPost.postId,
-      //   entityType: AnalyticEntityType.POST,
-      // });
-      // await analyticRepository.save(analytic);
-
-      // If this is a review post, update location/event analytics
-      if (dto.type === PostType.REVIEW && dto.rating) {
-        if (dto.locationId) {
-          await this.updateEntityRating(
-            dto.locationId,
-            AnalyticEntityType.LOCATION,
-            em,
-          );
-        }
-
-        if (dto.eventId) {
-          await this.updateEntityRating(
-            dto.eventId,
-            AnalyticEntityType.EVENT,
-            em,
-          );
-        }
-      }
-
-      // Update user profile total counters
-      // if (dto.authorId) {
-      //   const userProfileRepo = em.getRepository(UserProfileEntity);
-      //   if (dto.type === PostType.BLOG) {
-      //     await userProfileRepo.increment(
-      //       { accountId: dto.authorId },
-      //       'totalBlogs',
-      //       1,
-      //     );
-      //   } else if (dto.type === PostType.REVIEW) {
-      //     await userProfileRepo.increment(
-      //       { accountId: dto.authorId },
-      //       'totalReviews',
-      //       1,
-      //     );
-      //   }
-      // }
-
-      return savedPost;
-    });
-
-    // Emit post created event for gamification
-    // if (dto.authorId) {
-    //   const postCreatedEvent = new PostCreatedEvent();
-    //   postCreatedEvent.postId = result.postId;
-    //   postCreatedEvent.authorId = dto.authorId;
-    //   postCreatedEvent.postType = dto.type;
-    //   postCreatedEvent.isVerified = isVerified;
-    //   this.eventEmitter.emit(POST_CREATED_EVENT, postCreatedEvent);
-    // }
-
-    return result.postId;
+  createEventReview(dto: CreateEventReviewDto): Promise<PostResponseDto> {
+    throw new Error('Method not implemented.');
   }
 
   private async updateEntityRating(
@@ -320,31 +221,128 @@ export class PostCreationService
     dto: CreateCommentRequestDto,
   ): Promise<CommentResponseDto> {
     const postRepository = PostRepositoryProvider(this.dataSource);
-    const post = await postRepository.findOne({
+    const post = await postRepository
+      .findOneOrFail({
+        where: { postId: dto.postId },
+      })
+      .then((res) => {
+        if (!res.canAddComments()) {
+          throw new ForbiddenException('You cannot add comments to this post');
+        }
+        return res;
+      });
+
+    return (
+      this.ensureTransaction(null, async (em) => {
+        const commentRepository = CommentRepositoryProvider(em);
+        const comment = this.mapTo_safe(CommentEntity, {
+          ...dto,
+          postId: post.postId,
+        });
+        return commentRepository.save(comment);
+      })
+        // Emit comment created event
+        .then((savedComment) => {
+          this.eventEmitter.emit(
+            COMMENT_CREATED_EVENT,
+            new CommentCreatedEvent(
+              savedComment.commentId,
+              dto.authorId,
+              dto.postId,
+            ),
+          );
+
+          return savedComment;
+        })
+        .then((savedComment) => this.mapTo(CommentResponseDto, savedComment))
+    );
+  }
+
+  async addInteractionToPost(dto: ReactPostDto): Promise<void> {
+    const postRepository = PostRepositoryProvider(this.dataSource);
+    const post = await postRepository.findOneOrFail({
       where: { postId: dto.postId },
     });
 
-    if (!post) {
-      throw new NotFoundException('Post not found');
+    const reactRepository = ReactRepositoryProvider(this.dataSource);
+    const react = await reactRepository.findOne({
+      where: {
+        entityId: dto.postId,
+        authorId: dto.userId,
+        entityType: ReactEntityType.POST,
+      },
+    });
+
+    let upvotesDelta = 0;
+    let downvotesDelta = 0;
+    let shouldEmitEvent = false;
+    let finalReactType: ReactType | null = null;
+
+    if (react && react.type === dto.type) {
+      // User is removing their reaction
+      await reactRepository.delete(react.id);
+      if (dto.type === ReactType.UPVOTE) upvotesDelta = -1;
+      if (dto.type === ReactType.DOWNVOTE) downvotesDelta = -1;
+      finalReactType = null; // reaction removed
+    } else if (react && react.type !== dto.type) {
+      // User is changing their reaction
+      await reactRepository.update(react.id, { type: dto.type });
+      if (
+        react.type === ReactType.UPVOTE &&
+        dto.type === ReactType.DOWNVOTE
+      ) {
+        upvotesDelta = -1;
+        downvotesDelta = +1;
+      } else if (
+        react.type === ReactType.DOWNVOTE &&
+        dto.type === ReactType.UPVOTE
+      ) {
+        downvotesDelta = -1;
+        upvotesDelta = +1;
+      }
+      shouldEmitEvent = true;
+      finalReactType = dto.type;
+    } else {
+      // User is adding a new reaction
+      await reactRepository.save(
+        reactRepository.create({
+          entityId: dto.postId,
+          entityType: ReactEntityType.POST,
+          authorId: dto.userId,
+          type: dto.type,
+        }),
+      );
+      if (dto.type === ReactType.UPVOTE) upvotesDelta = +1;
+      if (dto.type === ReactType.DOWNVOTE) downvotesDelta = +1;
+      shouldEmitEvent = true;
+      finalReactType = dto.type;
     }
 
-    return this.ensureTransaction(null, async (em) => {
-      const commentRepository = CommentRepositoryProvider(em);
-      const comment = commentRepository.create({
-        author: { id: dto.authorId },
-        post: { postId: dto.postId },
-        content: dto.content,
-      });
-      return commentRepository.save(comment);
-    }).then((savedComment) => {
-      // Emit comment created event for gamification
-      const commentCreatedEvent = new CommentCreatedEvent();
-      commentCreatedEvent.commentId = savedComment.commentId;
-      commentCreatedEvent.authorId = dto.authorId ?? '';
-      commentCreatedEvent.postId = dto.postId;
-      this.eventEmitter.emit(COMMENT_CREATED_EVENT, commentCreatedEvent);
+    const analyticRepository = this.dataSource.getRepository(AnalyticEntity);
+    await analyticRepository.increment(
+      { entityId: post.postId, entityType: AnalyticEntityType.POST },
+      'totalUpvotes',
+      upvotesDelta,
+    );
+    await analyticRepository.increment(
+      { entityId: post.postId, entityType: AnalyticEntityType.POST },
+      'totalDownvotes',
+      downvotesDelta,
+    );
 
-      return this.mapTo(CommentResponseDto, savedComment);
-    });
+    // Emit event for user behavior analysis (only if reaction was added/changed, not removed)
+    if (shouldEmitEvent && finalReactType && post.authorId !== dto.userId) {
+      const event = new PostReactedEvent();
+      event.postId = dto.postId;
+      event.postAuthorId = post.authorId;
+      event.reactorUserId = dto.userId;
+      event.reactType = finalReactType;
+      event.locationId = post.locationId;
+      this.eventEmitter.emit(POST_REACTED_EVENT, event);
+    }
+  }
+
+  addInteractionToComment(dto: ReactCommentRequestDto): Promise<void> {
+    throw new Error('Method not implemented.');
   }
 }

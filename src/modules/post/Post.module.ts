@@ -44,8 +44,8 @@ import { PostManagementService } from '@/modules/post/app/impl/PostManagement.se
     ClientsModule.register(getRabbitMQConfig()),
   ],
   controllers: [
-    PostPublicController,
-    CommentPrivateController,
+    // PostPublicController,
+    // CommentPrivateController,
     PostUserController,
     AnnouncementPublicController,
     AnnouncementOwnerController,
@@ -66,7 +66,7 @@ import { PostManagementService } from '@/modules/post/app/impl/PostManagement.se
     },
     {
       provide: IPostQueryService,
-      useClass: PostQueryService,
+      useValue: new Proxy({}, {}), // TODO: Fix
     },
     {
       provide: IPostManagementService,

@@ -29,19 +29,25 @@ export class CommentEntity {
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     nullable: false,
-    onDelete: 'CASCADE',
     createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'author_id' })
   author: AccountEntity;
 
+  @Column({ name: 'author_id', type: 'uuid', nullable: false })
+  authorId: string;
+
   @ManyToOne(() => PostEntity, (post) => post.postId, {
     nullable: false,
-    onDelete: 'CASCADE',
     createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'post_id' })
   post: PostEntity;
+
+  @Column({ name: 'post_id', type: 'uuid', nullable: false })
+  postId: string;
+
+  // reverse relationships
 
   @OneToMany(() => ReactEntity, (react) => react.entityId, {
     cascade: ['remove'],

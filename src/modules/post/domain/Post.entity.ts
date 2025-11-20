@@ -2,6 +2,7 @@ import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -39,6 +40,10 @@ export class PostEntity {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
+
+  // soft deletes only
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp with time zone' })
+  deletedAt: Date;
 
   @Column({ name: 'image_urls', type: 'text', array: true, default: [] })
   imageUrls: string[];
@@ -102,5 +107,9 @@ export class PostEntity {
   public turnIntoLocationReview() {
     this.type = PostType.REVIEW;
     return this;
+  }
+
+  public canAddComments(): boolean {
+    return true; // Add check here for future code (e.g., if post is banned, then cannot add comments)
   }
 }

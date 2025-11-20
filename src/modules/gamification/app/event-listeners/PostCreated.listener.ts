@@ -35,7 +35,7 @@ export class PostCreatedListener {
       } else if (event.postType === PostType.REVIEW) {
         rewardType = RewardPointType.CREATE_REVIEW;
       } else {
-        this.logger.warn(`❌ Unknown post type: ${event.postType}`);
+        this.logger.warn(`❌ Unknown post type`);
         return;
       }
 
