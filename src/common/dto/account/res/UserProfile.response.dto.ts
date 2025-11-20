@@ -35,4 +35,7 @@ export class UserProfileResponseDto {
 
   @Expose()
   dob: Date;
+
+  @Expose()
+  bio?: string | null;
 }

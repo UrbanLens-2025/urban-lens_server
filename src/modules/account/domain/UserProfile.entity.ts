@@ -28,6 +28,9 @@ export class UserProfileEntity {
   @Column({ name: 'dob', type: 'timestamp with time zone', nullable: true })
   dob: Date;
 
+  @Column({ name: 'bio', type: 'text', nullable: true })
+  bio?: string | null;
+
   @ManyToOne(() => RankEntity, {
     nullable: true,
     createForeignKeyConstraints: false,

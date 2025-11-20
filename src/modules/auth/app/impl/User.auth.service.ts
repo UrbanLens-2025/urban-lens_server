@@ -12,15 +12,11 @@ export class UserAuthService extends CoreService implements IUserAuthService {
   }
 
   async updateUser(userDto: JwtTokenDto, dto: UpdateUserAccountDto) {
-    const account = await this.accountRepository.repo.findOneBy({
+    const account = await this.accountRepository.repo.findOneByOrFail({
       id: userDto.sub,
     });
 
-    if (!account) {
-      throw new NotFoundException('Account not found');
-    }
-
-    const updatedAccount = Object.assign(account, dto);
+    const updatedAccount = this.assignTo_safeIgnoreEmpty(account, dto);
 
     return this.accountRepository.repo.update(
       { id: account.id },
