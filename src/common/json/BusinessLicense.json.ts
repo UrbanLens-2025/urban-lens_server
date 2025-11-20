@@ -7,7 +7,9 @@ import {
   IsUrl,
 } from 'class-validator';
 import { AcceptedBusinessLicenseTypes } from '@/common/constants/AcceptedBusinessLicenseTypes.constant';
+import { Exclude, Expose } from 'class-transformer';
 
+@Exclude()
 export class BusinessLicenseJson {
   @ApiProperty({
     enum: AcceptedBusinessLicenseTypes,
@@ -15,6 +17,7 @@ export class BusinessLicenseJson {
   })
   @IsNotEmpty()
   @IsEnum(AcceptedBusinessLicenseTypes)
+  @Expose()
   licenseType: AcceptedBusinessLicenseTypes;
 
   @ApiProperty({
@@ -26,6 +29,7 @@ export class BusinessLicenseJson {
   @ArrayNotEmpty()
   @IsNotEmpty({ each: true })
   @IsUrl({}, { each: true })
+  @Expose()
   documentImageUrls: string[];
 }
 
