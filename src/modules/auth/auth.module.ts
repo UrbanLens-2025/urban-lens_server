@@ -13,6 +13,7 @@ import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 import { AuthController } from '@/modules/auth/interfaces/auth.controller';
 import { AccountModule } from '@/modules/account/Account.module';
+import { WalletModule } from '@/modules/wallet/Wallet.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AccountModule } from '@/modules/account/Account.module';
     AccountInfraModule,
     FileStorageModule,
     AccountModule,
+    WalletModule,
   ],
   controllers: [AuthPublicController, AuthDevOnlyController, AuthController],
   providers: [

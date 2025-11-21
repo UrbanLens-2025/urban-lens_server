@@ -17,6 +17,7 @@ import {
   TicketOrderCreatedEvent,
 } from '@/modules/event/domain/events/TicketOrderCreated.event';
 import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
+import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
 
 @Injectable()
 export class TicketOrderManagementService
@@ -27,6 +28,8 @@ export class TicketOrderManagementService
     private readonly eventEmitter: EventEmitter2,
     @Inject(IWalletTransactionCoordinatorService)
     private readonly walletTransactionCoordinatorService: IWalletTransactionCoordinatorService,
+    @Inject(IEventAttendanceManagementService)
+    private readonly eventAttendanceManagementService: IEventAttendanceManagementService,
   ) {
     super();
   }
@@ -154,6 +157,16 @@ export class TicketOrderManagementService
             await eventTicketRepository.reserveTickets({
               items: dto.items,
             });
+            return res;
+          })
+          // create event attendance entities
+          .then(async (res) => {
+            await this.eventAttendanceManagementService.createEventAttendanceEntitiesFromTicketOrder(
+              {
+                ticketOrderId: res.id,
+                entityManager: em,
+              },
+            );
             return res;
           })
           // publish events

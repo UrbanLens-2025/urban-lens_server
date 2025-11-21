@@ -8,6 +8,8 @@ import { WithdrawFundsDto } from '@/common/dto/wallet/WithdrawFunds.dto';
 import { LockFundsDto } from '@/common/dto/wallet/LockFunds.dto';
 import { UnlockFundsDto } from '@/common/dto/wallet/UnlockFunds.dto';
 import { PermanentlyWithdrawLockedFundsDto } from '@/common/dto/wallet/PermanentlyWithdrawLockedFunds.dto';
+import { CreateDefaultWalletDto } from '@/common/dto/wallet/CreateDefaultWallet.dto';
+import { WalletEntity } from '@/modules/wallet/domain/Wallet.entity';
 
 @Injectable()
 export class WalletActionService
@@ -18,6 +20,14 @@ export class WalletActionService
 
   constructor() {
     super();
+  }
+
+  createDefaultWallet(dto: CreateDefaultWalletDto): Promise<void> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const walletRepository = WalletRepository(em);
+      const wallet = WalletEntity.createDefault(dto.userId);
+      await walletRepository.save(wallet);
+    });
   }
 
   depositFunds(rawDto: DepositFundsDto): Promise<WalletResponseDto> {

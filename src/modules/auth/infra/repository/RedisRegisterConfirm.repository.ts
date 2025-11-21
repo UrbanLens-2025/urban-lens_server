@@ -71,4 +71,10 @@ export class RedisRegisterConfirmRepository {
 
     return data;
   }
+
+  async delete(email: string): Promise<void> {
+    const key =
+      RedisRegisterConfirmRepository.REGISTER_CONFIRM_KEY.concat(email);
+    await this.redis.del(key);
+  }
 }

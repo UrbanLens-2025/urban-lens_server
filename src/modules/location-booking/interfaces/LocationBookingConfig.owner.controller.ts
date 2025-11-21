@@ -27,18 +27,6 @@ export class LocationBookingConfigOwnerController {
     private readonly locationBookingConfigManagementService: ILocationBookingConfigManagementService,
   ) {}
 
-  @ApiOperation({ summary: 'Create a location booking config' })
-  @Post()
-  createLocationBooking(
-    @AuthUser() user: JwtTokenDto,
-    @Body() dto: AddLocationBookingConfigDto,
-  ) {
-    return this.locationBookingConfigManagementService.addConfig({
-      ...dto,
-      accountId: user.sub,
-    });
-  }
-
   @ApiOperation({ summary: 'Update a location booking config' })
   @Put(':id')
   updateLocationBooking(
