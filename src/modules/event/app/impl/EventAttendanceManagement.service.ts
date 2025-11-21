@@ -69,6 +69,9 @@ export class EventAttendanceManagementService
         where: {
           id: ticketOrderId,
         },
+        relations: {
+          orderDetails: true,
+        },
       });
 
       const accountDetails = await accountRepository.findOneOrFail({
@@ -85,16 +88,18 @@ export class EventAttendanceManagementService
       // In the subscriber it was accessed directly.
       if (ticketOrder.orderDetails) {
         for (const orderDetail of ticketOrder.orderDetails) {
-          const eventAttendance = new EventAttendanceEntity();
-          eventAttendance.orderId = ticketOrder.id;
-          eventAttendance.status = EventAttendanceStatus.CREATED;
-          eventAttendance.eventId = ticketOrder.eventId;
-          eventAttendance.ticketId = orderDetail.ticketId;
-          eventAttendance.referencedTicketOrderId = ticketOrder.id;
-          eventAttendance.ownerId = accountDetails.id;
-          eventAttendance.ownerEmail = accountDetails.email;
-          eventAttendance.ownerPhoneNumber = accountDetails.phoneNumber;
-          eventAttendances.push(eventAttendance);
+          for (let i = 0; i < orderDetail.quantity; i++) {
+            const eventAttendance = new EventAttendanceEntity();
+            eventAttendance.orderId = ticketOrder.id;
+            eventAttendance.status = EventAttendanceStatus.CREATED;
+            eventAttendance.eventId = ticketOrder.eventId;
+            eventAttendance.ticketId = orderDetail.ticketId;
+            eventAttendance.referencedTicketOrderId = ticketOrder.id;
+            eventAttendance.ownerId = accountDetails.id;
+            eventAttendance.ownerEmail = accountDetails.email;
+            eventAttendance.ownerPhoneNumber = accountDetails.phoneNumber;
+            eventAttendances.push(eventAttendance);
+          }
         }
       } else {
         throw new InternalServerErrorException(

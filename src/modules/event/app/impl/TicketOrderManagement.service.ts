@@ -164,6 +164,7 @@ export class TicketOrderManagementService
             await this.eventAttendanceManagementService.createEventAttendanceEntitiesFromTicketOrder(
               {
                 ticketOrderId: res.id,
+                entityManager: em,
               },
             );
             return res;

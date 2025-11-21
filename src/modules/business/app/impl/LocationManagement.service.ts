@@ -28,7 +28,6 @@ import { LocationRequestTagsRepository } from '@/modules/business/infra/reposito
 import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
 import { ILocationAnalyticsService } from '@/modules/business/app/ILocationAnalytics.service';
 import { ILocationBookingConfigManagementService } from '@/modules/location-booking/app/ILocationBookingConfigManagement.service';
-import { CreateLocationEntityDto } from '@/common/dto/business/CreateLocationEntity.dto';
 
 @Injectable()
 export class LocationManagementService
@@ -335,6 +334,7 @@ export class LocationManagementService
             {
               locationId: savedLocation.id,
               businessId: savedLocation.businessId,
+              entityManager: em,
             },
           );
           return savedLocation;

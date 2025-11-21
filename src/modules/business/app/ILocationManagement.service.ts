@@ -8,7 +8,6 @@ import { LocationResponseDto } from '@/common/dto/business/res/Location.response
 import { CreatePublicLocationDto } from '@/common/dto/business/CreatePublicLocation.dto';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
-import { CreateLocationEntityDto } from '@/common/dto/business/CreateLocationEntity.dto';
 
 export const ILocationManagementService = Symbol('ILocationManagementService');
 export interface ILocationManagementService {
