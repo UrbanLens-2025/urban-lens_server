@@ -1,6 +1,6 @@
 import { Exclude, Expose, Type } from 'class-transformer';
-import { TagResponseDto } from '@/common/dto/account/res/TagResponse.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
+import { TagCategoryResponseDto } from '@/common/dto/utility/TagCategory.dto';
 
 @Exclude()
 export class EventTagsResponseDto {
@@ -19,13 +19,13 @@ export class EventTagsResponseDto {
   eventId: string;
 
   @Expose()
-  tagId: number;
+  tagCategoryId: number;
 
   @Expose()
   @Type(() => EventResponseDto)
   event: EventResponseDto;
 
   @Expose()
-  @Type(() => TagResponseDto)
-  tag: TagResponseDto;
+  @Type(() => TagCategoryResponseDto)
+  tagCategory: TagCategoryResponseDto;
 }

@@ -40,7 +40,9 @@ export class EventRequestQueryService
           referencedLocationBooking: {
             location: true,
           },
-          tags: true,
+          tags: {
+            tagCategory: true,
+          },
           createdBy: true,
         },
       })

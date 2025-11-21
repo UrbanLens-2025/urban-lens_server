@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { TagEntity } from '@/modules/utility/domain/Tag.entity';
+import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 
 @Entity({ name: LocationRequestTagsEntity.TABLE_NAME })
 export class LocationRequestTagsEntity {
@@ -36,12 +37,12 @@ export class LocationRequestTagsEntity {
   @Column({ name: 'location_request_id', type: 'uuid' })
   locationRequestId: string;
 
-  @ManyToOne(() => TagEntity, (tag) => tag.id, {
+  @Column({ name: 'tag_category_id', type: 'bigint' })
+  tagCategoryId: number;
+
+  @ManyToOne(() => TagCategoryEntity, (tagCategory) => tagCategory.id, {
     createForeignKeyConstraints: false,
   })
-  @JoinColumn({ name: 'tag_id' })
-  tag: TagEntity;
-
-  @Column({ name: 'tag_id', type: 'integer' })
-  tagId: number;
+  @JoinColumn({ name: 'tag_category_id' })
+  tagCategory: TagCategoryEntity;
 }

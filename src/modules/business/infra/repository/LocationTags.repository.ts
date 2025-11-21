@@ -5,11 +5,11 @@ export const LocationTagsRepository = (ctx: DataSource | EntityManager) =>
   ctx.getRepository(LocationTagsEntity).extend({
     persistEntities(
       this: Repository<LocationTagsEntity>,
-      payload: { tagIds: number[]; locationId: string },
+      payload: { tagCategoryIds: number[]; locationId: string },
     ) {
-      const entities = payload.tagIds.map((tagId) => {
+      const entities = payload.tagCategoryIds.map((tagCategoryId) => {
         const entity = new LocationTagsEntity();
-        entity.tagId = tagId;
+        entity.tagCategoryId = tagCategoryId;
         entity.locationId = payload.locationId;
         return entity;
       });
@@ -19,14 +19,14 @@ export const LocationTagsRepository = (ctx: DataSource | EntityManager) =>
 
     findDuplicatesIncludingDeleted(
       this: Repository<LocationTagsEntity>,
-      payload: { locationId: string; tagIds: number[] },
+      payload: { locationId: string; tagCategoryIds: number[] },
     ) {
       return this.createQueryBuilder('location_tag')
         .where('location_tag.location_id = :locationId', {
           locationId: payload.locationId,
         })
-        .andWhere('location_tag.tag_id IN (:...tagIds)', {
-          tagIds: payload.tagIds,
+        .andWhere('location_tag.tag_category_id IN (:...tagCategoryIds)', {
+          tagCategoryIds: payload.tagCategoryIds,
         })
         .withDeleted()
         .getMany();

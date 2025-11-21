@@ -77,7 +77,7 @@ export class EventResponseDto {
       return undefined;
     }
     return value
-      .map((eventTag: EventTagsResponseDto) => eventTag?.tag)
+      .map((eventTag: EventTagsResponseDto) => eventTag?.tagCategory)
       .filter(Boolean);
   })
   @Type(() => EventTagsResponseDto)

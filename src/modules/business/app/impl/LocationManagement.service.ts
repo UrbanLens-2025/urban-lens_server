@@ -13,21 +13,19 @@ import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { AddLocationTagDto } from '@/common/dto/business/AddLocationTag.dto';
 import { RemoveLocationTagDto } from '@/common/dto/business/RemoveLocationTag.dto';
 import { LocationTagsResponseDto } from '@/common/dto/business/res/LocationTags.response.dto';
-import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.repository';
 import { LocationTagsRepository } from '@/modules/business/infra/repository/LocationTags.repository';
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
 import { ForceUpdateLocationDto } from '@/common/dto/business/ForceUpdateLocation.dto';
 import { CreatePublicLocationDto } from '@/common/dto/business/CreatePublicLocation.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
-import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
 import { CategoryType } from '@/common/constants/CategoryType.constant';
-import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationRequestTagsRepository } from '@/modules/business/infra/repository/LocationRequestTags.repository';
 import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
 import { ILocationAnalyticsService } from '@/modules/business/app/ILocationAnalytics.service';
 import { ILocationBookingConfigManagementService } from '@/modules/location-booking/app/ILocationBookingConfigManagement.service';
+import { TagCategoryRepositoryProvider } from '@/modules/utility/infra/repository/TagCategory.repository';
 
 @Injectable()
 export class LocationManagementService
@@ -46,7 +44,7 @@ export class LocationManagementService
   addTag(dto: AddLocationTagDto): Promise<LocationTagsResponseDto[]> {
     return this.ensureTransaction(null, async (em) => {
       const locationRepository = LocationRepositoryProvider(em);
-      const tagRepository = TagRepositoryProvider(em);
+      const tagCategoryRepository = TagCategoryRepositoryProvider(em);
       const locationTagsRepository = LocationTagsRepository(em);
 
       // validate location
@@ -58,8 +56,13 @@ export class LocationManagementService
       });
 
       // validate tags
-      const tags = await tagRepository.countSelectableTagsById(dto.tagIds);
-      if (tags !== dto.tagIds.length) {
+      const tags = await tagCategoryRepository.count({
+        where: {
+          id: In(dto.tagCategoryIds),
+          applicableTypes: In([CategoryType.LOCATION, CategoryType.ALL]),
+        },
+      });
+      if (tags !== dto.tagCategoryIds.length) {
         throw new BadRequestException(
           'One or more tags are invalid or not selectable',
         );
@@ -69,7 +72,7 @@ export class LocationManagementService
       const duplicates =
         await locationTagsRepository.findDuplicatesIncludingDeleted({
           locationId: location.id,
-          tagIds: dto.tagIds,
+          tagCategoryIds: dto.tagCategoryIds,
         });
 
       // sort duplicates into deleted and undeleted
@@ -102,13 +105,14 @@ export class LocationManagementService
       }
 
       // create location tags
-      const tagIdsToPersist = dto.tagIds.filter(
-        (tagId) => !sortedDuplicates.deleted.some((dup) => dup.tagId === tagId),
+      const tagCategoryIdsToPersist = dto.tagCategoryIds.filter(
+        (tagId) =>
+          !sortedDuplicates.deleted.some((dup) => dup.tagCategoryId === tagId),
       );
 
       return await locationTagsRepository
         .persistEntities({
-          tagIds: tagIdsToPersist,
+          tagCategoryIds: tagCategoryIdsToPersist,
           locationId: location.id,
         })
         .then((e) =>
@@ -136,7 +140,7 @@ export class LocationManagementService
       // delete location tags
       return await locationTagsRepository.softDelete({
         locationId: dto.locationId,
-        tagId: In(dto.tagIds),
+        tagCategoryId: In(dto.tagCategoryIds),
       });
     });
   }
@@ -178,13 +182,13 @@ export class LocationManagementService
     return this.ensureTransaction(null, async (em) => {
       const locationRepository = LocationRepositoryProvider(em);
       const locationTagRepository = LocationTagsRepository(em);
-      const tagRepository = TagRepositoryProvider(em);
-      const categoryRepository = em.getRepository(TagCategoryEntity);
+      const tagCategoryRepository = TagCategoryRepositoryProvider(em);
 
       // Validate categories exist
-      const categories = await categoryRepository.find({
+      const categories = await tagCategoryRepository.find({
         where: {
           id: In(dto.categoryIds),
+          applicableTypes: In([CategoryType.LOCATION, CategoryType.ALL]),
         },
       });
 
@@ -198,44 +202,6 @@ export class LocationManagementService
         );
       }
 
-      // Validate categories have LOCATION type
-      const invalidCategories = categories.filter(
-        (c) =>
-          !c.applicableTypes?.includes(CategoryType.LOCATION) &&
-          !c.applicableTypes?.includes(CategoryType.ALL),
-      );
-
-      if (invalidCategories.length > 0) {
-        const invalidNames = invalidCategories.map((c) => c.name).join(', ');
-        throw new BadRequestException(
-          `The following categories are not applicable for LOCATION type: ${invalidNames}`,
-        );
-      }
-
-      // Convert categories to tags
-      const finalTagIds = await mergeTagsWithCategories(
-        [], // No manual tags, only from categories
-        dto.categoryIds,
-        CategoryType.LOCATION,
-        this.dataSource,
-      );
-
-      if (finalTagIds.length === 0) {
-        const categoryNames = categories.map((c) => c.name).join(', ');
-        throw new BadRequestException(
-          `Selected categories (${categoryNames}) do not contain any valid tags with positive scores. Please ensure categories have tag_score_weights configured.`,
-        );
-      }
-
-      // validate tags
-      const countTags =
-        await tagRepository.countSelectableTagsById(finalTagIds);
-      if (countTags !== finalTagIds.length) {
-        throw new BadRequestException(
-          'One or more tags are invalid or not selectable',
-        );
-      }
-
       const newLocation = this.mapTo_safe(LocationEntity, dto);
       newLocation.ownershipType = LocationOwnershipType.PUBLIC_PLACE;
 
@@ -244,20 +210,10 @@ export class LocationManagementService
       // save tags
       await locationTagRepository.persistEntities({
         locationId: savedLocation.id,
-        tagIds: finalTagIds,
+        tagCategoryIds: categories.map((c) => c.id),
       });
 
-      // Reload location with tags and tag relations
-      const locationWithTags = await locationRepository.findOne({
-        where: { id: savedLocation.id },
-        relations: ['tags', 'tags.tag'],
-      });
-
-      if (!locationWithTags) {
-        throw new BadRequestException('Failed to create location');
-      }
-
-      return this.mapTo(LocationResponseDto, locationWithTags);
+      return this.mapTo(LocationResponseDto, savedLocation);
     });
   }
 
@@ -322,7 +278,7 @@ export class LocationManagementService
           });
 
           savedLocation.tags = await locationTagsRepository.persistEntities({
-            tagIds: locationRequestTags.map((t) => t.tagId),
+            tagCategoryIds: locationRequestTags.map((t) => t.tagCategoryId),
             locationId: savedLocation.id,
           });
 
