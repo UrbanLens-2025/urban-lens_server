@@ -7,11 +7,11 @@ export const LocationRequestTagsRepository = (
   ctx.getRepository(LocationRequestTagsEntity).extend({
     persistEntities(
       this: Repository<LocationRequestTagsEntity>,
-      payload: { tagCategoryIds: number[]; locationRequestId: string },
+      payload: { tagIds: number[]; locationRequestId: string },
     ) {
-      const entities = payload.tagCategoryIds.map((tagCategoryId) => {
+      const entities = payload.tagIds.map((tagId) => {
         const entity = new LocationRequestTagsEntity();
-        entity.tagCategoryId = tagCategoryId;
+        entity.tagId = tagId;
         entity.locationRequestId = payload.locationRequestId;
         return entity;
       });

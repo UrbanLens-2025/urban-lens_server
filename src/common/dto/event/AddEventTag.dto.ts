@@ -12,5 +12,5 @@ export class AddEventTagDto {
   @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   @IsNotEmpty({ each: true })
-  tagCategoryIds: number[];
+  tagIds: number[];
 }

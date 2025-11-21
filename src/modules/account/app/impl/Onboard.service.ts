@@ -3,11 +3,15 @@ import { CoreService } from '@/common/core/Core.service';
 import { IOnboardService } from '@/modules/account/app/IOnboard.service';
 import { OnboardCreatorDto } from '@/common/dto/account/OnboardCreator.dto';
 import { OnboardUserDto } from '@/common/dto/account/OnboardUser.dto';
-import { In, UpdateResult } from 'typeorm';
+import { In, MoreThan, UpdateResult } from 'typeorm';
+import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
+import { TagEntity } from '@/modules/utility/domain/Tag.entity';
+import { UserTagsEntity } from '@/modules/account/domain/UserTags.entity';
 import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
 import { Role } from '@/common/constants/Role.constant';
 import { CreatorProfileRepository } from '@/modules/account/infra/repository/CreatorProfile.repository';
+import { RankEntity } from '@/modules/gamification/domain/Rank.entity';
 import { UserLoginResponseDto } from '@/common/dto/auth/res/UserLoginResponse.dto';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { TokenService } from '@/common/core/token/token.service';
@@ -17,10 +21,7 @@ import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Ac
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.dto';
-import { UserProfileRepositoryProvider } from '@/modules/account/infra/repository/UserProfile.repository';
-import { TagCategoryRepositoryProvider } from '@/modules/utility/infra/repository/TagCategory.repository';
-import { RankRepositoryProvider } from '@/modules/gamification/infra/repository/Rank.repository';
-import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
+import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 
 @Injectable()
 export class OnboardService extends CoreService implements IOnboardService {
@@ -37,33 +38,26 @@ export class OnboardService extends CoreService implements IOnboardService {
     dto: OnboardUserDto,
   ): Promise<UserLoginResponseDto> {
     return this.dataSource.transaction(async (manager) => {
-      const accountRepository = AccountRepositoryProvider(manager);
-      const userProfileRepository = UserProfileRepositoryProvider(manager);
-      const tagCategoryRepository = TagCategoryRepositoryProvider(manager);
-      const rankRepository = RankRepositoryProvider(manager);
+      const accountRepository = manager.getRepository(AccountEntity);
+      const tagRepository = manager.getRepository(TagEntity);
+      const userTagsRepository = manager.getRepository(UserTagsEntity);
+      const userProfileRepository = manager.getRepository(UserProfileEntity);
 
-      const account = await accountRepository
-        .findOneByOrFail({
-          id: accountId,
-          role: Role.USER,
-        })
-        .then((account) => {
-          if (account.hasOnboarded) {
-            throw new BadRequestException('User has already onboarded');
-          }
-          return account;
-        });
+      const account = await accountRepository.findOneByOrFail({
+        id: accountId,
+        role: Role.USER,
+      });
 
-      // confirm uploads
-      await this.fileStorageService.confirmUpload(
-        [dto.avatarUrl, dto.coverUrl],
-        manager,
-      );
+      if (account.hasOnboarded) {
+        throw new BadRequestException('User has already onboarded');
+      }
 
       // validate and apply tag categories
-      const initialTagScores: Record<string, number> = {};
+      let initialTagScores: Record<string, number> = {};
 
       if (dto.categoryIds && dto.categoryIds.length > 0) {
+        const tagCategoryRepository = manager.getRepository(TagCategoryEntity);
+
         const categories = await tagCategoryRepository.findBy({
           id: In(dto.categoryIds),
         });
@@ -76,21 +70,32 @@ export class OnboardService extends CoreService implements IOnboardService {
         for (const category of categories) {
           const weights = category.tagScoreWeights || {};
           for (const [tagKey, weight] of Object.entries(weights)) {
-            initialTagScores[tagKey] = (initialTagScores[tagKey] || 0) + weight;
+            initialTagScores[tagKey] =
+              (initialTagScores[tagKey] || 0) + (weight as number);
           }
         }
       }
 
       // Get the lowest rank (smallest minPoints)
-      const startingRank = await rankRepository.getStartingRank();
+      const lowestRank = await manager.getRepository(RankEntity).findOne({
+        where: { minPoints: MoreThan(0) },
+        order: { minPoints: 'ASC' },
+      });
 
-      const userProfileEntity = this.mapTo_safe(UserProfileEntity, dto);
-      userProfileEntity.accountId = account.id;
-      userProfileEntity.rankId = startingRank.id;
-      userProfileEntity.points = 0;
-      userProfileEntity.tagScores = initialTagScores;
+      if (!lowestRank) {
+        throw new BadRequestException(
+          'No ranks found in system. Please create ranks first.',
+        );
+      }
 
-      await userProfileRepository.save(userProfileEntity);
+      await userProfileRepository.save({
+        accountId: account.id,
+        rankId: lowestRank.id,
+        points: 0,
+        tagScores: initialTagScores,
+        bio: dto.bio,
+        dob: dto.dob,
+      });
 
       account.hasOnboarded = true;
       account.avatarUrl = dto.avatarUrl ?? null;
@@ -113,28 +118,19 @@ export class OnboardService extends CoreService implements IOnboardService {
     dto: OnboardCreatorDto,
   ): Promise<UpdateResult> {
     return this.dataSource.transaction(async (manager) => {
-      const accountRepository = AccountRepositoryProvider(manager);
+      const accountRepository = manager.getRepository(AccountEntity);
       const creatorProfileRepository = CreatorProfileRepository(manager);
 
-      const account = await accountRepository
-        .findOneByOrFail({
-          id: accountId,
-          role: Role.EVENT_CREATOR,
-        })
-        .then((account) => {
-          if (account.hasOnboarded) {
-            throw new BadRequestException('Creator has already onboarded');
-          }
-          return account;
-        });
+      const account = await accountRepository.findOneByOrFail({
+        id: accountId,
+        role: Role.EVENT_CREATOR,
+      });
 
-      // confirm uploads
-      await this.fileStorageService.confirmUpload(
-        [dto.avatarUrl, dto.coverUrl],
-        manager,
-      );
+      if (account.hasOnboarded) {
+        throw new BadRequestException('Creator has already onboarded');
+      }
 
-      const creatorProfile = this.mapTo_safe(CreatorProfileEntity, dto);
+      const creatorProfile = this.mapTo_Raw(CreatorProfileEntity, dto);
       creatorProfile.accountId = account.id;
       await creatorProfileRepository.save(creatorProfile);
 
@@ -157,18 +153,13 @@ export class OnboardService extends CoreService implements IOnboardService {
       const businessRepository = BusinessRepositoryProvider(em);
       const accountRepository = AccountRepositoryProvider(em);
 
-      const account = await accountRepository
-        .findOneOrFail({
-          where: { id: accountId, role: Role.BUSINESS_OWNER },
-        })
-        .then((account) => {
-          if (account.hasOnboarded) {
-            throw new BadRequestException(
-              'Business owner has already onboarded',
-            );
-          }
-          return account;
-        });
+      const account = await accountRepository.findOneOrFail({
+        where: { id: accountId, role: Role.BUSINESS_OWNER },
+      });
+
+      if (account.hasOnboarded) {
+        throw new BadRequestException('Business owner has already onboarded');
+      }
 
       await this.fileStorageService.confirmUpload(
         [createBusinessDto.avatar],

@@ -1,4 +1,4 @@
-import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import { EventRequestStatus } from '@/common/constants/EventRequestStatus.constant';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { EventRequestTagsResponseDto } from '@/common/dto/event/res/EventRequestTags.response.dto';
@@ -6,7 +6,6 @@ import { SocialLink } from '@/common/json/SocialLink.json';
 import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
-import { TagCategoryResponseDto } from '@/common/dto/utility/TagCategory.dto';
 
 @Exclude()
 export class EventRequestResponseDto {
@@ -48,15 +47,7 @@ export class EventRequestResponseDto {
 
   @Expose()
   @Type(() => EventRequestTagsResponseDto)
-  @Transform(({ value }) => {
-    if (!value || !Array.isArray(value)) {
-      return undefined;
-    }
-    return value
-      .filter((tag: EventRequestTagsResponseDto) => tag?.tagCategory)
-      .map((tags: EventRequestTagsResponseDto) => tags?.tagCategory);
-  })
-  tags: TagCategoryResponseDto[];
+  tags: EventRequestTagsResponseDto[];
 
   @Expose()
   @Type(() => SocialLink)

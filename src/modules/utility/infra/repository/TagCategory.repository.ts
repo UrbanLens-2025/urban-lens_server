@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 
 @Injectable()
@@ -42,11 +42,3 @@ export class TagCategoryRepository {
     return (result.affected ?? 0) > 0;
   }
 }
-
-export const TagCategoryRepositoryProvider = (
-  ctx: DataSource | EntityManager,
-) => ctx.getRepository(TagCategoryEntity).extend({});
-
-export type TagCategoryRepositoryProvider = ReturnType<
-  typeof TagCategoryRepositoryProvider
->;

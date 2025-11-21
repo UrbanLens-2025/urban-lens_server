@@ -11,9 +11,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { paginate, Paginated } from 'nestjs-paginate';
 import { EventTagsRepository } from '@/modules/event/infra/repository/EventTags.repository';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
+import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.repository';
 import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
 import { In } from 'typeorm';
-import { TagCategoryRepositoryProvider } from '@/modules/utility/infra/repository/TagCategory.repository';
 
 @Injectable()
 export class EventTagsManagementService
@@ -32,7 +32,7 @@ export class EventTagsManagementService
   addEventTag(dto: AddEventTagDto): Promise<EventTagsResponseDto[]> {
     return this.ensureTransaction(null, async (em) => {
       const eventRepository = EventRepository(em);
-      const tagCategoryRepository = TagCategoryRepositoryProvider(em);
+      const tagRepository = TagRepositoryProvider(em);
       const eventTagsRepository = EventTagsRepository(em);
 
       // validate event ownership
@@ -44,12 +44,8 @@ export class EventTagsManagementService
       });
 
       // validate tags
-      const tagCategories = await tagCategoryRepository.find({
-        where: {
-          id: In(dto.tagCategoryIds),
-        },
-      });
-      if (tagCategories.length !== dto.tagCategoryIds.length) {
+      const tags = await tagRepository.countSelectableTagsById(dto.tagIds);
+      if (tags !== dto.tagIds.length) {
         throw new BadRequestException(
           'One or more tags are invalid or not selectable',
         );
@@ -59,7 +55,7 @@ export class EventTagsManagementService
       const duplicates =
         await eventTagsRepository.findDuplicatesIncludingDeleted({
           eventId: event.id,
-          tagCategoryIds: dto.tagCategoryIds,
+          tagIds: dto.tagIds,
         });
 
       // sort duplicates into deleted and undeleted
@@ -92,14 +88,13 @@ export class EventTagsManagementService
       }
 
       // create new event tags
-      const tagIdsToPersist = dto.tagCategoryIds.filter(
-        (tagId) =>
-          !sortedDuplicates.deleted.some((dup) => dup.tagCategoryId === tagId),
+      const tagIdsToPersist = dto.tagIds.filter(
+        (tagId) => !sortedDuplicates.deleted.some((dup) => dup.tagId === tagId),
       );
 
       return await eventTagsRepository
         .persistEntities({
-          tagCategoryIds: tagIdsToPersist,
+          tagIds: tagIdsToPersist,
           eventId: event.id,
         })
         .then((e) => this.mapToArray(EventTagsResponseDto, e));
@@ -122,7 +117,7 @@ export class EventTagsManagementService
       // soft delete event tags
       await eventTagsRepository.softDelete({
         eventId: dto.eventId,
-        tagCategoryId: In(dto.tagCategoryIds),
+        tagId: In(dto.tagIds),
       });
     });
   }

@@ -8,8 +8,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { TagEntity } from '@/modules/utility/domain/Tag.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
-import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 
 @Entity({ name: LocationTagsEntity.TABLE_NAME })
 export class LocationTagsEntity {
@@ -40,12 +40,12 @@ export class LocationTagsEntity {
   @Column({ name: 'location_id', type: 'uuid' })
   locationId: string;
 
-  @Column({ name: 'tag_category_id', type: 'bigint' })
-  tagCategoryId: number;
-
-  @ManyToOne(() => TagCategoryEntity, (tagCategory) => tagCategory.id, {
+  @ManyToOne(() => TagEntity, (tag) => tag.id, {
     createForeignKeyConstraints: false,
   })
-  @JoinColumn({ name: 'tag_category_id' })
-  tagCategory: TagCategoryEntity;
+  @JoinColumn({ name: 'tag_id' })
+  tag: TagEntity;
+
+  @Column({ name: 'tag_id', type: 'integer' })
+  tagId: number;
 }

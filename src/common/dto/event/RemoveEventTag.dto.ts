@@ -12,5 +12,5 @@ export class RemoveEventTagDto {
   @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   @IsNotEmpty({ each: true })
-  tagCategoryIds: number[];
+  tagIds: number[];
 }

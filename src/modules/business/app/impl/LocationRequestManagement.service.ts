@@ -4,14 +4,17 @@ import { ILocationRequestManagementService } from '@/modules/business/app/ILocat
 import {
   BadRequestException,
   Inject,
-  Injectable
+  Injectable,
+  InternalServerErrorException,
 } from '@nestjs/common';
+import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
+import { CategoryType } from '@/common/constants/CategoryType.constant';
 import { LocationRequestResponseDto } from '@/common/dto/business/res/LocationRequest.response.dto';
 import { LocationRequestRepository } from '@/modules/business/infra/repository/LocationRequest.repository';
 import { BusinessRepositoryProvider } from '@/modules/account/infra/repository/Business.repository';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
-import { DeleteResult, In, UpdateResult } from 'typeorm';
+import { DeleteResult, EntityManager, In, UpdateResult } from 'typeorm';
 import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
 import { CancelLocationRequestDto } from '@/common/dto/business/CancelLocationRequest.dto';
 import { ProcessLocationRequestDto } from '@/common/dto/business/ProcessLocationRequest.dto';
@@ -22,16 +25,20 @@ import {
 } from '@/modules/business/domain/events/LocationRequestApproved.event';
 import { LOCATION_REQUEST_REJECTED_EVENT } from '@/modules/business/domain/events/LocationRequestRejected.event';
 import { LOCATION_REQUEST_NEEDS_MORE_INFO_EVENT } from '@/modules/business/domain/events/LocationRequestNeedsMoreInfo.event';
+import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.repository';
 import { LocationRequestTagsRepository } from '@/modules/business/infra/repository/LocationRequestTags.repository';
 import { AddLocationRequestTagsDto } from '@/common/dto/business/AddLocationRequestTags.dto';
 import { DeleteLocationRequestTagDto } from '@/common/dto/business/DeleteLocationRequestTag.dto';
 import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/LocationRequestTags.response.dto';
+import { LocationEntity } from '@/modules/business/domain/Location.entity';
+import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
+import { LocationTagsRepository } from '@/modules/business/infra/repository/LocationTags.repository';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
 import { CreateLocationRequestFromUserDto } from '@/common/dto/business/CreateLocationRequestFromUser.dto';
 import { UserProfileRepositoryProvider } from '@/modules/account/infra/repository/UserProfile.repository';
+import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
 import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
-import { TagCategoryRepositoryProvider } from '@/modules/utility/infra/repository/TagCategory.repository';
 
 @Injectable()
 export class LocationRequestManagementService
@@ -54,7 +61,7 @@ export class LocationRequestManagementService
     return this.ensureTransaction(null, async (em) => {
       const locationRequestRepository = LocationRequestRepository(em);
       const userProfileRepository = UserProfileRepositoryProvider(em);
-      const tagCategoryRepository = TagCategoryRepositoryProvider(em);
+      const tagRepository = TagRepositoryProvider(em);
       const locationRequestTagRepository = LocationRequestTagsRepository(em);
 
       const userProfile = await userProfileRepository.findOneByOrFail({
@@ -67,14 +74,25 @@ export class LocationRequestManagementService
         );
       }
 
-      // validate tags
-      const tagCountInDb = await tagCategoryRepository.count({
-        where: {
-          id: In(dto.categoryIds),
-        },
-      });
+      // Convert categories to tags
+      const finalTagIds = await mergeTagsWithCategories(
+        [], // No manual tags
+        dto.categoryIds,
+        CategoryType.LOCATION,
+        this.dataSource,
+      );
 
-      if (tagCountInDb !== dto.categoryIds.length) {
+      if (finalTagIds.length === 0) {
+        throw new BadRequestException(
+          'Selected categories do not contain any valid tags',
+        );
+      }
+
+      // validate tags
+      const tagCountInDb =
+        await tagRepository.countSelectableTagsById(finalTagIds);
+
+      if (tagCountInDb !== finalTagIds.length) {
         throw new BadRequestException(
           'One or more tags from categories are invalid/not selectable',
         );
@@ -94,7 +112,7 @@ export class LocationRequestManagementService
           // create tags
           .then(async (e) => {
             e.tags = await locationRequestTagRepository.persistEntities({
-              tagCategoryIds: dto.categoryIds,
+              tagIds: finalTagIds,
               locationRequestId: e.id,
             });
 
@@ -110,7 +128,7 @@ export class LocationRequestManagementService
     return this.ensureTransaction(null, async (em) => {
       const locationRequestRepository = LocationRequestRepository(em);
       const businessProfileRepository = BusinessRepositoryProvider(em);
-      const tagCategoryRepository = TagCategoryRepositoryProvider(em);
+      const tagRepository = TagRepositoryProvider(em);
       const locationRequestTagRepository = LocationRequestTagsRepository(em);
 
       const businessProfile = await businessProfileRepository.findOneByOrFail({
@@ -123,14 +141,25 @@ export class LocationRequestManagementService
         );
       }
 
-      // validate tags
-      const tagCountInDb = await tagCategoryRepository.count({
-        where: {
-          id: In(dto.categoryIds),
-        },
-      });
+      // Convert categories to tags
+      const finalTagIds = await mergeTagsWithCategories(
+        [], // No manual tags
+        dto.categoryIds,
+        CategoryType.LOCATION,
+        this.dataSource,
+      );
 
-      if (tagCountInDb !== dto.categoryIds.length) {
+      if (finalTagIds.length === 0) {
+        throw new BadRequestException(
+          'Selected categories do not contain any valid tags',
+        );
+      }
+
+      // validate tags
+      const tagCountInDb =
+        await tagRepository.countSelectableTagsById(finalTagIds);
+
+      if (tagCountInDb !== finalTagIds.length) {
         throw new BadRequestException(
           'One or more tags from categories are invalid/not selectable',
         );
@@ -153,7 +182,7 @@ export class LocationRequestManagementService
           // create tags
           .then(async (e) => {
             e.tags = await locationRequestTagRepository.persistEntities({
-              tagCategoryIds: dto.categoryIds,
+              tagIds: finalTagIds,
               locationRequestId: e.id,
             });
 
@@ -168,8 +197,8 @@ export class LocationRequestManagementService
   ): Promise<LocationRequestTagsResponseDto[]> {
     return this.ensureTransaction(null, async (em) => {
       const locationRequestRepository = LocationRequestRepository(em);
+      const tagRepository = TagRepositoryProvider(em);
       const locationRequestTagRepository = LocationRequestTagsRepository(em);
-      const tagCategoryRepository = TagCategoryRepositoryProvider(em);
 
       const locationRequest = await locationRequestRepository.findOneByOrFail({
         id: dto.locationRequestId,
@@ -183,21 +212,18 @@ export class LocationRequestManagementService
       }
 
       // validate tags
-      const existsSelectedTags = await tagCategoryRepository.count({
-        where: {
-          id: In(dto.tagCategoryIds),
-        },
-      });
-
-      if (existsSelectedTags !== dto.tagCategoryIds.length) {
+      const existsSelectedTags = await tagRepository.countSelectableTagsById(
+        dto.tagIds,
+      );
+      if (!existsSelectedTags) {
         throw new BadRequestException(
-          'One or more tags from categories are invalid/not selectable',
+          'One or more provided tags are invalid/not selectable',
         );
       }
 
       return await locationRequestTagRepository
         .persistEntities({
-          tagCategoryIds: dto.tagCategoryIds,
+          tagIds: dto.tagIds,
           locationRequestId: locationRequest.id,
         })
         .then((e) => this.mapToArray(LocationRequestTagsResponseDto, e));

@@ -8,13 +8,18 @@ import { Environment } from '@/config/env.config';
 import { EventRequestEntity } from '@/modules/event/domain/EventRequest.entity';
 import { EventRequestStatus } from '@/common/constants/EventRequestStatus.constant';
 import { EventRequestResponseDto } from '@/common/dto/event/res/EventRequest.response.dto';
+import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.repository';
 import { EventRequestTagsRepository } from '@/modules/event/infra/repository/EventRequestTags.repository';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { StartBookingPaymentDto } from '@/common/dto/location-booking/StartBookingPayment.dto';
-import { In } from 'typeorm';
-import { TagCategoryRepositoryProvider } from '@/modules/utility/infra/repository/TagCategory.repository';
-import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
+import { EntityManager } from 'typeorm';
+import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
+import { EventEntity } from '@/modules/event/domain/Event.entity';
+import { EventStatus } from '@/common/constants/EventStatus.constant';
+import { EventTagsRepository } from '@/modules/event/infra/repository/EventTags.repository';
+import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
+import { CategoryType } from '@/common/constants/CategoryType.constant';
 
 @Injectable()
 export class EventRequestManagementService
@@ -27,8 +32,6 @@ export class EventRequestManagementService
     private readonly locationBookingService: ILocationBookingManagementService,
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
-    @Inject(IEventManagementService)
-    private readonly eventManagementService: IEventManagementService,
   ) {
     super();
   }
@@ -38,24 +41,30 @@ export class EventRequestManagementService
   ): Promise<EventRequestResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const eventRequestRepository = EventRequestRepository(em);
+      const tagRepository = TagRepositoryProvider(em);
       const eventRequestTagRepository = EventRequestTagsRepository(em);
-      const tagCategoryRepository = TagCategoryRepositoryProvider(em);
 
-      // check tag categories exist
-      const tagCategories = await tagCategoryRepository
-        .find({
-          where: {
-            id: In(dto.categoryIds),
-          },
-        })
-        .then((res) => {
-          if (res.length !== dto.categoryIds.length) {
-            throw new BadRequestException(
-              'One or more tag category IDs are not available',
-            );
-          }
-          return res;
-        });
+      // Convert categories to tags
+      const finalTagIds = await mergeTagsWithCategories(
+        [], // No manual tags
+        dto.categoryIds,
+        CategoryType.EVENT,
+        this.dataSource,
+      );
+
+      if (finalTagIds.length === 0) {
+        throw new BadRequestException(
+          'Selected categories do not contain any valid tags',
+        );
+      }
+
+      // validate tags
+      const tags = await tagRepository.countSelectableTagsById(finalTagIds);
+      if (tags !== finalTagIds.length) {
+        throw new BadRequestException(
+          'One or more tags from categories are invalid. Please check tag visibility.',
+        );
+      }
 
       // create location booking with dates
       const locationBooking =
@@ -86,7 +95,7 @@ export class EventRequestManagementService
             savedEventRequest.tags =
               await eventRequestTagRepository.persistEntities({
                 eventRequestId: savedEventRequest.id,
-                tagCategoryIds: tagCategories.map((i) => i.id),
+                tagIds: finalTagIds,
               });
             return savedEventRequest;
           })
@@ -137,10 +146,7 @@ export class EventRequestManagementService
         })
         // transfer event request details to event
         .then(async (_) => {
-          await this.eventManagementService.createEventFromRequest({
-            eventRequestId: eventRequest.id,
-            entityManager: em,
-          });
+          await this.createEventFromRequest(eventRequest.id, em);
           return _;
         })
         // map to dto
@@ -148,6 +154,48 @@ export class EventRequestManagementService
           ...this.mapTo(EventRequestResponseDto, eventRequest),
           locationBooking: locationBookingResponseDto,
         }));
+    });
+  }
+
+  private async createEventFromRequest(
+    eventRequestId: string,
+    entityManager: EntityManager,
+  ) {
+    return this.ensureTransaction(entityManager, async (em) => {
+      const eventRepository = EventRepository(em);
+      const eventRequestRepository = EventRequestRepository(em);
+      const eventTagsRepository = EventTagsRepository(em);
+
+      const eventRequest = await eventRequestRepository.findOneOrFail({
+        where: {
+          id: eventRequestId,
+        },
+        relations: {
+          referencedLocationBooking: true,
+          tags: true,
+        },
+      });
+
+      const event = new EventEntity();
+      event.displayName = eventRequest.eventName;
+      event.description = eventRequest.eventDescription;
+      event.locationId = eventRequest.referencedLocationBooking.locationId;
+      event.referencedEventRequestId = eventRequestId;
+      event.createdById = eventRequest.createdById;
+      event.social = eventRequest.social;
+      event.status = EventStatus.DRAFT;
+
+      return (
+        eventRepository
+          .save(event)
+          // save tags
+          .then(async (event) => {
+            await eventTagsRepository.persistEntities({
+              eventId: event.id,
+              tagIds: eventRequest.tags.map((i) => i.tagId),
+            });
+          })
+      );
     });
   }
 }

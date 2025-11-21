@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { TagEntity } from '@/modules/utility/domain/Tag.entity';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
-import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 
 @Entity({ name: EventTagsEntity.TABLE_NAME })
 export class EventTagsEntity {
@@ -32,14 +31,14 @@ export class EventTagsEntity {
   })
   deletedAt?: Date | null;
 
-  @ManyToOne(() => TagCategoryEntity, (tagCategory) => tagCategory.id, {
+  @Column({ name: 'tag_id', type: 'int' })
+  tagId: number;
+
+  @ManyToOne(() => TagEntity, (tag) => tag.id, {
     createForeignKeyConstraints: false,
   })
-  @JoinColumn({ name: 'tag_category_id' })
-  tagCategory: TagCategoryEntity;
-
-  @Column({ name: 'tag_category_id', type: 'bigint' })
-  tagCategoryId: number;
+  @JoinColumn({ name: 'tag_id' })
+  tag: TagEntity;
 
   @ManyToOne(() => EventEntity, (event) => event.id, {
     createForeignKeyConstraints: false,

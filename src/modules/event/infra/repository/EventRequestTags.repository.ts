@@ -5,11 +5,11 @@ export const EventRequestTagsRepository = (ctx: DataSource | EntityManager) =>
   ctx.getRepository(EventRequestTagsEntity).extend({
     persistEntities(
       this: Repository<EventRequestTagsEntity>,
-      payload: { tagCategoryIds: number[]; eventRequestId: string },
+      payload: { tagIds: number[]; eventRequestId: string },
     ) {
-      const entities = payload.tagCategoryIds.map((tagCategoryId) => {
+      const entities = payload.tagIds.map((tagId) => {
         const entity = new EventRequestTagsEntity();
-        entity.tagCategoryId = tagCategoryId;
+        entity.tagId = tagId;
         entity.eventRequestId = payload.eventRequestId;
 
         return entity;
