@@ -140,7 +140,7 @@ export class LocationManagementService
       // delete location tags
       return await locationTagsRepository.softDelete({
         locationId: dto.locationId,
-        tagCategoryId: In(dto.tagIds),
+        tagCategoryId: In(dto.tagCategoryIds),
       });
     });
   }

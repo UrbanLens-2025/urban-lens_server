@@ -185,11 +185,11 @@ export class LocationRequestManagementService
       // validate tags
       const existsSelectedTags = await tagCategoryRepository.count({
         where: {
-          id: In(dto.tagIds),
+          id: In(dto.tagCategoryIds),
         },
       });
 
-      if (existsSelectedTags !== dto.tagIds.length) {
+      if (existsSelectedTags !== dto.tagCategoryIds.length) {
         throw new BadRequestException(
           'One or more tags from categories are invalid/not selectable',
         );
@@ -197,7 +197,7 @@ export class LocationRequestManagementService
 
       return await locationRequestTagRepository
         .persistEntities({
-          tagCategoryIds: dto.tagIds,
+          tagCategoryIds: dto.tagCategoryIds,
           locationRequestId: locationRequest.id,
         })
         .then((e) => this.mapToArray(LocationRequestTagsResponseDto, e));

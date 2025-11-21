@@ -18,8 +18,6 @@ import { Environment } from '@/config/env.config';
 import { CreateEventFromRequestDto } from '@/common/dto/event/CreateEventFromRequest.dto';
 import { EventRequestRepository } from '@/modules/event/infra/repository/EventRequest.repository';
 import { EventTagsRepository } from '@/modules/event/infra/repository/EventTags.repository';
-import { convertCategoriesToTagIds } from '@/common/utils/category-to-tags.util';
-import { CategoryType } from '@/common/constants/CategoryType.constant';
 
 @Injectable()
 export class EventManagementService

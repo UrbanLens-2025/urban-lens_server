@@ -12,5 +12,5 @@ export class AddLocationRequestTagsDto {
   @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   @IsNotEmpty({ each: true })
-  tagIds: number[];
+  tagCategoryIds: number[];
 }

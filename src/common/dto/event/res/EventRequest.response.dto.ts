@@ -53,8 +53,8 @@ export class EventRequestResponseDto {
       return undefined;
     }
     return value
-      .map((tags: EventRequestTagsResponseDto) => tags?.tagCategory)
-      .filter(Boolean);
+      .filter((tag: EventRequestTagsResponseDto) => tag?.tagCategory)
+      .map((tags: EventRequestTagsResponseDto) => tags?.tagCategory);
   })
   tags: TagCategoryResponseDto[];
 

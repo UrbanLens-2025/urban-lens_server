@@ -1,4 +1,4 @@
-import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import { EventRequestResponseDto } from '@/common/dto/event/res/EventRequest.response.dto';
 import { TagCategoryResponseDto } from '@/common/dto/utility/TagCategory.dto';
 
