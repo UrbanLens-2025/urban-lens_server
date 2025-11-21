@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { EventRequestEntity } from '@/modules/event/domain/EventRequest.entity';
-import { TagEntity } from '@/modules/utility/domain/Tag.entity';
+import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 
 @Entity({ name: EventRequestTagsEntity.TABLE_NAME })
 export class EventRequestTagsEntity {
@@ -32,12 +32,12 @@ export class EventRequestTagsEntity {
   @Column({ name: 'event_request_id', type: 'uuid' })
   eventRequestId: string;
 
-  @ManyToOne(() => TagEntity, (tag) => tag.id, {
+  @ManyToOne(() => TagCategoryEntity, (tagCategory) => tagCategory.id, {
     createForeignKeyConstraints: false,
   })
-  @JoinColumn({ name: 'tag_id' })
-  tag: TagEntity;
+  @JoinColumn({ name: 'tag_category_id' })
+  tagCategory: TagCategoryEntity;
 
-  @Column({ name: 'tag_id', type: 'int' })
-  tagId: number;
+  @Column({ name: 'tag_category_id', type: 'bigint' })
+  tagCategoryId: number;
 }

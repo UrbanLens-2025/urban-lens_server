@@ -15,6 +15,11 @@ import dayjs from 'dayjs';
 import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
+import { CreateEventFromRequestDto } from '@/common/dto/event/CreateEventFromRequest.dto';
+import { EventRequestRepository } from '@/modules/event/infra/repository/EventRequest.repository';
+import { EventTagsRepository } from '@/modules/event/infra/repository/EventTags.repository';
+import { convertCategoriesToTagIds } from '@/common/utils/category-to-tags.util';
+import { CategoryType } from '@/common/constants/CategoryType.constant';
 
 @Injectable()
 export class EventManagementService
@@ -141,6 +146,47 @@ export class EventManagementService
       return await eventRepository
         .save(event)
         .then((res) => this.mapTo(EventResponseDto, res));
+    });
+  }
+
+  createEventFromRequest(dto: CreateEventFromRequestDto): Promise<void> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const eventRepository = EventRepository(em);
+      const eventRequestRepository = EventRequestRepository(em);
+      const eventTagsRepository = EventTagsRepository(em);
+
+      const eventRequest = await eventRequestRepository.findOneOrFail({
+        where: {
+          id: dto.eventRequestId,
+        },
+        relations: {
+          referencedLocationBooking: true,
+          tags: {
+            tagCategory: true,
+          },
+        },
+      });
+
+      const event = new EventEntity();
+      event.displayName = eventRequest.eventName;
+      event.description = eventRequest.eventDescription;
+      event.locationId = eventRequest.referencedLocationBooking.locationId;
+      event.referencedEventRequestId = dto.eventRequestId;
+      event.createdById = eventRequest.createdById;
+      event.social = eventRequest.social;
+      event.status = EventStatus.DRAFT;
+
+      return (
+        eventRepository
+          .save(event)
+          // convert tag categories to tag IDs and save tags
+          .then(async (savedEvent) => {
+            await eventTagsRepository.persistEntities({
+              eventId: savedEvent.id,
+              tagCategoryIds: eventRequest.tags.map((i) => i.tagCategoryId),
+            });
+          })
+      );
     });
   }
 }

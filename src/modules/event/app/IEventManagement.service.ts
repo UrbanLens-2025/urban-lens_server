@@ -3,6 +3,7 @@ import { UpdateEventDto } from '@/common/dto/event/UpdateEvent.dto';
 import { PublishEventDto } from '@/common/dto/event/PublishEvent.dto';
 import { FinishEventDto } from '@/common/dto/event/FinishEvent.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
+import { CreateEventFromRequestDto } from '@/common/dto/event/CreateEventFromRequest.dto';
 
 export const IEventManagementService = Symbol('IEventManagementService');
 
@@ -15,4 +16,6 @@ export interface IEventManagementService {
    * @param dto
    */
   finishEvent(dto: FinishEventDto): Promise<EventResponseDto>;
+
+  createEventFromRequest(dto: CreateEventFromRequestDto): Promise<void>;
 }

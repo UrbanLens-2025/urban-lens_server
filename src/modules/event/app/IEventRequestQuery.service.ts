@@ -25,7 +25,9 @@ export namespace IEventRequestQueryService_QueryConfig {
         status: true,
       },
       relations: {
-        tags: true,
+        tags: {
+          tagCategory: true,
+        },
       },
     };
   }
