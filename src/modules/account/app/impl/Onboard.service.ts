@@ -3,7 +3,7 @@ import { CoreService } from '@/common/core/Core.service';
 import { IOnboardService } from '@/modules/account/app/IOnboard.service';
 import { OnboardCreatorDto } from '@/common/dto/account/OnboardCreator.dto';
 import { OnboardUserDto } from '@/common/dto/account/OnboardUser.dto';
-import { In, MoreThan, UpdateResult } from 'typeorm';
+import { In, UpdateResult } from 'typeorm';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { TagEntity } from '@/modules/utility/domain/Tag.entity';
@@ -76,11 +76,13 @@ export class OnboardService extends CoreService implements IOnboardService {
         }
       }
 
-      // Get the lowest rank (smallest minPoints)
-      const lowestRank = await manager.getRepository(RankEntity).findOne({
-        where: { minPoints: MoreThan(0) },
+      // Get the lowest rank (smallest minPoints, including 0)
+      const ranks = await manager.getRepository(RankEntity).find({
         order: { minPoints: 'ASC' },
+        take: 1,
       });
+
+      const lowestRank = ranks[0];
 
       if (!lowestRank) {
         throw new BadRequestException(
@@ -91,7 +93,8 @@ export class OnboardService extends CoreService implements IOnboardService {
       await userProfileRepository.save({
         accountId: account.id,
         rankId: lowestRank.id,
-        points: 0,
+        rank: lowestRank.name,
+        rankingPoint: 0,
         tagScores: initialTagScores,
         bio: dto.bio,
         dob: dto.dob,

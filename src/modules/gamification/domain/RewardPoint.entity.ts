@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 export enum RewardPointType {
   CREATE_COMMENT = 'create_comment',
@@ -10,6 +10,7 @@ export enum RewardPointType {
 }
 
 @Entity({ name: 'reward_points' })
+@Unique(['type'])
 export class RewardPointEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
