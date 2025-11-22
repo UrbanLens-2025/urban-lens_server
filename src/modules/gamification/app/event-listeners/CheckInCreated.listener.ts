@@ -24,6 +24,9 @@ export class CheckInCreatedListener {
 
   @OnEvent(CHECK_IN_CREATED_EVENT)
   async handleEvent(event: CheckInCreatedEvent) {
+    this.logger.log(
+      `📥 CheckInCreated event received: userId=${event.userId}, locationId=${event.locationId}, checkInId=${event.checkInId}`,
+    );
     try {
       // Get reward points for check-in
       const rewardPoint = await this.rewardPointRepository.repo.findOne({
@@ -36,6 +39,10 @@ export class CheckInCreatedListener {
         );
         return;
       }
+
+      this.logger.log(
+        `💰 Found reward point: ${rewardPoint.points} points for check-in`,
+      );
 
       // Add points to user (for global ranking) - only from check-in
       await this.userPointsService.addPoints(

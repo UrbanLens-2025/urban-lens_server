@@ -48,20 +48,18 @@ export class UserPointsService implements IUserPointsService {
       }
 
       this.logger.debug(
-        `✓ Found user profile. Current points: ${userProfile.points}, Ranking points: ${userProfile.rankingPoint}`,
+        `✓ Found user profile. Current ranking points: ${userProfile.rankingPoint}`,
       );
 
       // Record balance before transaction
-      const balanceBefore = userProfile.points;
+      const balanceBefore = userProfile.rankingPoint;
 
-      // Update both points (for redeeming) and ranking points (for ranking)
-      const oldPoints = userProfile.points;
+      // Update ranking points
       const oldRankingPoint = userProfile.rankingPoint;
-      userProfile.points += points;
       userProfile.rankingPoint += points;
 
       this.logger.debug(
-        `💾 Saving user profile with new points: ${oldPoints} + ${points} = ${userProfile.points}, Ranking: ${oldRankingPoint} + ${points} = ${userProfile.rankingPoint}`,
+        `💾 Saving user profile with new ranking points: ${oldRankingPoint} + ${points} = ${userProfile.rankingPoint}`,
       );
 
       await userProfileRepo.save(userProfile);
@@ -74,12 +72,12 @@ export class UserPointsService implements IUserPointsService {
         description,
         referenceId,
         balanceBefore,
-        balanceAfter: userProfile.points,
+        balanceAfter: userProfile.rankingPoint,
       });
       await pointsHistoryRepo.save(pointsHistory);
 
       this.logger.log(
-        `✅ Added ${points} points to user ${userId}. Points: ${oldPoints} → ${userProfile.points}, Ranking: ${oldRankingPoint} → ${userProfile.rankingPoint}`,
+        `✅ Added ${points} ranking points to user ${userId}. Ranking: ${oldRankingPoint} → ${userProfile.rankingPoint}`,
       );
 
       // Update rank based on ranking points (within same transaction)

@@ -8,6 +8,7 @@ import {
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CheckInRepositoryProvider } from '@/modules/business/infra/repository/CheckIn.repository';
@@ -26,6 +27,8 @@ import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Ac
 
 @Injectable()
 export class CheckInV2Service extends CoreService implements ICheckInV2Service {
+  private readonly logger = new Logger(CheckInV2Service.name);
+
   constructor(private readonly eventEmitter: EventEmitter2) {
     super();
   }
@@ -109,10 +112,11 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
           })
           // Emit events
           .then((e) => {
-            this.eventEmitter.emit(
-              CHECK_IN_CREATED_EVENT,
-              new CheckInCreatedEvent(e),
+            const event = new CheckInCreatedEvent(e);
+            this.logger.debug(
+              `📤 Emitting CHECK_IN_CREATED_EVENT: userId=${event.userId}, locationId=${event.locationId}, checkInId=${event.checkInId}`,
             );
+            this.eventEmitter.emit(CHECK_IN_CREATED_EVENT, event);
 
             return e;
           })

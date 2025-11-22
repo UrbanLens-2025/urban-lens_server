@@ -44,9 +44,6 @@ export class UserProfileEntity {
   @Column({ name: 'rank', type: 'varchar', length: 50, nullable: true })
   rank: RankName;
 
-  @Column({ name: 'points', type: 'integer', default: 0 })
-  points: number;
-
   @Column({ name: 'ranking_point', type: 'integer', default: 0 })
   rankingPoint: number;
 
