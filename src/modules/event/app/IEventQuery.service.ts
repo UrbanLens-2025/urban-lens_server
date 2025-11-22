@@ -9,10 +9,18 @@ import { SearchPublishedEventsDto } from '@/common/dto/event/SearchPublishedEven
 import { GetPublishedEventByIdDto } from '@/common/dto/event/GetPublishedEventById.dto';
 import { GetPublishedEventTicketsDto } from '@/common/dto/event/GetPublishedEventTickets.dto';
 import { SearchNearbyPublishedEventsDto } from '@/common/dto/event/SearchNearbyPublishedEvents.dto';
+import { SearchAllEventsUnfilteredDto } from '@/common/dto/event/SearchAllEventsUnfiltered.dto';
+import { GetAnyEventByIdDto } from '@/common/dto/event/GetAnyEventById.dto';
 
 export const IEventQueryService = Symbol('IEventQueryService');
 
 export interface IEventQueryService {
+  getAllEventsUnfiltered(
+    dto: SearchAllEventsUnfilteredDto,
+  ): Promise<Paginated<EventResponseDto>>;
+
+  getAnyEventById(dto: GetAnyEventByIdDto): Promise<EventResponseDto>;
+
   searchMyEvents(dto: SearchMyEventsDto): Promise<Paginated<EventResponseDto>>;
 
   getMyEventById(dto: GetMyEventByIdDto): Promise<EventResponseDto>;
@@ -39,6 +47,25 @@ export interface IEventQueryService {
 }
 
 export namespace IEventQueryService_QueryConfig {
+  export function getAllEventsUnfiltered(): PaginateConfig<EventEntity> {
+    return {
+      sortableColumns: ['createdAt', 'updatedAt', 'displayName', 'status'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      searchableColumns: ['displayName', 'description'],
+      filterableColumns: {
+        status: true,
+      },
+      relations: {
+        createdBy: true,
+        location: true,
+        tags: {
+          tag: true,
+        },
+        tickets: true,
+      },
+    };
+  }
+
   export function searchNearbyPublishedEventsByCoordinates(): PaginateConfig<EventEntity> {
     return {
       sortableColumns: ['createdAt', 'displayName'],

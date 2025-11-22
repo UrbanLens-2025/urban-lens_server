@@ -8,6 +8,7 @@ export interface Environment {
   PORT: number;
   ENABLE_ACCOUNT_SEEDING: boolean;
   ENABLE_WALLET_SEEDING: boolean;
+  ENABLE_REPORT_REASON_SEEDING: boolean;
 
   DATABASE_HOST: string;
   DATABASE_PORT: number;
@@ -16,6 +17,10 @@ export interface Environment {
   DATABASE_NAME: string;
   DATABASE_ENABLE_SYNC: boolean;
   DATABASE_SCHEMA: string;
+  DATABASE_LOG_LEVELS:
+    | ('query' | 'schema' | 'error' | 'warn' | 'info' | 'log' | 'migration')[]
+    | 'all'
+    | false;
 
   MAILER_HOST: string;
   MAILER_PORT: number;
@@ -81,6 +86,7 @@ export const envConfig = joi.object<Environment>({
   PORT: joi.number().default(3000),
   ENABLE_ACCOUNT_SEEDING: joi.boolean().default(false),
   ENABLE_WALLET_SEEDING: joi.boolean().default(false),
+  ENABLE_REPORT_REASON_SEEDING: joi.boolean().default(false),
 
   DATABASE_HOST: joi.string().required(),
   DATABASE_PORT: joi.number().required(),
@@ -89,6 +95,45 @@ export const envConfig = joi.object<Environment>({
   DATABASE_NAME: joi.string().required(),
   DATABASE_ENABLE_SYNC: joi.boolean().default(false),
   DATABASE_SCHEMA: joi.string().default('public'),
+  DATABASE_LOG_LEVELS: joi
+    .custom((value, helpers) => {
+      const valueString = value as string | null | undefined;
+      if (!valueString) {
+        return false;
+      }
+      if (valueString === 'false') {
+        return false;
+      }
+      if (valueString === 'all') {
+        return 'all';
+      }
+      const parts = valueString.split(',').map((i) => i.trim());
+      const arraySchema = joi
+        .array()
+        .items(
+          joi
+            .string()
+            .valid(
+              'query',
+              'schema',
+              'error',
+              'warn',
+              'info',
+              'log',
+              'migration',
+            ),
+        )
+        .min(1)
+        .unique();
+      const validationResult = arraySchema.validate(parts);
+      if (validationResult.error) {
+        return helpers.error('any.invalid', {
+          message: validationResult.error.message,
+        });
+      }
+      return parts;
+    })
+    .default(false),
 
   MAILER_HOST: joi.string().required(),
   MAILER_PORT: joi.number().required(),
@@ -141,5 +186,7 @@ export const envConfig = joi.object<Environment>({
 
   WEBHOOK_API_KEY: joi.string().required(),
 
-  LOCATION_BOOKING_MAX_TIME_TO_PAY_MS: joi.number().default(1000 * 60 * 60 * 12), // 12 hours
+  LOCATION_BOOKING_MAX_TIME_TO_PAY_MS: joi
+    .number()
+    .default(1000 * 60 * 60 * 12), // 12 hours
 });

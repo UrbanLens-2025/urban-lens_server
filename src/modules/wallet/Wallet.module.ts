@@ -67,6 +67,10 @@ import { ExternalTransactionExpiredListener } from '@/modules/wallet/app/event-l
     WalletSeederHelper,
     ExternalTransactionExpiredListener,
   ],
-  exports: [WalletInfraModule, IWalletTransactionCoordinatorService],
+  exports: [
+    WalletInfraModule,
+    IWalletTransactionCoordinatorService,
+    IWalletActionService,
+  ],
 })
 export class WalletModule {}

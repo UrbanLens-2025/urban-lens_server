@@ -28,6 +28,9 @@ export class UserProfileEntity {
   @Column({ name: 'dob', type: 'timestamp with time zone', nullable: true })
   dob: Date;
 
+  @Column({ name: 'bio', type: 'text', nullable: true })
+  bio?: string | null;
+
   @ManyToOne(() => RankEntity, {
     nullable: true,
     createForeignKeyConstraints: false,
@@ -40,9 +43,6 @@ export class UserProfileEntity {
 
   @Column({ name: 'rank', type: 'varchar', length: 50, nullable: true })
   rank: RankName;
-
-  @Column({ name: 'points', type: 'integer', default: 0 })
-  points: number;
 
   @Column({ name: 'ranking_point', type: 'integer', default: 0 })
   rankingPoint: number;

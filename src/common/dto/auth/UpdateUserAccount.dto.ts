@@ -1,6 +1,7 @@
 import {
   IsOptional,
   IsPhoneNumber,
+  IsString,
   IsUrl,
   MaxLength,
   MinLength,
@@ -37,4 +38,10 @@ export class UpdateUserAccountDto {
   @MaxLength(1000)
   @ApiProperty({ default: 'https://picsum.photos/id/80/1920/1080' })
   coverUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @ApiProperty({ default: 'I am a software engineer' })
+  bio?: string;
 }

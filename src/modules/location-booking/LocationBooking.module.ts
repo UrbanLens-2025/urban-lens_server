@@ -21,7 +21,6 @@ import { LocationBookingConfigCreatorController } from '@/modules/location-booki
 import { LocationBookingConfigDevOnlyController } from '@/modules/location-booking/interfaces/LocationBookingConfig.dev-only.controller';
 import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
 import { BookingPayoutListener } from '@/modules/location-booking/app/event-listener/BookingPayout.listener';
-import { LocationBookingConfigAutoCreationSubscriber } from '@/modules/location-booking/infra/subscriber/LocationBookingConfigAutoCreation.subscriber';
 
 @Module({
   imports: [LocationReservationInfraModule, ScheduledJobsModule, WalletModule],
@@ -57,8 +56,10 @@ import { LocationBookingConfigAutoCreationSubscriber } from '@/modules/location-
       useClass: LocationBookingQueryService,
     },
     BookingPayoutListener,
-    LocationBookingConfigAutoCreationSubscriber,
   ],
-  exports: [ILocationBookingManagementService],
+  exports: [
+    ILocationBookingManagementService,
+    ILocationBookingConfigManagementService,
+  ],
 })
 export class LocationBookingModule {}

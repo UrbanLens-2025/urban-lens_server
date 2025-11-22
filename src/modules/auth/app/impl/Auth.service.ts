@@ -13,6 +13,8 @@ import { LoginDto } from '@/common/dto/auth/Login.dto';
 import { AccountRepository } from '@/modules/account/infra/repository/Account.repository';
 import { UserLoginResponseDto } from '@/common/dto/auth/res/UserLoginResponse.dto';
 import { CoreService } from '@/common/core/Core.service';
+import { ExistsByEmailResponseDto } from '@/common/dto/auth/res/ExistsByEmailResponse.dto';
+import { ExistsByEmailDto } from '@/common/dto/auth/ExistsByEmail.dto';
 import { RegisterResponseDto } from '@/common/dto/auth/res/RegisterResponse.dto';
 import { randomUUID } from 'crypto';
 import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
@@ -31,6 +33,7 @@ import {
   USER_REGISTRATION_CONFIRMED,
   UserRegistrationConfirmedEvent,
 } from '@/modules/auth/app/events/UserRegistrationConfirmed.event';
+import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service';
 
 @Injectable()
 export class AuthService extends CoreService implements IAuthService {
@@ -42,9 +45,22 @@ export class AuthService extends CoreService implements IAuthService {
     private readonly tokenService: TokenService,
     @Inject(IEmailNotificationService)
     private readonly emailNotificationService: IEmailNotificationService,
+    @Inject(IWalletActionService)
+    private readonly walletActionService: IWalletActionService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     super();
+  }
+
+  async existsByEmail(
+    dto: ExistsByEmailDto,
+  ): Promise<ExistsByEmailResponseDto> {
+    const exists = await this.accountRepository.repo.existsBy({
+      email: dto.email,
+    });
+    const response = new ExistsByEmailResponseDto();
+    response.exists = exists;
+    return response;
   }
 
   async resendOtp(dto: RegisterResendOtpDto): Promise<RegisterResponseDto> {
@@ -71,7 +87,7 @@ export class AuthService extends CoreService implements IAuthService {
 
     this.LOGGER.debug(`Resending OTP code: ${otpCode} for email: ${dto.email}`);
 
-    this.emailNotificationService.sendEmail({
+    await this.emailNotificationService.sendEmail({
       to: dto.email,
       template: EmailTemplates.CONFIRM_OTP,
       context: {
@@ -117,7 +133,7 @@ export class AuthService extends CoreService implements IAuthService {
       `Generated OTP code: ${otpCode} for email: ${createAuthDto.email}`,
     );
 
-    this.emailNotificationService.sendEmail({
+    await this.emailNotificationService.sendEmail({
       to: createAuthDto.email,
       template: EmailTemplates.CONFIRM_OTP,
       context: {
@@ -147,45 +163,68 @@ export class AuthService extends CoreService implements IAuthService {
   async registerUserConfirm(
     dto: RegisterConfirmDto,
   ): Promise<UserLoginResponseDto> {
-    const createAuthDto =
-      await this.redisRegisterConfirmRepository.getAndValidate(
-        dto.email,
-        dto.confirmCode,
-        dto.otpCode,
-      );
+    // Validate without deleting - we'll delete only after transaction succeeds
+    const registrationData =
+      await this.redisRegisterConfirmRepository.getByEmail(dto.email);
 
-    if (!createAuthDto) {
+    if (!registrationData) {
       throw new BadRequestException('Invalid confirm code, otp code, or email');
     }
 
-    const userEntity = this.mapTo_Raw(AccountEntity, createAuthDto);
-    userEntity.password = await bcrypt.hash(createAuthDto.password, 10);
-
-    // Business owners need to complete onboarding (register business and get approval)
-    if (createAuthDto.role === Role.BUSINESS_OWNER) {
-      userEntity.hasOnboarded = false;
+    if (
+      registrationData.confirmCode !== dto.confirmCode ||
+      registrationData.otpCode !== dto.otpCode
+    ) {
+      throw new BadRequestException('Invalid confirm code, otp code, or email');
     }
 
-    const user = await this.accountRepository.repo.save(userEntity);
+    const userEntity = this.mapTo_Raw(AccountEntity, registrationData);
+    userEntity.password = await bcrypt.hash(registrationData.password, 10);
 
-    this.emailNotificationService.sendEmail({
-      to: user.email,
-      template: EmailTemplates.WELCOME,
-      context: {
-        user_name: user.firstName + ' ' + user.lastName,
-      },
-    });
-
-    const response = new UserLoginResponseDto();
-    response.user = this.mapTo(AccountResponseDto, user);
-    response.token = await this.tokenService.generateToken(user);
-    return Promise.resolve(response).then((res) => {
-      this.eventEmitter.emit(
-        USER_REGISTRATION_CONFIRMED,
-        new UserRegistrationConfirmedEvent(user),
-      );
-      return res;
-    });
+    return (
+      this.ensureTransaction(null, async (em) => {
+        return this.accountRepository.repo
+          .save(userEntity)
+          .then(async (res) => {
+            await this.walletActionService.createDefaultWallet({
+              userId: res.id,
+              entityManager: em,
+            });
+            return res;
+          });
+      })
+        // delete Redis entry only after transaction succeeds
+        .then(async (res) => {
+          await this.redisRegisterConfirmRepository.delete(dto.email);
+          return res;
+        })
+        // send welcome email
+        .then(async (res) => {
+          await this.emailNotificationService.sendEmail({
+            to: res.email,
+            template: EmailTemplates.WELCOME,
+            context: {
+              user_name: res.firstName + ' ' + res.lastName,
+            },
+          });
+          return res;
+        })
+        // emit events
+        .then((res) => {
+          this.eventEmitter.emit(
+            USER_REGISTRATION_CONFIRMED,
+            new UserRegistrationConfirmedEvent(res),
+          );
+          return res;
+        })
+        // generate response
+        .then(async (res) => {
+          const response = new UserLoginResponseDto();
+          response.user = this.mapTo(AccountResponseDto, res);
+          response.token = await this.tokenService.generateToken(res);
+          return response;
+        })
+    );
   }
 
   async loginUser(loginDto: LoginDto): Promise<UserLoginResponseDto> {

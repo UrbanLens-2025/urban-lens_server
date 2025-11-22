@@ -4,6 +4,8 @@ import { RegisterConfirmDto } from '@/common/dto/auth/RegisterConfirm.dto';
 import { RegisterResendOtpDto } from '@/common/dto/auth/RegisterResendOtp.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RegisterDto } from '@/common/dto/auth/Register.dto';
+import { ExistsByEmailResponseDto } from '@/common/dto/auth/res/ExistsByEmailResponse.dto';
+import { ExistsByEmailDto } from '@/common/dto/auth/ExistsByEmail.dto';
 import { IAuthService } from '@/modules/auth/app/IAuth.service';
 
 @ApiTags('Auth')
@@ -46,5 +48,15 @@ export class AuthPublicController {
   @Post('/register/resend-otp')
   resendOtp(@Body() dto: RegisterResendOtpDto) {
     return this.authService.resendOtp(dto);
+  }
+
+  @ApiOperation({
+    summary: 'Check if email exists',
+  })
+  @Post('/exists-by-email')
+  existsByEmail(
+    @Body() dto: ExistsByEmailDto,
+  ): Promise<ExistsByEmailResponseDto> {
+    return this.authService.existsByEmail(dto);
   }
 }

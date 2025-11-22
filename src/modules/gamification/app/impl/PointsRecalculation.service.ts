@@ -54,7 +54,7 @@ export class PointsRecalculationService {
         throw new Error(`User profile not found for userId: ${userId}`);
       }
 
-      const oldPoints = userProfile.points;
+      const oldPoints = userProfile.rankingPoint;
 
       // Get all reward points
       const rewardPoints = await this.rewardPointRepository.repo.find();
@@ -104,13 +104,12 @@ export class PointsRecalculationService {
         0,
       );
 
-      // Update both points and ranking points
-      userProfile.points = newPoints;
+      // Update ranking points
       userProfile.rankingPoint = newPoints;
       await userProfileRepo.save(userProfile);
 
       this.logger.log(
-        `Recalculated points for user ${userId}: ${oldPoints} → ${newPoints} (both points and ranking_point updated)`,
+        `Recalculated ranking points for user ${userId}: ${oldPoints} → ${newPoints}`,
       );
 
       // Update rank based on ranking points

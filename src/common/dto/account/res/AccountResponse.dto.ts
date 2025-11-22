@@ -33,6 +33,9 @@ export class AccountResponseDto {
   hasOnboarded: boolean;
 
   @Expose()
+  isLocked: boolean;
+
+  @Expose()
   @Type(() => UserProfileResponseDto)
   userProfile?: UserProfileResponseDto;
 

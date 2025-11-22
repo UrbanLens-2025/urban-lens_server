@@ -28,6 +28,9 @@ import { LocationDevOnlyController } from '@/modules/business/interfaces/Locatio
 import { LocationCheckInAnalyticsListener } from '@/modules/business/app/event-listeners/LocationCheckInAnalytics.listener';
 import { ILocationOpeningHoursManagementService } from '@/modules/business/app/ILocationOpeningHoursManagement.service';
 import { LocationOpeningHoursManagementService } from '@/modules/business/app/impl/LocationOpeningHoursManagement.service';
+import { LocationAnalyticsService } from '@/modules/business/app/impl/LocationAnalytics.service';
+import { ILocationAnalyticsService } from '@/modules/business/app/ILocationAnalytics.service';
+import { LocationBookingModule } from '@/modules/location-booking/LocationBooking.module';
 
 @Module({
   imports: [
@@ -36,6 +39,7 @@ import { LocationOpeningHoursManagementService } from '@/modules/business/app/im
     TokenModule,
     FileStorageModule,
     AccountModule,
+    LocationBookingModule,
     ClientsModule.register(getRabbitMQConfig()),
   ],
   controllers: [
@@ -72,6 +76,10 @@ import { LocationOpeningHoursManagementService } from '@/modules/business/app/im
     {
       provide: ILocationOpeningHoursManagementService,
       useClass: LocationOpeningHoursManagementService,
+    },
+    {
+      provide: ILocationAnalyticsService,
+      useClass: LocationAnalyticsService,
     },
     CheckInTagPublisherListener,
     LocationCheckInAnalyticsListener,

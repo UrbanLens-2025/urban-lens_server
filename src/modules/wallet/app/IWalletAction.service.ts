@@ -4,6 +4,7 @@ import { WalletResponseDto } from '@/common/dto/wallet/res/Wallet.response.dto';
 import { WithdrawFundsDto } from '@/common/dto/wallet/WithdrawFunds.dto';
 import { UnlockFundsDto } from '@/common/dto/wallet/UnlockFunds.dto';
 import { PermanentlyWithdrawLockedFundsDto } from '@/common/dto/wallet/PermanentlyWithdrawLockedFunds.dto';
+import { CreateDefaultWalletDto } from '@/common/dto/wallet/CreateDefaultWallet.dto';
 
 export const IWalletActionService = Symbol('IWalletActionService');
 export interface IWalletActionService {
@@ -15,4 +16,6 @@ export interface IWalletActionService {
   permanentlyWithdrawLockedFunds(
     dto: PermanentlyWithdrawLockedFundsDto,
   ): Promise<WalletResponseDto>;
+
+  createDefaultWallet(dto: CreateDefaultWalletDto): Promise<void>;
 }

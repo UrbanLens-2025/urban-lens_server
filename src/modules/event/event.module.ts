@@ -24,8 +24,8 @@ import { TicketOrderQueryService } from '@/modules/event/app/impl/TicketOrderQue
 import { IEventAttendanceQueryService } from '@/modules/event/app/IEventAttendanceQuery.service';
 import { EventAttendanceQueryService } from '@/modules/event/app/impl/EventAttendanceQuery.service';
 import { EventUserController } from '@/modules/event/interfaces/Event.user.controller';
+import { EventAdminController } from '@/modules/event/interfaces/Event.admin.controller';
 import { WalletModule } from '@/modules/wallet/Wallet.module';
-import { EventAttendanceCreationSubscriber } from '@/modules/event/infra/subscriber/EventAttendanceCreation.subscriber';
 import { EventAttendanceManagementService } from '@/modules/event/app/impl/EventAttendanceManagement.service';
 import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
 import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
@@ -45,6 +45,7 @@ import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPa
     EventCreatorController,
     EventPublicController,
     EventUserController,
+    EventAdminController,
   ],
   providers: [
     {
@@ -87,7 +88,6 @@ import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPa
       provide: IEventAttendanceManagementService,
       useClass: EventAttendanceManagementService,
     },
-    EventAttendanceCreationSubscriber,
     EventPayoutListener,
   ],
 })

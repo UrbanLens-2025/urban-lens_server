@@ -4,6 +4,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
+  IsString,
   IsUrl,
   MaxLength,
 } from 'class-validator';
@@ -40,4 +41,10 @@ export class OnboardUserDto {
   @IsBeforeToday()
   @ApiProperty()
   dob?: Date;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @ApiProperty({ default: 'I am a software engineer' })
+  bio?: string;
 }

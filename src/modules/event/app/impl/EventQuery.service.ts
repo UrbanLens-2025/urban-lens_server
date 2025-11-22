@@ -17,12 +17,44 @@ import { GetPublishedEventByIdDto } from '@/common/dto/event/GetPublishedEventBy
 import { GetPublishedEventTicketsDto } from '@/common/dto/event/GetPublishedEventTickets.dto';
 import { EventStatus } from '@/common/constants/EventStatus.constant';
 import { SearchNearbyPublishedEventsDto } from '@/common/dto/event/SearchNearbyPublishedEvents.dto';
+import { SearchAllEventsUnfilteredDto } from '@/common/dto/event/SearchAllEventsUnfiltered.dto';
+import { GetAnyEventByIdDto } from '@/common/dto/event/GetAnyEventById.dto';
 
 @Injectable()
 export class EventQueryService
   extends CoreService
   implements IEventQueryService
 {
+  getAllEventsUnfiltered(
+    dto: SearchAllEventsUnfilteredDto,
+  ): Promise<Paginated<EventResponseDto>> {
+    return paginate(
+      dto.query,
+      EventRepository(this.dataSource),
+      IEventQueryService_QueryConfig.getAllEventsUnfiltered(),
+    ).then((res) => this.mapToPaginated(EventResponseDto, res));
+  }
+
+  getAnyEventById(dto: GetAnyEventByIdDto): Promise<EventResponseDto> {
+    const eventRepository = EventRepository(this.dataSource);
+
+    return eventRepository
+      .findOneOrFail({
+        where: {
+          id: dto.eventId,
+        },
+        relations: {
+          createdBy: true,
+          location: true,
+          tags: {
+            tag: true,
+          },
+          tickets: true,
+        },
+      })
+      .then((entity) => this.mapTo(EventResponseDto, entity));
+  }
+
   searchNearbyPublishedEventsByCoordinates(
     dto: SearchNearbyPublishedEventsDto,
   ): Promise<Paginated<EventResponseDto>> {
