@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
@@ -8,6 +8,7 @@ import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { IOnboardService } from '@/modules/account/app/IOnboard.service';
 import { OptionalAuth } from '@/common/decorators/OptionalAuth.decorator';
+import { GetLeaderboardSnapshotDto } from '@/common/dto/account/GetLeaderboardSnapshot.dto';
 
 @ApiBearerAuth()
 @Roles(Role.USER)
@@ -36,5 +37,19 @@ export class AccountUserController {
   @OptionalAuth()
   getLeaderboard(@AuthUser() user?: JwtTokenDto) {
     return this.accountQueryService.getLeaderboard(user?.sub);
+  }
+
+  @ApiOperation({
+    summary: 'Get leaderboard snapshot',
+    description:
+      'Get historical leaderboard snapshot for a specific period (monthly, yearly, or seasonal).',
+  })
+  @Get('/leaderboard/snapshot')
+  @OptionalAuth()
+  getLeaderboardSnapshot(
+    @Query() dto: GetLeaderboardSnapshotDto,
+    @AuthUser() user?: JwtTokenDto,
+  ) {
+    return this.accountQueryService.getLeaderboardSnapshot(dto, user?.sub);
   }
 }

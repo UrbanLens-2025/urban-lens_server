@@ -16,6 +16,7 @@ import { TokenModule } from '@/common/core/token/token.module';
 import { IAccountProfileManagementService } from '@/modules/account/app/IAccountProfileManagement.service';
 import { AccountProfileManagementService } from '@/modules/account/app/impl/AccountProfileManagement.service';
 import { GamificationInfraModule } from '@/modules/gamification/infra/Gamification.infra.module';
+import { GamificationModule } from '@/modules/gamification/Gamification.module';
 import { AccountHelper } from '@/modules/account/app/helper/Account.helper';
 import { AccountAdminController } from '@/modules/account/interfaces/Account.admin.controller';
 import { AccountQueryService } from '@/modules/account/app/impl/AccountQuery.service';
@@ -35,6 +36,7 @@ import { AccountManagementService } from '@/modules/account/app/impl/AccountMana
     FileStorageModule,
     TokenModule,
     GamificationInfraModule,
+    GamificationModule,
   ],
   controllers: [
     AccountAdminController,

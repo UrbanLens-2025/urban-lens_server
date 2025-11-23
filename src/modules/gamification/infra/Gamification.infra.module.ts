@@ -20,6 +20,8 @@ import { LocationMissionLogRepository } from './repository/LocationMissionLog.re
 import { OneTimeQRCodeRepository } from './repository/OneTimeQRCode.repository';
 import { UserLocationProfileRepository } from './repository/UserLocationProfile.repository';
 import { UserLocationVoucherExchangeHistoryRepository } from './repository/UserLocationVoucherExchangeHistory.repository';
+import { LeaderboardSnapshotEntity } from '../domain/LeaderboardSnapshot.entity';
+import { LeaderboardSnapshotRepository } from './repository/LeaderboardSnapshot.repository';
 
 const repositories = [
   RewardPointRepository,
@@ -32,6 +34,7 @@ const repositories = [
   OneTimeQRCodeRepository,
   UserLocationProfileRepository,
   UserLocationVoucherExchangeHistoryRepository,
+  LeaderboardSnapshotRepository,
 ];
 
 @Module({
@@ -47,6 +50,7 @@ const repositories = [
       OneTimeQRCodeEntity,
       UserLocationProfileEntity,
       UserLocationVoucherExchangeHistoryEntity,
+      LeaderboardSnapshotEntity,
     ]),
   ],
   providers: repositories,
