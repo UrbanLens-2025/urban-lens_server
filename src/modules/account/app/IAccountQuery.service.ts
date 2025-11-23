@@ -6,11 +6,17 @@ import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { GetAccountByIdDto } from '@/common/dto/account/GetAccountById.dto';
+import { GetLeaderboardSnapshotDto } from '@/common/dto/account/GetLeaderboardSnapshot.dto';
+import { LeaderboardPeriodType } from '@/modules/gamification/domain/LeaderboardSnapshot.entity';
 
 export const IAccountQueryService = Symbol('IAccountQueryService');
 export interface IAccountQueryService {
   getAccountInfo(dto: UserGetAccountInfoDto): Promise<AccountResponseDto>;
   getLeaderboard(currentUserId?: string): Promise<LeaderboardResponseDto>;
+  getLeaderboardSnapshot(
+    dto: GetLeaderboardSnapshotDto,
+    currentUserId?: string,
+  ): Promise<LeaderboardResponseDto>;
   searchBusinesses(
     query: PaginateQuery,
   ): Promise<Paginated<BusinessResponseDto>>;

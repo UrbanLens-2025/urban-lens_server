@@ -20,7 +20,11 @@ import {
   PaginationParams,
   PaginationResult,
 } from '@/common/services/base.service';
-import { PostEntity, PostType } from '@/modules/post/domain/Post.entity';
+import {
+  PostEntity,
+  PostType,
+  Visibility,
+} from '@/modules/post/domain/Post.entity';
 import { ReactPostDto } from '@/common/dto/post/ReactPost.dto';
 import { ReactRepository } from '@/modules/post/infra/repository/React.repository';
 import {
@@ -29,6 +33,13 @@ import {
   ReactType,
 } from '../../domain/React.entity';
 import { DeletePostDto } from '@/common/dto/post/DeletePost.dto';
+import {
+  PostResponseDto,
+  PostAuthorResponseDto,
+} from '@/common/dto/post/Post.response.dto';
+import { ReactPostResponseDto } from '@/common/dto/post/ReactPost.response.dto';
+import { DeletePostResponseDto } from '@/common/dto/post/DeletePost.response.dto';
+import { UpdatePostVisibilityResponseDto } from '@/common/dto/post/UpdatePostVisibility.response.dto';
 import { CommentRepository } from '../../infra/repository/Comment.repository';
 import { CommentEntity } from '../../domain/Comment.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
@@ -128,14 +139,14 @@ export class PostService
     rawPost: RawPost,
     currentUserReaction: ReactType | null = null,
     isFollowing: boolean = false,
-  ): any {
-    const result: any = {
+  ): PostResponseDto {
+    const result: PostResponseDto = {
       postId: rawPost.post_postid,
       content: rawPost.post_content,
       imageUrls: rawPost.post_imageurls,
       type: rawPost.post_type,
       isVerified: rawPost.post_isverified,
-      visibility: rawPost.post_visibility || null,
+      visibility: (rawPost.post_visibility as Visibility) || null,
       createdAt: rawPost.post_createdat,
       updatedAt: rawPost.post_updatedat,
       author: {
@@ -159,7 +170,11 @@ export class PostService
     }
 
     // Add location if exists
-    if (rawPost.location_id) {
+    if (
+      rawPost.location_id &&
+      rawPost.location_name &&
+      rawPost.location_addressline
+    ) {
       result.location = {
         id: rawPost.location_id,
         name: rawPost.location_name,
@@ -409,7 +424,7 @@ export class PostService
     }
   }
 
-  async createPost(dto: CreatePostDto): Promise<any> {
+  async createPost(dto: CreatePostDto): Promise<PostResponseDto> {
     try {
       if (dto.type === PostType.BLOG && !dto.visibility) {
         throw new BadRequestException('Visibility is required for blog posts');
@@ -526,7 +541,22 @@ export class PostService
         this.eventEmitter.emit(POST_CREATED_EVENT, postCreatedEvent);
       }
 
-      return result.postId;
+      // Get the created post with all relations
+      const createdPost = await this.postRepository.repo
+        .createQueryBuilder('post')
+        .leftJoin('post.author', 'author')
+        .leftJoin(
+          'analytic',
+          'analytic',
+          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :type',
+          { type: AnalyticEntityType.POST },
+        )
+        .leftJoin('locations', 'location', 'location.id = post.location_id')
+        .where('post.post_id = :postId', { postId: result.postId })
+        .select(this.getPostSelectFields())
+        .getRawOne();
+
+      return this.mapRawPostToDto(createdPost, null, false);
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException(error);
@@ -624,7 +654,7 @@ export class PostService
     }
   }
 
-  async getPostById(postId: string, userId?: string): Promise<any> {
+  async getPostById(postId: string, userId?: string): Promise<PostResponseDto> {
     try {
       const post = await this.postRepository.repo
         .createQueryBuilder('post')
@@ -683,7 +713,7 @@ export class PostService
     }
   }
 
-  async reactPost(dto: ReactPostDto): Promise<any> {
+  async reactPost(dto: ReactPostDto): Promise<ReactPostResponseDto> {
     try {
       const post = await this.postRepository.repo.findOne({
         where: { postId: dto.postId },
@@ -767,14 +797,18 @@ export class PostService
         this.eventEmitter.emit(POST_REACTED_EVENT, event);
       }
 
-      return 'React post successfully';
+      return {
+        postId: dto.postId,
+        reactionType: finalReactType || dto.type,
+        message: 'React post successfully',
+      };
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException(error);
     }
   }
 
-  async deletePost(dto: DeletePostDto): Promise<any> {
+  async deletePost(dto: DeletePostDto): Promise<DeletePostResponseDto> {
     try {
       const post = await this.postRepository.repo.findOne({
         where: { postId: dto.postId },
@@ -837,7 +871,10 @@ export class PostService
         }
       });
 
-      return 'Post deleted successfully';
+      return {
+        postId: dto.postId,
+        message: 'Post deleted successfully',
+      };
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException(error.message);
@@ -848,7 +885,7 @@ export class PostService
     postId: string,
     reactType: ReactType,
     params: PaginationParams = {},
-  ): Promise<any> {
+  ): Promise<PaginationResult<PostAuthorResponseDto>> {
     try {
       const { page, limit, skip } = this.normalizePaginationParams(params);
 
@@ -874,11 +911,15 @@ export class PostService
         .limit(limit);
 
       const [reactions, total] = await queryBuilder.getManyAndCount();
-      const propertyName =
-        reactType === ReactType.UPVOTE ? 'totalUpvotes' : 'totalDownvotes';
 
       return {
-        [propertyName]: reactions.map((reaction) => reaction.author),
+        data: reactions.map((reaction) => ({
+          id: reaction.author.id,
+          firstName: reaction.author.firstName,
+          lastName: reaction.author.lastName,
+          avatarUrl: reaction.author.avatarUrl,
+          isFollow: false, // This would need to be checked separately if needed
+        })),
         meta: this.buildPaginationMeta(page, limit, total),
       };
     } catch (error) {
@@ -890,18 +931,21 @@ export class PostService
   async getUpvotesOfPost(
     postId: string,
     params: PaginationParams = {},
-  ): Promise<any> {
+  ): Promise<PaginationResult<PostAuthorResponseDto>> {
     return this.getReactionsOfPost(postId, ReactType.UPVOTE, params);
   }
 
   async getDownvotesOfPost(
     postId: string,
     params: PaginationParams = {},
-  ): Promise<any> {
+  ): Promise<PaginationResult<PostAuthorResponseDto>> {
     return this.getReactionsOfPost(postId, ReactType.DOWNVOTE, params);
   }
 
-  async getAllReactionsOfPost(postId: string): Promise<any> {
+  async getAllReactionsOfPost(postId: string): Promise<{
+    upvotes: PostAuthorResponseDto[];
+    downvotes: PostAuthorResponseDto[];
+  }> {
     try {
       const [upvotes, downvotes] = await Promise.all([
         this.getUpvotesOfPost(postId),
@@ -909,11 +953,8 @@ export class PostService
       ]);
 
       return {
-        upvotes: upvotes.totalUpvotes,
-        totalUpvotes: upvotes.total,
-        downvotes: downvotes.totalDownvotes,
-        totalDownvotes: downvotes.total,
-        totalReactions: upvotes.total + downvotes.total,
+        upvotes: upvotes.data,
+        downvotes: downvotes.data,
       };
     } catch (error) {
       console.error(error);
@@ -1282,7 +1323,10 @@ export class PostService
     }
   }
 
-  async updatePostVisibility(postId: string, isHidden: boolean): Promise<any> {
+  async updatePostVisibility(
+    postId: string,
+    isHidden: boolean,
+  ): Promise<UpdatePostVisibilityResponseDto> {
     try {
       const post = await this.postRepository.repo.findOne({
         where: { postId },

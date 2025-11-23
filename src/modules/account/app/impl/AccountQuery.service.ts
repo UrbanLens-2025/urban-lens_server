@@ -18,12 +18,22 @@ import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { BusinessRepositoryProvider } from '@/modules/account/infra/repository/Business.repository';
 import { GetAccountByIdDto } from '@/common/dto/account/GetAccountById.dto';
+import { GetLeaderboardSnapshotDto } from '@/common/dto/account/GetLeaderboardSnapshot.dto';
+import { LeaderboardPeriodHelper } from '@/modules/gamification/app/helper/LeaderboardPeriod.helper';
+import { Inject } from '@nestjs/common';
+import { ILeaderboardSnapshotService } from '@/modules/gamification/app/ILeaderboardSnapshot.service';
 
 @Injectable({})
 export class AccountQueryService
   extends CoreService
   implements IAccountQueryService
 {
+  constructor(
+    @Inject(ILeaderboardSnapshotService)
+    private readonly leaderboardSnapshotService: ILeaderboardSnapshotService,
+  ) {
+    super();
+  }
   async getAccountInfo(
     dto: UserGetAccountInfoDto,
   ): Promise<AccountResponseDto> {
@@ -58,12 +68,12 @@ export class AccountQueryService
 
   async getLeaderboard(
     currentUserId?: string,
+    limit?: number,
   ): Promise<LeaderboardResponseDto> {
     const userProfileRepository = UserProfileRepositoryProvider(
       this.dataSource,
     );
-    // Get all user profiles sorted by ranking_point (highest first)
-    const userProfiles = await userProfileRepository
+    const queryBuilder = userProfileRepository
       .createQueryBuilder('userProfile')
       .leftJoin('userProfile.account', 'account')
       .select([
@@ -73,10 +83,14 @@ export class AccountQueryService
         'account.lastName',
         'account.avatarUrl',
       ])
-      .orderBy('userProfile.ranking_point', 'DESC')
-      .getMany();
+      .orderBy('userProfile.ranking_point', 'DESC');
 
-    // Map to leaderboard users with rank position
+    if (limit) {
+      queryBuilder.limit(limit);
+    }
+
+    const userProfiles = await queryBuilder.getMany();
+
     const rankings: LeaderboardUserDto[] = userProfiles.map(
       (profile, index) => ({
         userId: profile.accountId,
@@ -84,7 +98,7 @@ export class AccountQueryService
         lastName: profile.account?.lastName || '',
         avatarUrl: profile.account?.avatarUrl || null,
         rankingPoint: profile.rankingPoint,
-        rank: index + 1, // Position in leaderboard (1-based)
+        rank: index + 1,
       }),
     );
 
@@ -125,5 +139,44 @@ export class AccountQueryService
         },
       })
       .then((res) => this.mapTo(AccountResponseDto, res));
+  }
+
+  async getLeaderboardSnapshot(
+    dto: GetLeaderboardSnapshotDto,
+    currentUserId?: string,
+  ): Promise<LeaderboardResponseDto> {
+    const periodValue =
+      dto.periodValue || LeaderboardPeriodHelper.getPeriodValue(dto.periodType);
+
+    // Try to get snapshot data
+    let rankings = await this.leaderboardSnapshotService.getLeaderboardSnapshot(
+      dto.periodType,
+      periodValue,
+      dto.limit || 100,
+    );
+
+    // If no snapshot found and querying current period, fallback to real-time leaderboard
+    if (rankings.length === 0 && !dto.periodValue) {
+      // Use real-time leaderboard for current period with limit
+      const realTimeLeaderboard = await this.getLeaderboard(
+        currentUserId,
+        dto.limit || 100,
+      );
+      return realTimeLeaderboard;
+    }
+
+    // Find current user's rank if userId is provided
+    let myRank: LeaderboardUserDto | null = null;
+    if (currentUserId) {
+      const userRank = rankings.find((r) => r.userId === currentUserId);
+      if (userRank) {
+        myRank = userRank;
+      }
+    }
+
+    return {
+      rankings,
+      myRank,
+    };
   }
 }

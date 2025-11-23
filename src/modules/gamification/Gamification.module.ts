@@ -33,6 +33,9 @@ import { GamificationInfraModule } from './infra/Gamification.infra.module';
 import { PostCreatedListener } from './app/event-listeners/PostCreated.listener';
 import { CommentCreatedListener } from './app/event-listeners/CommentCreated.listener';
 import { CheckInCreatedListener } from './app/event-listeners/CheckInCreated.listener';
+import { LeaderboardSnapshotService } from './app/impl/LeaderboardSnapshot.service';
+import { LeaderboardSnapshotCronService } from './app/cron/LeaderboardSnapshot.cron.service';
+import { ILeaderboardSnapshotService } from './app/ILeaderboardSnapshot.service';
 import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
 import { PostInfraModule } from '@/modules/post/infra/Post.infra.module';
 import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.module';
@@ -100,7 +103,12 @@ import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.mod
     PostCreatedListener,
     CommentCreatedListener,
     CheckInCreatedListener,
+    {
+      provide: ILeaderboardSnapshotService,
+      useClass: LeaderboardSnapshotService,
+    },
+    LeaderboardSnapshotCronService,
   ],
-  exports: [IRankService, IUserPointsService],
+  exports: [IRankService, IUserPointsService, ILeaderboardSnapshotService],
 })
 export class GamificationModule {}

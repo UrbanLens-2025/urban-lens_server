@@ -1,0 +1,13 @@
+## 39. Points History Table
+
+| Field name | Type | Allow nulls | Unique | PK/FK | Note |
+|------------|------|--------------|--------|-------|------|
+| id | uuid |  | x | PK |  |
+| balance_after | int |  |  |  |  |
+| balance_before | int |  |  |  |  |
+| created_at | timestamp with time zone |  |  |  | auto-generated |
+| description | text | x |  |  |  |
+| points | int |  |  |  |  |
+| reference_id | uuid | x |  |  |  |
+| transaction_type | varchar(50) |  |  |  |  |
+| user_id | uuid |  |  |  |  |
