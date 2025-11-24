@@ -25,7 +25,7 @@ export namespace IReportQueryService_Config {
     return {
       sortableColumns: ['createdAt', 'updatedAt', 'status', 'targetType'],
       defaultSortBy: [['createdAt', 'DESC']],
-      searchableColumns: ['title', 'description', 'reported_reason'],
+      searchableColumns: ['title', 'description', 'reportedReasonKey'],
       filterableColumns: {
         status: true,
         targetType: true,
@@ -33,7 +33,6 @@ export namespace IReportQueryService_Config {
       },
       relations: {
         createdBy: true,
-        lastUpdatedBy: true,
         reportedReasonEntity: true,
         referencedTargetPost: true,
         referencedTargetEvent: true,

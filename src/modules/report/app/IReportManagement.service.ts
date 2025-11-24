@@ -6,4 +6,3 @@ export const IReportManagementService = Symbol('IReportManagementService');
 export interface IReportManagementService {
   processReport(dto: ProcessReportDto): Promise<ReportResponseDto>;
 }
-

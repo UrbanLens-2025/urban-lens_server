@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Param, Query } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -18,6 +18,10 @@ import {
 } from 'nestjs-paginate';
 import { GetReportsByTargetTypeDto } from '@/common/dto/report/GetReportsByTargetType.dto';
 import { GetReportsDto } from '@/common/dto/report/GetReports.dto';
+import { ProcessReportDto } from '@/common/dto/report/ProcessReport.dto';
+import { AuthUser } from '@/common/AuthUser.decorator';
+import { IReportManagementService } from '@/modules/report/app/IReportManagement.service';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
 @ApiTags('Report')
 @ApiBearerAuth()
@@ -27,6 +31,8 @@ export class ReportAdminController {
   constructor(
     @Inject(IReportQueryService)
     private readonly reportQueryService: IReportQueryService,
+    @Inject(IReportManagementService)
+    private readonly reportManagementService: IReportManagementService,
   ) {}
 
   @ApiOperation({ summary: 'Get all reports' })
@@ -59,5 +65,19 @@ export class ReportAdminController {
   })
   getReportById(@Param('reportId') reportId: string) {
     return this.reportQueryService.getReportById({ reportId });
+  }
+
+  @ApiOperation({ summary: 'Process report' })
+  @Post('/:reportId/process')
+  processReport(
+    @Param('reportId') reportId: string,
+    @Body() dto: ProcessReportDto,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.reportManagementService.processReport({
+      ...dto,
+      reportId,
+      initiatedByAccountId: user.sub,
+    });
   }
 }
