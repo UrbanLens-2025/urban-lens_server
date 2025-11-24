@@ -6,6 +6,8 @@ import { ReportTargetPostResponseDto } from '@/common/dto/report/res/ReportTarge
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 import { ReportReasonResponseDto } from '@/common/dto/report/res/ReportReason.response.dto';
+import { ReportResolutionActions } from '@/common/constants/ReportResolutionActions.constant';
+import { ReportResolvedByType } from '@/common/constants/ReportResolvedByType.constant';
 
 @Exclude()
 export class ReportResponseDto {
@@ -17,12 +19,6 @@ export class ReportResponseDto {
 
   @Expose()
   targetId: string;
-
-  @Expose()
-  entityId: string;
-
-  @Expose()
-  entityType: ReportEntityType;
 
   @Expose()
   reported_reason: string;
@@ -40,6 +36,23 @@ export class ReportResponseDto {
   status: ReportStatus;
 
   @Expose()
+  resolutionAction?: ReportResolutionActions | null;
+
+  @Expose()
+  resolvedByType?: ReportResolvedByType | null;
+
+  @Expose()
+  resolvedById?: string | null;
+
+  @Expose()
+  @Type(() => AccountResponseDto)
+  resolvedBy?: AccountResponseDto | null;
+
+  @Expose()
+  @Type(() => Date)
+  resolvedAt?: Date | null;
+
+  @Expose()
   @Type(() => Date)
   createdAt: Date;
 
@@ -53,13 +66,6 @@ export class ReportResponseDto {
   @Expose()
   @Type(() => Date)
   updatedAt: Date;
-
-  @Expose()
-  lastUpdatedById?: string | null;
-
-  @Expose()
-  @Type(() => AccountResponseDto)
-  lastUpdatedBy?: AccountResponseDto | null;
 
   @Expose()
   @Type(() => ReportReasonResponseDto)

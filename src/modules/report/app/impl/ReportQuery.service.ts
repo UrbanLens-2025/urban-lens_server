@@ -64,7 +64,6 @@ export class ReportQueryService
       where: { id: dto.reportId },
       relations: {
         createdBy: true,
-        lastUpdatedBy: true,
         reportedReasonEntity: true,
         referencedTargetPost: true,
         referencedTargetEvent: true,

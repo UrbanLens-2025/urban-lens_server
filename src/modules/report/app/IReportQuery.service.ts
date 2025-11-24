@@ -33,7 +33,6 @@ export namespace IReportQueryService_Config {
       },
       relations: {
         createdBy: true,
-        lastUpdatedBy: true,
         reportedReasonEntity: true,
         referencedTargetPost: true,
         referencedTargetEvent: true,
