@@ -62,6 +62,8 @@ export interface Environment {
 
   GOOGLE_MAPS_API_KEY?: string;
 
+  PERSPECTIVE_API_KEY?: string;
+
   OLLAMA_ENABLED: boolean;
   OLLAMA_HOST?: string;
   OLLAMA_MODEL?: string;
@@ -175,6 +177,8 @@ export const envConfig = joi.object<Environment>({
   PAYMENT_ALLOW_MOCK_HASH: joi.boolean().default(false),
 
   GOOGLE_MAPS_API_KEY: joi.string().optional(),
+
+  PERSPECTIVE_API_KEY: joi.string().optional(),
 
   OLLAMA_ENABLED: joi.boolean().default(false),
   OLLAMA_HOST: joi.string().default('http://localhost:11434'),
