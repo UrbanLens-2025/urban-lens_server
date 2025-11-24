@@ -1,5 +1,12 @@
-import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Query,
+} from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
   IEventQueryService,
   IEventQueryService_QueryConfig,
@@ -42,6 +49,32 @@ export class EventPublicController {
   @Get()
   getPublishedEvents(@Paginate() query: PaginateQuery) {
     return this.eventQueryService.searchPublishedEvents({ query });
+  }
+
+  @ApiOperation({ summary: 'Search published events by tag category' })
+  @ApiPaginationQuery(
+    IEventQueryService_QueryConfig.searchPublishedEventsByTagCategory(),
+  )
+  @ApiQuery({
+    name: 'tagCategoryIds',
+    type: [Number],
+    isArray: true,
+    description: 'Array of tag category IDs',
+    example: [1, 2, 3],
+  })
+  @Get('/search/by-tag-category')
+  searchPublishedEventsByTagCategory(
+    @Paginate() query: PaginateQuery,
+    @Query('tagCategoryIds') tagCategoryIds: string | string[],
+  ) {
+    const categoryIds = Array.isArray(tagCategoryIds)
+      ? tagCategoryIds.map((id) => Number(id))
+      : [Number(tagCategoryIds)];
+
+    return this.eventQueryService.searchPublishedEventsByTagCategory({
+      query,
+      tagCategoryIds: categoryIds,
+    });
   }
 
   @ApiOperation({ summary: 'Get all tickets for a published event' })
