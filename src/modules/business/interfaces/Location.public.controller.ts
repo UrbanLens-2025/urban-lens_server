@@ -20,6 +20,7 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
+import { SearchVisibleLocationsByTagCategoryDto } from '@/common/dto/business/SearchVisibleLocationsByTagCategory.dto';
 
 @ApiTags('Location')
 @Controller('/public/locations')
@@ -58,6 +59,32 @@ export class LocationPublicController {
   @Get('/search')
   searchVisibleLocations(@Paginate() query: PaginateQuery) {
     return this.locationQueryService.searchVisibleLocations(query);
+  }
+
+  @ApiOperation({ summary: 'Search visible locations by tag category' })
+  @ApiPaginationQuery(
+    ILocationQueryService_QueryConfig.searchVisibleLocationsByTagCategory(),
+  )
+  @ApiQuery({
+    name: 'tagCategoryIds',
+    type: [Number],
+    isArray: true,
+    description: 'Array of tag category IDs',
+    example: [1, 2, 3],
+  })
+  @Get('/search/by-tag-category')
+  searchVisibleLocationsByTagCategory(
+    @Paginate() query: PaginateQuery,
+    @Query('tagCategoryIds') tagCategoryIds: string | string[],
+  ) {
+    const categoryIds = Array.isArray(tagCategoryIds)
+      ? tagCategoryIds.map((id) => Number(id))
+      : [Number(tagCategoryIds)];
+
+    return this.locationQueryService.searchVisibleLocationsByTagCategory({
+      query,
+      tagCategoryIds: categoryIds,
+    });
   }
 
   @ApiOperation({ summary: 'Get visible location by ID' })

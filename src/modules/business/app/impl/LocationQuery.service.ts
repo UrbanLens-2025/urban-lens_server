@@ -14,12 +14,39 @@ import { LocationRepositoryProvider } from '@/modules/business/infra/repository/
 import { GetVisibleLocationsByBusinessIdDto } from '@/common/dto/business/GetVisibleLocationsByBusinessId.dto';
 import { GetMyCreatedLocationByIdDto } from '@/common/dto/business/GetMyCreatedLocationById.dto';
 import { LocationWithDistanceResponseDto } from '@/common/dto/business/stub/LocationWithDistance.response.dto';
+import { SearchVisibleLocationsByTagCategoryDto } from '@/common/dto/business/SearchVisibleLocationsByTagCategory.dto';
+import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
+import { CategoryType } from '@/common/constants/CategoryType.constant';
+import { In } from 'typeorm';
 
 @Injectable()
 export class LocationQueryService
   extends CoreService
   implements ILocationQueryService
 {
+  async searchVisibleLocationsByTagCategory(
+    dto: SearchVisibleLocationsByTagCategoryDto,
+  ): Promise<Paginated<LocationResponseDto>> {
+    const tagIds = await mergeTagsWithCategories(
+      [],
+      dto.tagCategoryIds,
+      CategoryType.LOCATION,
+      this.dataSource,
+    );
+    const locationRepository = LocationRepositoryProvider(this.dataSource);
+    return paginate(dto.query, locationRepository, {
+      ...ILocationQueryService_QueryConfig.searchVisibleLocationsByTagCategory(),
+      where: {
+        isVisibleOnMap: true,
+        tags: {
+          tag: {
+            id: In(tagIds),
+          },
+        },
+      },
+    }).then((locations) => this.mapToPaginated(LocationResponseDto, locations));
+  }
+
   getNearbyVisibleLocationsByCoordinates(
     dto: GetNearbyVisibleLocationsByCoordinatesDto,
   ): Promise<Paginated<LocationWithDistanceResponseDto>> {
