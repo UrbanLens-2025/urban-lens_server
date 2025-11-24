@@ -8,6 +8,7 @@ import { GetVisibleLocationsByBusinessIdDto } from '@/common/dto/business/GetVis
 import { GetMyCreatedLocationByIdDto } from '@/common/dto/business/GetMyCreatedLocationById.dto';
 import { LocationWithDistanceResponseDto } from '@/common/dto/business/stub/LocationWithDistance.response.dto';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
+import { SearchVisibleLocationsByTagCategoryDto } from '@/common/dto/business/SearchVisibleLocationsByTagCategory.dto';
 
 export const ILocationQueryService = Symbol('ILocationQueryService');
 
@@ -27,6 +28,10 @@ export interface ILocationQueryService {
 
   searchVisibleLocations(
     query: PaginateQuery,
+  ): Promise<Paginated<LocationResponseDto>>;
+
+  searchVisibleLocationsByTagCategory(
+    dto: SearchVisibleLocationsByTagCategoryDto,
   ): Promise<Paginated<LocationResponseDto>>;
 
   // business locations
@@ -122,6 +127,26 @@ export namespace ILocationQueryService_QueryConfig {
       },
       relations: {
         business: true,
+        tags: {
+          tag: true,
+        },
+      },
+    };
+  }
+
+  export function searchVisibleLocationsByTagCategory(): PaginateConfig<LocationEntity> {
+    return {
+      sortableColumns: ['name', 'createdAt', 'updatedAt'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      searchableColumns: [
+        'name',
+        'description',
+        'addressLine',
+        'addressLevel1',
+        'addressLevel2',
+      ],
+      select: ['*', 'tags.tag.*', 'tags.*'],
+      relations: {
         tags: {
           tag: true,
         },

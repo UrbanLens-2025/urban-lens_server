@@ -19,12 +19,39 @@ import { EventStatus } from '@/common/constants/EventStatus.constant';
 import { SearchNearbyPublishedEventsDto } from '@/common/dto/event/SearchNearbyPublishedEvents.dto';
 import { SearchAllEventsUnfilteredDto } from '@/common/dto/event/SearchAllEventsUnfiltered.dto';
 import { GetAnyEventByIdDto } from '@/common/dto/event/GetAnyEventById.dto';
+import { SearchPublishedEventsByTagCategoryDto } from '@/common/dto/event/SearchPublishedEventsByTagCategory.dto';
+import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
+import { CategoryType } from '@/common/constants/CategoryType.constant';
+import { In } from 'typeorm';
 
 @Injectable()
 export class EventQueryService
   extends CoreService
   implements IEventQueryService
 {
+  async searchPublishedEventsByTagCategory(
+    dto: SearchPublishedEventsByTagCategoryDto,
+  ): Promise<Paginated<EventResponseDto>> {
+    const tagIds = await mergeTagsWithCategories(
+      [],
+      dto.tagCategoryIds,
+      CategoryType.EVENT,
+      this.dataSource,
+    );
+    const eventRepository = EventRepository(this.dataSource);
+    return paginate(dto.query, eventRepository, {
+      ...IEventQueryService_QueryConfig.searchPublishedEventsByTagCategory(),
+      where: {
+        status: EventStatus.PUBLISHED,
+        tags: {
+          tag: {
+            id: In(tagIds),
+          },
+        },
+      },
+    }).then((events) => this.mapToPaginated(EventResponseDto, events));
+  }
+
   getAllEventsUnfiltered(
     dto: SearchAllEventsUnfilteredDto,
   ): Promise<Paginated<EventResponseDto>> {
