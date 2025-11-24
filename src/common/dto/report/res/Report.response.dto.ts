@@ -21,7 +21,7 @@ export class ReportResponseDto {
   targetId: string;
 
   @Expose()
-  reported_reason: string;
+  reportedReasonKey: string;
 
   @Expose()
   title: string;

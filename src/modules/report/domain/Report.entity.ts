@@ -33,9 +33,6 @@ export class ReportEntity {
   @Column({ name: 'target_id', type: 'uuid' })
   targetId: string;
 
-  @Column({ name: 'reported_reason', type: 'varchar', length: 100 })
-  reported_reason: string;
-
   @Column({ name: 'title', type: 'varchar', length: 555 })
   title: string;
 
@@ -104,6 +101,9 @@ export class ReportEntity {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
+
+  @Column({ name: 'reported_reason', type: 'varchar', length: 100 })
+  reportedReasonKey: string;
 
   //#region development relations for easy fetching
   @ManyToOne(() => ReportReasonEntity, (reportedReason) => reportedReason.key, {

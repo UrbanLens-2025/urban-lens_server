@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { IReportCreationService } from '@/modules/report/app/IReportCreation.service';
 import { CoreService } from '@/common/core/Core.service';
@@ -18,8 +18,9 @@ import {
   REPORT_CREATED_EVENT,
   ReportCreatedEvent,
 } from '@/modules/report/domain/events/ReportCreated.event';
-import { EntityManager } from 'typeorm';
+import { EntityManager, MoreThan } from 'typeorm';
 import { PostRepositoryProvider } from '@/modules/post/infra/repository/Post.repository';
+import { ReportRepositoryProvider } from '@/modules/report/infra/repository/Report.repository';
 
 @Injectable()
 export class ReportCreationService
@@ -40,7 +41,15 @@ export class ReportCreationService
         where: { postId: dto.postId },
       });
 
-      // Step 2: Create report
+      // Step 2: Detect duplicate reports
+      await this.detectReportSpamming(
+        dto.createdById,
+        ReportEntityType.POST,
+        dto.postId,
+        em,
+      );
+
+      // Step 3: Create report
       return this.createReport(
         em,
         ReportEntityType.POST,
@@ -64,7 +73,15 @@ export class ReportCreationService
         where: { id: dto.eventId },
       });
 
-      // Step 2: Create report
+      // Step 2: Detect duplicate reports
+      await this.detectReportSpamming(
+        dto.createdById,
+        ReportEntityType.EVENT,
+        dto.eventId,
+        em,
+      );
+
+      // Step 3: Create report
       return this.createReport(
         em,
         ReportEntityType.EVENT,
@@ -88,7 +105,15 @@ export class ReportCreationService
         where: { id: dto.locationId },
       });
 
-      // Step 2: Create report
+      // Step 2: Detect duplicate reports
+      await this.detectReportSpamming(
+        dto.createdById,
+        ReportEntityType.LOCATION,
+        dto.locationId,
+        em,
+      );
+
+      // Step 3: Create report
       return this.createReport(
         em,
         ReportEntityType.LOCATION,
@@ -113,6 +138,7 @@ export class ReportCreationService
     attachedImageUrls?: string[],
   ): Promise<ReportResponseDto> {
     const reportReasonRepo = ReportReasonRepositoryProvider(em);
+    const reportRepo = ReportRepositoryProvider(em);
     const reportReason = await reportReasonRepo.findOneOrFail({
       where: {
         key: reportedReason,
@@ -120,17 +146,18 @@ export class ReportCreationService
       },
     });
 
-    const report = em.create(ReportEntity, {
+    const report = reportRepo.create({
       targetType,
       targetId,
-      reported_reason: reportedReason,
+      reportedReasonKey: reportReason.key,
       title,
       description: description ?? null,
       attachedImageUrls: attachedImageUrls || [],
       status: ReportStatus.PENDING,
       createdById,
     });
-    const savedReport = await em.save(report);
+
+    const savedReport = await reportRepo.save(report);
 
     const reportCreatedEvent = new ReportCreatedEvent();
     reportCreatedEvent.reportId = savedReport.id;
@@ -141,5 +168,43 @@ export class ReportCreationService
     this.eventEmitter.emit(REPORT_CREATED_EVENT, reportCreatedEvent);
 
     return this.mapTo(ReportResponseDto, savedReport);
+  }
+
+  private async detectReportSpamming(
+    accountId: string,
+    targetType: ReportEntityType,
+    targetId: string,
+    em: EntityManager,
+  ): Promise<void> {
+    const reportRepo = ReportRepositoryProvider(em);
+    const duplicateReportsByTargetId = await reportRepo.count({
+      where: {
+        createdById: accountId,
+        targetType,
+        targetId,
+        createdAt: MoreThan(new Date(Date.now() - 1000 * 60 * 60 * 24)), // 24 hours ago
+        status: ReportStatus.PENDING,
+      },
+    });
+
+    if (duplicateReportsByTargetId >= 3) {
+      throw new BadRequestException(
+        'You have reached the maximum number of duplicate reports for this target within the last 24 hours',
+      );
+    }
+
+    const totalReportsIn24Hours = await reportRepo.count({
+      where: {
+        createdById: accountId,
+        createdAt: MoreThan(new Date(Date.now() - 1000 * 60 * 60 * 24)), // 24 hours ago
+        status: ReportStatus.PENDING,
+      },
+    });
+
+    if (totalReportsIn24Hours >= 10) {
+      throw new BadRequestException(
+        'You have reached the maximum number of reports within the last 24 hours',
+      );
+    }
   }
 }
