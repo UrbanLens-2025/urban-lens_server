@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Inject,
@@ -20,7 +21,6 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
-import { SearchVisibleLocationsByTagCategoryDto } from '@/common/dto/business/SearchVisibleLocationsByTagCategory.dto';
 
 @ApiTags('Location')
 @Controller('/public/locations')
@@ -69,6 +69,7 @@ export class LocationPublicController {
     name: 'tagCategoryIds',
     type: [Number],
     isArray: true,
+    required: true,
     description: 'Array of tag category IDs',
     example: [1, 2, 3],
   })
@@ -77,9 +78,15 @@ export class LocationPublicController {
     @Paginate() query: PaginateQuery,
     @Query('tagCategoryIds') tagCategoryIds: string | string[],
   ) {
-    const categoryIds = Array.isArray(tagCategoryIds)
+    if (tagCategoryIds === null || tagCategoryIds === undefined) {
+      throw new BadRequestException('Tag category IDs are required');
+    }
+
+    let categoryIds = Array.isArray(tagCategoryIds)
       ? tagCategoryIds.map((id) => Number(id))
       : [Number(tagCategoryIds)];
+
+    categoryIds = categoryIds.filter((id) => !isNaN(id));
 
     return this.locationQueryService.searchVisibleLocationsByTagCategory({
       query,
