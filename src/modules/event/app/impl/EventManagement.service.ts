@@ -91,6 +91,7 @@ export class EventManagementService
               const locationBooking =
                 await this.locationBookingService.createBooking_ForBusinessLocation(
                   {
+                    targetId: savedEvent.id,
                     accountId: dto.accountId,
                     dates: dto.eventLocation.dates,
                     locationId: dto.eventLocation.locationId,

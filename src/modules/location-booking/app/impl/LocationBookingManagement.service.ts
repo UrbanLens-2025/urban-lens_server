@@ -116,6 +116,7 @@ export class LocationBookingManagementService
       booking.locationId = dto.locationId;
       booking.amountToPay = bookingPrice;
       booking.createdById = dto.accountId;
+      booking.targetId = dto.targetId;
       booking.status = LocationBookingStatus.AWAITING_BUSINESS_PROCESSING;
       // attach dates
       booking.dates = dto.dates.map((d) =>

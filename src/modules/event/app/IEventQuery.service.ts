@@ -97,6 +97,7 @@ export namespace IEventQueryService_QueryConfig {
         tags: {
           tag: true,
         },
+        locationBookings: true,
       },
     };
   }
