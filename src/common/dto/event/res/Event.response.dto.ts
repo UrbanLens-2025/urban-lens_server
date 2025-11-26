@@ -2,7 +2,6 @@ import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { EventStatus } from '@/common/constants/EventStatus.constant';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
-import { EventRequestResponseDto } from '@/common/dto/event/res/EventRequest.response.dto';
 import { EventTagsResponseDto } from '@/common/dto/event/res/EventTags.response.dto';
 import { SocialLink } from '@/common/json/SocialLink.json';
 import { EventTicketResponseDto } from '@/common/dto/event/res/EventTicket.response.dto';

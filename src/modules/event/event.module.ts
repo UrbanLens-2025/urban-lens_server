@@ -1,12 +1,7 @@
 import { Module } from '@nestjs/common';
 import { EventInfraModule } from '@/modules/event/infra/event.infra.module';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
-import { EventRequestCreatorController } from '@/modules/event/interfaces/EventRequest.creator.controller';
-import { IEventRequestManagementService } from '@/modules/event/app/IEventRequestManagement.service';
-import { EventRequestManagementService } from '@/modules/event/app/impl/EventRequestManagement.service';
 import { LocationBookingModule } from '@/modules/location-booking/LocationBooking.module';
-import { IEventRequestQueryService } from '@/modules/event/app/IEventRequestQuery.service';
-import { EventRequestQueryService } from '@/modules/event/app/impl/EventRequestQuery.service';
 import { EventCreatorController } from '@/modules/event/interfaces/Event.creator.controller';
 import { EventPublicController } from '@/modules/event/interfaces/Event.public.controller';
 import { IEventQueryService } from '@/modules/event/app/IEventQuery.service';
@@ -41,21 +36,12 @@ import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPa
     ScheduledJobsModule,
   ],
   controllers: [
-    EventRequestCreatorController,
     EventCreatorController,
     EventPublicController,
     EventUserController,
     EventAdminController,
   ],
   providers: [
-    {
-      provide: IEventRequestManagementService,
-      useClass: EventRequestManagementService,
-    },
-    {
-      provide: IEventRequestQueryService,
-      useClass: EventRequestQueryService,
-    },
     {
       provide: IEventQueryService,
       useClass: EventQueryService,

@@ -4,17 +4,14 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  OneToMany, PrimaryGeneratedColumn,
+  UpdateDateColumn
 } from 'typeorm';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { EventStatus } from '@/common/constants/EventStatus.constant';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { SocialLink } from '@/common/json/SocialLink.json';
 import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
-import { EventRequestEntity } from '@/modules/event/domain/EventRequest.entity';
 import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
 import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
 import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
