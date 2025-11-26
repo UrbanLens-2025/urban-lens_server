@@ -7,7 +7,9 @@ import {
   IsUrl,
 } from 'class-validator';
 import { AcceptedEventValidationDocuments } from '@/common/constants/AcceptedEventValidationDocuments.constant';
+import { Exclude, Expose } from 'class-transformer';
 
+@Exclude()
 export class EventValidationDocumentsJson {
   @ApiProperty({
     enum: AcceptedEventValidationDocuments,
@@ -15,6 +17,7 @@ export class EventValidationDocumentsJson {
   })
   @IsNotEmpty()
   @IsEnum(AcceptedEventValidationDocuments)
+  @Expose()
   documentType: AcceptedEventValidationDocuments;
 
   @ApiProperty({ type: String, isArray: true, example: ['http://google.com'] })
@@ -22,5 +25,6 @@ export class EventValidationDocumentsJson {
   @ArrayNotEmpty()
   @IsNotEmpty({ each: true })
   @IsUrl({}, { each: true })
+  @Expose()
   documentImageUrls: string[];
 }

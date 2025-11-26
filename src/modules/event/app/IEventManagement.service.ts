@@ -4,6 +4,9 @@ import { PublishEventDto } from '@/common/dto/event/PublishEvent.dto';
 import { FinishEventDto } from '@/common/dto/event/FinishEvent.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 import { CreateEventDto } from '@/common/dto/event/CreateEvent.dto';
+import { InitiateEventBookingPaymentDto } from '@/common/dto/event/InitiateBookingPayment.dto';
+import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
+import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 
 export const IEventManagementService = Symbol('IEventManagementService');
 
@@ -17,4 +20,8 @@ export interface IEventManagementService {
    * @param dto
    */
   finishEvent(dto: FinishEventDto): Promise<EventResponseDto>;
+  initiateBookingPayment(
+    dto: InitiateEventBookingPaymentDto,
+  ): Promise<EventResponseDto>;
+  addLocationBooking(dto: AddLocationBookingDto): Promise<EventResponseDto>;
 }

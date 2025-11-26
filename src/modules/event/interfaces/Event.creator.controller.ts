@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Inject,
+  Ip,
   Param,
   ParseUUIDPipe,
   Post,
@@ -43,6 +44,8 @@ import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAtt
 import { ConfirmTicketUsageDto } from '@/common/dto/event/ConfirmTicketUsage.dto';
 import { CreateEventDto } from '@/common/dto/event/CreateEvent.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
+import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
+import { InitiateEventBookingPaymentDto } from '@/common/dto/event/InitiateBookingPayment.dto';
 
 @ApiBearerAuth()
 @ApiTags('Event')
@@ -75,6 +78,38 @@ export class EventCreatorController {
     return this.eventManagementService.createEvent({
       ...dto,
       accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Add a location booking to my event' })
+  @Post('/:eventId/location-bookings')
+  addLocationBookingToMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: AddLocationBookingDto,
+  ) {
+    return this.eventManagementService.addLocationBooking({
+      ...dto,
+      eventId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Initiate payment for location booking' })
+  @Post('/:eventId/location-bookings/:locationBookingId/payment')
+  initiatePaymentForLocationBooking(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Ip() ipAddress: string,
+  ) {
+    return this.eventManagementService.initiateBookingPayment({
+      eventId,
+      locationBookingId,
+      accountId: userDto.sub,
+      accountName: userDto.email,
+      ipAddress,
+      returnUrl: '',
     });
   }
 

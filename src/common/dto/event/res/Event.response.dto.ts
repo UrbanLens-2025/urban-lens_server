@@ -85,13 +85,6 @@ export class EventResponseDto {
   termsAndConditions?: string | null;
 
   @Expose()
-  referencedEventRequestId?: string | null;
-
-  @Expose()
-  @Type(() => EventRequestResponseDto)
-  referencedEventRequest?: EventRequestResponseDto;
-
-  @Expose()
   @Transform(({ value }) => {
     if (!value || !Array.isArray(value)) {
       return undefined;

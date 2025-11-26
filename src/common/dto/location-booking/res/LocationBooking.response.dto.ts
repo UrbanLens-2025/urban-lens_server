@@ -3,9 +3,10 @@ import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTransaction.response.dto';
-import { EventRequestResponseDto } from '@/common/dto/event/res/EventRequest.response.dto';
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 import { LocationBookingDateResponseDto } from '@/common/dto/location-booking/res/LocationBookingDate.response.dto';
+import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
+import { ScheduledJobResponseDto } from '@/common/dto/scheduled-job/res/ScheduledJob.response.dto';
 
 @Exclude()
 export class LocationBookingResponseDto {
@@ -38,10 +39,20 @@ export class LocationBookingResponseDto {
   locationId: string;
 
   @Expose()
-  referencedTransactionId: string;
+  targetId?: string | null;
 
   @Expose()
-  softLockedUntil?: Date;
+  referencedTransactionId?: string | null;
+
+  @Expose()
+  softLockedUntil?: Date | null;
+
+  @Expose()
+  scheduledPayoutJobId?: number | null;
+
+  @Expose()
+  @Type(() => Date)
+  paidOutAt?: Date | null;
 
   // -- Relations --
 
@@ -55,9 +66,13 @@ export class LocationBookingResponseDto {
 
   @Expose()
   @Type(() => WalletTransactionResponseDto)
-  referencedTransaction: WalletTransactionResponseDto;
+  referencedTransaction?: WalletTransactionResponseDto;
 
   @Expose()
-  @Type(() => EventRequestResponseDto)
-  referencedEventRequest: EventRequestResponseDto;
+  @Type(() => EventResponseDto)
+  referencedEvent?: EventResponseDto;
+
+  @Expose()
+  @Type(() => ScheduledJobResponseDto)
+  scheduledPayoutJob?: ScheduledJobResponseDto;
 }

@@ -17,10 +17,12 @@ import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import { CreateEventDto } from '@/common/dto/event/CreateEvent.dto';
 import { EventTagsRepository } from '@/modules/event/infra/repository/EventTags.repository';
-import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
 import { CategoryType } from '@/common/constants/CategoryType.constant';
+import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
-import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
+import { InitiateEventBookingPaymentDto } from '@/common/dto/event/InitiateBookingPayment.dto';
+import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
+import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 
 @Injectable()
 export class EventManagementService
@@ -84,23 +86,6 @@ export class EventManagementService
               eventId: savedEvent.id,
               tagIds: finalTagIds,
             });
-            return savedEvent;
-          })
-          .then(async (savedEvent) => {
-            if (dto.eventLocation) {
-              const locationBooking =
-                await this.locationBookingService.createBooking_ForBusinessLocation(
-                  {
-                    targetId: savedEvent.id,
-                    accountId: dto.accountId,
-                    dates: dto.eventLocation.dates,
-                    locationId: dto.eventLocation.locationId,
-                  },
-                );
-              savedEvent.locationBookings = [
-                this.mapTo_safe(LocationBookingEntity, locationBooking),
-              ];
-            }
             return savedEvent;
           })
           // map to response
@@ -214,6 +199,127 @@ export class EventManagementService
       return await eventRepository
         .save(event)
         .then((res) => this.mapTo(EventResponseDto, res));
+    });
+  }
+
+  // .then(async (savedEvent) => {
+  //   if (dto.eventLocation) {
+  //     const locationBooking =
+  //       await this.locationBookingService.createBooking_ForBusinessLocation(
+  //         {
+  //           targetId: savedEvent.id,
+  //           accountId: dto.accountId,
+  //           dates: dto.eventLocation.dates,
+  //           locationId: dto.eventLocation.locationId,
+  //         },
+  //       );
+  //     savedEvent.locationBookings = [
+  //       this.mapTo_safe(LocationBookingEntity, locationBooking),
+  //     ];
+  //   }
+  //   return savedEvent;
+  // })
+
+  addLocationBooking(dto: AddLocationBookingDto): Promise<EventResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const eventRepo = EventRepository(em);
+
+      const event = await eventRepo
+        .findOneOrFail({
+          where: {
+            id: dto.eventId,
+            createdById: dto.accountId,
+          },
+          relations: {
+            locationBookings: true,
+          },
+        })
+        .then((res) => {
+          if (!res.canAddBooking()) {
+            throw new BadRequestException(
+              'You can only modify bookings for events that are DRAFT.',
+            );
+          }
+
+          return res;
+        });
+
+      // check if location booking already exists
+      const existingLocationBooking = event.locationBookings.find((booking) => {
+        return booking.locationId === dto.locationId;
+      });
+      if (existingLocationBooking) {
+        throw new BadRequestException(
+          'You have already added a booking for this location.',
+        );
+      }
+
+      const locationBooking =
+        await this.locationBookingService.createBooking_ForBusinessLocation({
+          targetId: dto.eventId,
+          accountId: dto.accountId,
+          dates: dto.dates,
+          locationId: dto.locationId,
+        });
+
+      return this.mapTo(EventResponseDto, {
+        ...event,
+        locationBookings: [...event.locationBookings, locationBooking],
+      });
+    });
+  }
+
+  initiateBookingPayment(
+    dto: InitiateEventBookingPaymentDto,
+  ): Promise<EventResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const eventRepo = EventRepository(em);
+
+      const event = await eventRepo
+        .findOneOrFail({
+          where: {
+            id: dto.eventId,
+          },
+          relations: {
+            locationBookings: true,
+          },
+        })
+        // check can confirm
+        .then((res) => {
+          if (!res.canBeUpdated()) {
+            throw new BadRequestException(
+              'Event is not eligible for booking confirmation.',
+            );
+          }
+          return res;
+        });
+
+      const locationBooking = event.locationBookings.find((booking) => {
+        return booking.id === dto.locationBookingId;
+      });
+
+      if (!locationBooking) {
+        throw new BadRequestException('Location booking not found for event.');
+      }
+
+      const locationBookingResponse =
+        await this.locationBookingService.payForBooking({
+          ...dto,
+          locationBookingId: locationBooking.id,
+          entityManager: em,
+        });
+
+      event.locationId = locationBookingResponse.locationId;
+      await eventRepo.update(
+        { id: event.id },
+        { locationId: event.locationId },
+      );
+
+      return this.mapTo(EventResponseDto, {
+        ...event,
+        locationId: event.locationId,
+        locationBookings: [locationBookingResponse],
+      });
     });
   }
 }

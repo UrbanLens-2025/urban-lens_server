@@ -66,17 +66,6 @@ export class EventRequestEntity {
   })
   eventValidationDocuments: EventValidationDocumentsJson[];
 
-  @OneToOne(
-    () => LocationBookingEntity,
-    (locationBooking) => locationBooking.referencedEventRequest,
-    {
-      createForeignKeyConstraints: false,
-      nullable: true,
-    },
-  )
-  @JoinColumn({ name: 'referenced_location_booking_id' })
-  referencedLocationBooking: LocationBookingEntity;
-
   @Column({
     name: 'referenced_location_booking_id',
     type: 'uuid',
@@ -94,13 +83,6 @@ export class EventRequestEntity {
     { createForeignKeyConstraints: false },
   )
   tags: EventRequestTagsEntity[];
-
-  @OneToOne(() => EventEntity, (event) => event.referencedEventRequest, {
-    createForeignKeyConstraints: false,
-    nullable: true,
-  })
-  @JoinColumn({ name: 'referenced_event_id' })
-  referencedEvent?: EventEntity | null;
 
   @Column({
     name: 'referenced_event_id',

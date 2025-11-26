@@ -14,9 +14,6 @@ import { LocationBookingEntity } from '@/modules/location-booking/domain/Locatio
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 import { ProcessBookingDto } from '@/common/dto/location-booking/ProcessBooking.dto';
-import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
-import { EventRequestStatus } from '@/common/constants/EventRequestStatus.constant';
-import { EventRequestRepository } from '@/modules/event/infra/repository/EventRequest.repository';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   BOOKING_APPROVED_EVENT,
@@ -138,7 +135,6 @@ export class LocationBookingManagementService
   processBooking(dto: ProcessBookingDto): Promise<UpdateResult> {
     return this.ensureTransaction(null, async (em) => {
       const locationBookingRepository = LocationBookingRepository(em);
-      const eventRequestRepository = EventRequestRepository(em);
 
       const booking = await locationBookingRepository.findOneOrFail({
         where: {
@@ -146,9 +142,6 @@ export class LocationBookingManagementService
           location: {
             businessId: dto.accountId, // you can only process your locations
           },
-        },
-        relations: {
-          referencedEventRequest: true,
         },
       });
 
@@ -187,30 +180,30 @@ export class LocationBookingManagementService
         );
       }
 
-      // update parent object based on booking type
-      switch (booking.bookingObject) {
-        case LocationBookingObject.FOR_EVENT: {
-          if (!booking.referencedEventRequest) {
-            throw new InternalServerErrorException(
-              'Booking is for event but no referenced event request found.',
-            );
-          }
+      // // update parent object based on booking type
+      // switch (booking.bookingObject) {
+      //   case LocationBookingObject.FOR_EVENT: {
+      //     if (!booking.referencedEventRequest) {
+      //       throw new InternalServerErrorException(
+      //         'Booking is for event but no referenced event request found.',
+      //       );
+      //     }
 
-          // update referenced event request status
-          const eventRequest = booking.referencedEventRequest;
-          eventRequest.status = EventRequestStatus.PROCESSED;
-          await eventRequestRepository.update(
-            { id: eventRequest.id },
-            eventRequest,
-          );
-          break;
-        }
-        default: {
-          throw new InternalServerErrorException(
-            'Unknown booking object type.',
-          );
-        }
-      }
+      //     // update referenced event request status
+      //     const eventRequest = booking.referencedEventRequest;
+      //     eventRequest.status = EventRequestStatus.PROCESSED;
+      //     await eventRequestRepository.update(
+      //       { id: eventRequest.id },
+      //       eventRequest,
+      //     );
+      //     break;
+      //   }
+      //   default: {
+      //     throw new InternalServerErrorException(
+      //       'Unknown booking object type.',
+      //     );
+      //   }
+      // }
 
       // emit events for notifications
       this.eventEmitter.emit(
@@ -230,9 +223,6 @@ export class LocationBookingManagementService
         where: {
           id: dto.locationBookingId,
           createdById: dto.accountId,
-        },
-        relations: {
-          referencedEventRequest: true,
         },
       });
 
@@ -285,9 +275,10 @@ export class LocationBookingManagementService
         booking.scheduledPayoutJobId = null;
       }
 
-      await locationBookingRepository.update({ id: booking.id }, booking);
-
-      return this.mapTo(LocationBookingResponseDto, booking);
+      return this.mapTo(
+        LocationBookingResponseDto,
+        await locationBookingRepository.save(booking),
+      );
     });
   }
 }

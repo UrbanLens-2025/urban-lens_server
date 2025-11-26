@@ -109,16 +109,6 @@ export class EventEntity {
   })
   tags: EventTagsEntity[];
 
-  @OneToOne(() => EventRequestEntity, (eventRequest) => eventRequest.id, {
-    createForeignKeyConstraints: false,
-    nullable: true,
-  })
-  @JoinColumn({ name: 'referenced_event_request_id' })
-  referencedEventRequest?: EventRequestEntity | null;
-
-  @Column({ name: 'referenced_event_request_id', type: 'uuid', nullable: true })
-  referencedEventRequestId?: string | null;
-
   @Column({ name: 'has_paid_out', type: 'boolean', default: false })
   hasPaidOut: boolean;
 
@@ -205,10 +195,14 @@ export class EventEntity {
     return correctStatus && hasLocation && hasDisplayName && hasDates;
   }
 
-  canBeUpdated() {
+  public canBeUpdated() {
     const correctStatus =
       this.status === EventStatus.DRAFT ||
       this.status === EventStatus.PUBLISHED;
     return correctStatus;
+  }
+
+  public canAddBooking() {
+    return this.status === EventStatus.DRAFT;
   }
 }

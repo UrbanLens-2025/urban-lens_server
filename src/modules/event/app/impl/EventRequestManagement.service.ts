@@ -180,7 +180,6 @@ export class EventRequestManagementService
       event.displayName = eventRequest.eventName;
       event.description = eventRequest.eventDescription;
       event.locationId = eventRequest.referencedLocationBooking.locationId;
-      event.referencedEventRequestId = eventRequestId;
       event.createdById = eventRequest.createdById;
       event.social = eventRequest.social;
       event.status = EventStatus.DRAFT;

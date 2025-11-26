@@ -5,7 +5,6 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -13,7 +12,6 @@ import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransaction.entity';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
-import { EventRequestEntity } from '@/modules/event/domain/EventRequest.entity';
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
 import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
@@ -99,16 +97,6 @@ export class LocationBookingEntity {
   )
   @JoinColumn({ name: 'referenced_transaction_id' })
   referencedTransaction: WalletTransactionEntity;
-
-  @OneToOne(
-    () => EventRequestEntity,
-    (eventRequest) => eventRequest.referencedLocationBooking,
-    {
-      createForeignKeyConstraints: false,
-      nullable: true,
-    },
-  )
-  referencedEventRequest?: EventRequestEntity | null;
 
   // @Column({
   //   name: 'referenced_event_id',

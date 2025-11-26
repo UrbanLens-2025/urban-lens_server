@@ -50,7 +50,7 @@ export class LocationBookingQueryService
         },
         relations: {
           referencedTransaction: true,
-          referencedEventRequest: true,
+          referencedEvent: true,
           createdBy: {
             creatorProfile: true,
           },
