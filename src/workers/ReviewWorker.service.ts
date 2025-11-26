@@ -144,24 +144,15 @@ export class ReviewWorkerService {
           ? parseFloat(result.average_rating)
           : 0;
 
-        // Upsert location_analytics
+        // Update location directly
         await this.dataSource.query(
           `
-          INSERT INTO "${this.schema}"."location_analytics" (
-            location_id, 
-            total_reviews, 
-            average_rating,
-            total_posts,
-            total_check_ins,
-            created_at,
-            updated_at
-          )
-          VALUES ($1, $2, $3, 0, 0, NOW(), NOW())
-          ON CONFLICT (location_id) 
-          DO UPDATE SET
+          UPDATE "${this.schema}"."locations"
+          SET 
             total_reviews = $2,
             average_rating = $3,
             updated_at = NOW()
+          WHERE id = $1
           `,
           [locationId, totalReviews, averageRating],
         );

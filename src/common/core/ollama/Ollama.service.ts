@@ -542,12 +542,11 @@ Start by querying nearby locations within the radius.`;
           ) FILTER (WHERE t.id IS NOT NULL),
           '[]'
         ) as tags,
-        la.average_rating as "averageRating",
-        la.total_reviews as "totalReviews"
+        l.average_rating as "averageRating",
+        l.total_reviews as "totalReviews"
       FROM ${schema}.locations l
       LEFT JOIN ${schema}.location_tags lt ON l.id = lt.location_id
       LEFT JOIN ${schema}.tag t ON lt.tag_id = t.id
-      LEFT JOIN ${schema}.location_analytics la ON l.id = la.location_id
       WHERE l.is_visible_on_map = true
         AND (
           6371 * acos(
@@ -556,7 +555,7 @@ Start by querying nearby locations within the radius.`;
             sin(radians($1)) * sin(radians(l.latitude))
           )
         ) <= $3
-      GROUP BY l.id, l.name, l.address_line, l.latitude, l.longitude, l.image_url, la.average_rating, la.total_reviews
+      GROUP BY l.id, l.name, l.address_line, l.latitude, l.longitude, l.image_url, l.average_rating, l.total_reviews
       ORDER BY distance ASC
       LIMIT $4
     `;
@@ -608,15 +607,14 @@ Start by querying nearby locations within the radius.`;
           ) FILTER (WHERE t.id IS NOT NULL),
           '[]'
         ) as tags,
-        la.average_rating as "averageRating"
+        l.average_rating as "averageRating"
       FROM ${schema}.locations l
       INNER JOIN ${schema}.location_tags lt ON l.id = lt.location_id
       LEFT JOIN ${schema}.tag t ON lt.tag_id = t.id
-      LEFT JOIN ${schema}.location_analytics la ON l.id = la.location_id
       WHERE l.is_visible_on_map = true
         AND lt.tag_id = ANY($3::int[])
-      GROUP BY l.id, l.name, l.address_line, l.latitude, l.longitude, la.average_rating
-      ORDER BY la.average_rating DESC NULLS LAST, distance ASC
+      GROUP BY l.id, l.name, l.address_line, l.latitude, l.longitude, l.average_rating
+      ORDER BY l.average_rating DESC NULLS LAST, distance ASC
       LIMIT $4
     `;
 

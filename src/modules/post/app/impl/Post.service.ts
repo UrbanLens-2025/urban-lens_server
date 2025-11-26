@@ -10,11 +10,7 @@ import { IPostService } from '../IPost.service';
 import { PostRepository } from '@/modules/post/infra/repository/Post.repository';
 import { CreatePostDto } from '@/common/dto/post/CreatePost.dto';
 import { GetMyPostsQueryDto } from '@/common/dto/post/GetMyPostsQuery.dto';
-import { AnalyticRepository } from '../../../analytic/infra/repository/Analytic.repository';
-import {
-  AnalyticEntity,
-  AnalyticEntityType,
-} from '@/modules/analytic/domain/Analytic.entity';
+import { AnalyticEntityType } from '@/modules/analytic/domain/Analytic.entity';
 import {
   BaseService,
   PaginationParams,
@@ -56,7 +52,9 @@ import {
   PostReactedEvent,
 } from '@/modules/post/domain/events/PostReacted.event';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
-import { LocationAnalyticsEntity } from '@/modules/business/domain/LocationAnalytics.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
+import { LocationEntity } from '@/modules/business/domain/Location.entity';
+import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { EntityManager } from 'typeorm';
 
 interface RawPost {
@@ -93,7 +91,6 @@ export class PostService
 {
   constructor(
     private readonly postRepository: PostRepository,
-    private readonly analyticRepository: AnalyticRepository,
     private readonly reactRepository: ReactRepository,
     private readonly commentRepository: CommentRepository,
     private readonly checkInRepository: CheckInRepository,
@@ -119,13 +116,13 @@ export class PostService
       'post.visibility as post_visibility',
       'post.created_at as post_createdat',
       'post.updated_at as post_updatedat',
-      'author.id as author_id',
-      'author.first_name as author_firstname',
-      'author.last_name as author_lastname',
-      'author.avatar_url as author_avatarurl',
-      'analytic.total_upvotes as analytic_total_upvotes',
-      'analytic.total_downvotes as analytic_total_downvotes',
-      'analytic.total_comments as analytic_total_comments',
+      'post.total_upvotes as analytic_total_upvotes',
+      'post.total_downvotes as analytic_total_downvotes',
+      'post.total_comments as analytic_total_comments',
+      'account.id as author_id',
+      'account.first_name as author_firstname',
+      'account.last_name as author_lastname',
+      'account.avatar_url as author_avatarurl',
       'location.id as location_id',
       'location.name as location_name',
       'location.address_line as location_addressline',
@@ -299,24 +296,22 @@ export class PostService
       const { page, limit, skip } = this.normalizePaginationParams(params);
 
       // Build query to get public posts
+      const selectFields = this.getPostSelectFields();
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoin('post.author', 'author')
-        .leftJoin(
-          'analytic',
-          'analytic',
-          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
-          { analyticType: AnalyticEntityType.POST },
-        )
+        .leftJoin('accounts', 'account', 'account.id = post.author_id')
         .leftJoin('locations', 'location', 'location.id = post.location_id')
         .where('post.visibility = :visibility OR post.visibility IS NULL', {
           visibility: 'public',
         })
-        .andWhere('post.is_hidden = :isHidden', { isHidden: false })
-        .select(this.getPostSelectFields())
-        .orderBy('post.created_at', 'DESC')
-        .offset(skip)
-        .limit(limit);
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
+
+      // Add all select fields
+      selectFields.forEach((field) => {
+        postsQuery.addSelect(field);
+      });
+
+      postsQuery.orderBy('post.created_at', 'DESC').offset(skip).limit(limit);
 
       // Count total posts
       const countQuery = this.postRepository.repo
@@ -373,26 +368,24 @@ export class PostService
       }
 
       // Build query to get posts from followed users
+      const selectFields = this.getPostSelectFields();
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoin('post.author', 'author')
-        .leftJoin(
-          'analytic',
-          'analytic',
-          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
-          { analyticType: AnalyticEntityType.POST },
-        )
+        .leftJoin('accounts', 'account', 'account.id = post.author_id')
         .leftJoin('locations', 'location', 'location.id = post.location_id')
         .where('post.author_id IN (:...followedUserIds)', { followedUserIds })
         .andWhere('post.is_hidden = :isHidden', { isHidden: false })
         .andWhere(
           '(post.visibility = :public OR post.visibility = :followers OR post.visibility IS NULL)',
           { public: 'public', followers: 'followers' },
-        )
-        .select(this.getPostSelectFields())
-        .orderBy('post.created_at', 'DESC')
-        .offset(skip)
-        .limit(limit);
+        );
+
+      // Add all select fields
+      selectFields.forEach((field) => {
+        postsQuery.addSelect(field);
+      });
+
+      postsQuery.orderBy('post.created_at', 'DESC').offset(skip).limit(limit);
 
       // Count total posts
       const countQuery = this.postRepository.repo
@@ -426,6 +419,26 @@ export class PostService
 
   async createPost(dto: CreatePostDto): Promise<PostResponseDto> {
     try {
+      // Check if user has onboarded
+      if (dto.authorId) {
+        const account = await this.postRepository.repo.manager
+          .getRepository(AccountEntity)
+          .findOne({
+            where: { id: dto.authorId },
+            select: ['id', 'hasOnboarded'],
+          });
+
+        if (!account) {
+          throw new NotFoundException('Account not found');
+        }
+
+        if (!account.hasOnboarded) {
+          throw new ForbiddenException(
+            'User must complete onboarding before creating posts',
+          );
+        }
+      }
+
       if (dto.type === PostType.BLOG && !dto.visibility) {
         throw new BadRequestException('Visibility is required for blog posts');
       }
@@ -478,16 +491,13 @@ export class PostService
 
           const post = this.postRepository.repo.create({
             ...dto,
+            author: { id: dto.authorId },
             isVerified,
+            totalUpvotes: 0,
+            totalDownvotes: 0,
+            totalComments: 0,
           });
           const savedPost = await transactionalEntityManager.save(post);
-
-          // Create post analytic
-          const analytic = this.analyticRepository.repo.create({
-            entityId: savedPost.postId,
-            entityType: AnalyticEntityType.POST,
-          });
-          await transactionalEntityManager.save(analytic);
 
           // If this is a review post, update location/event analytics
           if (dto.type === PostType.REVIEW && dto.rating) {
@@ -542,19 +552,23 @@ export class PostService
       }
 
       // Get the created post with all relations
-      const createdPost = await this.postRepository.repo
+      const selectFields = this.getPostSelectFields();
+      const queryBuilder = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoin('post.author', 'author')
-        .leftJoin(
-          'analytic',
-          'analytic',
-          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :type',
-          { type: AnalyticEntityType.POST },
-        )
+        .leftJoin('accounts', 'account', 'account.id = post.author_id')
         .leftJoin('locations', 'location', 'location.id = post.location_id')
-        .where('post.post_id = :postId', { postId: result.postId })
-        .select(this.getPostSelectFields())
-        .getRawOne();
+        .where('post.post_id = :postId', { postId: result.postId });
+
+      // Add all select fields
+      selectFields.forEach((field) => {
+        queryBuilder.addSelect(field);
+      });
+
+      const createdPost = await queryBuilder.getRawOne();
+
+      if (!createdPost) {
+        throw new NotFoundException('Post not found after creation');
+      }
 
       return this.mapRawPostToDto(createdPost, null, false);
     } catch (error) {
@@ -570,11 +584,10 @@ export class PostService
   ): Promise<void> {
     const postRepo = transactionalEntityManager.getRepository(PostEntity);
 
-    // For LOCATION, update location_analytics table
+    // For LOCATION, update location table directly
     if (entityType === AnalyticEntityType.LOCATION) {
-      const locationAnalyticsRepo = transactionalEntityManager.getRepository(
-        LocationAnalyticsEntity,
-      );
+      const locationRepo =
+        transactionalEntityManager.getRepository(LocationEntity);
 
       const reviews = await postRepo.find({
         where: {
@@ -594,41 +607,18 @@ export class PostService
         averageRating = parseFloat((totalRating / totalReviews).toFixed(2));
       }
 
-      // Upsert location_analytics
-      let locationAnalytics = await locationAnalyticsRepo.findOne({
-        where: { locationId: entityId },
-      });
-
-      if (!locationAnalytics) {
-        locationAnalytics = locationAnalyticsRepo.create({
-          locationId: entityId,
+      // Update location directly
+      await locationRepo.update(
+        { id: entityId },
+        {
           totalReviews,
           averageRating,
-          totalPosts: 0,
-          totalCheckIns: 0,
-        });
-      } else {
-        locationAnalytics.totalReviews = totalReviews;
-        locationAnalytics.averageRating = averageRating;
-      }
-
-      await locationAnalyticsRepo.save(locationAnalytics);
+        },
+      );
     }
-    // For EVENT, keep using analytic table (or implement event_analytics if needed)
+    // For EVENT, update event table directly
     else if (entityType === AnalyticEntityType.EVENT) {
-      const analyticRepo =
-        transactionalEntityManager.getRepository(AnalyticEntity);
-
-      let analytic = await analyticRepo.findOne({
-        where: { entityId, entityType },
-      });
-
-      if (!analytic) {
-        analytic = analyticRepo.create({
-          entityId,
-          entityType,
-        });
-      }
+      const eventRepo = transactionalEntityManager.getRepository(EventEntity);
 
       const reviews = await postRepo.find({
         where: {
@@ -637,38 +627,42 @@ export class PostService
         },
       });
 
-      analytic.totalReviews = reviews.length;
+      const totalReviews = reviews.length;
+      let avgRating = 0;
 
       if (reviews.length > 0) {
         const totalRating = reviews.reduce(
           (sum, review) => sum + (review.rating || 0),
           0,
         );
-        const avgRating = totalRating / reviews.length;
-        analytic.avgRating = parseFloat(avgRating.toFixed(2));
-      } else {
-        analytic.avgRating = 0;
+        avgRating = parseFloat((totalRating / reviews.length).toFixed(2));
       }
 
-      await analyticRepo.save(analytic);
+      await eventRepo.update(
+        { id: entityId },
+        {
+          totalReviews,
+          avgRating,
+        },
+      );
     }
   }
 
   async getPostById(postId: string, userId?: string): Promise<PostResponseDto> {
     try {
-      const post = await this.postRepository.repo
+      const selectFields = this.getPostSelectFields();
+      const queryBuilder = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoin('post.author', 'author')
-        .leftJoin(
-          'analytic',
-          'analytic',
-          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :type',
-          { type: AnalyticEntityType.POST },
-        )
+        .leftJoin('accounts', 'account', 'account.id = post.author_id')
         .leftJoin('locations', 'location', 'location.id = post.location_id')
-        .where('post.post_id = :postId', { postId })
-        .select(this.getPostSelectFields())
-        .getRawOne();
+        .where('post.post_id = :postId', { postId });
+
+      // Add all select fields
+      selectFields.forEach((field) => {
+        queryBuilder.addSelect(field);
+      });
+
+      const post = await queryBuilder.getRawOne();
 
       if (!post) {
         throw new NotFoundException('Post not found');
@@ -775,13 +769,13 @@ export class PostService
         finalReactType = dto.type;
       }
 
-      await this.analyticRepository.repo.increment(
-        { entityId: post.postId, entityType: AnalyticEntityType.POST },
+      await this.postRepository.repo.increment(
+        { postId: post.postId },
         'totalUpvotes',
         upvotesDelta,
       );
-      await this.analyticRepository.repo.increment(
-        { entityId: post.postId, entityType: AnalyticEntityType.POST },
+      await this.postRepository.repo.increment(
+        { postId: post.postId },
         'totalDownvotes',
         downvotesDelta,
       );
@@ -828,10 +822,6 @@ export class PostService
         await tx.delete(ReactEntity, {
           entityId: post.postId,
           entityType: ReactEntityType.POST,
-        });
-        await tx.delete(AnalyticEntity, {
-          entityId: post.postId,
-          entityType: AnalyticEntityType.POST,
         });
         await tx.delete(PostEntity, { postId: post.postId });
 
@@ -971,15 +961,10 @@ export class PostService
     try {
       const { page, limit, skip } = this.normalizePaginationParams(params);
 
+      const selectFields = this.getPostSelectFields();
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoin('post.author', 'author')
-        .leftJoin(
-          'analytic',
-          'analytic',
-          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
-          { analyticType: AnalyticEntityType.POST },
-        )
+        .leftJoin('accounts', 'account', 'account.id = post.author_id')
         .leftJoin('locations', 'location', 'location.id = post.location_id')
         .where('post.author_id = :authorId', { authorId });
 
@@ -988,11 +973,12 @@ export class PostService
         postsQuery.andWhere('post.type = :postType', { postType });
       }
 
-      postsQuery
-        .select(this.getPostSelectFields())
-        .orderBy('post.createdAt', 'DESC')
-        .offset(skip)
-        .limit(limit);
+      // Add all select fields
+      selectFields.forEach((field) => {
+        postsQuery.addSelect(field);
+      });
+
+      postsQuery.orderBy('post.createdAt', 'DESC').offset(skip).limit(limit);
 
       const countQuery = this.postRepository.repo
         .createQueryBuilder('post')
@@ -1031,15 +1017,10 @@ export class PostService
     try {
       const { page, limit, skip } = this.normalizePaginationParams(params);
 
+      const selectFields = this.getPostSelectFields();
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoin('post.author', 'author')
-        .leftJoin(
-          'analytic',
-          'analytic',
-          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
-          { analyticType: AnalyticEntityType.POST },
-        )
+        .leftJoin('accounts', 'account', 'account.id = post.author_id')
         .leftJoin('locations', 'location', 'location.id = post.location_id')
         .where('post.author_id = :authorId', { authorId });
 
@@ -1062,11 +1043,12 @@ export class PostService
         });
       }
 
-      postsQuery
-        .select(this.getPostSelectFields())
-        .orderBy('post.created_at', 'DESC')
-        .offset(skip)
-        .limit(limit);
+      // Add all select fields
+      selectFields.forEach((field) => {
+        postsQuery.addSelect(field);
+      });
+
+      postsQuery.orderBy('post.created_at', 'DESC').offset(skip).limit(limit);
 
       const countQuery = this.postRepository.repo
         .createQueryBuilder('post')
@@ -1150,7 +1132,7 @@ export class PostService
   ): Promise<PaginationResult<any>> {
     const { page, limit, skip } = this.normalizePaginationParams(params);
 
-    const [data, total] = await this.postRepository.repo.findAndCount({
+    const [posts, total] = await this.postRepository.repo.findAndCount({
       skip,
       take: limit,
       order: {
@@ -1182,7 +1164,7 @@ export class PostService
     });
 
     return {
-      data,
+      data: posts,
       meta: this.buildPaginationMeta(page, limit, total),
     };
   }
@@ -1203,15 +1185,10 @@ export class PostService
       const { page, limit, skip } = this.normalizePaginationParams(params);
 
       // Build posts query
+      const selectFields = this.getPostSelectFields();
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoin('post.author', 'author')
-        .leftJoin(
-          'analytic',
-          'analytic',
-          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
-          { analyticType: AnalyticEntityType.POST },
-        )
+        .leftJoin('accounts', 'account', 'account.id = post.author_id')
         .leftJoin('locations', 'location', 'location.id = post.location_id')
         .where('post.type = :type', { type: PostType.REVIEW })
         .andWhere('post.is_hidden = :isHidden', { isHidden: false });
@@ -1228,11 +1205,12 @@ export class PostService
         postsQuery.andWhere('post.event_id = :eventId', { eventId });
       }
 
-      postsQuery
-        .select(this.getPostSelectFields())
-        .orderBy('post.created_at', 'DESC')
-        .offset(skip)
-        .limit(limit);
+      // Add all select fields
+      selectFields.forEach((field) => {
+        postsQuery.addSelect(field);
+      });
+
+      postsQuery.orderBy('post.created_at', 'DESC').offset(skip).limit(limit);
 
       // Build count query
       const countQuery = this.postRepository.repo
@@ -1280,22 +1258,20 @@ export class PostService
       const { page, limit, skip } = this.normalizePaginationParams(params);
 
       // Build posts query
+      const selectFields = this.getPostSelectFields();
       const postsQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .leftJoin('post.author', 'author')
-        .leftJoin(
-          'analytic',
-          'analytic',
-          'analytic.entity_id::uuid = post.post_id AND analytic.entity_type = :analyticType',
-          { analyticType: AnalyticEntityType.POST },
-        )
+        .leftJoin('accounts', 'account', 'account.id = post.author_id')
         .leftJoin('locations', 'location', 'location.id = post.location_id')
         .where('post.location_id = :locationId', { locationId })
-        .andWhere('post.is_hidden = :isHidden', { isHidden: false })
-        .select(this.getPostSelectFields())
-        .orderBy('post.created_at', 'DESC')
-        .offset(skip)
-        .limit(limit);
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
+
+      // Add all select fields
+      selectFields.forEach((field) => {
+        postsQuery.addSelect(field);
+      });
+
+      postsQuery.orderBy('post.created_at', 'DESC').offset(skip).limit(limit);
 
       // Build count query
       const countQuery = this.postRepository.repo

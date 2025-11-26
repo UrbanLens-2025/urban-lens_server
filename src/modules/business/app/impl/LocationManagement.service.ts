@@ -26,7 +26,6 @@ import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationRequestTagsRepository } from '@/modules/business/infra/repository/LocationRequestTags.repository';
 import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
-import { ILocationAnalyticsService } from '@/modules/business/app/ILocationAnalytics.service';
 import { ILocationBookingConfigManagementService } from '@/modules/location-booking/app/ILocationBookingConfigManagement.service';
 
 @Injectable()
@@ -35,8 +34,6 @@ export class LocationManagementService
   implements ILocationManagementService
 {
   constructor(
-    @Inject(ILocationAnalyticsService)
-    private readonly locationAnalyticsService: ILocationAnalyticsService,
     @Inject(ILocationBookingConfigManagementService)
     private readonly locationBookingConfigManagementService: ILocationBookingConfigManagementService,
   ) {
@@ -339,14 +336,8 @@ export class LocationManagementService
           );
           return savedLocation;
         })
-        // create analytics
-        .then(async (savedLocation) => {
-          await this.locationAnalyticsService.createLocationAnalyticsEntity({
-            locationId: savedLocation.id,
-            entityManager: em,
-          });
-          return savedLocation;
-        })
+      // Analytics columns are already initialized with defaults in LocationEntity
+      // No need to create separate analytics record
     );
   }
 }
