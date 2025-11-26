@@ -48,4 +48,11 @@ export class CommentEntity {
     createForeignKeyConstraints: false,
   })
   reacts: ReactEntity[];
+
+  // Analytics columns (migrated from analytic table)
+  @Column({ name: 'total_upvotes', type: 'int', default: 0 })
+  totalUpvotes: number;
+
+  @Column({ name: 'total_downvotes', type: 'int', default: 0 })
+  totalDownvotes: number;
 }

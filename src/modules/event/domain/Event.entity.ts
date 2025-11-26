@@ -132,6 +132,19 @@ export class EventEntity {
   })
   ticketOrders: TicketOrderEntity[];
 
+  // Analytics columns (migrated from analytic table)
+  @Column({ name: 'total_reviews', type: 'int', default: 0 })
+  totalReviews: number;
+
+  @Column({
+    name: 'avg_rating',
+    type: 'decimal',
+    precision: 3,
+    scale: 2,
+    default: 0,
+  })
+  avgRating: number;
+
   //#region TRANSIENT FIELDS - Do NOT add @Column to these. These are NOT PERSISTED to the db.
 
   distanceMeters?: number;

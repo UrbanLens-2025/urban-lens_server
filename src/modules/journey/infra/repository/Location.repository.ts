@@ -20,7 +20,6 @@ export class LocationRepository implements ILocationRepository {
       .createQueryBuilder('location')
       .leftJoinAndSelect('location.tags', 'tags')
       .leftJoinAndSelect('tags.tag', 'tag')
-      .leftJoinAndSelect('location.analytics', 'analytics')
       .where('location.isVisibleOnMap = :isVisibleOnMap', {
         isVisibleOnMap: true,
       })
@@ -62,7 +61,6 @@ export class LocationRepository implements ILocationRepository {
       .createQueryBuilder('location')
       .leftJoinAndSelect('location.tags', 'tags')
       .leftJoinAndSelect('tags.tag', 'tag')
-      .leftJoinAndSelect('location.analytics', 'analytics')
       .where('location.id IN (:...ids)', { ids: locationIds })
       .andWhere('location.isVisibleOnMap = :isVisibleOnMap', {
         isVisibleOnMap: true,

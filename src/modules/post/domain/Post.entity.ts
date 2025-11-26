@@ -88,4 +88,14 @@ export class PostEntity {
 
   @Column({ name: 'is_hidden', type: 'boolean', default: false })
   isHidden: boolean;
+
+  // Analytics columns (migrated from analytic table)
+  @Column({ name: 'total_upvotes', type: 'int', default: 0 })
+  totalUpvotes: number;
+
+  @Column({ name: 'total_downvotes', type: 'int', default: 0 })
+  totalDownvotes: number;
+
+  @Column({ name: 'total_comments', type: 'int', default: 0 })
+  totalComments: number;
 }

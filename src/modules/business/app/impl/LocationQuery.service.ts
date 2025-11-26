@@ -80,7 +80,6 @@ export class LocationQueryService
           tags: {
             tag: true,
           },
-          analytics: true,
         },
       })
       .then(async (e) => {

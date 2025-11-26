@@ -4,7 +4,6 @@ import { BusinessResponseDto } from '@/common/dto/account/res/Business.response.
 import { LocationTagsResponseDto } from '@/common/dto/business/res/LocationTags.response.dto';
 import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
 import { LocationBookingConfigResponseDto } from '@/common/dto/location-booking/res/LocationBookingConfig.response.dto';
-import { LocationAnalyticsResponseDto } from '@/common/dto/business/res/LocationAnalytics.response.dto';
 import { TagResponseDto } from '@/common/dto/account/res/TagResponse.dto';
 
 @Exclude()
@@ -81,8 +80,4 @@ export class LocationResponseDto {
   @Expose()
   @Type(() => LocationBookingConfigResponseDto)
   bookingConfig: LocationBookingConfigResponseDto;
-
-  @Expose()
-  @Type(() => LocationAnalyticsResponseDto)
-  analytics?: LocationAnalyticsResponseDto;
 }

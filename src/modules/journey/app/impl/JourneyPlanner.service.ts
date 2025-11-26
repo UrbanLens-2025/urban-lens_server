@@ -202,11 +202,9 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       longitude: number;
       imageUrl: string[];
       tags?: Array<{ tag: { id: number; displayName: string } }>;
-      analytics?: {
-        averageRating: number;
-        totalReviews: number;
-        totalCheckIns: number;
-      };
+      averageRating?: number;
+      totalReviews?: number;
+      totalCheckIns?: number;
     }>,
     userTagScores: Record<string, number>,
     prioritizeRating: boolean = false,
@@ -236,9 +234,9 @@ export class JourneyPlannerService implements IJourneyPlannerService {
 
       // Get rating-based score (0-100)
       // Convert to numbers since DB might return bigint/string
-      const averageRating = Number(location.analytics?.averageRating || 0);
-      const totalReviews = Number(location.analytics?.totalReviews || 0);
-      const totalCheckIns = Number(location.analytics?.totalCheckIns || 0);
+      const averageRating = Number(location.averageRating || 0);
+      const totalReviews = Number(location.totalReviews || 0);
+      const totalCheckIns = Number(location.totalCheckIns || 0);
       const ratingScore = (averageRating / 5) * 100;
 
       // Calculate popularity score based on check-ins (0-100)
@@ -690,9 +688,9 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       // Score candidates by rating + popularity
       const scoredCandidates = candidateLocations
         .map((loc) => {
-          const avgRating = Number(loc.analytics?.averageRating || 0);
-          const totalReviews = Number(loc.analytics?.totalReviews || 0);
-          const totalCheckIns = Number(loc.analytics?.totalCheckIns || 0);
+          const avgRating = Number(loc.averageRating || 0);
+          const totalReviews = Number(loc.totalReviews || 0);
+          const totalCheckIns = Number(loc.totalCheckIns || 0);
 
           const ratingScore = (avgRating / 5) * 100;
           const popularityScore = Math.min(
@@ -745,9 +743,9 @@ export class JourneyPlannerService implements IJourneyPlannerService {
     const candidates: LocationCandidate[] = locations.map((loc) => {
       // Calculate preference score based on analytics
       // Convert to numbers since DB might return bigint/string
-      const averageRating = Number(loc.analytics?.averageRating || 0);
-      const totalReviews = Number(loc.analytics?.totalReviews || 0);
-      const totalCheckIns = Number(loc.analytics?.totalCheckIns || 0);
+      const averageRating = Number(loc.averageRating || 0);
+      const totalReviews = Number(loc.totalReviews || 0);
+      const totalCheckIns = Number(loc.totalCheckIns || 0);
 
       const ratingScore = (averageRating / 5) * 100;
       const popularityScore = Math.min(100, Math.log10(totalCheckIns + 1) * 20);

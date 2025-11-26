@@ -21,7 +21,6 @@ import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
 import { InternalServerErrorException } from '@nestjs/common';
 import { LocationOpeningHoursEntity } from '@/modules/business/domain/LocationOpeningHours.entity';
-import { LocationAnalyticsEntity } from '@/modules/business/domain/LocationAnalytics.entity';
 
 @Entity({ name: LocationEntity.TABLE_NAME })
 export class LocationEntity {
@@ -148,11 +147,6 @@ export class LocationEntity {
   )
   bookingConfig: LocationBookingConfigEntity;
 
-  @OneToOne(() => LocationAnalyticsEntity, (analytics) => analytics.location, {
-    createForeignKeyConstraints: false,
-  })
-  analytics: LocationAnalyticsEntity;
-
   @OneToMany(
     () => LocationOpeningHoursEntity,
     (openingHours) => openingHours.location,
@@ -161,6 +155,25 @@ export class LocationEntity {
     },
   )
   openingHours: LocationOpeningHoursEntity[];
+
+  // Analytics columns (migrated from location_analytics table)
+  @Column({ name: 'total_posts', type: 'bigint', default: 0 })
+  totalPosts: number;
+
+  @Column({ name: 'total_check_ins', type: 'bigint', default: 0 })
+  totalCheckIns: number;
+
+  @Column({ name: 'total_reviews', type: 'int', default: 0 })
+  totalReviews: number;
+
+  @Column({
+    name: 'average_rating',
+    type: 'decimal',
+    precision: 3,
+    scale: 2,
+    default: 0,
+  })
+  averageRating: number;
 
   //#endregion
 

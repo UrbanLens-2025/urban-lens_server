@@ -7,11 +7,9 @@ import {
 import { ICommentService } from '../IComment.service';
 import { CreateCommentRequestDto } from '@/common/dto/post/CreateComment.dto';
 import { CommentRepository } from '../../infra/repository/Comment.repository';
-import { AnalyticRepository } from '../../../analytic/infra/repository/Analytic.repository';
 import { BaseService, PaginationParams } from '@/common/services/base.service';
 import { CommentEntity } from '../../domain/Comment.entity';
 import { PostRepository } from '../../infra/repository/Post.repository';
-import { AnalyticEntityType } from '@/modules/analytic/domain/Analytic.entity';
 import { ReactRepository } from '../../infra/repository/React.repository';
 import { ReactCommentRequestDto } from '@/common/dto/post/ReactComment.dto';
 import { ReactEntityType, ReactType } from '../../domain/React.entity';
@@ -21,6 +19,8 @@ import {
   COMMENT_CREATED_EVENT,
   CommentCreatedEvent,
 } from '@/modules/gamification/domain/events/CommentCreated.event';
+import { PostEntity } from '../../domain/Post.entity';
+import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 
 @Injectable()
 export class CommentService
@@ -29,7 +29,6 @@ export class CommentService
 {
   constructor(
     private readonly commentRepository: CommentRepository,
-    private readonly analyticRepository: AnalyticRepository,
     private readonly postRepository: PostRepository,
     private readonly reactRepository: ReactRepository,
     private readonly eventEmitter: EventEmitter2,
@@ -54,16 +53,10 @@ export class CommentService
         });
         const savedComment = await transactionalEntityManager.save(comment);
 
-        // Create analytic for comment
-        const analytic = this.analyticRepository.repo.create({
-          entityId: savedComment.commentId,
-          entityType: AnalyticEntityType.COMMENT,
-        });
-        await transactionalEntityManager.save(analytic);
-
-        // Update totalComments of post
-        await this.analyticRepository.repo.increment(
-          { entityId: dto.postId, entityType: AnalyticEntityType.POST },
+        // Update totalComments of post directly
+        await transactionalEntityManager.increment(
+          PostEntity,
+          { postId: dto.postId },
           'totalComments',
           1,
         );
@@ -94,24 +87,18 @@ export class CommentService
     const queryBuilder = this.repository
       .createQueryBuilder('comment')
       .leftJoin('comment.author', 'author')
-      .leftJoin(
-        'analytic',
-        'analytic',
-        `analytic.entity_id::uuid = comment.comment_id AND analytic.entity_type = :type`,
-        { type: AnalyticEntityType.COMMENT },
-      )
       .where('comment.post_id = :postId', { postId })
       .select([
         'comment.commentId',
         'comment.content',
         'comment.createdAt',
         'comment.updatedAt',
+        'comment.totalUpvotes',
+        'comment.totalDownvotes',
         'author.id',
         'author.firstName',
         'author.lastName',
         'author.avatarUrl',
-        'analytic.total_upvotes',
-        'analytic.total_downvotes',
       ]);
 
     // Get total count before applying pagination
@@ -123,12 +110,11 @@ export class CommentService
       .limit(limit)
       .getRawAndEntities();
 
-    const data = entities.map((entity, index) => {
-      const row = raw[index];
+    const data = entities.map((entity) => {
       return {
         ...entity,
-        totalUpvotes: Number(row.analytic_total_upvotes) || 0,
-        totalDownvotes: Number(row.analytic_total_downvotes) || 0,
+        totalUpvotes: entity.totalUpvotes || 0,
+        totalDownvotes: entity.totalDownvotes || 0,
       };
     });
 
@@ -161,6 +147,7 @@ export class CommentService
     }
     const post = await this.postRepository.repo.findOne({
       where: { postId: comment.post.postId },
+      relations: ['author'],
     });
     if (!post) {
       throw new NotFoundException('Post not found');
@@ -173,21 +160,11 @@ export class CommentService
     await this.commentRepository.repo.manager.transaction(
       async (transactionalEntityManager) => {
         await transactionalEntityManager.remove(comment);
-        await transactionalEntityManager.remove(
-          await this.analyticRepository.repo.findOne({
-            where: {
-              entityId: dto.commentId,
-              entityType: AnalyticEntityType.COMMENT,
-            },
-          }),
-        );
 
-        // Decrease totalComments of post
-        await this.analyticRepository.repo.decrement(
-          {
-            entityId: comment.post.postId,
-            entityType: AnalyticEntityType.POST,
-          },
+        // Decrease totalComments of post directly
+        await transactionalEntityManager.decrement(
+          PostEntity,
+          { postId: comment.post.postId },
           'totalComments',
           1,
         );
@@ -245,17 +222,17 @@ export class CommentService
       if (dto.type === ReactType.DOWNVOTE) downvotesDelta = +1;
     }
 
-    // update analytic
+    // update comment analytics directly
     if (upvotesDelta !== 0) {
-      await this.analyticRepository.repo.increment(
-        { entityId: comment.commentId, entityType: AnalyticEntityType.COMMENT },
+      await this.commentRepository.repo.increment(
+        { commentId: comment.commentId },
         'totalUpvotes',
         upvotesDelta,
       );
     }
     if (downvotesDelta !== 0) {
-      await this.analyticRepository.repo.increment(
-        { entityId: comment.commentId, entityType: AnalyticEntityType.COMMENT },
+      await this.commentRepository.repo.increment(
+        { commentId: comment.commentId },
         'totalDownvotes',
         downvotesDelta,
       );
