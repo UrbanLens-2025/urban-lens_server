@@ -12,14 +12,11 @@ import { ReportReasonPublicController } from '@/modules/report/interfaces/Report
 import { IReportQueryService } from '@/modules/report/app/IReportQuery.service';
 import { ReportQueryService } from '@/modules/report/app/impl/ReportQuery.service';
 import { ReportAdminController } from '@/modules/report/interfaces/Report.admin.controller';
-
+import { IReportManagementService } from '@/modules/report/app/IReportManagement.service';
+import { ReportManagementService } from '@/modules/report/app/impl/ReportManagement.service';
 @Module({
   imports: [ReportInfraModule],
   providers: [
-    // {
-    //   provide: IReportService,
-    //   useClass: ReportService,
-    // },
     {
       provide: IReportCreationService,
       useClass: ReportCreationService,
@@ -36,9 +33,12 @@ import { ReportAdminController } from '@/modules/report/interfaces/Report.admin.
       provide: IReportQueryService,
       useClass: ReportQueryService,
     },
+    {
+      provide: IReportManagementService,
+      useClass: ReportManagementService,
+    },
   ],
   controllers: [
-    // ReportController,
     ReportPrivateController,
     ReportAdminController,
     ReportReasonAdminController,

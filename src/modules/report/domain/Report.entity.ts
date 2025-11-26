@@ -1,3 +1,5 @@
+import { ReportResolutionActions } from '@/common/constants/ReportResolutionActions.constant';
+import { ReportResolvedByType } from '@/common/constants/ReportResolvedByType.constant';
 import { ReportStatus } from '@/common/constants/ReportStatus.constant';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
@@ -31,9 +33,6 @@ export class ReportEntity {
   @Column({ name: 'target_id', type: 'uuid' })
   targetId: string;
 
-  @Column({ name: 'reported_reason', type: 'varchar', length: 100 })
-  reported_reason: string;
-
   @Column({ name: 'title', type: 'varchar', length: 555 })
   title: string;
 
@@ -51,6 +50,43 @@ export class ReportEntity {
   @Column({ name: 'status', type: 'varchar', length: 50 })
   status: ReportStatus;
 
+  @Column({
+    name: 'resolution_action',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
+  resolutionAction?: ReportResolutionActions | null;
+
+  @Column({
+    name: 'resolved_by_type',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
+  resolvedByType?: ReportResolvedByType | null;
+
+  @Column({
+    name: 'resolved_by_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  resolvedById?: string | null;
+
+  @ManyToOne(() => AccountEntity, (account) => account.id, {
+    createForeignKeyConstraints: false,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'resolved_by_id' })
+  resolvedBy?: AccountEntity | null;
+
+  @Column({
+    name: 'resolved_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  resolvedAt?: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 
@@ -66,15 +102,8 @@ export class ReportEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
-  @Column({ name: 'last_updated_by', type: 'uuid', nullable: true })
-  lastUpdatedById?: string | null;
-
-  @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
-    nullable: true,
-  })
-  @JoinColumn({ name: 'last_updated_by' })
-  lastUpdatedBy?: AccountEntity | null;
+  @Column({ name: 'reported_reason', type: 'varchar', length: 100 })
+  reportedReasonKey: string;
 
   //#region development relations for easy fetching
   @ManyToOne(() => ReportReasonEntity, (reportedReason) => reportedReason.key, {
@@ -104,4 +133,8 @@ export class ReportEntity {
   @JoinColumn({ name: 'target_id' })
   referencedTargetLocation?: LocationEntity | null;
   //#endregion
+
+  public canBeProcessed(): boolean {
+    return this.status === ReportStatus.PENDING;
+  }
 }

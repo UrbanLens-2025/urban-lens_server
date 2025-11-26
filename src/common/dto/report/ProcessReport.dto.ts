@@ -1,24 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { ReportStatus } from '@/common/constants/ReportStatus.constant';
+import { ReportResolutionActions } from '@/common/constants/ReportResolutionActions.constant';
 
 export class ProcessReportDto {
-  @IsString()
+  @IsEnum(ReportResolutionActions)
   @IsNotEmpty()
-  @ApiProperty({
-    description: 'The id of the report being processed',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  reportId: string;
-
-  @IsEnum(ReportStatus)
-  @IsNotEmpty()
-  @ApiProperty({
-    description: 'The new status of the report',
-    example: ReportStatus.PENDING,
-    enum: ReportStatus,
-  })
-  status: ReportStatus;
+  @ApiProperty({ enum: ReportResolutionActions })
+  resolutionAction: ReportResolutionActions;
 
   @IsString()
   @IsOptional()
@@ -28,7 +16,6 @@ export class ProcessReportDto {
   })
   notes?: string;
 
-  @IsString()
-  @IsOptional()
-  lastUpdatedById: string;
+  initiatedByAccountId?: string | null; // null if system initiated
+  reportId: string;
 }
