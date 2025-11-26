@@ -8,6 +8,7 @@ import { LocationResponseDto } from '@/common/dto/business/res/Location.response
 import { CreatePublicLocationDto } from '@/common/dto/business/CreatePublicLocation.dto';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
+import { CreateBatchPublicLocationDto } from '@/common/dto/business/CreateBatchPublicLocation.dto';
 
 export const ILocationManagementService = Symbol('ILocationManagementService');
 export interface ILocationManagementService {
@@ -18,6 +19,9 @@ export interface ILocationManagementService {
   createPublicLocation(
     dto: CreatePublicLocationDto,
   ): Promise<LocationResponseDto>;
+  createManyPublicLocations(
+    dto: CreateBatchPublicLocationDto,
+  ): Promise<LocationResponseDto[]>;
 
   convertLocationRequestToLocationEntity(
     em: EntityManager,

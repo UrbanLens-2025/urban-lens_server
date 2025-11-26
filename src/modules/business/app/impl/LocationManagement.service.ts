@@ -20,13 +20,17 @@ import { ForceUpdateLocationDto } from '@/common/dto/business/ForceUpdateLocatio
 import { CreatePublicLocationDto } from '@/common/dto/business/CreatePublicLocation.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
-import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
+import {
+  convertCategoriesToTagIds,
+  mergeTagsWithCategories,
+} from '@/common/utils/category-to-tags.util';
 import { CategoryType } from '@/common/constants/CategoryType.constant';
 import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationRequestTagsRepository } from '@/modules/business/infra/repository/LocationRequestTags.repository';
 import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
 import { ILocationBookingConfigManagementService } from '@/modules/location-booking/app/ILocationBookingConfigManagement.service';
+import { CreateBatchPublicLocationDto } from '@/common/dto/business/CreateBatchPublicLocation.dto';
 
 @Injectable()
 export class LocationManagementService
@@ -169,10 +173,13 @@ export class LocationManagementService
     });
   }
 
+  /**
+   * @deprecated Use createManyPublicLocations instead
+   */
   createPublicLocation(
     dto: CreatePublicLocationDto,
   ): Promise<LocationResponseDto> {
-    return this.ensureTransaction(null, async (em) => {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
       const locationRepository = LocationRepositoryProvider(em);
       const locationTagRepository = LocationTagsRepository(em);
       const tagRepository = TagRepositoryProvider(em);
@@ -339,5 +346,100 @@ export class LocationManagementService
       // Analytics columns are already initialized with defaults in LocationEntity
       // No need to create separate analytics record
     );
+  }
+
+  createManyPublicLocations(
+    dto: CreateBatchPublicLocationDto,
+  ): Promise<LocationResponseDto[]> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationRepository = LocationRepositoryProvider(em);
+      const locationTagRepository = LocationTagsRepository(em);
+      const categoryRepository = em.getRepository(TagCategoryEntity);
+
+      const allCategoryIds = [
+        ...new Set(dto.items.flatMap((item) => item.categoryIds)),
+      ];
+
+      const allCategories = await categoryRepository.find({
+        where: { id: In(allCategoryIds) },
+      });
+
+      if (allCategories.length !== allCategoryIds.length) {
+        const foundIds = allCategories.map((c) => c.id);
+        const missingIds = allCategoryIds.filter(
+          (id) => !foundIds.includes(id),
+        );
+        throw new BadRequestException(
+          `One or more categories not found: ${missingIds.join(', ')}`,
+        );
+      }
+
+      const locationTagMappings = await Promise.all(
+        dto.items.map(async (item) => {
+          // Filter categories for this location
+          const itemCategories = allCategories.filter((c) =>
+            item.categoryIds.includes(c.id),
+          );
+
+          // Validate category types
+          const invalidCategories = itemCategories.filter(
+            (c) =>
+              !c.applicableTypes?.includes(CategoryType.LOCATION) &&
+              !c.applicableTypes?.includes(CategoryType.ALL),
+          );
+
+          if (invalidCategories.length > 0) {
+            throw new BadRequestException(
+              `Invalid categories for location: ${invalidCategories.map((c) => c.name).join(', ')}`,
+            );
+          }
+
+          // Convert categories to tags (no DB query, uses already-fetched categories)
+          const finalTagIds = await convertCategoriesToTagIds(
+            item.categoryIds,
+            CategoryType.LOCATION,
+            this.dataSource, // Still needs dataSource, but categories already cached
+          );
+
+          if (finalTagIds.length === 0) {
+            throw new BadRequestException(
+              `Selected categories do not contain valid tags for location: ${item.name}`,
+            );
+          }
+
+          return { item, tagIds: finalTagIds };
+        }),
+      );
+
+      // 5. Bulk create locations
+      const newLocations = locationTagMappings.map(({ item }) => {
+        const location = this.mapTo_safe(LocationEntity, item);
+        location.ownershipType = LocationOwnershipType.PUBLIC_PLACE;
+        return location;
+      });
+      const savedLocations = await locationRepository.save(newLocations);
+
+      // 6. Bulk create location tags
+      const locationTagEntities = savedLocations.flatMap((location, idx) =>
+        locationTagMappings[idx].tagIds.map((tagId) => ({
+          locationId: location.id,
+          tagId,
+        })),
+      );
+      await locationTagRepository.save(locationTagEntities);
+
+      // 7. Bulk reload all locations with relations in ONE query
+      const locationsWithTags = await locationRepository.find({
+        where: { id: In(savedLocations.map((l) => l.id)) },
+        relations: {
+          tags: {
+            tag: true,
+          },
+        },
+      });
+
+      // 8. Map to response DTOs
+      return this.mapToArray(LocationResponseDto, locationsWithTags);
+    });
   }
 }
