@@ -10,7 +10,7 @@ import { IPostService } from '../IPost.service';
 import { PostRepository } from '@/modules/post/infra/repository/Post.repository';
 import { CreatePostDto } from '@/common/dto/post/CreatePost.dto';
 import { GetMyPostsQueryDto } from '@/common/dto/post/GetMyPostsQuery.dto';
-import { AnalyticEntityType } from '@/modules/analytic/domain/Analytic.entity';
+import { AnalyticEntityType } from '@/common/constants/AnalyticEntityType.constant';
 import {
   BaseService,
   PaginationParams,
