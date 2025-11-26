@@ -18,6 +18,8 @@ import { EventRequestEntity } from '@/modules/event/domain/EventRequest.entity';
 import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
 import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
 import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
+import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
+import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
 
 @Entity({ name: EventEntity.TABLE_NAME })
 export class EventEntity {
@@ -53,6 +55,16 @@ export class EventEntity {
   @Column({ name: 'cover_url', type: 'varchar', length: 500, nullable: true })
   coverUrl: string;
 
+  @Column({
+    name: 'expected_number_of_participants',
+    type: 'int',
+    default: 0,
+  })
+  expectedNumberOfParticipants: number;
+
+  @Column({ name: 'allow_tickets', type: 'boolean', default: false })
+  allowTickets: boolean;
+
   @Column({ name: 'status', type: 'varchar', length: 50 })
   status: EventStatus;
 
@@ -72,15 +84,19 @@ export class EventEntity {
 
   @ManyToOne(() => LocationEntity, (location) => location.id, {
     createForeignKeyConstraints: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'location_id' })
-  location: LocationEntity;
+  location?: LocationEntity | null;
 
-  @Column({ name: 'location_id', type: 'uuid' })
-  locationId: string;
+  @Column({ name: 'location_id', type: 'uuid', nullable: true })
+  locationId?: string | null;
 
   @Column({ name: 'social', type: 'jsonb', nullable: true })
   social?: SocialLink[] | null;
+
+  @Column({ name: 'event_validation_documents', type: 'jsonb' })
+  eventValidationDocuments: EventValidationDocumentsJson[];
 
   @Column({ name: 'refund_policy', type: 'text', nullable: true })
   refundPolicy?: string | null;
@@ -95,12 +111,13 @@ export class EventEntity {
 
   @OneToOne(() => EventRequestEntity, (eventRequest) => eventRequest.id, {
     createForeignKeyConstraints: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'referenced_event_request_id' })
-  referencedEventRequest: EventRequestEntity;
+  referencedEventRequest?: EventRequestEntity | null;
 
-  @Column({ name: 'referenced_event_request_id', type: 'uuid' })
-  referencedEventRequestId: string;
+  @Column({ name: 'referenced_event_request_id', type: 'uuid', nullable: true })
+  referencedEventRequestId?: string | null;
 
   @Column({ name: 'has_paid_out', type: 'boolean', default: false })
   hasPaidOut: boolean;
@@ -131,6 +148,15 @@ export class EventEntity {
     createForeignKeyConstraints: false,
   })
   ticketOrders: TicketOrderEntity[];
+
+  @OneToMany(
+    () => LocationBookingEntity,
+    (locationBooking) => locationBooking.referencedEvent,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
+  locationBookings: LocationBookingEntity[];
 
   // Analytics columns (migrated from analytic table)
   @Column({ name: 'total_reviews', type: 'int', default: 0 })

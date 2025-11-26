@@ -41,6 +41,8 @@ import {
 } from '@/modules/event/app/ITicketOrderQuery.service';
 import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
 import { ConfirmTicketUsageDto } from '@/common/dto/event/ConfirmTicketUsage.dto';
+import { CreateEventDto } from '@/common/dto/event/CreateEvent.dto';
+import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 
 @ApiBearerAuth()
 @ApiTags('Event')
@@ -63,6 +65,18 @@ export class EventCreatorController {
     @Inject(IEventAttendanceManagementService)
     private readonly eventAttendanceManagementService: IEventAttendanceManagementService,
   ) {}
+
+  @ApiOperation({ summary: 'Create a new event' })
+  @Post()
+  createEvent(
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: CreateEventDto,
+  ): Promise<EventResponseDto> {
+    return this.eventManagementService.createEvent({
+      ...dto,
+      accountId: userDto.sub,
+    });
+  }
 
   @ApiOperation({ summary: 'Get all my events' })
   @ApiPaginationQuery(IEventQueryService_QueryConfig.searchMyEvents())

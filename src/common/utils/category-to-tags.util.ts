@@ -1,4 +1,4 @@
-import { DataSource, In } from 'typeorm';
+import { DataSource, EntityManager, In } from 'typeorm';
 import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 import { CategoryType } from '@/common/constants/CategoryType.constant';
 
@@ -12,7 +12,7 @@ import { CategoryType } from '@/common/constants/CategoryType.constant';
 export async function convertCategoriesToTagIds(
   categoryIds: number[],
   categoryType: CategoryType,
-  dataSource: DataSource,
+  dataSource: DataSource | EntityManager,
 ): Promise<number[]> {
   if (!categoryIds || categoryIds.length === 0) {
     return [];
@@ -74,7 +74,7 @@ export async function mergeTagsWithCategories(
   manualTagIds: number[],
   categoryIds: number[] | undefined,
   categoryType: CategoryType,
-  dataSource: DataSource,
+  dataSource: DataSource | EntityManager,
 ): Promise<number[]> {
   const categoryTagIds = categoryIds
     ? await convertCategoriesToTagIds(categoryIds, categoryType, dataSource)

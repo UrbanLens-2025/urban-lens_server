@@ -18,6 +18,7 @@ import { LocationBookingObject } from '@/common/constants/LocationBookingObject.
 import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
 import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
 import { isNotBlank } from '@/common/utils/is-not-blank.util';
+import { EventEntity } from '@/modules/event/domain/Event.entity';
 
 @Entity({ name: LocationBookingEntity.TABLE_NAME })
 export class LocationBookingEntity {
@@ -48,6 +49,13 @@ export class LocationBookingEntity {
     default: LocationBookingObject.FOR_EVENT,
   })
   bookingObject: LocationBookingObject;
+
+  @Column({
+    name: 'target_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  targetId?: string | null;
 
   @ManyToOne(() => LocationEntity, (location) => location.id, {
     createForeignKeyConstraints: false,
@@ -101,6 +109,20 @@ export class LocationBookingEntity {
     },
   )
   referencedEventRequest?: EventRequestEntity | null;
+
+  // @Column({
+  //   name: 'referenced_event_id',
+  //   type: 'uuid',
+  //   nullable: true,
+  // })
+  // referencedEventId?: string | null;
+
+  @ManyToOne(() => EventEntity, (event) => event.id, {
+    createForeignKeyConstraints: false,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'target_id' })
+  referencedEvent?: EventEntity | null;
 
   @ManyToOne(() => ScheduledJobEntity, (scheduledJob) => scheduledJob.id, {
     createForeignKeyConstraints: false,
