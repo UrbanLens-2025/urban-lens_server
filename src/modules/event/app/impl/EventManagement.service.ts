@@ -15,6 +15,7 @@ import dayjs from 'dayjs';
 import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
+import { CancelEventBookingDto } from '@/common/dto/event/CancelEventBooking.dto';
 import { CreateEventDto } from '@/common/dto/event/CreateEvent.dto';
 import { EventTagsRepository } from '@/modules/event/infra/repository/EventTags.repository';
 import { CategoryType } from '@/common/constants/CategoryType.constant';
@@ -22,7 +23,6 @@ import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { InitiateEventBookingPaymentDto } from '@/common/dto/event/InitiateBookingPayment.dto';
 import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
-import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 
 @Injectable()
 export class EventManagementService
@@ -202,24 +202,6 @@ export class EventManagementService
     });
   }
 
-  // .then(async (savedEvent) => {
-  //   if (dto.eventLocation) {
-  //     const locationBooking =
-  //       await this.locationBookingService.createBooking_ForBusinessLocation(
-  //         {
-  //           targetId: savedEvent.id,
-  //           accountId: dto.accountId,
-  //           dates: dto.eventLocation.dates,
-  //           locationId: dto.eventLocation.locationId,
-  //         },
-  //       );
-  //     savedEvent.locationBookings = [
-  //       this.mapTo_safe(LocationBookingEntity, locationBooking),
-  //     ];
-  //   }
-  //   return savedEvent;
-  // })
-
   addLocationBooking(dto: AddLocationBookingDto): Promise<EventResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const eventRepo = EventRepository(em);
@@ -235,7 +217,7 @@ export class EventManagementService
           },
         })
         .then((res) => {
-          if (!res.canAddBooking()) {
+          if (!res.canSafelyModifyBooking()) {
             throw new BadRequestException(
               'You can only modify bookings for events that are DRAFT.',
             );
@@ -320,6 +302,38 @@ export class EventManagementService
         locationId: event.locationId,
         locationBookings: [locationBookingResponse],
       });
+    });
+  }
+
+  cancelEventBooking(dto: CancelEventBookingDto): Promise<EventResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const eventRepository = EventRepository(em);
+      const event = await eventRepository
+        .findOneOrFail({
+          where: {
+            id: dto.eventId,
+            createdById: dto.accountId,
+          },
+        })
+        .then((res) => {
+          if (!res.canSafelyModifyBooking()) {
+            throw new BadRequestException(
+              'You cannot cancel this event booking.',
+            );
+          }
+          return res;
+        });
+      const locationBooking = await this.locationBookingService.cancelBooking({
+        accountId: dto.accountId,
+        locationBookingId: dto.locationBookingId,
+        cancellationReason: dto.cancellationReason,
+      });
+
+      event.locationId = null; // remove location from event
+
+      return await eventRepository
+      .save(event)
+      .then((res) => this.mapTo(EventResponseDto, res));
     });
   }
 }

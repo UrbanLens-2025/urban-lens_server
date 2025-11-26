@@ -4,8 +4,9 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany, PrimaryGeneratedColumn,
-  UpdateDateColumn
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { EventStatus } from '@/common/constants/EventStatus.constant';
@@ -199,7 +200,7 @@ export class EventEntity {
     return correctStatus;
   }
 
-  public canAddBooking() {
+  public canSafelyModifyBooking() {
     return this.status === EventStatus.DRAFT;
   }
 }

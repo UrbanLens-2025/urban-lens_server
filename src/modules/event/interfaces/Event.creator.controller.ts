@@ -46,6 +46,7 @@ import { CreateEventDto } from '@/common/dto/event/CreateEvent.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
 import { InitiateEventBookingPaymentDto } from '@/common/dto/event/InitiateBookingPayment.dto';
+import { CancelEventBookingDto } from '@/common/dto/event/CancelEventBooking.dto';
 
 @ApiBearerAuth()
 @ApiTags('Event')
@@ -110,6 +111,22 @@ export class EventCreatorController {
       accountName: userDto.email,
       ipAddress,
       returnUrl: '',
+    });
+  }
+
+  @ApiOperation({ summary: 'Cancel a location booking for my event' })
+  @Delete('/:eventId/location-bookings/:locationBookingId/cancel')
+  cancelLocationBooking(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: CancelEventBookingDto,
+  ) {
+    return this.eventManagementService.cancelEventBooking({
+      ...dto,
+      eventId,
+      locationBookingId,
+      accountId: userDto.sub,
     });
   }
 

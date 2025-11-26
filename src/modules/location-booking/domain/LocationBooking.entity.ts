@@ -77,15 +77,15 @@ export class LocationBookingEntity {
   @Column({ name: 'amount_to_pay', type: 'numeric' })
   amountToPay: number;
 
-  @Column({ name: 'referenced_transaction_id', type: 'uuid', nullable: true })
-  referencedTransactionId: string;
-
   @Column({
     name: 'soft_locked_until',
     type: 'timestamp with time zone',
     nullable: true,
   })
   softLockedUntil?: Date | null;
+
+  @Column({ name: 'referenced_transaction_id', type: 'uuid', nullable: true })
+  referencedTransactionId: string;
 
   @ManyToOne(
     () => WalletTransactionEntity,
@@ -98,12 +98,23 @@ export class LocationBookingEntity {
   @JoinColumn({ name: 'referenced_transaction_id' })
   referencedTransaction: WalletTransactionEntity;
 
-  // @Column({
-  //   name: 'referenced_event_id',
-  //   type: 'uuid',
-  //   nullable: true,
-  // })
-  // referencedEventId?: string | null;
+  @Column({
+    name: 'refund_transaction_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  refundTransactionId?: string | null;
+
+  @ManyToOne(
+    () => WalletTransactionEntity,
+    (walletTransaction) => walletTransaction.id,
+    {
+      createForeignKeyConstraints: false,
+      nullable: true,
+    },
+  )
+  @JoinColumn({ name: 'refund_transaction_id' })
+  refundTransaction?: WalletTransactionEntity | null;
 
   @ManyToOne(() => EventEntity, (event) => event.id, {
     createForeignKeyConstraints: false,
@@ -128,6 +139,13 @@ export class LocationBookingEntity {
   })
   paidOutAt?: Date | null;
 
+  @Column({
+    name: 'cancellation_reason',
+    type: 'varchar',
+    length: 555,
+    nullable: true,
+  })
+  cancellationReason?: string | null;
   // domain functions
 
   public canBeProcessed(): boolean {
@@ -148,5 +166,23 @@ export class LocationBookingEntity {
       this.status === LocationBookingStatus.PAYMENT_RECEIVED &&
       !isNotBlank(this.paidOutAt)
     );
+  }
+
+  public canBeCancelled(): boolean {
+    // check if booking is in a cancellable status
+    const cancellableStatuses = [
+      LocationBookingStatus.APPROVED,
+      LocationBookingStatus.AWAITING_BUSINESS_PROCESSING,
+      LocationBookingStatus.PAYMENT_RECEIVED,
+    ];
+
+    // check if booking date is in the past
+    const bookingDates = this.dates; // don't worry, this is eagerly loaded!
+    const now = new Date();
+    const isPastBookingDate = bookingDates.some(
+      (date) => date.startDateTime < now,
+    );
+
+    return cancellableStatuses.includes(this.status) && !isPastBookingDate;
   }
 }

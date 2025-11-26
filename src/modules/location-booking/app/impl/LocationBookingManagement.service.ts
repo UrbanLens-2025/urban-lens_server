@@ -32,6 +32,7 @@ import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob
 import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
 import { DelayedMessageProvider } from '@/common/core/delayed-message/DelayedMessage.provider';
 import { DelayedMessageKeys } from '@/common/constants/DelayedMessageKeys.constant';
+import { CancelBookingDto } from '@/common/dto/location-booking/CancelBooking.dto';
 
 @Injectable()
 export class LocationBookingManagementService
@@ -279,6 +280,49 @@ export class LocationBookingManagementService
         LocationBookingResponseDto,
         await locationBookingRepository.save(booking),
       );
+    });
+  }
+
+  cancelBooking(dto: CancelBookingDto): Promise<LocationBookingResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationBookingRepository = LocationBookingRepository(em);
+      const locationBooking = await locationBookingRepository
+        .findOneOrFail({
+          where: {
+            id: dto.locationBookingId,
+            createdById: dto.accountId,
+          },
+        })
+        .then((res) => {
+          if (!res.canBeCancelled()) {
+            throw new BadRequestException(
+              'You can only cancel this booking if it is in a cancellable status and the booking date is not in the past.',
+            );
+          }
+          return res;
+        });
+
+      // refund booking amount to event creator if booking has been paid for
+      if (locationBooking.status === LocationBookingStatus.PAYMENT_RECEIVED) {
+        const refundTransaction =
+          await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
+            {
+              entityManager: em,
+              destinationAccountId: dto.accountId,
+              amount: locationBooking.amountToPay,
+              currency: SupportedCurrency.VND,
+            },
+          );
+        locationBooking.refundTransactionId = refundTransaction.id;
+      }
+
+      locationBooking.status = LocationBookingStatus.CANCELLED;
+      locationBooking.cancellationReason = dto.cancellationReason;
+
+      // update location booking
+      return await locationBookingRepository
+        .save(locationBooking)
+        .then((res) => this.mapTo(LocationBookingResponseDto, res));
     });
   }
 }

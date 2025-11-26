@@ -3,6 +3,7 @@ import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/Lo
 import { ProcessBookingDto } from '@/common/dto/location-booking/ProcessBooking.dto';
 import { UpdateResult } from 'typeorm';
 import { PayForBookingDto } from '@/common/dto/location-booking/PayForBooking.dto';
+import { CancelBookingDto } from '@/common/dto/location-booking/CancelBooking.dto';
 
 export const ILocationBookingManagementService = Symbol(
   'ILocationBookingManagementService',
@@ -15,4 +16,6 @@ export interface ILocationBookingManagementService {
   processBooking(dto: ProcessBookingDto): Promise<UpdateResult>;
 
   payForBooking(dto: PayForBookingDto): Promise<LocationBookingResponseDto>;
+
+  cancelBooking(dto: CancelBookingDto): Promise<LocationBookingResponseDto>;
 }

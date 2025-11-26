@@ -122,6 +122,7 @@ export class EventQueryService
           tags: {
             tag: true,
           },
+          locationBookings: true,
         },
       })
       .then((entity) => this.mapTo(EventResponseDto, entity));
