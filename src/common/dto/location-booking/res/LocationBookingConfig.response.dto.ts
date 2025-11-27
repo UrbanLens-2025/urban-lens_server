@@ -25,6 +25,9 @@ export class LocationBookingConfigResponseDto {
   minGapBetweenBookingsMinutes: number;
 
   @Expose()
+  maxCapacity?: number | null;
+
+  @Expose()
   @Type(() => Date)
   createdAt: Date;
 

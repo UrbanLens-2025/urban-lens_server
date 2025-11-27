@@ -65,6 +65,9 @@ export class LocationBookingConfigEntity {
   @Column({ name: 'min_gap_between_bookings_minutes', type: 'int' })
   minGapBetweenBookingsMinutes: number;
 
+  @Column({ name: 'max_capacity', type: 'int', nullable: true })
+  maxCapacity?: number | null;
+
   public static createDefault(
     locationId: string,
     createdById: string,
@@ -78,6 +81,7 @@ export class LocationBookingConfigEntity {
     config.maxBookingDurationMinutes = 240;
     config.minBookingDurationMinutes = 60;
     config.minGapBetweenBookingsMinutes = 15;
+    config.maxCapacity = null; // default to null (no limit)
     config.createdById = createdById;
     return config;
   }
