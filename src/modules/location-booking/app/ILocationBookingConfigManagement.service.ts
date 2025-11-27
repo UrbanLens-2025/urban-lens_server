@@ -1,4 +1,3 @@
-import { AddLocationBookingConfigDto } from '@/common/dto/location-booking/AddLocationBookingConfig.dto';
 import { LocationBookingConfigResponseDto } from '@/common/dto/location-booking/res/LocationBookingConfig.response.dto';
 import { UpdateLocationBookingConfigDto } from '@/common/dto/location-booking/UpdateLocationBookingConfig.dto';
 import { UpdateResult } from 'typeorm';

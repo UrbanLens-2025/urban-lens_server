@@ -1,59 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
-  IsArray,
-  IsBoolean,
-  IsDate,
-  IsInt,
+  IsArray, IsDate, IsInt,
   IsNotEmpty,
   IsOptional,
-  IsPositive,
-  IsUUID,
-  MaxLength,
-  ValidateNested,
+  IsPositive, IsUrl, MaxLength,
+  ValidateNested
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SocialLink } from '@/common/json/SocialLink.json';
-import { IsBefore } from '@/common/decorators/IsBefore.decorator';
-import { IsAfterToday } from '@/common/decorators/IsAfterToday.decorator';
 import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
+import { IsBefore } from '@/common/decorators/IsBefore.decorator';
 import dayjs from 'dayjs';
-
-// class EventDateRange {
-//   @ApiProperty({ example: new Date().toISOString() })
-//   @Type(() => Date)
-//   @IsNotEmpty()
-//   @IsBefore('endDateTime')
-//   @IsAfterToday()
-//   @IsDate()
-//   startDateTime: Date;
-
-//   @ApiProperty({ example: dayjs().add(12, 'hours').toISOString() })
-//   @Type(() => Date)
-//   @IsNotEmpty()
-//   @IsDate()
-//   endDateTime: Date;
-// }
-
-// class EventLocationDto {
-//   @ApiProperty({
-//     description: 'ID of the business location to book for the event',
-//   })
-//   @IsNotEmpty()
-//   @IsUUID()
-//   locationId: string;
-
-//   @ApiProperty({
-//     description: 'List of date ranges for the booking',
-//     isArray: true,
-//     type: EventDateRange,
-//   })
-//   @IsArray()
-//   @ArrayNotEmpty()
-//   @ValidateNested({ each: true })
-//   @Type(() => EventDateRange)
-//   dates: EventDateRange[];
-// }
 
 export class CreateEventDto {
   // transient fields
@@ -75,10 +33,6 @@ export class CreateEventDto {
   @IsPositive()
   expectedNumberOfParticipants: number;
 
-  @ApiProperty()
-  @IsBoolean()
-  allowTickets: boolean;
-
   @ApiProperty({
     isArray: true,
     type: Number,
@@ -90,7 +44,7 @@ export class CreateEventDto {
   @IsInt({ each: true })
   categoryIds: number[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: [SocialLink],
   })
   @ValidateNested({ each: true })
@@ -99,21 +53,43 @@ export class CreateEventDto {
   @Type(() => SocialLink)
   social: SocialLink[];
 
-  @ApiProperty({
-    isArray: true,
-    type: EventValidationDocumentsJson,
+  @ApiPropertyOptional({
+    type: [EventValidationDocumentsJson],
   })
-  @ValidateNested({ each: true })
+  @IsOptional()
   @IsArray()
-  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
   @Type(() => EventValidationDocumentsJson)
-  eventValidationDocuments: EventValidationDocumentsJson[];
+  eventValidationDocuments?: EventValidationDocumentsJson[] | null;
 
-  // @ApiPropertyOptional({
-  //   type: EventLocationDto,
-  // })
-  // @IsOptional()
-  // @ValidateNested()
-  // @Type(() => EventLocationDto)
-  // eventLocation?: EventLocationDto | null;
+  @ApiPropertyOptional({
+    example: dayjs().add(1, 'day').set('hour', 10).toISOString(),
+  })
+  @IsDate()
+  @IsBefore('endDate')
+  @Type(() => Date)
+  @IsOptional()
+  startDate?: Date | null;
+
+  @ApiPropertyOptional({
+    example: dayjs().add(1, 'day').set('hour', 20).toISOString(),
+  })
+  @IsDate()
+  @Type(() => Date)
+  @IsOptional()
+  endDate?: Date | null;
+
+  @ApiPropertyOptional({
+    example: 'https://google.com',
+  })
+  @IsUrl()
+  @IsOptional()
+  coverUrl?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'https://google.com',
+  })
+  @IsUrl()
+  @IsOptional()
+  avatarUrl?: string | null;
 }

@@ -48,10 +48,10 @@ export class EventEntity {
   description: string;
 
   @Column({ name: 'avatar_url', type: 'varchar', length: 500, nullable: true })
-  avatarUrl: string;
+  avatarUrl?: string | null;
 
   @Column({ name: 'cover_url', type: 'varchar', length: 500, nullable: true })
-  coverUrl: string;
+  coverUrl?: string | null;
 
   @Column({
     name: 'expected_number_of_participants',

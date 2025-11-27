@@ -75,10 +75,13 @@ export class EventManagementService
           .save(event)
           // confirm uploads
           .then(async (newEvent) => {
-            const filesToConfirm = dto.eventValidationDocuments.flatMap(
+            const filesToConfirm = dto.eventValidationDocuments?.flatMap(
               (i) => i.documentImageUrls,
             );
-            await this.fileStorageService.confirmUpload(filesToConfirm, em);
+            await this.fileStorageService.confirmUpload(
+              filesToConfirm ?? [],
+              em,
+            );
             return newEvent;
           })
           // save tags
@@ -341,8 +344,8 @@ export class EventManagementService
       event.locationId = null; // remove location from event
 
       return await eventRepository
-      .save(event)
-      .then((res) => this.mapTo(EventResponseDto, res));
+        .save(event)
+        .then((res) => this.mapTo(EventResponseDto, res));
     });
   }
 }
