@@ -23,6 +23,7 @@ import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { InitiateEventBookingPaymentDto } from '@/common/dto/event/InitiateBookingPayment.dto';
 import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
+import { CancelEventDto } from '@/common/dto/event/CancelEvent.dto';
 
 @Injectable()
 export class EventManagementService
@@ -199,6 +200,14 @@ export class EventManagementService
       return await eventRepository
         .save(event)
         .then((res) => this.mapTo(EventResponseDto, res));
+    });
+  }
+
+  cancelEvent(dto: CancelEventDto): Promise<unknown> {
+    return this.ensureTransaction(null, async (em) => {
+      // TODO: implement cancelEvent workflow
+      await Promise.resolve();
+      return null;
     });
   }
 

@@ -8,6 +8,7 @@ import { InitiateEventBookingPaymentDto } from '@/common/dto/event/InitiateBooki
 import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
 import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 import { CancelEventBookingDto } from '@/common/dto/event/CancelEventBooking.dto';
+import { CancelEventDto } from '@/common/dto/event/CancelEvent.dto';
 
 export const IEventManagementService = Symbol('IEventManagementService');
 
@@ -15,6 +16,7 @@ export interface IEventManagementService {
   createEvent(dto: CreateEventDto): Promise<EventResponseDto>;
   updateMyEvent(dto: UpdateEventDto): Promise<UpdateResult>;
   publishEvent(dto: PublishEventDto): Promise<UpdateResult>;
+  cancelEvent(dto: CancelEventDto): Promise<unknown>;
 
   /**
    * This method should finish the specified event and start a 1 week countdown until event ticket sales are transferred to the event owners wallet
