@@ -30,7 +30,11 @@ export class BookableLocationSearchService
         },
         relations: {
           bookingConfig: true,
+          availabilities: true,
           business: true,
+          tags: {
+            tag: true,
+          },
         },
       })
       .then((res) => this.mapTo(LocationResponseDto, res));

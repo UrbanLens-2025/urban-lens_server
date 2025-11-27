@@ -21,6 +21,7 @@ import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
 import { InternalServerErrorException } from '@nestjs/common';
 import { LocationOpeningHoursEntity } from '@/modules/business/domain/LocationOpeningHours.entity';
+import { LocationAvailabilityEntity } from '@/modules/location-booking/domain/LocationAvailability.entity';
 
 @Entity({ name: LocationEntity.TABLE_NAME })
 export class LocationEntity {
@@ -128,6 +129,11 @@ export class LocationEntity {
   //#endregion
 
   //#region TRANSIENT RELATIONS - These are for development purposes ONLY.
+
+  @OneToMany(() => LocationAvailabilityEntity, (a) => a.location, {
+    createForeignKeyConstraints: false,
+  })
+  availabilities: LocationAvailabilityEntity[];
 
   @OneToMany(
     () => LocationTagsEntity,
