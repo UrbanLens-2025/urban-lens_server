@@ -16,7 +16,7 @@ export interface IEventManagementService {
   createEvent(dto: CreateEventDto): Promise<EventResponseDto>;
   updateMyEvent(dto: UpdateEventDto): Promise<UpdateResult>;
   publishEvent(dto: PublishEventDto): Promise<UpdateResult>;
-  cancelEvent(dto: CancelEventDto): Promise<unknown>;
+  cancelEvent(dto: CancelEventDto): Promise<EventResponseDto>;
 
   /**
    * This method should finish the specified event and start a 1 week countdown until event ticket sales are transferred to the event owners wallet

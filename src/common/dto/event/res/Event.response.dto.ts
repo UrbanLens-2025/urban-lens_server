@@ -63,6 +63,9 @@ export class EventResponseDto {
   endDate?: Date | null;
 
   @Expose()
+  cancellationReason?: string | null;
+
+  @Expose()
   locationId?: string | null;
 
   @Expose()

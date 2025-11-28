@@ -1,7 +1,8 @@
+import { CoreActionDto } from '@/common/dto/CoreAction.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, Length } from 'class-validator';
 
-export class CancelBookingDto {
+export class CancelBookingDto extends CoreActionDto {
   locationBookingId: string;
   accountId: string;
 

@@ -185,4 +185,12 @@ export class LocationBookingEntity {
 
     return cancellableStatuses.includes(this.status) && !isPastBookingDate;
   }
+
+  public isActive(): boolean {
+    return (
+      this.status === LocationBookingStatus.AWAITING_BUSINESS_PROCESSING ||
+      this.status === LocationBookingStatus.APPROVED ||
+      this.status === LocationBookingStatus.PAYMENT_RECEIVED
+    );
+  }
 }

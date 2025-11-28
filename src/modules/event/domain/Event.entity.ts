@@ -102,6 +102,14 @@ export class EventEntity {
   @Column({ name: 'terms_and_conditions', type: 'text', nullable: true })
   termsAndConditions?: string | null;
 
+  @Column({
+    name: 'cancellation_reason',
+    type: 'varchar',
+    length: 555,
+    nullable: true,
+  })
+  cancellationReason?: string | null;
+
   @OneToMany(() => EventTagsEntity, (eventTags) => eventTags.event, {
     createForeignKeyConstraints: false,
   })
@@ -202,5 +210,12 @@ export class EventEntity {
 
   public canSafelyModifyBooking() {
     return this.status === EventStatus.DRAFT;
+  }
+
+  public canBeCancelled() {
+    const correctStatus =
+      this.status === EventStatus.DRAFT ||
+      this.status === EventStatus.PUBLISHED;
+    return correctStatus;
   }
 }

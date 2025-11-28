@@ -24,6 +24,7 @@ import { ILocationBookingManagementService } from '@/modules/location-booking/ap
 import { InitiateEventBookingPaymentDto } from '@/common/dto/event/InitiateBookingPayment.dto';
 import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
 import { CancelEventDto } from '@/common/dto/event/CancelEvent.dto';
+import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
 
 @Injectable()
 export class EventManagementService
@@ -39,6 +40,8 @@ export class EventManagementService
     private readonly scheduledJobService: IScheduledJobService,
     @Inject(ILocationBookingManagementService)
     private readonly locationBookingService: ILocationBookingManagementService,
+    @Inject(ITicketOrderManagementService)
+    private readonly ticketOrderManagementService: ITicketOrderManagementService,
     private readonly configService: ConfigService<Environment>,
   ) {
     super();
@@ -206,12 +209,50 @@ export class EventManagementService
     });
   }
 
-  cancelEvent(dto: CancelEventDto): Promise<unknown> {
+  cancelEvent(dto: CancelEventDto): Promise<EventResponseDto> {
     return this.ensureTransaction(null, async (em) => {
-      // TODO: implement cancelEvent workflow
-      await Promise.resolve();
-      return null;
-    });
+      const eventRepo = EventRepository(em);
+      const event = await eventRepo
+        .findOneOrFail({
+          where: {
+            id: dto.eventId,
+            createdById: dto.accountId,
+          },
+          relations: {
+            locationBookings: true,
+          },
+        })
+        .then((res) => {
+          if (!res.canBeCancelled()) {
+            throw new BadRequestException('Event cannot be cancelled.');
+          }
+          return res;
+        });
+
+      event.status = EventStatus.CANCELLED;
+
+      // refund tickets
+      await this.ticketOrderManagementService.refundAllSuccessfulOrders({
+        accountId: dto.accountId,
+        eventId: dto.eventId,
+        refundReason: 'Event was cancelled by the organizer.',
+        entityManager: em,
+      });
+
+      // cancel booking
+      for (const locationBooking of event.locationBookings) {
+        if (locationBooking.canBeCancelled()) {
+          await this.locationBookingService.cancelBooking({
+            accountId: dto.accountId,
+            locationBookingId: locationBooking.id,
+            cancellationReason: 'Event was cancelled by the organizer.',
+            entityManager: em,
+          });
+        }
+      }
+
+      return eventRepo.save(event);
+    }).then((res) => this.mapTo(EventResponseDto, res));
   }
 
   addLocationBooking(dto: AddLocationBookingDto): Promise<EventResponseDto> {
