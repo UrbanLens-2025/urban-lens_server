@@ -279,9 +279,20 @@ export class EventManagementService
           return res;
         });
 
+      // validate dates (each entry must be one day)
+      for (const date of dto.dates) {
+        const start = dayjs(date.startDateTime);
+        const end = dayjs(date.endDateTime);
+        if (!start.isSame(end, 'day')) {
+          throw new BadRequestException(
+            'Each date range must be one day. If you need to book for multiple days, please add multiple dates.',
+          );
+        }
+      }
+
       // check if location booking already exists
       const existingLocationBooking = event.locationBookings.find((booking) => {
-        return booking.locationId === dto.locationId;
+        return booking.locationId === dto.locationId && booking.isActive();
       });
       if (existingLocationBooking) {
         throw new BadRequestException(
