@@ -13,12 +13,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import {
-  Channel,
-  ChannelModel,
-  connect,
-  ConsumeMessage,
-} from 'amqplib';
+import { Channel, ChannelModel, connect, ConsumeMessage } from 'amqplib';
 
 /**
  * This class does the following:
@@ -108,8 +103,10 @@ export class DelayedMessageProvider implements OnModuleInit, OnModuleDestroy {
     try {
       const routingKey = msg?.fields.routingKey as DelayedMessageKeys;
       this.eventEmitter.emit(routingKey, this.buildResponseWrapper(msg));
+      this.channel?.ack(msg);
     } catch (error) {
       this.logger.error('Error consuming delayed message', error);
+      this.channel?.nack(msg, false, false);
     }
   }
 
@@ -117,8 +114,10 @@ export class DelayedMessageProvider implements OnModuleInit, OnModuleDestroy {
     msg: ConsumeMessage,
   ): DelayedMessageResponseWrapper<unknown> {
     return new DelayedMessageResponseWrapper(
-      () => this.channel?.nack(msg, false, false),
-      () => this.channel?.ack(msg),
+      // () => this.channel?.nack(msg, false, false),
+      () => {},
+      () => {},
+      // () => this.channel?.ack(msg),
       JSON.parse(msg.content.toString()),
     );
   }
