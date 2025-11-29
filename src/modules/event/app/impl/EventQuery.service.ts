@@ -20,9 +20,13 @@ import { SearchNearbyPublishedEventsDto } from '@/common/dto/event/SearchNearbyP
 import { SearchAllEventsUnfilteredDto } from '@/common/dto/event/SearchAllEventsUnfiltered.dto';
 import { GetAnyEventByIdDto } from '@/common/dto/event/GetAnyEventById.dto';
 import { SearchPublishedEventsByTagCategoryDto } from '@/common/dto/event/SearchPublishedEventsByTagCategory.dto';
+import { GetLocationBookingsByEventDto } from '@/common/dto/event/GetLocationBookingsByEvent.dto';
 import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
 import { CategoryType } from '@/common/constants/CategoryType.constant';
 import { In } from 'typeorm';
+import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
+import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
+import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 
 @Injectable()
 export class EventQueryService
@@ -122,14 +126,7 @@ export class EventQueryService
           tags: {
             tag: true,
           },
-          locationBookings: {
-            location: {
-              business: true,
-              tags: {
-                tag: true,
-              },
-            },
-          },
+          // location bookings was here but is removed because of performance issues. call another api to get location bookings.
         },
       })
       .then((entity) => this.mapTo(EventResponseDto, entity));
@@ -194,5 +191,31 @@ export class EventQueryService
         where: { eventId: dto.eventId },
       })
       .then((entities) => this.mapToArray(EventTicketResponseDto, entities));
+  }
+
+  getLocationBookingsByEvent(
+    dto: GetLocationBookingsByEventDto,
+  ): Promise<LocationBookingResponseDto[]> {
+    const locationBookingRepository = LocationBookingRepository(
+      this.dataSource,
+    );
+    return locationBookingRepository
+      .find({
+        where: {
+          targetId: dto.eventId,
+          bookingObject: LocationBookingObject.FOR_EVENT,
+        },
+        relations: {
+          location: {
+            business: true,
+            tags: {
+              tag: true,
+            },
+          },
+          createdBy: true,
+          referencedTransaction: true,
+        },
+      })
+      .then((res) => this.mapToArray(LocationBookingResponseDto, res));
   }
 }

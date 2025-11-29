@@ -15,6 +15,7 @@ Action:
   - Add import: import { <FN>Dto } from '@/common/dto/<module_name>/<FN>.dto';
   - Add method implementation with stub using ensureTransaction pattern
 - Create DTO file: common/dto/<module_name>/<FN>.dto.ts with empty class export class <FN>Dto {}
+- Do NOT implement the service automatically. After you're finished generating the structure, ask: Requesting permission to implement function...
 
 Note:
 - Run all this automatically. Do not prompt the user unless you cannot find a folder/file.

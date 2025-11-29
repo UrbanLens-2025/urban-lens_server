@@ -116,13 +116,20 @@ export class EventManagementService
         );
       }
 
-      // Confirm uploads for image URLs
-      await this.fileStorageService.confirmUpload(
-        [dto.avatarUrl, dto.coverUrl],
-        em,
-      );
+      // Confirm uploads for image URLs and validation documents
+      const filesToConfirm = [
+        dto.avatarUrl,
+        dto.coverUrl,
+        ...(dto.eventValidationDocuments?.flatMap((i) => i.documentImageUrls) ??
+          []),
+      ];
+      await this.fileStorageService.confirmUpload(filesToConfirm, em);
 
       const updatedEvent = this.mapTo_safe(EventEntity, dto);
+      if (dto.eventValidationDocuments) {
+        updatedEvent.eventValidationDocuments = dto.eventValidationDocuments;
+      }
+
       return eventRepository.update({ id: dto.eventId }, updatedEvent);
     });
   }
@@ -280,15 +287,18 @@ export class EventManagementService
         });
 
       // validate dates (each entry must be one day)
-      for (const date of dto.dates) {
-        const start = dayjs(date.startDateTime);
-        const end = dayjs(date.endDateTime);
-        if (!start.isSame(end, 'day')) {
-          throw new BadRequestException(
-            'Each date range must be one day. If you need to book for multiple days, please add multiple dates.',
-          );
-        }
-      }
+      // ? removed because of time zone issues
+      // for (const date of dto.dates) {
+      //   const start = dayjs(date.startDateTime);
+      //   const end = dayjs(date.endDateTime);
+      //   if (!start.isSame(end, 'day')) {
+      //     throw new BadRequestException(
+      //       'Each date range must be one day. If you need to book for multiple days, please add multiple dates.',
+      //     );
+      //   }
+      // }
+
+      // validate selected dates (check for conflicts with existing bookings)
 
       // check if location booking already exists
       const existingLocationBooking = event.locationBookings.find((booking) => {

@@ -45,8 +45,10 @@ import { ConfirmTicketUsageDto } from '@/common/dto/event/ConfirmTicketUsage.dto
 import { CreateEventDto } from '@/common/dto/event/CreateEvent.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
-import { InitiateEventBookingPaymentDto } from '@/common/dto/event/InitiateBookingPayment.dto';
 import { CancelEventBookingDto } from '@/common/dto/event/CancelEventBooking.dto';
+import { GetLocationBookingsByEventDto } from '@/common/dto/event/GetLocationBookingsByEvent.dto';
+import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
+import { CancelEventDto } from '@/common/dto/event/CancelEvent.dto';
 
 @ApiBearerAuth()
 @ApiTags('Event')
@@ -78,6 +80,20 @@ export class EventCreatorController {
   ): Promise<EventResponseDto> {
     return this.eventManagementService.createEvent({
       ...dto,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Cancel my event'})
+  @Delete('/:eventId/cancel')
+  cancelMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: CancelEventDto,
+  ) {
+    return this.eventManagementService.cancelEvent({
+      ...dto,
+      eventId,
       accountId: userDto.sub,
     });
   }
@@ -128,6 +144,19 @@ export class EventCreatorController {
       locationBookingId,
       accountId: userDto.sub,
     });
+  }
+
+  @ApiOperation({ summary: 'Get location bookings for my event' })
+  @Get('/:eventId/location-bookings')
+  getLocationBookingsForMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+  ): Promise<LocationBookingResponseDto[]> {
+    const dto: GetLocationBookingsByEventDto = {
+      eventId,
+    };
+
+    return this.eventQueryService.getLocationBookingsByEvent(dto);
   }
 
   @ApiOperation({ summary: 'Get all my events' })

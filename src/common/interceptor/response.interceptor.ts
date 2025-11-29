@@ -17,6 +17,7 @@ export class ResponseInterceptorConfig<T>
   ):
     | Observable<SuccessResponseDto<T>>
     | Promise<Observable<SuccessResponseDto<T>>> {
+    const start = Date.now();
     return next.handle().pipe(
       map((data) => ({
         success: true,
@@ -24,6 +25,10 @@ export class ResponseInterceptorConfig<T>
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
         statusCode: context.switchToHttp().getResponse()['statusCode'] || 200,
         data,
+        meta: {
+          duration: `${Date.now() - start}ms`,
+          timestamp: new Date().toISOString(),
+        },
       })),
     );
   }
