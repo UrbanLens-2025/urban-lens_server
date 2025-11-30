@@ -9,6 +9,7 @@ import { ReportResolutionActions } from '@/common/constants/ReportResolutionActi
 import { ReportEntity } from '@/modules/report/domain/Report.entity';
 import { ReportStatus } from '@/common/constants/ReportStatus.constant';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class ReportManagementService
