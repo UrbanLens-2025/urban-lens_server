@@ -5,7 +5,6 @@ import { LocationResponseDto } from '@/common/dto/business/res/Location.response
 import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTransaction.response.dto';
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 import { LocationBookingDateResponseDto } from '@/common/dto/location-booking/res/LocationBookingDate.response.dto';
-import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 import { ScheduledJobResponseDto } from '@/common/dto/scheduled-job/res/ScheduledJob.response.dto';
 
 @Exclude()

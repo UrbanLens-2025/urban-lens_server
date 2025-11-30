@@ -96,10 +96,10 @@ export const TicketOrderRepository = (ctx: DataSource | EntityManager) =>
     ) {
       const qb = await this.createQueryBuilder('order')
         .select(
-          'et.id, et.display_name, COALESCE(SUM(etod.sub_total), 0) as total_revenue',
+          'et.id, et.displayName, COALESCE(SUM(etod.subTotal), 0) as totalRevenue',
         )
-        .innerJoin('order.orderDetails', 'orderDetails')
-        .innerJoin('orderDetails.ticket', 'ticket')
+        .innerJoin('order.orderDetails', 'etod')
+        .innerJoin('orderDetails.ticket', 'et')
         .where('order.eventId = :eventId', { eventId: payload.eventId })
         .andWhere('order.createdAt BETWEEN :startDate AND :endDate', {
           startDate: payload.startDate,
@@ -108,7 +108,7 @@ export const TicketOrderRepository = (ctx: DataSource | EntityManager) =>
         .andWhere('order.status = :status', {
           status: EventTicketOrderStatus.PAID,
         })
-        .groupBy('et.id, et.display_name')
+        .groupBy('et.id, et.displayName')
         .getRawMany<{
           id: string;
           displayName: string;

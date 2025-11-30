@@ -187,7 +187,7 @@ export class TicketOrderManagementService
   refundAllSuccessfulOrders(
     dto: RefundAllSuccessfulOrdersDto,
   ): Promise<TicketOrderResponseDto[]> {
-    return this.ensureTransaction(null, async (em) => {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
       const ticketOrderRepo = TicketOrderRepository(em);
 
       const ticketOrders = await ticketOrderRepo.find({

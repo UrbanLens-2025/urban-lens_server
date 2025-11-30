@@ -49,7 +49,7 @@ export class ReportManagementService
         report.resolvedById = dto.initiatedByAccountId;
       }
 
-      this.handleReportResolution(report, dto.resolutionAction);
+      await this.handleReportResolution(em, report, dto.resolutionAction);
 
       return reportRepo
         .save(report)
@@ -58,6 +58,7 @@ export class ReportManagementService
   }
 
   private async handleReportResolution(
+    em: EntityManager,
     report: ReportEntity,
     resolutionAction: ReportResolutionActions,
   ) {

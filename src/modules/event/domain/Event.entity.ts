@@ -93,7 +93,7 @@ export class EventEntity {
   @Column({ name: 'social', type: 'jsonb', nullable: true })
   social?: SocialLink[] | null;
 
-  @Column({ name: 'event_validation_documents', type: 'jsonb' })
+  @Column({ name: 'event_validation_documents', type: 'jsonb', default: '[]' })
   eventValidationDocuments: EventValidationDocumentsJson[];
 
   @Column({ name: 'refund_policy', type: 'text', nullable: true })

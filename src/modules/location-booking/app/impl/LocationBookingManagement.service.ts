@@ -181,31 +181,6 @@ export class LocationBookingManagementService
         );
       }
 
-      // // update parent object based on booking type
-      // switch (booking.bookingObject) {
-      //   case LocationBookingObject.FOR_EVENT: {
-      //     if (!booking.referencedEventRequest) {
-      //       throw new InternalServerErrorException(
-      //         'Booking is for event but no referenced event request found.',
-      //       );
-      //     }
-
-      //     // update referenced event request status
-      //     const eventRequest = booking.referencedEventRequest;
-      //     eventRequest.status = EventRequestStatus.PROCESSED;
-      //     await eventRequestRepository.update(
-      //       { id: eventRequest.id },
-      //       eventRequest,
-      //     );
-      //     break;
-      //   }
-      //   default: {
-      //     throw new InternalServerErrorException(
-      //       'Unknown booking object type.',
-      //     );
-      //   }
-      // }
-
       // emit events for notifications
       this.eventEmitter.emit(
         BOOKING_APPROVED_EVENT,
