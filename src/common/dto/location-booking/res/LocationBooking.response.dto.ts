@@ -69,10 +69,6 @@ export class LocationBookingResponseDto {
   referencedTransaction?: WalletTransactionResponseDto;
 
   @Expose()
-  @Type(() => EventResponseDto)
-  referencedEvent?: EventResponseDto;
-
-  @Expose()
   @Type(() => ScheduledJobResponseDto)
   scheduledPayoutJob?: ScheduledJobResponseDto;
 }

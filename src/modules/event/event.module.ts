@@ -25,9 +25,7 @@ import { EventAttendanceManagementService } from '@/modules/event/app/impl/Event
 import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
 import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
 import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPayout.listener';
-import {
-  IEventAnalyticsService,
-} from '@/modules/event/app/IEventAnalytics.service';
+import { IEventAnalyticsService } from '@/modules/event/app/IEventAnalytics.service';
 import { EventAnalyticsService } from '@/modules/event/app/impl/EventAnalytics.service';
 import { EventAnalyticsDevOnlyController } from '@/modules/event/interfaces/EventAnalytics.dev-only.controller';
 
@@ -86,5 +84,6 @@ import { EventAnalyticsDevOnlyController } from '@/modules/event/interfaces/Even
     },
     EventPayoutListener,
   ],
+  exports: [IEventManagementService],
 })
 export class EventModule {}

@@ -95,34 +95,87 @@ export class R2FileStorageService
       );
     }
 
-    // save to db, if failed, cancel upload to r2
-    const fileEntity = PublicFileEntity.fromFile(body, userDto.sub);
-    fileEntity.createdById = userDto.sub;
-    fileEntity.status = PublicFileStatus.AWAITING_UPLOAD;
-
     return from(
-      this.dataSource.transaction(async (entityManager) => {
+      // save try to db.
+      this.ensureTransaction(null, async (entityManager) => {
         const publicFileRepository = PublicFileRepository(entityManager);
+        const fileEntity = PublicFileEntity.fromFile(body, userDto.sub);
+        fileEntity.createdById = userDto.sub;
 
-        const savedFile = await publicFileRepository.save(fileEntity);
+        fileEntity.status = PublicFileStatus.AWAITING_UPLOAD;
+        return await publicFileRepository.save(fileEntity);
+      })
+        // upload to r2.
+        .then(async (savedFile) => {
+          try {
+            await this.uploadToR2WithRetry(
+              savedFile.fileName,
+              body.buffer,
+              3, // max retries
+            );
+            return savedFile;
+          } catch (error) {
+            await this.ensureTransaction(null, async (em) => {
+              const repo = PublicFileRepository(em);
+              await repo.update(savedFile.id, {
+                status: PublicFileStatus.FAILED_UPLOAD,
+              });
+            });
+            throw error;
+          }
+        })
+        // confirm upload to db.
+        .then((savedFile) =>
+          this.ensureTransaction(null, async (em) => {
+            const publicFileRepository = PublicFileRepository(em);
+            const url = `${this.configService.get('R2_PUBLIC_DEVELOPMENT_URL')}/${savedFile.fileName}`;
+            savedFile.status = PublicFileStatus.AWAITING_CONFIRM_SIGNAL;
+            savedFile.fileUrl = url;
+            await publicFileRepository.save(savedFile);
+            return url;
+          }).catch((error) => {
+            // DB update failed but file is in R2 - log for cleanup job
+            this.logger.error(
+              `File uploaded to R2 but DB update failed: ${savedFile.fileName}`,
+              error,
+            );
+            throw error;
+          }),
+        ),
+    );
+  }
 
+  private async uploadToR2WithRetry(
+    fileName: string,
+    buffer: Buffer,
+    maxRetries = 3,
+  ): Promise<void> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
         await this.r2.send(
           new PutObjectCommand({
             Bucket: this.configService.get('R2_PUBLIC_BUCKET_NAME'),
-            Key: fileEntity.fileName,
-            Body: body.buffer,
+            Key: fileName,
+            Body: buffer,
             ACL: 'public-read',
           }),
         );
+        return; // success
+      } catch (error) {
+        this.logger.warn(
+          `R2 upload attempt ${attempt}/${maxRetries} failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
 
-        const url = `${this.configService.get('R2_PUBLIC_DEVELOPMENT_URL')}/${savedFile.fileName}`;
-        savedFile.status = PublicFileStatus.AWAITING_CONFIRM_SIGNAL;
-        savedFile.fileUrl = url;
-        await publicFileRepository.save(savedFile);
+        if (attempt === maxRetries) {
+          throw error; // final attempt failed
+        }
 
-        return url;
-      }),
-    );
+        // Exponential backoff: 1s, 2s, 4s
+        await new Promise((resolve) =>
+          setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)),
+        );
+      }
+    }
   }
 
   private validateFile(

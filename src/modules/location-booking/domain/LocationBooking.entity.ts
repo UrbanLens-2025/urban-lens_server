@@ -116,13 +116,6 @@ export class LocationBookingEntity {
   @JoinColumn({ name: 'refund_transaction_id' })
   refundTransaction?: WalletTransactionEntity | null;
 
-  @ManyToOne(() => EventEntity, (event) => event.id, {
-    createForeignKeyConstraints: false,
-    nullable: true,
-  })
-  @JoinColumn({ name: 'target_id' })
-  referencedEvent?: EventEntity | null;
-
   @ManyToOne(() => ScheduledJobEntity, (scheduledJob) => scheduledJob.id, {
     createForeignKeyConstraints: false,
   })
