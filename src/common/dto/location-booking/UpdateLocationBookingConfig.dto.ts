@@ -57,4 +57,14 @@ export class UpdateLocationBookingConfigDto {
   @Type(() => Number)
   @IsOptional()
   minGapBetweenBookingsMinutes?: number;
+
+  @ApiPropertyOptional({
+    example: 100,
+    description: 'Maximum capacity for the location.',
+  })
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  @IsOptional()
+  maxCapacity?: number;
 }

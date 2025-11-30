@@ -14,9 +14,6 @@ import { LocationBookingEntity } from '@/modules/location-booking/domain/Locatio
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 import { ProcessBookingDto } from '@/common/dto/location-booking/ProcessBooking.dto';
-import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
-import { EventRequestStatus } from '@/common/constants/EventRequestStatus.constant';
-import { EventRequestRepository } from '@/modules/event/infra/repository/EventRequest.repository';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   BOOKING_APPROVED_EVENT,
@@ -35,6 +32,7 @@ import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob
 import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
 import { DelayedMessageProvider } from '@/common/core/delayed-message/DelayedMessage.provider';
 import { DelayedMessageKeys } from '@/common/constants/DelayedMessageKeys.constant';
+import { CancelBookingDto } from '@/common/dto/location-booking/CancelBooking.dto';
 
 @Injectable()
 export class LocationBookingManagementService
@@ -116,6 +114,7 @@ export class LocationBookingManagementService
       booking.locationId = dto.locationId;
       booking.amountToPay = bookingPrice;
       booking.createdById = dto.accountId;
+      booking.targetId = dto.targetId;
       booking.status = LocationBookingStatus.AWAITING_BUSINESS_PROCESSING;
       // attach dates
       booking.dates = dto.dates.map((d) =>
@@ -137,7 +136,6 @@ export class LocationBookingManagementService
   processBooking(dto: ProcessBookingDto): Promise<UpdateResult> {
     return this.ensureTransaction(null, async (em) => {
       const locationBookingRepository = LocationBookingRepository(em);
-      const eventRequestRepository = EventRequestRepository(em);
 
       const booking = await locationBookingRepository.findOneOrFail({
         where: {
@@ -145,9 +143,6 @@ export class LocationBookingManagementService
           location: {
             businessId: dto.accountId, // you can only process your locations
           },
-        },
-        relations: {
-          referencedEventRequest: true,
         },
       });
 
@@ -186,30 +181,30 @@ export class LocationBookingManagementService
         );
       }
 
-      // update parent object based on booking type
-      switch (booking.bookingObject) {
-        case LocationBookingObject.FOR_EVENT: {
-          if (!booking.referencedEventRequest) {
-            throw new InternalServerErrorException(
-              'Booking is for event but no referenced event request found.',
-            );
-          }
+      // // update parent object based on booking type
+      // switch (booking.bookingObject) {
+      //   case LocationBookingObject.FOR_EVENT: {
+      //     if (!booking.referencedEventRequest) {
+      //       throw new InternalServerErrorException(
+      //         'Booking is for event but no referenced event request found.',
+      //       );
+      //     }
 
-          // update referenced event request status
-          const eventRequest = booking.referencedEventRequest;
-          eventRequest.status = EventRequestStatus.PROCESSED;
-          await eventRequestRepository.update(
-            { id: eventRequest.id },
-            eventRequest,
-          );
-          break;
-        }
-        default: {
-          throw new InternalServerErrorException(
-            'Unknown booking object type.',
-          );
-        }
-      }
+      //     // update referenced event request status
+      //     const eventRequest = booking.referencedEventRequest;
+      //     eventRequest.status = EventRequestStatus.PROCESSED;
+      //     await eventRequestRepository.update(
+      //       { id: eventRequest.id },
+      //       eventRequest,
+      //     );
+      //     break;
+      //   }
+      //   default: {
+      //     throw new InternalServerErrorException(
+      //       'Unknown booking object type.',
+      //     );
+      //   }
+      // }
 
       // emit events for notifications
       this.eventEmitter.emit(
@@ -229,9 +224,6 @@ export class LocationBookingManagementService
         where: {
           id: dto.locationBookingId,
           createdById: dto.accountId,
-        },
-        relations: {
-          referencedEventRequest: true,
         },
       });
 
@@ -284,9 +276,53 @@ export class LocationBookingManagementService
         booking.scheduledPayoutJobId = null;
       }
 
-      await locationBookingRepository.update({ id: booking.id }, booking);
+      return this.mapTo(
+        LocationBookingResponseDto,
+        await locationBookingRepository.save(booking),
+      );
+    });
+  }
 
-      return this.mapTo(LocationBookingResponseDto, booking);
+  cancelBooking(dto: CancelBookingDto): Promise<LocationBookingResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationBookingRepository = LocationBookingRepository(em);
+      const locationBooking = await locationBookingRepository
+        .findOneOrFail({
+          where: {
+            id: dto.locationBookingId,
+            createdById: dto.accountId,
+          },
+        })
+        .then((res) => {
+          if (!res.canBeCancelled()) {
+            throw new BadRequestException(
+              'You can only cancel this booking if it is in a cancellable status and the booking date is not in the past.',
+            );
+          }
+          return res;
+        });
+
+      // refund booking amount to event creator if booking has been paid for
+      if (locationBooking.status === LocationBookingStatus.PAYMENT_RECEIVED) {
+        const refundTransaction =
+          await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
+            {
+              entityManager: em,
+              destinationAccountId: dto.accountId,
+              amount: locationBooking.amountToPay,
+              currency: SupportedCurrency.VND,
+            },
+          );
+        locationBooking.refundTransactionId = refundTransaction.id;
+      }
+
+      locationBooking.status = LocationBookingStatus.CANCELLED;
+      locationBooking.cancellationReason = dto.cancellationReason;
+
+      // update location booking
+      return await locationBookingRepository
+        .save(locationBooking)
+        .then((res) => this.mapTo(LocationBookingResponseDto, res));
     });
   }
 }

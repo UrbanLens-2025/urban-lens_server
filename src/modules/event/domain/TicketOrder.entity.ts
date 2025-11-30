@@ -60,6 +60,21 @@ export class TicketOrderEntity {
   })
   status: EventTicketOrderStatus;
 
+  @Column({
+    name: 'refunded_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  refundedAt?: Date | null;
+
+  @Column({
+    name: 'refund_reason',
+    type: 'varchar',
+    length: 555,
+    nullable: true,
+  })
+  refundReason?: string | null;
+
   @ManyToOne(() => WalletTransactionEntity, (transaction) => transaction.id, {
     createForeignKeyConstraints: false,
     nullable: true,
@@ -69,6 +84,20 @@ export class TicketOrderEntity {
 
   @Column({ name: 'referenced_transaction_id', type: 'uuid', nullable: true })
   referencedTransactionId: string | null;
+
+  @Column({
+    name: 'refund_transaction_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  refundTransactionId?: string | null;
+
+  @ManyToOne(() => WalletTransactionEntity, (transaction) => transaction.id, {
+    createForeignKeyConstraints: false,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'refund_transaction_id' })
+  refundTransaction?: WalletTransactionEntity | null;
 
   @ManyToOne(() => EventEntity, (event) => event.id, {
     createForeignKeyConstraints: false,

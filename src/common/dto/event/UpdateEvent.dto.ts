@@ -2,15 +2,18 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsDate,
+  IsInt,
   IsOptional,
-  IsString,
+  IsPositive,
   IsUrl,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SocialLink } from '@/common/json/SocialLink.json';
+import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
 import { IsBefore } from '@/common/decorators/IsBefore.decorator';
+import dayjs from 'dayjs';
 
 export class UpdateEventDto {
   // transient fields
@@ -20,52 +23,66 @@ export class UpdateEventDto {
   // persistent fields
   @ApiPropertyOptional({ example: 'Event name' })
   @IsOptional()
-  @IsString()
   @MaxLength(255)
   displayName?: string;
 
   @ApiPropertyOptional({ example: 'Event description' })
   @IsOptional()
-  @IsString()
+  @MaxLength(1024)
   description?: string;
 
-  @ApiPropertyOptional({ example: 'https://google.com' })
+  @ApiPropertyOptional({ example: 100 })
   @IsOptional()
-  @IsUrl()
-  avatarUrl?: string | null;
+  @IsInt()
+  @IsPositive()
+  expectedNumberOfParticipants?: number;
 
-  @ApiPropertyOptional({ example: 'https://google.com' })
+  @ApiPropertyOptional({
+    type: [SocialLink],
+  })
   @IsOptional()
-  @IsUrl()
-  coverUrl?: string | null;
+  @ValidateNested({ each: true })
+  @IsArray()
+  @Type(() => SocialLink)
+  social?: SocialLink[] | null;
 
-  @ApiPropertyOptional({ example: new Date().toISOString() })
+  @ApiPropertyOptional({
+    type: [EventValidationDocumentsJson],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EventValidationDocumentsJson)
+  eventValidationDocuments?: EventValidationDocumentsJson[] | null;
+
+  @ApiPropertyOptional({
+    example: dayjs().add(1, 'day').set('hour', 10).toISOString(),
+  })
   @IsOptional()
   @IsDate()
   @IsBefore('endDate')
   @Type(() => Date)
-  startDate?: Date;
+  startDate?: Date | null;
 
-  @ApiPropertyOptional({ example: new Date().toISOString() })
+  @ApiPropertyOptional({
+    example: dayjs().add(1, 'day').set('hour', 20).toISOString(),
+  })
   @IsOptional()
   @IsDate()
   @Type(() => Date)
-  endDate?: Date;
+  endDate?: Date | null;
 
-  @ApiPropertyOptional({ example: 'Refund policy details here' })
+  @ApiPropertyOptional({
+    example: 'https://google.com',
+  })
   @IsOptional()
-  @IsString()
-  refundPolicy?: string | null;
+  @IsUrl()
+  coverUrl?: string | null;
 
-  @ApiPropertyOptional({ example: 'Terms and conditions details here' })
+  @ApiPropertyOptional({
+    example: 'https://google.com',
+  })
   @IsOptional()
-  @IsString()
-  termsAndConditions?: string | null;
-
-  @ApiPropertyOptional({ type: [SocialLink] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => SocialLink)
-  social?: SocialLink[] | null;
+  @IsUrl()
+  avatarUrl?: string | null;
 }

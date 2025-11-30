@@ -1,6 +1,7 @@
 import { CoreService } from '@/common/core/Core.service';
 import { CreateTicketOrderDto } from '@/common/dto/event/CreateTicketOrder.dto';
 import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
+import { RefundAllSuccessfulOrdersDto } from '@/common/dto/event/RefundAllSuccessfulOrders.dto';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { EventTicketRepository } from '@/modules/event/infra/repository/EventTicket.repository';
@@ -180,6 +181,43 @@ export class TicketOrderManagementService
           // map to response
           .then((res) => this.mapTo(TicketOrderResponseDto, res))
       );
+    });
+  }
+
+  refundAllSuccessfulOrders(
+    dto: RefundAllSuccessfulOrdersDto,
+  ): Promise<TicketOrderResponseDto[]> {
+    return this.ensureTransaction(null, async (em) => {
+      const ticketOrderRepo = TicketOrderRepository(em);
+
+      const ticketOrders = await ticketOrderRepo.find({
+        where: {
+          eventId: dto.eventId,
+          status: EventTicketOrderStatus.PAID,
+        },
+      });
+
+      const refunds: TicketOrderEntity[] = [];
+      // for every paid ticket order, refund
+      for (const ticketOrder of ticketOrders) {
+        const refundTransaction =
+          await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
+            {
+              amount: ticketOrder.totalPaymentAmount,
+              currency: SupportedCurrency.VND,
+              destinationAccountId: ticketOrder.createdById,
+              entityManager: em,
+            },
+          );
+
+        ticketOrder.refundTransactionId = refundTransaction.id;
+        ticketOrder.status = EventTicketOrderStatus.REFUNDED;
+        ticketOrder.refundedAt = new Date();
+        ticketOrder.refundReason = dto.refundReason;
+        refunds.push(await ticketOrderRepo.save(ticketOrder));
+      }
+
+      return this.mapToArray(TicketOrderResponseDto, refunds);
     });
   }
 }

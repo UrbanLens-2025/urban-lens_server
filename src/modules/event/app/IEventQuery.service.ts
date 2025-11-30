@@ -12,6 +12,8 @@ import { SearchNearbyPublishedEventsDto } from '@/common/dto/event/SearchNearbyP
 import { SearchAllEventsUnfilteredDto } from '@/common/dto/event/SearchAllEventsUnfiltered.dto';
 import { GetAnyEventByIdDto } from '@/common/dto/event/GetAnyEventById.dto';
 import { SearchPublishedEventsByTagCategoryDto } from '@/common/dto/event/SearchPublishedEventsByTagCategory.dto';
+import { GetLocationBookingsByEventDto } from '@/common/dto/event/GetLocationBookingsByEvent.dto';
+import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 export const IEventQueryService = Symbol('IEventQueryService');
 
 export interface IEventQueryService {
@@ -48,6 +50,10 @@ export interface IEventQueryService {
   getPublishedEventTickets(
     dto: GetPublishedEventTicketsDto,
   ): Promise<EventTicketResponseDto[]>;
+
+  getLocationBookingsByEvent(
+    dto: GetLocationBookingsByEventDto,
+  ): Promise<LocationBookingResponseDto[]>;
 }
 
 export namespace IEventQueryService_QueryConfig {

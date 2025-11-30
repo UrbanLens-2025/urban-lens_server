@@ -14,8 +14,9 @@ import { ReportQueryService } from '@/modules/report/app/impl/ReportQuery.servic
 import { ReportAdminController } from '@/modules/report/interfaces/Report.admin.controller';
 import { IReportManagementService } from '@/modules/report/app/IReportManagement.service';
 import { ReportManagementService } from '@/modules/report/app/impl/ReportManagement.service';
+import { EventModule } from '@/modules/event/event.module';
 @Module({
-  imports: [ReportInfraModule],
+  imports: [ReportInfraModule, EventModule],
   providers: [
     {
       provide: IReportCreationService,

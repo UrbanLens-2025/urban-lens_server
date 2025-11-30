@@ -1,7 +1,20 @@
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
+import { paginate, PaginateConfig, PaginateQuery } from 'nestjs-paginate';
+import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
+import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
+import { DatabaseService } from 'node_modules/firebase-admin/lib/database/database';
+import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
+import dayjs from 'dayjs';
+import {
+  DayOfWeek,
+  numberToDayOfWeek,
+} from '@/common/constants/DayOfWeek.constant';
+import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
+import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
+import { LocationAvailabilityEntity } from '@/modules/location-booking/domain/LocationAvailability.entity';
 
 @Injectable()
 export class LocationRepository {
@@ -76,6 +89,90 @@ export const LocationRepositoryProvider = (ctx: DataSource | EntityManager) =>
         .then((row) => {
           return row !== undefined ? Number(row.distanceMeters) : undefined;
         });
+    },
+
+    findBookableLocations(
+      this: Repository<LocationEntity>,
+      query: PaginateQuery,
+      config: PaginateConfig<LocationEntity>,
+      payload: {
+        bookingDates?: {
+          startDate: Date;
+          endDate: Date;
+        };
+      },
+    ) {
+      const qb = this.createQueryBuilder('l');
+
+      qb.innerJoin('l.bookingConfig', 'bc', 'bc.allowBooking = true');
+      qb.where('l.ownershipType = :ownershipType', {
+        ownershipType: LocationOwnershipType.OWNED_BY_BUSINESS,
+      });
+
+      if (payload.bookingDates) {
+        const { startDate, endDate } = payload.bookingDates;
+
+        // Calculate days of week needed
+        const startDay = dayjs(startDate);
+        const endDay = dayjs(endDate);
+        const uniqueDays = new Set<DayOfWeek>();
+
+        let current = startDay;
+        while (!current.isAfter(endDay)) {
+          uniqueDays.add(numberToDayOfWeek(current.day()));
+          current = current.add(1, 'day');
+        }
+
+        // Check availability for all required days
+        qb.andWhere((qb) => {
+          const subQuery = qb
+            .subQuery()
+            .select('1')
+            .from(LocationAvailabilityEntity, 'la')
+            .where('la.location_id = l.id')
+            .andWhere('la.day_of_week IN (:...daysOfWeek)')
+            .groupBy('la.location_id')
+            .having('COUNT(DISTINCT la.day_of_week) = :expectedDayCount')
+            .getQuery();
+          return `EXISTS ${subQuery}`;
+        });
+
+        // Exclude locations with conflicting bookings
+        qb.andWhere((qb) => {
+          const subQuery = qb
+            .subQuery()
+            .select('1')
+            .from(LocationBookingEntity, 'lb')
+            .innerJoin(
+              LocationBookingDateEntity,
+              'lbd',
+              'lbd.booking_id = lb.id',
+            )
+            .where('lb.location_id = l.id')
+            .andWhere('lb.status = :status')
+            .andWhere('lbd.start_date_time <= :endDate')
+            .andWhere('lbd.end_date_time >= :startDate')
+            .getQuery();
+          return `NOT EXISTS ${subQuery}`;
+        });
+
+        qb.setParameters({
+          status: LocationBookingStatus.PAYMENT_RECEIVED,
+          startDate,
+          endDate,
+          daysOfWeek: Array.from(uniqueDays),
+          expectedDayCount: uniqueDays.size,
+        });
+      }
+
+      return paginate(query, qb, {
+        ...config,
+        relations: {
+          ...config.relations,
+          bookings: true,
+          bookingConfig: true,
+        },
+      });
     },
   });
 
