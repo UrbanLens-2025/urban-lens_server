@@ -90,6 +90,8 @@ classDiagram
     EventService --> IFileStorageService
 ```
 
+**Figure 1:** Class diagram showing the entities, services, and controllers for the Event feature, including relationships between Event, EventParticipant, Account, and Location entities.
+
 ## Sequence Diagram: Create Event
 
 ### Class Diagram: Create Event
@@ -118,6 +120,8 @@ classDiagram
     EventService --> LocationRepository
     EventService --> IFileStorageService
 ```
+
+**Figure 2:** Class diagram for the Create Event sequence, showing the classes involved in creating an event.
 
 ```mermaid
 sequenceDiagram
@@ -150,6 +154,8 @@ sequenceDiagram
     EventService-->>EventController: EventResponseDto
     EventController-->>Client: 201 Created
 ```
+
+**Figure 3:** Sequence diagram illustrating the flow of creating an event, including file storage confirmation, location validation, and event persistence.
 
 ## Sequence Diagram: Join Event
 
@@ -210,6 +216,8 @@ sequenceDiagram
     EventController-->>Client: 200 OK
 ```
 
+**Figure 5:** Sequence diagram showing the flow of joining an event, including event validation, duplicate check, and participant creation.
+
 ## Sequence Diagram: List Upcoming Events
 
 ### Class Diagram: List Upcoming Events
@@ -257,3 +265,5 @@ sequenceDiagram
     EventService-->>EventController: Paginated<EventResponseDto>
     EventController-->>Client: 200 OK
 ```
+
+**Figure 7:** Sequence diagram illustrating the flow of listing upcoming events, including filtering by start time and public visibility, and pagination.

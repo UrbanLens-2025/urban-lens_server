@@ -111,6 +111,8 @@ classDiagram
     LocationMissionBusinessController --> IVoucherExchangeService
 ```
 
+**Figure 1:** Class diagram showing the entities, services, and controllers for the Voucher feature, including relationships between LocationVoucher, UserLocationVoucherExchangeHistory, and UserProfile entities.
+
 ## Sequence Diagram: Exchange Voucher
 
 ### Class Diagram: Exchange Voucher
@@ -149,6 +151,8 @@ classDiagram
     VoucherExchangeService --> UserLocationVoucherExchangeHistoryRepository
     LocationVoucherRepository --> LocationVoucherEntity
 ```
+
+**Figure 2:** Class diagram for the Exchange Voucher sequence, showing the classes involved in exchanging vouchers.
 
 ```mermaid
 sequenceDiagram
@@ -208,6 +212,8 @@ sequenceDiagram
     VoucherController-->>Client: 200 OK
 ```
 
+**Figure 3:** Sequence diagram illustrating the flow of exchanging a voucher, including voucher validation, points deduction, quantity management, and voucher history creation.
+
 ## Sequence Diagram: Get User Available Vouchers
 
 ### Class Diagram: Get User Available Vouchers
@@ -235,6 +241,8 @@ classDiagram
     UserLocationVoucherExchangeHistoryRepository --> LocationVoucherEntity
 ```
 
+**Figure 4:** Class diagram for the Get User Available Vouchers sequence, showing the classes involved in retrieving user vouchers.
+
 ```mermaid
 sequenceDiagram
     participant Client
@@ -254,6 +262,8 @@ sequenceDiagram
     VoucherExchangeService-->>VoucherController: UserVoucherResponseDto[]
     VoucherController-->>Client: 200 OK
 ```
+
+**Figure 5:** Sequence diagram showing the flow of retrieving user available vouchers, including filtering by usage status and mapping to response DTOs.
 
 ## Sequence Diagram: Use Voucher (Business Owner)
 
@@ -317,6 +327,8 @@ sequenceDiagram
     BusinessController-->>Client: 200 OK
 ```
 
+**Figure 7:** Sequence diagram illustrating the flow of using a voucher by a business owner, including voucher validation, expiration checks, and usage tracking.
+
 ## Sequence Diagram: Get Free Available Vouchers
 
 ### Class Diagram: Get Free Available Vouchers
@@ -379,3 +391,5 @@ sequenceDiagram
     VoucherService-->>VoucherController: Paginated<VoucherResponseDto>
     VoucherController-->>Client: 200 OK
 ```
+
+**Figure 8:** Sequence diagram showing the flow of retrieving free available vouchers, including filtering by price point, date range, and quantity availability.

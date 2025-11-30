@@ -15,6 +15,7 @@ export class LocationRepository implements ILocationRepository {
     latitude: number,
     longitude: number,
     radiusKm: number,
+    limit?: number,
   ): Promise<LocationEntity[]> {
     const query = this.locationRepo
       .createQueryBuilder('location')
@@ -49,6 +50,10 @@ export class LocationRepository implements ILocationRepository {
       )
       .setParameters({ latitude, longitude, radiusKm });
 
+    if (limit) {
+      query.limit(limit);
+    }
+
     return query.getMany();
   }
 
@@ -66,5 +71,48 @@ export class LocationRepository implements ILocationRepository {
         isVisibleOnMap: true,
       })
       .getMany();
+  }
+
+  async findNearestLocation(
+    latitude: number,
+    longitude: number,
+    maxRadiusKm: number = 50,
+  ): Promise<LocationEntity | null> {
+    const query = this.locationRepo
+      .createQueryBuilder('location')
+      .leftJoinAndSelect('location.tags', 'tags')
+      .leftJoinAndSelect('tags.tag', 'tag')
+      .where('location.isVisibleOnMap = :isVisibleOnMap', {
+        isVisibleOnMap: true,
+      })
+      .andWhere(
+        `(
+          6371 * acos(
+            cos(radians(:latitude)) * 
+            cos(radians(location.latitude)) * 
+            cos(radians(location.longitude) - radians(:longitude)) + 
+            sin(radians(:latitude)) * 
+            sin(radians(location.latitude))
+          )
+        ) <= :maxRadiusKm`,
+        { latitude, longitude, maxRadiusKm },
+      )
+      .orderBy(
+        `(
+          6371 * acos(
+            cos(radians(:latitude)) * 
+            cos(radians(location.latitude)) * 
+            cos(radians(location.longitude) - radians(:longitude)) + 
+            sin(radians(:latitude)) * 
+            sin(radians(location.latitude))
+          )
+        )`,
+        'ASC',
+      )
+      .setParameters({ latitude, longitude, maxRadiusKm })
+      .limit(1);
+
+    const results = await query.getMany();
+    return results.length > 0 ? results[0] : null;
   }
 }

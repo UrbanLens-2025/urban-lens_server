@@ -109,6 +109,8 @@ classDiagram
     LocationManagementService --> IFileStorageService
 ```
 
+**Figure 1:** Class diagram showing the entities, services, and controllers for the Location feature, including relationships between Location, Tag, TagCategory, and LocationAnalytics entities.
+
 ## Sequence Diagram: Create Public Location
 
 ### Class Diagram: Create Public Location
@@ -146,6 +148,8 @@ classDiagram
     LocationManagementService --> LocationTagRepository
     LocationManagementService --> IFileStorageService
 ```
+
+**Figure 2:** Class diagram for the Create Public Location sequence, showing the classes involved in creating a public location.
 
 ```mermaid
 sequenceDiagram
@@ -194,6 +198,8 @@ sequenceDiagram
     Service-->>Controller: LocationResponseDto
     Controller-->>Client: 201 Created
 ```
+
+**Figure 3:** Sequence diagram illustrating the flow of creating a public location, including file storage confirmation, category validation, tag processing, and location persistence.
 
 ## Sequence Diagram: Create Business Location
 
@@ -302,6 +308,8 @@ classDiagram
     LocationManagementService --> LocationRepository
 ```
 
+**Figure 5:** Class diagram for the Get Location by Id sequence, showing the classes involved in retrieving a location by ID.
+
 ```mermaid
 sequenceDiagram
     participant Client
@@ -323,3 +331,5 @@ sequenceDiagram
     Service-->>Controller: LocationResponseDto
     Controller-->>Client: 200 OK
 ```
+
+**Figure 6:** Sequence diagram illustrating the flow of retrieving a location by ID, including error handling and response mapping.

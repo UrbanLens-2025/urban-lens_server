@@ -116,6 +116,8 @@
         PostService --> IFileStorageService
     ```
 
+**Figure 1:** Class diagram showing the entities, services, and controllers for the Post feature, including relationships between Post, Comment, React, and Analytics entities.
+
     ## Sequence Diagram: Create Post
 
 ### Class Diagram: Create Post
@@ -159,6 +161,8 @@ classDiagram
     PostRepository --> PostEntity
 ```
 
+**Figure 2:** Class diagram for the Create Post sequence, showing the classes involved in the post creation flow.
+
     ```mermaid
     sequenceDiagram
         participant Client
@@ -196,6 +200,8 @@ classDiagram
         PostService-->>PostController: PostResponseDto
         PostController-->>Client: 201 Created
     ```
+
+**Figure 3:** Sequence diagram illustrating the flow of creating a new post, including file storage confirmation, post saving, analytics creation, and event emission.
 
     ## Sequence Diagram: React Post
 
@@ -237,6 +243,8 @@ classDiagram
     ReactRepository --> ReactEntity
 ```
 
+**Figure 4:** Class diagram for the React Post sequence, showing the classes involved in reacting to a post.
+
     ```mermaid
     sequenceDiagram
         participant Client
@@ -272,6 +280,8 @@ classDiagram
         PostService-->>PostController: ReactResponseDto
         PostController-->>Client: 200 OK
     ```
+
+**Figure 5:** Sequence diagram showing the flow of reacting to a post, including handling existing reacts, updating analytics, and managing react types.
 
     ## Sequence Diagram: Delete Post
 
@@ -309,6 +319,8 @@ classDiagram
     PostRepository --> PostEntity
 ```
 
+**Figure 6:** Class diagram for the Delete Post sequence, showing the classes involved in deleting a post.
+
     ```mermaid
     sequenceDiagram
         participant Client
@@ -342,3 +354,5 @@ classDiagram
         PostService-->>PostController: success
         PostController-->>Client: 200 OK
     ```
+
+**Figure 7:** Sequence diagram illustrating the flow of deleting a post, including authorization checks, location analytics updates, and post removal.

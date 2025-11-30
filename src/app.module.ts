@@ -44,6 +44,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
 import { DelayedMessageModule } from '@/common/core/delayed-message/DelayedMessage.module';
 import { ContentModerationModule } from '@/modules/content-moderation/ContentModeration.module';
+import { DashboardModule } from '@/modules/dashboard/Dashboard.module';
 @Module({
   imports: [
     // DevtoolsModule.register({
@@ -101,6 +102,7 @@ import { ContentModerationModule } from '@/modules/content-moderation/ContentMod
     ScheduledJobsModule,
     DelayedMessageModule,
     ContentModerationModule,
+    DashboardModule,
   ],
   controllers: [
     AppController,

@@ -33,6 +33,8 @@ sequenceDiagram
     PostController-->>Client: 201 Created
 ```
 
+**Figure 1:** Sequence diagram illustrating the flow of creating a new post, including file storage confirmation, post saving, analytics creation, and event emission.
+
 ## 2. Create Itinerary Flow
 
 ```mermaid
@@ -74,6 +76,8 @@ sequenceDiagram
     ItineraryService-->>ItineraryController: ItineraryResponseDto
     ItineraryController-->>Client: 201 Created
 ```
+
+**Figure 2:** Sequence diagram showing the flow of creating an itinerary, including file storage confirmation, transaction handling, and location association.
 
 ## 3. Update Itinerary Album Flow
 
@@ -119,6 +123,8 @@ sequenceDiagram
     ItineraryService-->>ItineraryController: ItineraryResponseDto
     ItineraryController-->>Client: 200 OK
 ```
+
+**Figure 3:** Sequence diagram illustrating the flow of updating an itinerary album, including authorization checks, file storage confirmation, and metadata updates.
 
 ## 4. Scan QR Code and Complete Mission Flow
 
@@ -177,6 +183,8 @@ sequenceDiagram
     QRController-->>Client: 200 OK
 ```
 
+**Figure 4:** Sequence diagram showing the flow of scanning a QR code and completing a mission, including QR code validation, mission progress tracking, reward distribution, and voucher creation.
+
 ## 5. Exchange Voucher Flow
 
 ```mermaid
@@ -220,6 +228,8 @@ sequenceDiagram
     VoucherController-->>Client: 200 OK
 ```
 
+**Figure 5:** Sequence diagram illustrating the flow of exchanging a voucher, including voucher validation, points deduction, quantity management, and voucher history creation.
+
 ## 6. Get User Missions Flow
 
 ```mermaid
@@ -252,6 +262,8 @@ sequenceDiagram
     MissionController-->>Client: 200 OK
 ```
 
+**Figure 6:** Sequence diagram showing the flow of retrieving user missions, including query building, filtering by location, and ordering results.
+
 ## 7. Get User Available Vouchers Flow
 
 ```mermaid
@@ -272,6 +284,8 @@ sequenceDiagram
     VoucherExchangeService-->>VoucherController: UserVoucherResponseDto[]
     VoucherController-->>Client: 200 OK
 ```
+
+**Figure 7:** Sequence diagram illustrating the flow of retrieving user available vouchers, including filtering by usage status and mapping to response DTOs.
 
 ## 8. Use Voucher Flow
 
@@ -306,6 +320,8 @@ sequenceDiagram
     BusinessController-->>Client: 200 OK
 ```
 
+**Figure 8:** Sequence diagram showing the flow of using a voucher by a business owner, including voucher validation, expiration checks, and usage tracking.
+
 ## 9. Get Free Available Vouchers Flow
 
 ```mermaid
@@ -336,6 +352,8 @@ sequenceDiagram
     VoucherService-->>VoucherController: Paginated<VoucherResponseDto>
     VoucherController-->>Client: 200 OK
 ```
+
+**Figure 9:** Sequence diagram illustrating the flow of retrieving free available vouchers, including filtering by price point, date range, and quantity availability.
 
 ## 10. Create Post and Track Analytics Flow
 

@@ -186,3 +186,5 @@ classDiagram
     TicketOrderQueryService "1" --> "1" TicketOrderRepository
     EventAttendanceQueryService "1" --> "1" EventAttendanceRepository
 ```
+
+**Figure 1:** Class diagram showing the services architecture for the Event module, including event management, ticket orders, and attendance tracking.

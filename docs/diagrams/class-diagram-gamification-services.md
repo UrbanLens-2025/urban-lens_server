@@ -253,3 +253,5 @@ classDiagram
     VoucherExchangeService "1" --> "1" UserLocationProfileRepository
     VoucherExchangeService "1" --> "1" LocationVoucherRepository
 ```
+
+**Figure 1:** Class diagram showing the services architecture for the Gamification module, including mission management, QR code scanning, and voucher exchange services.

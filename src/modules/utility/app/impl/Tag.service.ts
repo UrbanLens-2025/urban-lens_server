@@ -12,6 +12,9 @@ import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.re
 import { UpdateTagDto } from '@/common/dto/account/UpdateTag.dto';
 import { UpdateResult } from 'typeorm';
 import { ExistsDuplicateTagDto } from '@/common/dto/account/ExistsDuplicateTag.dto';
+import { PopularTagResponseDto } from '@/common/dto/utility/res/PopularTagResponse.dto';
+import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
+import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
 
 @Injectable()
 export class TagService extends CoreService implements ITagService {
@@ -103,5 +106,85 @@ export class TagService extends CoreService implements ITagService {
         items: [dto],
       })
       .then((res) => res.length > 0);
+  }
+
+  async getPopularLocationTags(
+    limit: number = 20,
+  ): Promise<PopularTagResponseDto[]> {
+    const locationTagsRepo = this.dataSource.getRepository(LocationTagsEntity);
+
+    const popularTags = await locationTagsRepo
+      .createQueryBuilder('locationTag')
+      .leftJoin('locationTag.tag', 'tag')
+      .select('tag.id', 'tag_id')
+      .addSelect('tag.groupName', 'tag_group_name')
+      .addSelect('tag.displayName', 'tag_display_name')
+      .addSelect('tag.color', 'tag_color')
+      .addSelect('tag.icon', 'tag_icon')
+      .addSelect('tag.isSelectable', 'tag_is_selectable')
+      .addSelect('COUNT(DISTINCT locationTag.locationId)', 'usageCount')
+      .where('locationTag.deletedAt IS NULL')
+      .groupBy('tag.id')
+      .addGroupBy('tag.groupName')
+      .addGroupBy('tag.displayName')
+      .addGroupBy('tag.color')
+      .addGroupBy('tag.icon')
+      .addGroupBy('tag.isSelectable')
+      .orderBy('COUNT(DISTINCT locationTag.locationId)', 'DESC')
+      .addOrderBy('tag.displayName', 'ASC')
+      .limit(limit)
+      .getRawMany();
+
+    return popularTags.map((tag) =>
+      this.mapTo(PopularTagResponseDto, {
+        id: tag.tag_id,
+        groupName: tag.tag_group_name,
+        displayName: tag.tag_display_name,
+        color: tag.tag_color,
+        icon: tag.tag_icon,
+        isSelectable: tag.tag_is_selectable,
+        usageCount: parseInt(tag.usageCount || '0', 10),
+      }),
+    );
+  }
+
+  async getPopularEventTags(
+    limit: number = 20,
+  ): Promise<PopularTagResponseDto[]> {
+    const eventTagsRepo = this.dataSource.getRepository(EventTagsEntity);
+
+    const popularTags = await eventTagsRepo
+      .createQueryBuilder('eventTag')
+      .leftJoin('eventTag.tag', 'tag')
+      .select('tag.id', 'tag_id')
+      .addSelect('tag.groupName', 'tag_group_name')
+      .addSelect('tag.displayName', 'tag_display_name')
+      .addSelect('tag.color', 'tag_color')
+      .addSelect('tag.icon', 'tag_icon')
+      .addSelect('tag.isSelectable', 'tag_is_selectable')
+      .addSelect('COUNT(DISTINCT eventTag.eventId)', 'usageCount')
+      .where('eventTag.deletedAt IS NULL')
+      .groupBy('tag.id')
+      .addGroupBy('tag.groupName')
+      .addGroupBy('tag.displayName')
+      .addGroupBy('tag.color')
+      .addGroupBy('tag.icon')
+      .addGroupBy('tag.isSelectable')
+      .orderBy('COUNT(DISTINCT eventTag.eventId)', 'DESC')
+      .addOrderBy('tag.displayName', 'ASC')
+      .limit(limit)
+      .getRawMany();
+
+    return popularTags.map((tag) =>
+      this.mapTo(PopularTagResponseDto, {
+        id: tag.tag_id,
+        groupName: tag.tag_group_name,
+        displayName: tag.tag_display_name,
+        color: tag.tag_color,
+        icon: tag.tag_icon,
+        isSelectable: tag.tag_is_selectable,
+        usageCount: parseInt(tag.usageCount || '0', 10),
+      }),
+    );
   }
 }

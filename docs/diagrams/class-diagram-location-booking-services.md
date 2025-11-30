@@ -161,3 +161,5 @@ classDiagram
     BookableLocationSearchService "1" --> "1" LocationRepository
     BookableLocationSearchService "1" --> "1" LocationBookingConfigRepository
 ```
+
+**Figure 1:** Class diagram showing the services architecture for the Location Booking module, including booking management, availability, and configuration services.

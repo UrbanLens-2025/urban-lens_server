@@ -100,6 +100,8 @@ classDiagram
     ItineraryService --> OllamaService
 ```
 
+**Figure 1:** Class diagram showing the entities, services, and controllers for the Itinerary feature, including relationships between Itinerary, ItineraryLocation, and Location entities.
+
 ## Sequence Diagram: Create Itinerary (Manual)
 
 ### Class Diagram: Create Itinerary (Manual)
@@ -150,6 +152,8 @@ classDiagram
     ItineraryLocationRepository --> ItineraryLocationEntity
 ```
 
+**Figure 2:** Class diagram for the Create Itinerary (Manual) sequence, showing the classes involved in manually creating an itinerary.
+
 ```mermaid
 sequenceDiagram
     participant Client
@@ -190,6 +194,8 @@ sequenceDiagram
     ItineraryService-->>ItineraryController: ItineraryResponseDto
     ItineraryController-->>Client: 201 Created
 ```
+
+**Figure 3:** Sequence diagram illustrating the flow of manually creating an itinerary, including file storage confirmation, transaction handling, and location association.
 
 ## Sequence Diagram: Create Itinerary from AI
 
@@ -237,6 +243,8 @@ classDiagram
     ItineraryService --> ItineraryLocationRepository
 ```
 
+**Figure 4:** Class diagram for the Create Itinerary from AI sequence, showing the classes involved in AI-powered itinerary creation.
+
 ```mermaid
 sequenceDiagram
     participant Client
@@ -282,6 +290,8 @@ sequenceDiagram
     ItineraryController-->>Client: 201 Created
 ```
 
+**Figure 5:** Sequence diagram showing the flow of creating an itinerary using AI, including AI metadata generation, file storage confirmation, and location association.
+
 ## Sequence Diagram: Update Itinerary Album
 
 ### Class Diagram: Update Itinerary Album
@@ -318,6 +328,8 @@ classDiagram
     ItineraryService --> ItineraryRepository
     ItineraryRepository --> ItineraryEntity
 ```
+
+**Figure 6:** Class diagram for the Update Itinerary Album sequence, showing the classes involved in updating itinerary album and metadata.
 
 ```mermaid
 sequenceDiagram
@@ -366,3 +378,5 @@ sequenceDiagram
     ItineraryService-->>ItineraryController: ItineraryResponseDto
     ItineraryController-->>Client: 200 OK
 ```
+
+**Figure 7:** Sequence diagram illustrating the flow of updating an itinerary album, including authorization checks, file storage confirmation, and metadata updates.

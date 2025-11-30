@@ -122,6 +122,8 @@ classDiagram
     QRCodeScanUserController --> IQRCodeScanService
 ```
 
+**Figure 1:** Class diagram showing the entities, services, and controllers for the Mission feature, including relationships between LocationMission, UserMissionProgress, OneTimeQRCode, and Location entities.
+
 ## Sequence Diagram: Scan QR Code and Complete Mission
 
 ### Class Diagram: Scan QR Code and Complete Mission
@@ -167,6 +169,8 @@ classDiagram
     QRCodeScanService --> LocationVoucherService
     OneTimeQRCodeRepository --> OneTimeQRCodeEntity
 ```
+
+**Figure 2:** Class diagram for the Scan QR Code and Complete Mission sequence, showing the classes involved in QR code scanning and mission completion.
 
 ```mermaid
 sequenceDiagram
@@ -230,6 +234,8 @@ sequenceDiagram
     QRController-->>Client: 200 OK
 ```
 
+**Figure 3:** Sequence diagram illustrating the flow of scanning a QR code and completing a mission, including QR code validation, mission progress tracking, reward distribution, and voucher creation.
+
 ## Sequence Diagram: Get User Missions
 
 ### Class Diagram: Get User Missions
@@ -254,6 +260,8 @@ classDiagram
     QRCodeScanService --> UserMissionProgressRepository
     QRCodeScanService --> LocationMissionRepository
 ```
+
+**Figure 4:** Class diagram for the Get User Missions sequence, showing the classes involved in retrieving user missions.
 
 ```mermaid
 sequenceDiagram
@@ -286,6 +294,8 @@ sequenceDiagram
     MissionController-->>Client: 200 OK
 ```
 
+**Figure 5:** Sequence diagram showing the flow of retrieving user missions, including query building, filtering by location, and ordering results.
+
 ## Sequence Diagram: Get Missions In Progress
 
 ### Class Diagram: Get Missions In Progress
@@ -306,6 +316,8 @@ classDiagram
     LocationMissionUserController --> QRCodeScanService
     QRCodeScanService --> UserMissionProgressRepository
 ```
+
+**Figure 6:** Class diagram for the Get Missions In Progress sequence, showing the classes involved in retrieving missions in progress.
 
 ```mermaid
 sequenceDiagram
@@ -337,6 +349,8 @@ sequenceDiagram
     MissionController-->>Client: 200 OK
 ```
 
+**Figure 7:** Sequence diagram illustrating the flow of retrieving missions in progress, including filtering by completion status and location.
+
 ## Sequence Diagram: Get QR Scan History
 
 ### Class Diagram: Get QR Scan History
@@ -364,6 +378,8 @@ classDiagram
     OneTimeQRCodeRepository --> OneTimeQRCodeEntity
 ```
 
+**Figure 8:** Class diagram for the Get QR Scan History sequence, showing the classes involved in retrieving QR scan history.
+
 ```mermaid
 sequenceDiagram
     participant Client
@@ -384,3 +400,5 @@ sequenceDiagram
     QRService-->>QRController: UserQRScanHistoryResponseDto[]
     QRController-->>Client: 200 OK
 ```
+
+**Figure 9:** Sequence diagram showing the flow of retrieving QR scan history, including filtering scanned QR codes and mapping to response DTOs.

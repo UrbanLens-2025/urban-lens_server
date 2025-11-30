@@ -251,6 +251,8 @@ classDiagram
     UserProfileEntity ||--o{ UserLocationVoucherExchangeHistoryEntity : "exchanges"
 ```
 
+**Figure 1:** Class diagram showing all entities in the system, including relationships between User, Post, Itinerary, Mission, Voucher, and Location domains.
+
 ## Services
 
 ```mermaid
@@ -430,3 +432,5 @@ classDiagram
     VoucherUserController --> IVoucherExchangeService
     VoucherUserController --> ILocationVoucherService
 ```
+
+**Figure 2:** Class diagram showing all services in the system, including service interfaces, implementations, controllers, and their relationships.
