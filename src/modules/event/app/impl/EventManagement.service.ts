@@ -401,6 +401,7 @@ export class EventManagementService
         accountId: dto.accountId,
         locationBookingId: dto.locationBookingId,
         cancellationReason: dto.cancellationReason,
+        entityManager: em,
       });
 
       event.locationId = null; // remove location from event

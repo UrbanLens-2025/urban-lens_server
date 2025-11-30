@@ -1,11 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
-  IsArray, IsDate, IsInt,
+  IsArray,
+  IsDate,
+  IsInt,
   IsNotEmpty,
   IsOptional,
-  IsPositive, IsUrl, MaxLength,
-  ValidateNested
+  IsPositive,
+  IsUrl,
+  MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SocialLink } from '@/common/json/SocialLink.json';

@@ -98,6 +98,12 @@ export class LocationBookingEntity {
   @JoinColumn({ name: 'referenced_transaction_id' })
   referencedTransaction: WalletTransactionEntity;
 
+  @OneToMany(() => EventEntity, (event) => event.locationBookings, {
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'target_id' })
+  referencedEvent?: EventEntity | null;
+
   @Column({
     name: 'refund_transaction_id',
     type: 'uuid',

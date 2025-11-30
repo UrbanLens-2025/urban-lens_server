@@ -1,7 +1,5 @@
 import { CoreService } from '@/common/core/Core.service';
-import {
-  Injectable, Logger
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import {
   DelayedMessageKeys,

@@ -1,11 +1,9 @@
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { paginate, PaginateConfig, PaginateQuery } from 'nestjs-paginate';
 import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
-import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
-import { DatabaseService } from 'node_modules/firebase-admin/lib/database/database';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import dayjs from 'dayjs';
 import {
@@ -129,10 +127,10 @@ export const LocationRepositoryProvider = (ctx: DataSource | EntityManager) =>
             .subQuery()
             .select('1')
             .from(LocationAvailabilityEntity, 'la')
-            .where('la.location_id = l.id')
-            .andWhere('la.day_of_week IN (:...daysOfWeek)')
-            .groupBy('la.location_id')
-            .having('COUNT(DISTINCT la.day_of_week) = :expectedDayCount')
+            .where('la.locationId = l.id')
+            .andWhere('la.dayOfWeek IN (:...daysOfWeek)')
+            .groupBy('la.locationId')
+            .having('COUNT(DISTINCT la.dayOfWeek) = :expectedDayCount')
             .getQuery();
           return `EXISTS ${subQuery}`;
         });
@@ -146,18 +144,22 @@ export const LocationRepositoryProvider = (ctx: DataSource | EntityManager) =>
             .innerJoin(
               LocationBookingDateEntity,
               'lbd',
-              'lbd.booking_id = lb.id',
+              'lbd.bookingId = lb.id',
             )
-            .where('lb.location_id = l.id')
-            .andWhere('lb.status = :status')
-            .andWhere('lbd.start_date_time <= :endDate')
-            .andWhere('lbd.end_date_time >= :startDate')
+            .where('lb.locationId = l.id')
+            .andWhere('lb.status IN (:...statuses)', {
+              statuses: [
+                LocationBookingStatus.PAYMENT_RECEIVED,
+                LocationBookingStatus.APPROVED,
+              ],
+            })
+            .andWhere('lbd.startDateTime <= :endDate')
+            .andWhere('lbd.endDateTime >= :startDate')
             .getQuery();
           return `NOT EXISTS ${subQuery}`;
         });
 
         qb.setParameters({
-          status: LocationBookingStatus.PAYMENT_RECEIVED,
           startDate,
           endDate,
           daysOfWeek: Array.from(uniqueDays),

@@ -10,7 +10,6 @@ import { IEventAnalyticsService } from '@/modules/event/app/IEventAnalytics.serv
 import { Injectable } from '@nestjs/common';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { TicketOrderRepository } from '@/modules/event/infra/repository/TicketOrder.repository';
-import { EventTicketOrderStatus } from '@/common/constants/EventTicketOrderStatus.constant';
 import { TicketsWithRevenueResponseDto } from '@/common/dto/event/analytics/TicketsWithRevenue.response.dto';
 import { GetTotalAttendeesDto } from '@/common/dto/event/GetTotalAttendees.dto';
 import dayjs from 'dayjs';

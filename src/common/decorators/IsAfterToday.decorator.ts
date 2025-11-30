@@ -22,7 +22,7 @@ export function IsAfterToday(validationOptions?: ValidationOptions) {
           return inputDate > today;
         },
         defaultMessage(args: ValidationArguments) {
-          return `${args.property} must be a date before today`;
+          return `${args.property} must be a date after today`;
         },
       },
     });

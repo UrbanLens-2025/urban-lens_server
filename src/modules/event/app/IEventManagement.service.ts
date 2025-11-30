@@ -6,7 +6,6 @@ import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 import { CreateEventDto } from '@/common/dto/event/CreateEvent.dto';
 import { InitiateEventBookingPaymentDto } from '@/common/dto/event/InitiateBookingPayment.dto';
 import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
-import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 import { CancelEventBookingDto } from '@/common/dto/event/CancelEventBooking.dto';
 import { CancelEventDto } from '@/common/dto/event/CancelEvent.dto';
 

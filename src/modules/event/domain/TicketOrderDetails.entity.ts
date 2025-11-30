@@ -48,9 +48,13 @@ export class TicketOrderDetailsEntity {
   })
   subTotal: number;
 
-  @ManyToOne(() => EventTicketEntity, (eventTicket) => eventTicket.id, {
-    createForeignKeyConstraints: false,
-  })
+  @ManyToOne(
+    () => EventTicketEntity,
+    (eventTicket) => eventTicket.ticketOrderDetails,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
   @JoinColumn({ name: 'event_ticket_id' })
   ticket: EventTicketEntity;
 
@@ -66,6 +70,6 @@ export class TicketOrderDetailsEntity {
   @Column({ name: 'ticket_order_id', type: 'uuid' })
   orderId: string;
 
-  @Column({ name: 'ticket_snapshot', type: 'jsonb' })
+  @Column({ name: 'ticket_snapshot', type: 'jsonb', default: {} })
   ticketSnapshot: EventTicketEntity;
 }

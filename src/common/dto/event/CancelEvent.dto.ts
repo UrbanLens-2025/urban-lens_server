@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, Length } from 'class-validator';
 
 export class CancelEventDto {
   eventId: string;
@@ -8,5 +8,6 @@ export class CancelEventDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
+  @Length(1, 555)
   cancellationReason: string;
 }

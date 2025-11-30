@@ -84,7 +84,7 @@ export class EventCreatorController {
     });
   }
 
-  @ApiOperation({ summary: 'Cancel my event'})
+  @ApiOperation({ summary: 'Cancel my event' })
   @Delete('/:eventId/cancel')
   cancelMyEvent(
     @Param('eventId', ParseUUIDPipe) eventId: string,
