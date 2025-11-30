@@ -187,3 +187,5 @@ classDiagram
 
     IPaymentGatewayPort <|.. SEPayPaymentGatewayAdapter
 ```
+
+**Figure 1:** Class diagram showing the services architecture for the Wallet module, including wallet operations, external transactions, and payment gateway integration.

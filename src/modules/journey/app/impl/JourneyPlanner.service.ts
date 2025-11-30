@@ -22,7 +22,7 @@ import {
   calculateDistance,
   estimateTravelTime,
 } from '@/common/utils/distance.util';
-import { generateFallbackActivity } from '@/common/utils/activity-suggestion.util';
+import { LocationEntity } from '@/modules/business/domain/Location.entity';
 
 interface LocationCandidate {
   id: string;
@@ -87,57 +87,118 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       );
     }
 
-    // 2. Determine search area
+    if (
+      !dto.startLocationId &&
+      (dto.currentLatitude == null || dto.currentLongitude == null)
+    ) {
+      throw new BadRequestException(
+        'Current coordinates are required when startLocationId is not provided.',
+      );
+    }
+
+    let startLocation: LocationEntity | null = null;
+    if (dto.startLocationId) {
+      const startLocations = await this.locationRepository.findByIds([
+        dto.startLocationId,
+      ]);
+      startLocation = startLocations[0] || null;
+    } else {
+      startLocation = await this.locationRepository.findNearestLocation(
+        dto.currentLatitude!,
+        dto.currentLongitude!,
+        50,
+      );
+    }
+
+    const startPoint: RoutePoint = startLocation
+      ? {
+          latitude: startLocation.latitude,
+          longitude: startLocation.longitude,
+        }
+      : {
+          latitude: dto.currentLatitude!,
+          longitude: dto.currentLongitude!,
+        };
+
+    let endLocation: LocationEntity | null = null;
+    let endPoint: RoutePoint | undefined;
+    if (dto.endLocationId) {
+      const endLocations = await this.locationRepository.findByIds([
+        dto.endLocationId,
+      ]);
+      endLocation = endLocations[0] || null;
+      if (endLocation) {
+        endPoint = {
+          latitude: endLocation.latitude,
+          longitude: endLocation.longitude,
+        };
+      }
+    } else if (dto.endLatitude && dto.endLongitude) {
+      endLocation = await this.locationRepository.findNearestLocation(
+        dto.endLatitude,
+        dto.endLongitude,
+        50,
+      );
+      endPoint = endLocation
+        ? {
+            latitude: endLocation.latitude,
+            longitude: endLocation.longitude,
+          }
+        : {
+            latitude: dto.endLatitude,
+            longitude: dto.endLongitude,
+          };
+    }
+
     const searchCenter = {
-      latitude: dto.preferredAreaLatitude ?? dto.currentLatitude,
-      longitude: dto.preferredAreaLongitude ?? dto.currentLongitude,
+      latitude: startPoint.latitude,
+      longitude: startPoint.longitude,
     };
-    // Use preferredAreaRadiusKm if specified, otherwise fall back to maxRadiusKm
-    const searchRadiusKm = dto.preferredAreaRadiusKm ?? dto.maxRadiusKm ?? 10;
+    const searchRadiusKm = 5;
 
     this.logger.debug(
       `Search center: (${searchCenter.latitude}, ${searchCenter.longitude}), radius: ${searchRadiusKm}km`,
     );
 
-    // 3. Find candidate locations with auto-expanding radius
-    let candidates = await this.locationRepository.findNearbyWithTags(
+    let nearbyCandidates = await this.locationRepository.findNearbyWithTags(
       searchCenter.latitude,
       searchCenter.longitude,
       searchRadiusKm,
+      dto.numberOfLocations * 3,
     );
 
-    // If not enough locations, gradually expand radius
     let currentRadius = searchRadiusKm;
-    const maxExpandedRadius = 20; // Maximum 20km
+    const maxExpandedRadius = 20;
     while (
-      candidates.length < dto.numberOfLocations &&
+      nearbyCandidates.length < dto.numberOfLocations &&
       currentRadius < maxExpandedRadius
     ) {
       currentRadius = Math.min(currentRadius * 1.5, maxExpandedRadius);
       this.logger.debug(
-        `Not enough locations (${candidates.length}), expanding search radius to ${currentRadius.toFixed(1)}km...`,
+        `Not enough locations (${nearbyCandidates.length}), expanding search radius to ${currentRadius.toFixed(1)}km...`,
       );
 
-      candidates = await this.locationRepository.findNearbyWithTags(
+      nearbyCandidates = await this.locationRepository.findNearbyWithTags(
         searchCenter.latitude,
         searchCenter.longitude,
         currentRadius,
+        dto.numberOfLocations * 3,
       );
     }
 
-    if (candidates.length === 0) {
+    if (nearbyCandidates.length === 0) {
       throw new NotFoundException(
         'No locations found in the specified area. Try increasing the search radius.',
       );
     }
 
     this.logger.debug(
-      `Found ${candidates.length} candidate locations within ${currentRadius.toFixed(1)}km`,
+      `Found ${nearbyCandidates.length} candidate locations within ${currentRadius.toFixed(1)}km`,
     );
 
     // 4. Score locations based on user preferences
     const scoredCandidates = this.scoreLocations(
-      candidates,
+      nearbyCandidates,
       userTagScores,
       hasLimitedPreferences,
     );
@@ -153,18 +214,7 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       );
     }
 
-    // 6. Optimize route
-    const startPoint: RoutePoint = {
-      latitude: dto.currentLatitude,
-      longitude: dto.currentLongitude,
-    };
-
-    const endPoint: RoutePoint | undefined = dto.endLatitude
-      ? {
-          latitude: dto.endLatitude,
-          longitude: dto.endLongitude!,
-        }
-      : undefined;
+    // 6. Optimize route. startPoint and endPoint already determined above.
 
     // Use Google Maps if available, otherwise fallback to Haversine
     const useGoogleMaps = this.googleMapsService.isEnabled();
@@ -598,13 +648,12 @@ export class JourneyPlannerService implements IJourneyPlannerService {
     };
   }
 
-  /**
-   * Create AI-powered journey where AI queries database and plans route
-   */
   async createAIPoweredJourney(
     userId: string,
     dto: CreatePersonalJourneyDto,
   ): Promise<AIJourneyResponseDto> {
+    const startTime = Date.now();
+
     if (!this.ollamaService.isEnabled()) {
       throw new BadRequestException(
         'AI-powered journey is not available. Please set OLLAMA_ENABLED=true',
@@ -615,30 +664,173 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       `Creating AI-powered journey for user ${userId} with ${dto.numberOfLocations} locations`,
     );
 
-    // Get user preferences
-    const userProfile =
-      await this.userProfileRepository.findByAccountId(userId);
+    if (
+      !dto.startLocationId &&
+      (dto.currentLatitude == null || dto.currentLongitude == null)
+    ) {
+      throw new BadRequestException(
+        'Current coordinates are required when startLocationId is not provided.',
+      );
+    }
+
+    // Parallelize: Get user profile and determine start/end locations simultaneously
+    const [userProfile, startLocationResult, endLocationResult] =
+      await Promise.all([
+        this.userProfileRepository.findByAccountId(userId),
+        dto.startLocationId
+          ? this.locationRepository
+              .findByIds([dto.startLocationId])
+              .then((locs) => locs[0] || null)
+          : this.locationRepository.findNearestLocation(
+              dto.currentLatitude!,
+              dto.currentLongitude!,
+              50,
+            ),
+        dto.endLocationId
+          ? this.locationRepository
+              .findByIds([dto.endLocationId])
+              .then((locs) => locs[0] || null)
+          : Promise.resolve(null),
+      ]);
+
     if (!userProfile) {
       throw new NotFoundException('User profile not found');
     }
 
     const userTagScores = userProfile.tagScores || {};
 
+    // Determine start location
+    let startLocation: LocationEntity | null = startLocationResult;
+    let startPoint: RoutePoint;
+
+    if (dto.startLocationId && startLocation) {
+      startPoint = {
+        latitude: startLocation.latitude,
+        longitude: startLocation.longitude,
+      };
+      this.logger.log(
+        `Using provided start location: ${startLocation.name} (${startLocation.id})`,
+      );
+    } else if (startLocation) {
+      startPoint = {
+        latitude: startLocation.latitude,
+        longitude: startLocation.longitude,
+      };
+      this.logger.log(
+        `Found nearest location to current position: ${startLocation.name} (${startLocation.id})`,
+      );
+    } else {
+      // Fallback to current position
+      startPoint = {
+        latitude: dto.currentLatitude!,
+        longitude: dto.currentLongitude!,
+      };
+      this.logger.warn(
+        'No nearby location found, using current position as start point',
+      );
+    }
+
+    // Determine end location
+    let endLocation: LocationEntity | null = endLocationResult;
+    let endPoint: RoutePoint | null = null;
+
+    if (dto.endLocationId && endLocation) {
+      endPoint = {
+        latitude: endLocation.latitude,
+        longitude: endLocation.longitude,
+      };
+      this.logger.log(
+        `Using provided end location: ${endLocation.name} (${endLocation.id})`,
+      );
+    } else if (dto.endLatitude && dto.endLongitude) {
+      endPoint = {
+        latitude: dto.endLatitude,
+        longitude: dto.endLongitude,
+      };
+    }
+
+    // Prepare wishlist location IDs (exclude start and end if they're in wishlist)
+    const wishlistIds = dto.wishlistLocationIds || [];
+    const excludedIds = new Set<string>();
+    if (startLocation) excludedIds.add(startLocation.id);
+    if (endLocation) excludedIds.add(endLocation.id);
+    const filteredWishlistIds = wishlistIds.filter(
+      (id) => !excludedIds.has(id),
+    );
+
+    this.logger.log(
+      `Wishlist locations: ${filteredWishlistIds.length} (${filteredWishlistIds.join(', ')})`,
+    );
+
+    // 3. Determine search area based on start point (current location if fallback)
+    const searchCenter = {
+      latitude: startPoint.latitude,
+      longitude: startPoint.longitude,
+    };
+    const searchRadiusKm = 5;
+
+    this.logger.debug(
+      `Search center: (${searchCenter.latitude}, ${searchCenter.longitude}), radius: ${searchRadiusKm}km`,
+    );
+
+    let nearbyCandidates = await this.locationRepository.findNearbyWithTags(
+      searchCenter.latitude,
+      searchCenter.longitude,
+      searchRadiusKm,
+      dto.numberOfLocations * 3,
+    );
+
+    let currentRadius = searchRadiusKm;
+    const maxExpandedRadius = 20;
+    while (
+      nearbyCandidates.length < dto.numberOfLocations &&
+      currentRadius < maxExpandedRadius
+    ) {
+      currentRadius = Math.min(currentRadius * 1.5, maxExpandedRadius);
+      this.logger.debug(
+        `Not enough locations (${nearbyCandidates.length}), expanding search radius to ${currentRadius.toFixed(1)}km...`,
+      );
+
+      nearbyCandidates = await this.locationRepository.findNearbyWithTags(
+        searchCenter.latitude,
+        searchCenter.longitude,
+        currentRadius,
+        dto.numberOfLocations * 3,
+      );
+    }
+
+    if (nearbyCandidates.length === 0) {
+      throw new NotFoundException(
+        'No locations found in the specified area. Try increasing the search radius.',
+      );
+    }
+
+    this.logger.debug(
+      `Found ${nearbyCandidates.length} candidate locations within ${currentRadius.toFixed(1)}km`,
+    );
+
     // Call AI agent to query database and plan journey
     const aiResponse = await this.ollamaService.generateJourneyWithDBAccess({
       userId,
       userPreferences: userTagScores,
       currentLocation: {
-        latitude: dto.currentLatitude,
-        longitude: dto.currentLongitude,
+        latitude: startPoint.latitude,
+        longitude: startPoint.longitude,
       },
       numberOfLocations: dto.numberOfLocations,
-      maxRadiusKm: dto.maxRadiusKm || 10,
+      maxRadiusKm: 5,
     });
 
+    // Early validation - fail fast if AI response is invalid
     if (!aiResponse || !aiResponse.suggestedLocationIds) {
       throw new BadRequestException(
-        'AI failed to generate journey. Please try the standard endpoint.',
+        'AI failed to generate journey. Cannot proceed without AI response. Please try again.',
+      );
+    }
+
+    if (aiResponse.suggestedLocationIds.length === 0) {
+      throw new BadRequestException(
+        'AI did not return any location IDs. Cannot proceed without AI-provided locations.',
       );
     }
 
@@ -646,100 +838,98 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       `AI suggested ${aiResponse.suggestedLocationIds.length} locations: ${aiResponse.suggestedLocationIds.join(', ')}`,
     );
 
-    // Fetch suggested locations from database
-    let locations = await this.locationRepository.findByIds(
-      aiResponse.suggestedLocationIds,
-    );
+    // Prepare location IDs list (will be used for parallel fetch)
+    let locationIds = [...(aiResponse.suggestedLocationIds || [])];
+
+    // Add wishlist locations if not already included
+    if (filteredWishlistIds.length > 0) {
+      const aiLocationIdsSet = new Set(locationIds);
+      filteredWishlistIds.forEach((id) => {
+        if (!aiLocationIdsSet.has(id)) {
+          locationIds.push(id);
+        }
+      });
+    }
+
+    // Ensure start and end locations are included if they exist
+    if (startLocation && !locationIds.includes(startLocation.id)) {
+      locationIds.unshift(startLocation.id); // Add to beginning
+    }
+    if (endLocation && !locationIds.includes(endLocation.id)) {
+      locationIds.push(endLocation.id); // Add to end
+    }
+
+    // Fetch locations from database (can be parallelized with other operations if needed)
+    let locations = await this.locationRepository.findByIds(locationIds);
 
     if (locations.length === 0) {
       throw new NotFoundException('No locations found for AI suggestions');
     }
 
-    // If AI didn't return enough locations, fill with nearby ones
-    if (locations.length < dto.numberOfLocations) {
-      this.logger.warn(
-        `AI only returned ${locations.length}/${dto.numberOfLocations} locations. Filling with nearby locations...`,
+    // Prioritize wishlist locations in the list
+    if (filteredWishlistIds.length > 0) {
+      const wishlistMap = new Map(
+        locations
+          .filter((loc) => filteredWishlistIds.includes(loc.id))
+          .map((loc) => [loc.id, loc]),
       );
-
-      // Use larger radius for fallback search (1.5x original or minimum 5km)
-      const baseRadius = dto.preferredAreaRadiusKm ?? dto.maxRadiusKm ?? 10;
-      const searchRadiusKm = Math.max(baseRadius * 1.5, 5);
-      const searchLat = dto.preferredAreaLatitude ?? dto.currentLatitude;
-      const searchLng = dto.preferredAreaLongitude ?? dto.currentLongitude;
-
-      this.logger.debug(
-        `Searching for additional locations with radius ${searchRadiusKm}km from (${searchLat}, ${searchLng})`,
+      const nonWishlistLocations = locations.filter(
+        (loc) => !filteredWishlistIds.includes(loc.id),
       );
-
-      const nearbyLocations = await this.locationRepository.findNearbyWithTags(
-        searchLat,
-        searchLng,
-        searchRadiusKm,
-      );
-
-      this.logger.debug(`Found ${nearbyLocations.length} nearby locations`);
-
-      // Filter out already selected locations and score them
-      const existingIds = new Set(locations.map((l) => l.id));
-      const candidateLocations = nearbyLocations.filter(
-        (loc) => !existingIds.has(loc.id),
-      );
-
-      // Score candidates by rating + popularity
-      const scoredCandidates = candidateLocations
-        .map((loc) => {
-          const avgRating = Number(loc.averageRating || 0);
-          const totalReviews = Number(loc.totalReviews || 0);
-          const totalCheckIns = Number(loc.totalCheckIns || 0);
-
-          const ratingScore = (avgRating / 5) * 100;
-          const popularityScore = Math.min(
-            100,
-            Math.log10(totalCheckIns + 1) * 20,
-          );
-
-          // 60% rating, 40% popularity
-          const score =
-            totalReviews > 0 || totalCheckIns > 0
-              ? ratingScore * 0.6 + popularityScore * 0.4
-              : 20;
-
-          return { location: loc, score };
-        })
-        .sort((a, b) => b.score - a.score);
-
-      const needed = dto.numberOfLocations - locations.length;
-      const additionalLocations = scoredCandidates
-        .slice(0, needed)
-        .map((c) => c.location);
-
-      locations = [...locations, ...additionalLocations];
-
-      this.logger.log(
-        `Added ${additionalLocations.length} additional locations (scored by rating+popularity). Total: ${locations.length}`,
-      );
-
-      if (locations.length < dto.numberOfLocations) {
-        this.logger.warn(
-          `⚠️  Could only find ${locations.length} locations within ${searchRadiusKm}km radius. User requested ${dto.numberOfLocations}.`,
-        );
-      }
+      // Put wishlist locations first
+      locations = [
+        ...Array.from(wishlistMap.values()),
+        ...nonWishlistLocations,
+      ];
     }
 
-    // Calculate distances and times
-    const startPoint: RoutePoint = {
-      latitude: dto.currentLatitude,
-      longitude: dto.currentLongitude,
-    };
+    // If AI didn't return enough locations, fail (no fallback - AI only)
+    if (locations.length < dto.numberOfLocations) {
+      throw new BadRequestException(
+        `AI only returned ${locations.length}/${dto.numberOfLocations} locations. Cannot proceed without AI-provided locations.`,
+      );
+    }
 
-    const endPoint = dto.endLatitude
-      ? {
-          latitude: dto.endLatitude,
-          longitude: dto.endLongitude!,
+    // Limit locations to numberOfLocations (excluding start/end if they're separate)
+    const maxLocations = dto.numberOfLocations;
+    if (locations.length > maxLocations) {
+      // Keep start and end if they exist, then fill with others
+      const finalLocations: LocationEntity[] = [];
+      const usedIds = new Set<string>();
+
+      // Add start location first if it exists and is not in the main list
+      if (startLocation && !locations.some((l) => l.id === startLocation!.id)) {
+        finalLocations.push(startLocation);
+        usedIds.add(startLocation.id);
+      }
+
+      // Add locations up to limit
+      for (const loc of locations) {
+        if (finalLocations.length >= maxLocations) break;
+        if (!usedIds.has(loc.id)) {
+          finalLocations.push(loc);
+          usedIds.add(loc.id);
         }
-      : null;
+      }
+
+      // Add end location if it exists and not already included
+      if (endLocation && !usedIds.has(endLocation.id)) {
+        if (finalLocations.length < maxLocations) {
+          finalLocations.push(endLocation);
+        } else {
+          // Replace last location with end location
+          finalLocations[finalLocations.length - 1] = endLocation;
+        }
+      }
+
+      locations = finalLocations;
+      this.logger.log(
+        `Limited locations to ${locations.length} (requested: ${maxLocations})`,
+      );
+    }
 
     // Map locations to candidates with real preference scores
+    // Optimized: Skip debug logging for better performance
     const candidates: LocationCandidate[] = locations.map((loc) => {
       // Calculate preference score based on analytics
       // Convert to numbers since DB might return bigint/string
@@ -759,11 +949,6 @@ export class JourneyPlannerService implements IJourneyPlannerService {
         preferenceScore = 30; // Low but not zero
       }
 
-      this.logger.debug(
-        `AI location ${loc.name}: score=${preferenceScore.toFixed(1)} ` +
-          `(rating=${averageRating.toFixed(1)}★/${totalReviews} reviews, checkIns=${totalCheckIns})`,
-      );
-
       return {
         id: loc.id,
         name: loc.name,
@@ -781,60 +966,35 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       };
     });
 
-    // Optimize route using greedy nearest neighbor algorithm
+    // Optimize route and calculate metrics in single pass (optimized)
+    // Check Google Maps availability early (lightweight operation)
     const useGoogleMaps = this.googleMapsService.isEnabled();
-    this.logger.debug(
-      `Optimizing route for ${candidates.length} AI-selected locations (distance-only)...`,
-    );
-    const optimizedRoute = await this.optimizeRoute(
+    const route = await this.optimizeRouteWithMetrics(
       startPoint,
       candidates,
       candidates.length, // Use all AI-selected locations
       endPoint ?? undefined,
       useGoogleMaps,
-      true, // prioritizeDistance = true for AI journey
     );
 
-    // Calculate route with distances
-    const route = await this.calculateRouteMetrics(
-      startPoint,
-      optimizedRoute,
-      endPoint,
-      useGoogleMaps,
-    );
-
-    // Add AI-suggested activities to each location
-    this.logger.debug(
-      `AI locationActivities: ${JSON.stringify(aiResponse.locationActivities, null, 2)}`,
-    );
-    this.logger.debug(
-      `Route location IDs: ${route.locations.map((l) => `${l.name} (${l.id})`).join(', ')}`,
-    );
-
+    // Add AI-suggested activities to each location (reduced logging for speed)
+    // Only use AI-suggested activities (no fallback)
     route.locations.forEach((loc) => {
       if (
         aiResponse.locationActivities &&
         aiResponse.locationActivities[loc.id]
       ) {
-        // Use AI suggestion if available
+        // Use AI suggestion only
         loc.suggestedActivity = aiResponse.locationActivities[loc.id];
-        this.logger.debug(
-          `✅ Matched AI activity for ${loc.name}: ${loc.suggestedActivity}`,
-        );
-      } else {
-        // Fallback: Generate activity based on tags
-        const location = candidates.find((c) => c.id === loc.id);
-        if (location) {
-          loc.suggestedActivity = generateFallbackActivity(
-            location.name,
-            location.tags.map((t) => t.displayName),
-          );
-          this.logger.debug(
-            `⚠️ Using fallback activity for ${loc.name}: ${loc.suggestedActivity}`,
-          );
-        }
       }
+      // If AI didn't provide activity, leave it undefined (no fallback generation)
     });
+
+    const responseTimeMs = Date.now() - startTime;
+    const responseTimeSeconds = responseTimeMs / 1000;
+    this.logger.log(
+      `✅ AI journey created in ${responseTimeSeconds.toFixed(2)}s (${responseTimeMs}ms)`,
+    );
 
     return {
       locations: route.locations,
@@ -846,11 +1006,208 @@ export class JourneyPlannerService implements IJourneyPlannerService {
         reasoning: aiResponse.reasoning,
         tips: aiResponse.tips,
       },
+      responseTimeSeconds: Math.round(responseTimeSeconds * 100) / 100, // Round to 2 decimal places
     };
   }
 
   /**
-   * Calculate route metrics for given locations
+   * Optimize route and calculate metrics in single pass (optimized version)
+   * Combines optimizeRoute + calculateRouteMetrics to reduce passes
+   */
+  private async optimizeRouteWithMetrics(
+    startPoint: RoutePoint,
+    candidates: LocationCandidate[],
+    count: number,
+    endPoint?: RoutePoint,
+    useGoogleMaps: boolean = false,
+  ): Promise<{
+    locations: JourneyLocationDto[];
+    totalDistanceKm: number;
+    estimatedTotalTimeMinutes: number;
+    averagePreferenceScore: number;
+    optimizationScore: number;
+  }> {
+    const route: LocationCandidate[] = [];
+    const remaining = [...candidates];
+    let current = startPoint;
+    const journeyLocations: JourneyLocationDto[] = [];
+    let totalDistance = 0;
+    let totalTime = 0;
+
+    // Optimize route using greedy nearest neighbor (distance-only for AI journey)
+    // OPTIMIZED: Use Haversine for route optimization (fast), Google Maps only for final calculation
+    while (route.length < count && remaining.length > 0) {
+      let bestIndex = 0;
+      let bestScore = -Infinity;
+
+      // Use Haversine for optimization (much faster, no API calls)
+      // Google Maps will be used later for final accurate distances
+      const distances = remaining.map((c) =>
+        this.calculateDistance(
+          current.latitude,
+          current.longitude,
+          c.latitude,
+          c.longitude,
+        ),
+      );
+
+      // Find best candidate (distance-only for AI journey)
+      for (let i = 0; i < remaining.length; i++) {
+        const distance = distances[i];
+        const compositeScore = -distance; // Negative so closer = higher score
+        if (compositeScore > bestScore) {
+          bestScore = compositeScore;
+          bestIndex = i;
+        }
+      }
+
+      const selected = remaining.splice(bestIndex, 1)[0];
+      route.push(selected);
+
+      // Use Haversine distance for optimization (will recalculate with Google Maps later if needed)
+      const segmentDistance = distances[bestIndex];
+      const segmentTime = estimateTravelTime(segmentDistance);
+
+      totalDistance += segmentDistance;
+      totalTime += segmentTime;
+
+      // Build journey location
+      journeyLocations.push({
+        id: selected.id,
+        name: selected.name,
+        description: selected.description,
+        addressLine: selected.addressLine,
+        latitude: selected.latitude,
+        longitude: selected.longitude,
+        imageUrl: selected.imageUrl[0] || null,
+        preferenceScore: selected.preferenceScore,
+        distanceFromPrevious: Math.round(segmentDistance * 100) / 100,
+        estimatedTravelTimeMinutes: Math.round(segmentTime),
+        order: route.length,
+        matchingTags: selected.tags.map((t) => t.displayName),
+        suggestedActivity: undefined, // Will be filled later
+      });
+
+      current = {
+        latitude: selected.latitude,
+        longitude: selected.longitude,
+        location: selected,
+      };
+    }
+
+    // Recalculate distances with Google Maps for final accurate metrics (batch all at once)
+    // This replaces N API calls in loop with 1 batch call
+    if (useGoogleMaps && route.length > 0) {
+      try {
+        // Prepare all segments for batch calculation
+        const distancePairs: Array<{
+          origin: { lat: number; lng: number };
+          destination: { lat: number; lng: number };
+        }> = [];
+
+        let tempPoint = startPoint;
+        for (const location of route) {
+          distancePairs.push({
+            origin: { lat: tempPoint.latitude, lng: tempPoint.longitude },
+            destination: { lat: location.latitude, lng: location.longitude },
+          });
+          tempPoint = {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            location,
+          };
+        }
+
+        // Batch calculate all distances at once (1 API call instead of N)
+        const results = await this.googleMapsService.batchGetDistances(
+          distancePairs,
+          TravelMode.driving,
+        );
+
+        // Update journey locations with accurate distances and times
+        totalDistance = 0;
+        totalTime = 0;
+        results.forEach((result, idx) => {
+          const distance = result.distanceKm;
+          const time = result.durationMinutes;
+          totalDistance += distance;
+          totalTime += time;
+
+          if (journeyLocations[idx]) {
+            journeyLocations[idx].distanceFromPrevious =
+              Math.round(distance * 100) / 100;
+            journeyLocations[idx].estimatedTravelTimeMinutes = Math.round(time);
+          }
+        });
+      } catch (error) {
+        this.logger.warn('Google Maps batch failed, using Haversine distances');
+        // Keep Haversine distances already calculated
+      }
+    }
+
+    // Handle end point if specified
+    if (endPoint && route.length > 1) {
+      // Sort last few locations to move closer to end point
+      const lastSegmentSize = Math.min(3, Math.floor(route.length / 2));
+      const fixedPart = route.slice(0, route.length - lastSegmentSize);
+      const flexiblePart = route.slice(route.length - lastSegmentSize);
+
+      flexiblePart.sort((a, b) => {
+        const distA = this.calculateDistance(
+          a.latitude,
+          a.longitude,
+          endPoint.latitude,
+          endPoint.longitude,
+        );
+        const distB = this.calculateDistance(
+          b.latitude,
+          b.longitude,
+          endPoint.latitude,
+          endPoint.longitude,
+        );
+        return distB - distA;
+      });
+
+      // Reorder journey locations accordingly
+      const reorderedRoute = [...fixedPart, ...flexiblePart];
+      journeyLocations.forEach((loc, idx) => {
+        const routeIdx = route.findIndex((r) => r.id === loc.id);
+        const newIdx = reorderedRoute.findIndex((r) => r.id === loc.id);
+        if (newIdx !== -1 && newIdx !== routeIdx) {
+          loc.order = newIdx + 1;
+        }
+      });
+    }
+
+    // Calculate metrics
+    const avgPreference =
+      journeyLocations.length > 0
+        ? journeyLocations.reduce((sum, loc) => sum + loc.preferenceScore, 0) /
+          journeyLocations.length
+        : 0;
+
+    const preferenceVariance =
+      journeyLocations.length > 1
+        ? journeyLocations.reduce(
+            (sum, loc) =>
+              sum + Math.pow(loc.preferenceScore - avgPreference, 2),
+            0,
+          ) / journeyLocations.length
+        : 0;
+
+    const optimizationScore = totalDistance * 10 + preferenceVariance;
+
+    return {
+      locations: journeyLocations,
+      totalDistanceKm: Math.round(totalDistance * 100) / 100,
+      estimatedTotalTimeMinutes: totalTime,
+      averagePreferenceScore: Math.round(avgPreference * 10) / 10,
+      optimizationScore: Math.round(optimizationScore * 10) / 10,
+    };
+  }
+
+  /**
+   * Calculate route metrics for given locations (kept for backward compatibility)
    */
   private async calculateRouteMetrics(
     startPoint: RoutePoint,
@@ -870,49 +1227,75 @@ export class JourneyPlannerService implements IJourneyPlannerService {
 
     const journeyLocations: JourneyLocationDto[] = [];
 
-    // Calculate distances between consecutive points
-    for (let i = 0; i < locations.length; i++) {
-      const location = locations[i];
-      const nextPoint: RoutePoint = {
+    // Prepare all distance pairs for batch calculation
+    const distancePairs: Array<{
+      origin: { lat: number; lng: number };
+      destination: { lat: number; lng: number };
+    }> = [];
+
+    let tempPoint = startPoint;
+    for (const location of locations) {
+      distancePairs.push({
+        origin: { lat: tempPoint.latitude, lng: tempPoint.longitude },
+        destination: { lat: location.latitude, lng: location.longitude },
+      });
+      tempPoint = {
         latitude: location.latitude,
         longitude: location.longitude,
         location,
       };
+    }
 
-      let distance: number;
-      let travelTime: number;
-
-      if (useGoogleMaps) {
-        try {
-          const result = await this.googleMapsService.getDistance(
-            { lat: currentPoint.latitude, lng: currentPoint.longitude },
-            { lat: nextPoint.latitude, lng: nextPoint.longitude },
-            TravelMode.driving,
-          );
-          distance = result.distanceKm;
-          travelTime = result.durationMinutes;
-        } catch (error) {
-          this.logger.warn('Google Maps failed, using Haversine fallback');
-          distance = calculateDistance(
-            currentPoint.latitude,
-            currentPoint.longitude,
-            nextPoint.latitude,
-            nextPoint.longitude,
-          );
-          travelTime = estimateTravelTime(distance);
-        }
-      } else {
-        distance = calculateDistance(
-          currentPoint.latitude,
-          currentPoint.longitude,
-          nextPoint.latitude,
-          nextPoint.longitude,
+    // Batch calculate all distances at once (much faster than sequential calls)
+    let distancesAndTimes: Array<{ distance: number; time: number }> = [];
+    if (useGoogleMaps && distancePairs.length > 0) {
+      try {
+        const results = await this.googleMapsService.batchGetDistances(
+          distancePairs,
+          TravelMode.driving,
         );
-        travelTime = estimateTravelTime(distance);
+        distancesAndTimes = results.map((r) => ({
+          distance: r.distanceKm,
+          time: r.durationMinutes,
+        }));
+      } catch (error) {
+        this.logger.warn('Google Maps batch failed, using Haversine fallback');
+        distancesAndTimes = distancePairs.map((pair) => {
+          const distance = calculateDistance(
+            pair.origin.lat,
+            pair.origin.lng,
+            pair.destination.lat,
+            pair.destination.lng,
+          );
+          return {
+            distance,
+            time: estimateTravelTime(distance),
+          };
+        });
       }
+    } else {
+      // Use Haversine for all pairs
+      distancesAndTimes = distancePairs.map((pair) => {
+        const distance = calculateDistance(
+          pair.origin.lat,
+          pair.origin.lng,
+          pair.destination.lat,
+          pair.destination.lng,
+        );
+        return {
+          distance,
+          time: estimateTravelTime(distance),
+        };
+      });
+    }
+
+    // Build journey locations with batch-calculated distances
+    for (let i = 0; i < locations.length; i++) {
+      const location = locations[i];
+      const { distance, time } = distancesAndTimes[i];
 
       totalDistance += distance;
-      totalTime += travelTime;
+      totalTime += time;
 
       journeyLocations.push({
         id: location.id,
@@ -924,13 +1307,11 @@ export class JourneyPlannerService implements IJourneyPlannerService {
         imageUrl: location.imageUrl[0] || null,
         preferenceScore: location.preferenceScore,
         distanceFromPrevious: Math.round(distance * 100) / 100,
-        estimatedTravelTimeMinutes: Math.round(travelTime),
+        estimatedTravelTimeMinutes: Math.round(time),
         order: i + 1,
         matchingTags: location.tags.map((t) => t.displayName),
         suggestedActivity: undefined, // Will be filled by AI if available
       });
-
-      currentPoint = nextPoint;
     }
 
     // Note: endPoint is used for route optimization but NOT included in totalDistance

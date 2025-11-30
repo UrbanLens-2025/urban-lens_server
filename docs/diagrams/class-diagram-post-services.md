@@ -152,3 +152,5 @@ classDiagram
     CommentService "1" --> "1" ReactRepository
     CommentService "1" --> "1" EventEmitter2
 ```
+
+**Figure 1:** Class diagram showing the services architecture for the Post module, including post and comment management, reactions, and analytics.

@@ -23,7 +23,8 @@
     "start:services": "docker compose --env-file .env.development up --build -d",
     "migration:generate": "node   --require ts-node/register   --require tsconfig-paths/register   ./node_modules/typeorm/cli.js   migration:generate -d ./src/migration.ts",
     "migration:run": "node --require ts-node/register --require tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d ./src/migration.ts",
-    "migration:revert": "node --require ts-node/register --require tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d ./src/migration.ts"
+    "migration:revert": "node --require ts-node/register --require tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d ./src/migration.ts",
+    "script:insert-reward-points": "ts-node --require tsconfig-paths/register scripts/insert-reward-points.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",

@@ -21,6 +21,15 @@ async function bootstrap() {
     logger: logLevels,
     snapshot: true,
   });
+  app.getHttpAdapter().getInstance().disable('etag');
+  app.use((req, res, next) => {
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      Pragma: 'no-cache',
+      Expires: '0',
+    });
+    next();
+  });
 
   app.enableCors();
   app.setGlobalPrefix('api');

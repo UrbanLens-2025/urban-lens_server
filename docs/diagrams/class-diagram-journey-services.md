@@ -107,3 +107,5 @@ classDiagram
     ItineraryService "1" --> "1" ItineraryLocationRepository
     ItineraryService "1" --> "1" IFileStorageService
 ```
+
+**Figure 1:** Class diagram showing the services architecture for the Journey module, including journey planning (algorithmic and AI-powered) and itinerary management.

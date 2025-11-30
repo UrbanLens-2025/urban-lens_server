@@ -22,6 +22,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserTagsEntity } from '@/modules/account/domain/UserTags.entity';
 import { PostEntity } from '@/modules/post/domain/Post.entity';
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
+import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
 import { ClientsModule } from '@nestjs/microservices';
 import { getRabbitMQConfig } from '@/config/rabbitmq.config';
 import { AnnouncementCreatorController } from '@/modules/post/interfaces/Announcement.creator.controller';
@@ -36,7 +37,12 @@ import { PostQueryService } from '@/modules/post/app/impl/PostQuery.service';
     FileStorageModule,
     BusinessInfraModule,
     AccountInfraModule,
-    TypeOrmModule.forFeature([UserTagsEntity, PostEntity, LocationTagsEntity]),
+    TypeOrmModule.forFeature([
+      UserTagsEntity,
+      PostEntity,
+      LocationTagsEntity,
+      EventTagsEntity,
+    ]),
     ClientsModule.register(getRabbitMQConfig()),
   ],
   controllers: [

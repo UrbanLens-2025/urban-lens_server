@@ -56,6 +56,9 @@ import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { EntityManager } from 'typeorm';
+import { UserProfileRepository } from '@/modules/account/infra/repository/UserProfile.repository';
+import { LocationTagsRepository } from '@/modules/business/infra/repository/LocationTags.repository';
+import { EventTagsRepository } from '@/modules/event/infra/repository/EventTags.repository';
 
 interface RawPost {
   post_postid: string;
@@ -95,6 +98,7 @@ export class PostService
     private readonly commentRepository: CommentRepository,
     private readonly checkInRepository: CheckInRepository,
     private readonly followRepository: FollowRepository,
+    private readonly userProfileRepository: UserProfileRepository,
     private readonly eventEmitter: EventEmitter2,
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
@@ -263,10 +267,132 @@ export class PostService
     };
   }
 
+  /**
+   * Calculate relevance score for a post based on user preferences
+   * Similar to Facebook's feed ranking algorithm
+   */
+  private async calculatePostRelevanceScore(
+    post: RawPost,
+    userTagScores: Record<string, number>,
+    isFollowingAuthor: boolean,
+  ): Promise<number> {
+    let score = 10; // Base score
+
+    // 1. Tag similarity score (0-100)
+    const tagScore = await this.calculateTagSimilarityScore(
+      post.post_locationid,
+      post.post_eventid,
+      userTagScores,
+    );
+    score += tagScore * 0.5; // Weight: 50%
+
+    // 2. Follow bonus (0-50)
+    if (isFollowingAuthor) {
+      score += 50;
+    }
+
+    // 3. Engagement score (0-50)
+    const engagementScore = this.calculateEngagementScore(
+      post.analytic_total_upvotes || 0,
+      post.analytic_total_comments || 0,
+    );
+    score += engagementScore;
+
+    // 4. Recency score (0-30)
+    const recencyScore = this.calculateRecencyScore(post.post_createdat);
+    score += recencyScore;
+
+    return score;
+  }
+
+  /**
+   * Calculate tag similarity between user preferences and post's location/event tags
+   */
+  private async calculateTagSimilarityScore(
+    locationId: string | undefined,
+    eventId: string | undefined,
+    userTagScores: Record<string, number>,
+  ): Promise<number> {
+    if (!locationId && !eventId) {
+      return 0;
+    }
+
+    const locationTagsRepo = LocationTagsRepository(
+      this.postRepository.repo.manager,
+    );
+    const eventTagsRepo = EventTagsRepository(this.postRepository.repo.manager);
+
+    let postTagIds: number[] = [];
+
+    // Get location tags
+    if (locationId) {
+      const locationTags = await locationTagsRepo.find({
+        where: { locationId },
+        select: ['tagId'],
+      });
+      postTagIds.push(...locationTags.map((lt) => lt.tagId));
+    }
+
+    // Get event tags
+    if (eventId) {
+      const eventTags = await eventTagsRepo.find({
+        where: { eventId },
+        select: ['tagId'],
+      });
+      postTagIds.push(...eventTags.map((et) => et.tagId));
+    }
+
+    if (postTagIds.length === 0) {
+      return 0;
+    }
+
+    // Calculate similarity: sum of user tag scores for matching tags
+    // Tag keys in userTagScores are in format "tag_<id>" (e.g., "tag_2", "tag_5")
+    let similarity = 0;
+    for (const tagId of postTagIds) {
+      const tagKey = `tag_${tagId}`;
+      if (userTagScores[tagKey]) {
+        similarity += userTagScores[tagKey];
+      }
+    }
+
+    // Normalize to 0-100 range
+    const maxPossibleScore =
+      Math.max(...Object.values(userTagScores), 1) * postTagIds.length;
+    return maxPossibleScore > 0 ? (similarity / maxPossibleScore) * 100 : 0;
+  }
+
+  /**
+   * Calculate engagement score based on upvotes and comments
+   */
+  private calculateEngagementScore(upvotes: number, comments: number): number {
+    // Logarithmic scaling to prevent very popular posts from dominating
+    const engagement = Math.log1p(upvotes + comments * 0.5);
+    // Scale to 0-50 range
+    return Math.min(engagement * 5, 50);
+  }
+
+  /**
+   * Calculate recency score - newer posts get higher scores
+   */
+  private calculateRecencyScore(createdAt: Date): number {
+    const now = new Date();
+    const ageInDays =
+      (now.getTime() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24);
+
+    // Posts older than 30 days get minimal score
+    if (ageInDays > 30) {
+      return 0;
+    }
+
+    // Linear decay: newer posts get higher scores
+    return Math.max(0, (1 - ageInDays / 30) * 30);
+  }
+
   private async processPostsWithReactions(
     posts: RawPost[],
     currentUserId?: string,
-  ): Promise<any[]> {
+  ): Promise<PostResponseDto[]> {
     if (!currentUserId) {
       return posts.map((post) => this.mapRawPostToDto(post, null, false));
     }
@@ -291,29 +417,11 @@ export class PostService
   async getBasicFeed(
     params: PaginationParams = {},
     currentUserId?: string,
-  ): Promise<PaginationResult<any>> {
+  ): Promise<PaginationResult<PostResponseDto>> {
     try {
       const { page, limit, skip } = this.normalizePaginationParams(params);
 
-      // Build query to get public posts
-      const selectFields = this.getPostSelectFields();
-      const postsQuery = this.postRepository.repo
-        .createQueryBuilder('post')
-        .leftJoin('accounts', 'account', 'account.id = post.author_id')
-        .leftJoin('locations', 'location', 'location.id = post.location_id')
-        .where('post.visibility = :visibility OR post.visibility IS NULL', {
-          visibility: 'public',
-        })
-        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
-
-      // Add all select fields
-      selectFields.forEach((field) => {
-        postsQuery.addSelect(field);
-      });
-
-      postsQuery.orderBy('post.created_at', 'DESC').offset(skip).limit(limit);
-
-      // Count total posts
+      // Count total posts first
       const countQuery = this.postRepository.repo
         .createQueryBuilder('post')
         .where('post.visibility = :visibility OR post.visibility IS NULL', {
@@ -321,30 +429,172 @@ export class PostService
         })
         .andWhere('post.is_hidden = :isHidden', { isHidden: false });
 
-      const [posts, total] = await Promise.all([
-        postsQuery.getRawMany(),
-        countQuery.getCount(),
-      ]);
+      const total = await countQuery.getCount();
 
-      const processedPosts = await this.processPostsWithReactions(
-        posts,
-        currentUserId,
-      );
-
-      return {
-        data: processedPosts,
-        meta: this.buildPaginationMeta(page, limit, total),
-      };
+      // For personalized feed, we need to fetch a larger batch, rank them, then paginate
+      // For non-personalized feed, use standard pagination
+      if (currentUserId) {
+        return this.getPersonalizedFeed(params, currentUserId, total);
+      } else {
+        return this.getStandardFeed(params, total);
+      }
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException(error.message);
     }
   }
 
+  /**
+   * Get standard feed (chronological order) for non-logged in users
+   */
+  private async getStandardFeed(
+    params: PaginationParams,
+    total: number,
+  ): Promise<PaginationResult<PostResponseDto>> {
+    const { page, limit, skip } = this.normalizePaginationParams(params);
+
+    const selectFields = this.getPostSelectFields();
+    const postsQuery = this.postRepository.repo
+      .createQueryBuilder('post')
+      .leftJoin('accounts', 'account', 'account.id = post.author_id')
+      .leftJoin('locations', 'location', 'location.id = post.location_id')
+      .where('post.visibility = :visibility OR post.visibility IS NULL', {
+        visibility: 'public',
+      })
+      .andWhere('post.is_hidden = :isHidden', { isHidden: false });
+
+    selectFields.forEach((field) => {
+      postsQuery.addSelect(field);
+    });
+
+    postsQuery.orderBy('post.created_at', 'DESC').offset(skip).limit(limit);
+
+    const posts = await postsQuery.getRawMany();
+    const processedPosts = await this.processPostsWithReactions(posts);
+
+    return {
+      data: processedPosts,
+      meta: this.buildPaginationMeta(page, limit, total),
+    };
+  }
+
+  /**
+   * Get personalized feed with ranking algorithm
+   * Fetches a fixed large batch, ranks them once, then paginates
+   * This ensures no duplicates across pages because we always rank the same set
+   */
+  private async getPersonalizedFeed(
+    params: PaginationParams,
+    currentUserId: string,
+    total: number,
+  ): Promise<PaginationResult<PostResponseDto>> {
+    const { page, limit } = this.normalizePaginationParams(params);
+
+    // Fetch a fixed large batch (always the same for consistency)
+    // This prevents duplicates because every page request ranks the same posts
+    const fixedFetchLimit = 1000; // Fetch up to 1000 most recent posts
+    const minPostsNeeded = limit * page; // Minimum posts needed for current page
+
+    const selectFields = this.getPostSelectFields();
+    const postsQuery = this.postRepository.repo
+      .createQueryBuilder('post')
+      .leftJoin('accounts', 'account', 'account.id = post.author_id')
+      .leftJoin('locations', 'location', 'location.id = post.location_id')
+      .where('post.visibility = :visibility OR post.visibility IS NULL', {
+        visibility: 'public',
+      })
+      .andWhere('post.is_hidden = :isHidden', { isHidden: false });
+
+    selectFields.forEach((field) => {
+      postsQuery.addSelect(field);
+    });
+
+    // Always fetch the same set from the beginning (no offset)
+    // This ensures consistency - same posts are ranked the same way every time
+    postsQuery.orderBy('post.created_at', 'DESC').limit(fixedFetchLimit);
+
+    const allPosts = await postsQuery.getRawMany();
+
+    // Rank all fetched posts once
+    const rankedPosts = await this.rankPostsByRelevance(
+      allPosts,
+      currentUserId,
+    );
+
+    // Check if we have enough posts for the requested page
+    if (rankedPosts.length < minPostsNeeded) {
+      // Not enough posts after ranking, return empty for this page
+      return {
+        data: [],
+        meta: this.buildPaginationMeta(page, limit, total),
+      };
+    }
+
+    // Paginate from ranked results
+    const skip = (page - 1) * limit;
+    const paginatedPosts = rankedPosts.slice(skip, skip + limit);
+
+    const processedPosts = await this.processPostsWithReactions(
+      paginatedPosts,
+      currentUserId,
+    );
+
+    return {
+      data: processedPosts,
+      meta: this.buildPaginationMeta(page, limit, total),
+    };
+  }
+
+  /**
+   * Rank posts by relevance score (personalized feed algorithm)
+   * Returns all posts sorted by relevance (no limit applied here)
+   */
+  private async rankPostsByRelevance(
+    posts: RawPost[],
+    currentUserId: string,
+    maxResults?: number,
+  ): Promise<RawPost[]> {
+    if (posts.length === 0) {
+      return [];
+    }
+
+    // Get user profile with tag scores
+    const userProfile = await this.userProfileRepository.repo.findOne({
+      where: { accountId: currentUserId },
+      select: ['accountId', 'tagScores'],
+    });
+
+    const userTagScores = userProfile?.tagScores || {};
+
+    // Get follow status for all authors
+    const authorIds = [...new Set(posts.map((post) => post.author_id))];
+    const followMap = await this.getFollowStatusMap(authorIds, currentUserId);
+
+    // Calculate relevance scores for all posts
+    const postsWithScores = await Promise.all(
+      posts.map(async (post) => {
+        const isFollowing = followMap.get(post.author_id) || false;
+        const score = await this.calculatePostRelevanceScore(
+          post,
+          userTagScores,
+          isFollowing,
+        );
+        return { post, score };
+      }),
+    );
+
+    // Sort by score (descending)
+    postsWithScores.sort((a, b) => b.score - a.score);
+
+    // Return all ranked posts or limit if specified
+    const rankedPosts = postsWithScores.map((item) => item.post);
+    return maxResults ? rankedPosts.slice(0, maxResults) : rankedPosts;
+  }
+
   async getFollowingFeed(
     currentUserId: string,
     params: PaginationParams = {},
-  ): Promise<PaginationResult<any>> {
+  ): Promise<PaginationResult<PostResponseDto>> {
     try {
       const { page, limit, skip } = this.normalizePaginationParams(params);
 
@@ -957,7 +1207,7 @@ export class PostService
     params: PaginationParams = {},
     currentUserId?: string,
     postType?: PostType,
-  ): Promise<PaginationResult<any>> {
+  ): Promise<PaginationResult<PostResponseDto>> {
     try {
       const { page, limit, skip } = this.normalizePaginationParams(params);
 
@@ -1013,7 +1263,7 @@ export class PostService
     filterQuery: GetMyPostsQueryDto,
     params: PaginationParams = {},
     currentUserId?: string,
-  ): Promise<PaginationResult<any>> {
+  ): Promise<PaginationResult<PostResponseDto>> {
     try {
       const { page, limit, skip } = this.normalizePaginationParams(params);
 
@@ -1097,7 +1347,7 @@ export class PostService
     authorId: string,
     params: PaginationParams = {},
     currentUserId?: string,
-  ): Promise<PaginationResult<any>> {
+  ): Promise<PaginationResult<PostResponseDto>> {
     return this.getPostsByAuthorIdAndType(authorId, params, currentUserId);
   }
 
@@ -1105,7 +1355,7 @@ export class PostService
     authorId: string,
     params: PaginationParams = {},
     currentUserId?: string,
-  ): Promise<PaginationResult<any>> {
+  ): Promise<PaginationResult<PostResponseDto>> {
     return this.getPostsByAuthorIdAndType(
       authorId,
       params,
@@ -1118,7 +1368,7 @@ export class PostService
     authorId: string,
     params: PaginationParams = {},
     currentUserId?: string,
-  ): Promise<PaginationResult<any>> {
+  ): Promise<PaginationResult<PostResponseDto>> {
     return this.getPostsByAuthorIdAndType(
       authorId,
       params,
@@ -1129,7 +1379,7 @@ export class PostService
 
   async getAllPosts(
     params: PaginationParams = {},
-  ): Promise<PaginationResult<any>> {
+  ): Promise<PaginationResult<PostResponseDto>> {
     const { page, limit, skip } = this.normalizePaginationParams(params);
 
     const [posts, total] = await this.postRepository.repo.findAndCount({
@@ -1153,6 +1403,9 @@ export class PostService
         createdAt: true,
         updatedAt: true,
         authorId: true,
+        totalUpvotes: true,
+        totalDownvotes: true,
+        totalComments: true,
         author: {
           id: true,
           firstName: true,
@@ -1163,8 +1416,34 @@ export class PostService
       },
     });
 
+    // Map PostEntity to PostResponseDto
+    const data: PostResponseDto[] = posts.map((post) => ({
+      postId: post.postId,
+      content: post.content,
+      imageUrls: post.imageUrls,
+      type: post.type,
+      isVerified: post.isVerified,
+      visibility: post.visibility,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      author: {
+        id: post.author.id,
+        firstName: post.author.firstName,
+        lastName: post.author.lastName,
+        avatarUrl: post.author.avatarUrl,
+        isFollow: false, // This would need to be checked separately if needed
+      },
+      analytics: {
+        totalUpvotes: post.totalUpvotes || 0,
+        totalDownvotes: post.totalDownvotes || 0,
+        totalComments: post.totalComments || 0,
+      },
+      currentUserReaction: null,
+      ...(post.rating && { rating: post.rating }),
+    }));
+
     return {
-      data: posts,
+      data,
       meta: this.buildPaginationMeta(page, limit, total),
     };
   }
@@ -1174,7 +1453,7 @@ export class PostService
     eventId: string | undefined,
     params: PaginationParams = {},
     currentUserId?: string,
-  ): Promise<PaginationResult<any>> {
+  ): Promise<PaginationResult<PostResponseDto>> {
     try {
       if (!locationId && !eventId) {
         throw new BadRequestException(
@@ -1253,7 +1532,7 @@ export class PostService
     locationId: string,
     params: PaginationParams = {},
     currentUserId?: string,
-  ): Promise<PaginationResult<any>> {
+  ): Promise<PaginationResult<PostResponseDto>> {
     try {
       const { page, limit, skip } = this.normalizePaginationParams(params);
 

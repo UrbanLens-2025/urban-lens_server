@@ -228,3 +228,5 @@ classDiagram
     AccountProfileManagementService "1" --> "1" CreatorProfileRepository
     AccountProfileManagementService "1" --> "1" IFileStorageService
 ```
+
+**Figure 1:** Class diagram showing the services architecture for the Account module, including controllers, service interfaces, implementations, and repositories.

@@ -36,13 +36,22 @@ export class OllamaService {
 
   constructor(private readonly dataSource: DataSource) {
     this.enabled = process.env.OLLAMA_ENABLED === 'true';
-    this.model = process.env.OLLAMA_MODEL || 'qwen2.5:7b';
+    // Use smaller model for faster response on M4
+    // Recommended: qwen2.5:3b (balanced), qwen2.5:1.5b (fastest), llama3.2:3b, or gemma2:2b
+    // 7b models are slower but more accurate. For speed, use 3b or smaller models.
+    this.model = process.env.OLLAMA_MODEL || 'qwen2.5:3b';
 
     if (this.enabled) {
       this.ollama = new Ollama({
         host: process.env.OLLAMA_HOST || 'http://localhost:11434',
       });
       this.logger.log(`Ollama enabled with model: ${this.model}`);
+      this.logger.log(
+        `💡 M4 Optimization: Using 8 threads. For faster response, try: qwen2.5:1.5b, gemma2:2b, or llama3.2:3b`,
+      );
+      this.logger.log(
+        `💡 Ensure Ollama uses Metal/GPU: Run 'ollama run ${this.model}' to verify GPU usage`,
+      );
     } else {
       this.logger.log('Ollama disabled');
     }
@@ -68,18 +77,33 @@ export class OllamaService {
       const tools = this.getDatabaseTools(schema);
       const conversationHistory: any[] = [];
 
-      // Initial prompt
+      // Initial prompt - store context for later use
       const initialPrompt = this.buildAgentPrompt(context);
       conversationHistory.push({
         role: 'user',
-        content: initialPrompt,
+        content:
+          initialPrompt +
+          '\n\n🚨 MANDATORY: Your FIRST response MUST call the tool:\nTOOL_CALL: query_nearby_locations\nPARAMETERS: {"latitude": ' +
+          context.currentLocation.latitude +
+          ', "longitude": ' +
+          context.currentLocation.longitude +
+          ', "radiusKm": ' +
+          (context.maxRadiusKm || 10) +
+          ', "limit": 6}\n\nDo NOT write anything else. Just call the tool.',
       });
 
       this.logger.debug('Starting AI agent conversation...');
 
+      // Store context for use in tool result message
+      const storedContext = context;
+
+      // Store tool result for fallback extraction if needed
+      let lastToolResult: any[] = [];
+
       // Agent loop - AI can call tools multiple times
       let iterations = 0;
-      const maxIterations = 3; // Reduce to prevent long waits
+      const maxIterations = 2; // Need 2 iterations: 1 for tool call, 1 for final response (optimized for speed)
+      let toolExecuted = false;
 
       while (iterations < maxIterations) {
         iterations++;
@@ -95,15 +119,25 @@ export class OllamaService {
             ...conversationHistory,
           ],
           options: {
-            temperature: 0.7,
-            num_predict: 1500, // Increased to ensure all 5 activities are generated
+            temperature: 0.1, // Very low temperature for fastest, most deterministic responses
+            num_predict: iterations === 1 ? 150 : 180, // Increased for second iteration to ensure complete UUIDs
+            top_p: 0.6, // Lower top_p for faster generation (was 0.7)
+            num_thread: 8, // M4 has 10 cores (4P+6E), use 8 threads for optimal performance
+            // M4 automatically uses Metal/GPU acceleration via Ollama, no manual config needed
           },
         });
 
         const content = response.message.content;
-        this.logger.debug(
-          `AI response (${content.length} chars): ${content.slice(0, 150)}...`,
-        );
+        // Log first iteration response to debug tool call issues
+        if (iterations === 1) {
+          this.logger.debug(
+            `AI first response (${content.length} chars): ${content.slice(0, 300)}...`,
+          );
+        } else if (content.length > 500) {
+          this.logger.debug(
+            `AI response (${content.length} chars): ${content.slice(0, 100)}...`,
+          );
+        }
 
         conversationHistory.push({
           role: 'assistant',
@@ -113,6 +147,7 @@ export class OllamaService {
         const toolCall = this.parseToolCall(content);
 
         if (toolCall) {
+          toolExecuted = true;
           this.logger.debug(
             `AI calling tool: ${toolCall.name} with params: ${JSON.stringify(toolCall.parameters)}`,
           );
@@ -124,6 +159,9 @@ export class OllamaService {
             schema,
           );
 
+          // Store for potential fallback extraction
+          lastToolResult = toolResult;
+
           this.logger.debug(
             `Tool returned ${toolResult.length || 0} locations. First 3 distances: ${toolResult
               .slice(0, 3)
@@ -131,13 +169,32 @@ export class OllamaService {
               .join(', ')}`,
           );
 
-          // Send result back to AI with format reminder
+          // Send result back to AI with concise format reminder
+          // Limit result size to speed up processing - only need numberOfLocations + 1 for buffer
+          const neededCount = storedContext.numberOfLocations + 1;
+          const limitedResults = toolResult.slice(0, Math.min(neededCount, 6)); // Max 6 for speed
+          const resultSummary = limitedResults.map((loc: any) => ({
+            id: loc.id,
+            n: loc.name.substring(0, 25), // Truncate to 25 chars (was 30)
+            d: parseFloat(loc.distance).toFixed(1), // Just number, no 'km'
+          }));
+
+          // Force AI to respond immediately after tool result - ultra concise
+          // Show exact UUIDs to make it easier for AI to copy
+          const uuidList = resultSummary.map((loc: any) => loc.id).join(', ');
           conversationHistory.push({
             role: 'user',
-            content: `Tool result (${toolResult.length || 0} items):\n${JSON.stringify(toolResult, null, 2)}\n\nNow provide your final response using EXACTLY this format:\n\nREASONING: [your reasoning in Vietnamese]\nTIPS:\n- [tip 1]\n- [tip 2]\n- [tip 3]\nLOCATION_IDS: [comma-separated UUIDs from the id field above]\nACTIVITIES:\n[uuid]: [activity description]\n[uuid]: [activity description]\n...\n\nREMEMBER: Copy exact UUIDs from "id" field in the results above!`,
+            content: `${limitedResults.length} locs:\n${JSON.stringify(resultSummary)}\n\n🚨 MANDATORY FORMAT (copy EXACTLY):\nREASONING: [2 sentences Vietnamese]\nTIPS:\n- [tip 1]\n- [tip 2]\nLOCATION_IDS: ${uuidList}\nACTIVITIES:\n${resultSummary.map((loc: any) => `${loc.id}: [activity]`).join('\n')}\n\n⚠️ YOU MUST include LOCATION_IDS line with UUIDs above. Copy them EXACTLY: ${uuidList}`,
           });
         } else {
           // AI finished, return final response
+          // If tool wasn't called in first iteration, fail immediately (no fallback)
+          if (iterations === 1 && !toolExecuted) {
+            this.logger.error(
+              '❌ AI did not call tool in first iteration. Cannot proceed without AI tool call.',
+            );
+            return null;
+          }
           this.logger.debug('AI finished, parsing final response...');
           this.logger.debug(`Full AI response:\n${content}`); // Log full response
           const parsed = this.parseAIResponse(content);
@@ -145,15 +202,50 @@ export class OllamaService {
             `Parsed: ${parsed.suggestedLocationIds?.length || 0} locations, ${parsed.tips.length} tips, ${Object.keys(parsed.locationActivities || {}).length} activities`,
           );
 
-          if (
-            parsed.suggestedLocationIds &&
-            parsed.suggestedLocationIds.length > 0
-          ) {
+          // If not enough location IDs found, supplement from tool result (fallback extraction)
+          const neededCount = storedContext.numberOfLocations;
+          const currentCount = parsed.suggestedLocationIds?.length || 0;
+
+          if (currentCount < neededCount) {
+            this.logger.warn(
+              `⚠️ AI returned only ${currentCount}/${neededCount} location IDs. Supplementing from tool result...`,
+            );
+            if (lastToolResult && lastToolResult.length > 0) {
+              // Extract locations from tool result
+              const toolResultIds = lastToolResult
+                .slice(0, neededCount)
+                .map((loc: any) => loc.id)
+                .filter((id: string) => id);
+
+              // Merge: use AI IDs first, then fill with tool result IDs
+              const existingIds = new Set(parsed.suggestedLocationIds || []);
+              const additionalIds = toolResultIds.filter(
+                (id: string) => !existingIds.has(id),
+              );
+              const finalIds = [
+                ...(parsed.suggestedLocationIds || []),
+                ...additionalIds,
+              ].slice(0, neededCount);
+
+              if (finalIds.length >= neededCount) {
+                this.logger.log(
+                  `✅ Extracted ${finalIds.length} location IDs (${currentCount} from AI + ${additionalIds.length} from tool result)`,
+                );
+                parsed.suggestedLocationIds = finalIds;
+              } else {
+                this.logger.error(
+                  `❌ Could only extract ${finalIds.length}/${neededCount} location IDs`,
+                );
+                return null;
+              }
+            } else {
+              this.logger.error('❌ No tool result available for extraction');
+              return null;
+            }
+          } else if (parsed.suggestedLocationIds) {
             this.logger.log(
               `✅ Successfully parsed ${parsed.suggestedLocationIds.length} location IDs`,
             );
-          } else {
-            this.logger.warn(`⚠️ No location IDs found in AI response!`);
           }
 
           return parsed;
@@ -256,103 +348,28 @@ export class OllamaService {
    * Build system prompt with tool descriptions
    */
   private getSystemPromptWithTools(tools: DatabaseTool[]): string {
-    return `You are an AI travel planning agent for Ho Chi Minh City, Vietnam.
+    return `You are a HCMC travel agent. You MUST call the tool FIRST before responding.
 
-You can query a database to find locations.
-
-Available tool: query_nearby_locations
-- Finds locations within a radius
-- Parameters: latitude (number), longitude (number), radiusKm (number), limit (number, optional)
-
-To use the tool, respond EXACTLY like this:
+STEP 1 - FIRST RESPONSE (MANDATORY):
+You MUST start your response with:
 TOOL_CALL: query_nearby_locations
-PARAMETERS: {"latitude": 10.762622, "longitude": 106.660172, "radiusKm": 5, "limit": 20}
+PARAMETERS: {"latitude": 10.762622, "longitude": 106.660172, "radiusKm": 10, "limit": 6}
 
-⚠️ CRITICAL FORMAT REQUIREMENT ⚠️
-After receiving query results, you MUST provide your final response in THIS EXACT FORMAT.
-DO NOT use markdown, bullets with numbers, or conversational text.
-ONLY use this structure:
-
-REASONING: [2-3 sentences in Vietnamese]
+STEP 2 - AFTER RECEIVING TOOL RESULTS:
+REASONING: [2 sentences Vietnamese]
 TIPS:
 - [tip 1]
 - [tip 2]
-- [tip 3]
-LOCATION_IDS: uuid1, uuid2, uuid3, uuid4, uuid5
+LOCATION_IDS: [UUIDs comma-separated from "id" field]
 ACTIVITIES:
-uuid1: [activity for location 1 based on its name]
-uuid2: [activity for location 2 based on its name]
-uuid3: [activity for location 3 based on its name]
-uuid4: [activity for location 4 based on its name]
-uuid5: [activity for location 5 based on its name]
+[uuid]: [activity]
+[uuid]: [activity]
 
-❌ WRONG FORMATS (DO NOT USE):
-1. **Museum Name**: - suggestion 1 - suggestion 2
-2. "These suggestions..." or any conversational closing
-3. Markdown formatting with ** or numbered lists
-
-✅ CORRECT FORMAT (USE THIS):
-REASONING: ...
-TIPS:
-- ...
-LOCATION_IDS: uuid1, uuid2, ...
-ACTIVITIES:
-uuid1: activity description
-uuid2: activity description
-
-CRITICAL REQUIREMENTS:
-- Call the tool ONLY ONCE
-- After getting results, provide final response immediately in the correct format
-- DO NOT write conversational responses or use markdown
-- Select EXACTLY the requested number of locations
-- COPY the exact UUID (id field) from query results - DO NOT modify or reorder
-- Format: "uuid: activity description" (one line per location)
-- YOU MUST WRITE EXACTLY 5 ACTIVITIES LINES (one for each UUID in LOCATION_IDS)
-- DO NOT STOP after 2-3 activities - CONTINUE until you have written ALL 5
-- Each activity MUST match the location's actual name from query results
-
-Example tool call:
-TOOL_CALL: query_nearby_locations
-PARAMETERS: {"latitude": 10.762622, "longitude": 106.660172, "radiusKm": 10, "limit": 20}
-
-Example final response (for 5 locations):
-REASONING: Các địa điểm phù hợp với sở thích yên tĩnh. Bắt đầu với cafe, sau đó công viên và bảo tàng.
-TIPS:
-- Đi buổi sáng tránh đông
-- Mang nước uống
-- Địa điểm 3 đẹp lúc hoàng hôn
-LOCATION_IDS: fa5c272f-4e3b-43f0-830d-9c16a4c7408f, e2898146-7768-4f9b-886d-26b1fac82bb8, b433956a-137b-408c-a5c0-3ddb700a36e1, 4edf4616-4651-44c5-87aa-0aa33d1ef457, 041f4377-ecc1-4d12-8019-5b417d58a51c
-ACTIVITIES:
-fa5c272f-4e3b-43f0-830d-9c16a4c7408f: Thưởng thức cà phê và làm việc trong không gian yên tĩnh tại Highlands Coffee
-e2898146-7768-4f9b-886d-26b1fac82bb8: Chụp ảnh kiến trúc Gothic và tham quan bên trong Nhà thờ Đức Bà
-b433956a-137b-408c-a5c0-3ddb700a36e1: Khám phá ẩm thực đường phố và trải nghiệm văn hóa tại Phố đi bộ Bùi Viện
-4edf4616-4651-44c5-87aa-0aa33d1ef457: Dạo bộ, tập thể dục và thư giãn trong Tao Dan Park
-041f4377-ecc1-4d12-8019-5b417d58a51c: Tham quan di tích lịch sử và chụp ảnh kiến trúc tại Dinh Độc Lập
-
-VALIDATION CHECK (DO THIS BEFORE WRITING ACTIVITIES):
-✓ 4edf4616... from query result has name "Tao Dan Park" → activity mentions "Tao Dan Park" ✓
-✓ 041f4377... from query result has name "Dinh Độc Lập" → activity mentions "Dinh Độc Lập" ✓
-✗ WRONG: 4edf4616... (Tao Dan Park) → activity about "Dinh Độc Lập" ✗
-✗ WRONG: 041f4377... (Dinh Độc Lập) → activity about "Tao Dan Park" ✗
-
-REMEMBER: Write ALL 5 activities - do not stop early!
-
-IMPORTANT: Write activities based on location name and type:
-- Read the location "name" field from query results
-- Infer the location type from its name (cafe, park, market, museum, church, etc.)
-- Suggest activities that match that specific type
-- Include the location name in the activity description for clarity
-
-Examples of good activity suggestions:
-- Cafe/Coffee shop → coffee, working, reading
-- Park/Garden → walking, exercise, relaxing
-- Market/Shopping → shopping, local food
-- Museum/Gallery → learning history/culture/art
-- Church/Temple → sightseeing, architecture photos
-- Street/Walking street → street food, nightlife, culture
-- Palace/Historical site → historical tour, architecture
-
-DO NOT copy activities between locations! Each must be unique and specific.`;
+CRITICAL:
+- Your FIRST response MUST call the tool (TOOL_CALL + PARAMETERS)
+- NO markdown (###, ##, #)
+- NO placeholders
+- Copy UUIDs exactly from "id" field`;
   }
 
   /**
@@ -361,40 +378,28 @@ DO NOT copy activities between locations! Each must be unique and specific.`;
   private buildAgentPrompt(context: JourneyContext): string {
     const topPreferences = Object.entries(context.userPreferences)
       .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([tag, score]) => `tag_${tag.replace('tag_', '')}: ${score}`);
+      .slice(0, 1) // Only top 1 preference for speed (was 2)
+      .map(([tag, score]) => `${tag.replace('tag_', '')}:${score}`);
 
-    return `Plan a journey for a user in Ho Chi Minh City.
+    return `Plan ${context.numberOfLocations} locs, ${context.maxRadiusKm || 10}km.
+Start: ${context.currentLocation.latitude}, ${context.currentLocation.longitude}
+Pref: ${topPreferences[0] || 'none'}
 
-User ID: ${context.userId}
-User preferences (tag scores):
-${topPreferences.join(', ')}
+⚠️ Call tool FIRST (NO markdown):
+TOOL_CALL: query_nearby_locations
+PARAMETERS: {"latitude": ${context.currentLocation.latitude}, "longitude": ${context.currentLocation.longitude}, "radiusKm": ${context.maxRadiusKm || 10}, "limit": 6}
 
-Current location: ${context.currentLocation.latitude}, ${context.currentLocation.longitude}
-Number of locations needed: ${context.numberOfLocations}
-Maximum radius: ${context.maxRadiusKm || 10}km
+Then respond EXACT format (NO ###, NO markdown):
+REASONING: [2 sentences Vietnamese]
+TIPS:
+- [tip 1]
+- [tip 2]
+LOCATION_IDS: [UUIDs comma-separated]
+ACTIVITIES:
+[uuid]: [activity]
+...
 
-Task:
-1. Query the database to find suitable locations (use query_nearby_locations)
-2. Analyze the results - PRIORITIZE locations with SMALLER "distance" values (closer to start)
-3. Select EXACTLY ${context.numberOfLocations} locations that are CLOSE to the start point
-4. For EACH selected location, write down: UUID + Name (e.g., "fa5c272f... = Highlands Coffee")
-5. Provide reasoning explaining why these locations match user preferences
-6. Give EXACTLY 3 practical tips for the journey
-7. List ALL ${context.numberOfLocations} location IDs (UUIDs)
-8. Write activities - DOUBLE CHECK that each UUID matches the correct location name
-
-CRITICAL SELECTION CRITERIA:
-- Query results include "distance" field - USE IT to select closer locations
-- Prefer locations with distance < 3km over locations with distance > 5km
-- Balance between user preferences AND proximity to start point
-
-CRITICAL VALIDATION:
-- Before writing ACTIVITIES, verify each UUID corresponds to the correct location name
-- Example: If UUID is "4edf4616..." and name is "Tao Dan Park", activity MUST be about park, NOT about palace
-- If UUID is "041f4377..." and name is "Dinh Độc Lập", activity MUST be about palace, NOT about park
-
-Start by querying nearby locations within the radius.`;
+Select ${context.numberOfLocations} closest, copy REAL UUIDs from "id" field.`;
   }
 
   /**
@@ -412,11 +417,20 @@ Start by querying nearby locations within the radius.`;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
 
-      if (line.startsWith('TOOL_CALL:')) {
-        toolName = line.replace('TOOL_CALL:', '').trim();
-      } else if (line.startsWith('PARAMETERS:')) {
-        // Collect JSON (might be multi-line)
-        parametersJson = line.replace('PARAMETERS:', '').trim();
+      // Handle formats: "TOOL_CALL: ..." or "Step 1: TOOL_CALL: ..." or "Step 1:TOOL_CALL: ..."
+      if (line.includes('TOOL_CALL:')) {
+        const toolCallMatch = line.match(/TOOL_CALL:\s*(.+)/i);
+        if (toolCallMatch) {
+          toolName = toolCallMatch[1].trim();
+        }
+      } else if (line.includes('PARAMETERS:')) {
+        // Collect JSON (might be multi-line) - handle "PARAMETERS:" or "Step 1: PARAMETERS:"
+        const paramsMatch = line.match(/PARAMETERS:\s*(.+)/i);
+        if (paramsMatch) {
+          parametersJson = paramsMatch[1].trim();
+        } else {
+          parametersJson = line.replace(/.*PARAMETERS:/i, '').trim();
+        }
 
         // Check if JSON continues on next lines
         let j = i + 1;
@@ -516,37 +530,25 @@ Start by querying nearby locations within the radius.`;
     },
     schema: string,
   ): Promise<any> {
-    const limit = params.limit || 20;
+    // Limit to 6 locations for faster query and response (was 8)
+    const limit = Math.min(params.limit || 6, 6);
 
+    // Optimized query - removed image_url and tags aggregation for faster query
+    // Tags not needed for AI selection, can be fetched later if needed
     const query = `
       SELECT 
         l.id,
         l.name,
-        l.address_line as "addressLine",
         l.latitude,
         l.longitude,
-        l.image_url as "imageUrl",
         (
           6371 * acos(
             cos(radians($1)) * cos(radians(l.latitude)) *
             cos(radians(l.longitude) - radians($2)) +
             sin(radians($1)) * sin(radians(l.latitude))
           )
-        ) as distance,
-        COALESCE(
-          json_agg(
-            DISTINCT jsonb_build_object(
-              'id', t.id,
-              'name', t.display_name
-            )
-          ) FILTER (WHERE t.id IS NOT NULL),
-          '[]'
-        ) as tags,
-        l.average_rating as "averageRating",
-        l.total_reviews as "totalReviews"
+        ) as distance
       FROM ${schema}.locations l
-      LEFT JOIN ${schema}.location_tags lt ON l.id = lt.location_id
-      LEFT JOIN ${schema}.tag t ON lt.tag_id = t.id
       WHERE l.is_visible_on_map = true
         AND (
           6371 * acos(
@@ -555,7 +557,6 @@ Start by querying nearby locations within the radius.`;
             sin(radians($1)) * sin(radians(l.latitude))
           )
         ) <= $3
-      GROUP BY l.id, l.name, l.address_line, l.latitude, l.longitude, l.image_url, l.average_rating, l.total_reviews
       ORDER BY distance ASC
       LIMIT $4
     `;
@@ -644,28 +645,58 @@ Start by querying nearby locations within the radius.`;
     for (const line of lines) {
       const trimmed = line.trim();
 
-      if (trimmed.startsWith('REASONING:')) {
+      // Handle markdown formats: ### REASONING:, ## REASONING:, REASONING:
+      if (trimmed.match(/^#*\s*REASONING:/i)) {
         currentSection = 'reasoning';
-        reasoning = trimmed.replace('REASONING:', '').trim();
-      } else if (trimmed.startsWith('TIPS:')) {
+        reasoning = trimmed.replace(/^#*\s*REASONING:/i, '').trim();
+      } else if (trimmed.match(/^#*\s*TIPS:/i)) {
         currentSection = 'tips';
-      } else if (trimmed.startsWith('ACTIVITIES:')) {
+      } else if (trimmed.match(/^#*\s*ACTIVITIES:/i)) {
         currentSection = 'activities';
-      } else if (trimmed.startsWith('LOCATION_IDS:')) {
-        const idsStr = trimmed.replace('LOCATION_IDS:', '').trim();
-        locationIds = idsStr
-          .split(',')
-          .map((id) => id.trim())
-          .filter((id) => {
+      } else if (
+        trimmed.match(/^#*\s*LOCATION_IDS:/i) ||
+        trimmed.match(/^#*\s*LOCATION IDS:/i) ||
+        trimmed.match(/^#*\s*LOCATION IDS AND ACTIVITIES:/i)
+      ) {
+        // Handle various formats (including markdown)
+        let idsStr = trimmed
+          .replace(/^#*\s*LOCATION_IDS:/i, '')
+          .replace(/^#*\s*LOCATION IDS:/i, '')
+          .replace(/^#*\s*LOCATION IDS AND ACTIVITIES:/i, '')
+          .trim();
+
+        // If format is "LOCATION IDS AND ACTIVITIES:", skip to next line
+        if (trimmed.includes('AND ACTIVITIES')) {
+          // Try to extract from next lines
+          continue;
+        }
+
+        // Parse UUIDs - handle incomplete UUIDs by trying to complete them from tool result
+        const rawIds = idsStr.split(',').map((id) => id.trim());
+        locationIds = rawIds
+          .map((id) => {
+            // Skip placeholders like UUID1, UUID2, etc.
+            if (/^UUID\d+$/i.test(id)) {
+              this.logger.warn(`⚠️ Skipping placeholder: "${id}"`);
+              return null;
+            }
             // Validate UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
             const uuidRegex =
               /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-            const isValid = uuidRegex.test(id);
-            if (!isValid) {
-              this.logger.warn(`⚠️ Invalid UUID format: "${id}" - skipping`);
+            if (uuidRegex.test(id)) {
+              return id;
             }
-            return isValid;
-          });
+            // Try to fix incomplete UUID (e.g., "3b0" -> try to find matching UUID)
+            if (id.length < 36 && id.length > 3) {
+              this.logger.warn(
+                `⚠️ Incomplete UUID detected: "${id}" - will try to match from tool result`,
+              );
+              return null; // Will be handled by fallback extraction
+            }
+            this.logger.warn(`⚠️ Invalid UUID format: "${id}" - skipping`);
+            return null;
+          })
+          .filter((id): id is string => id !== null);
       } else if (trimmed.startsWith('-') && currentSection === 'tips') {
         tips.push(trimmed.replace(/^-\s*/, ''));
       } else if (currentSection === 'activities' && trimmed.includes(':')) {

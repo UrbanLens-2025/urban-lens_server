@@ -56,4 +56,10 @@ export class AIJourneyResponseDto {
     example: 145.8,
   })
   optimizationScore: number;
+
+  @ApiProperty({
+    description: 'AI response time in seconds',
+    example: 5.23,
+  })
+  responseTimeSeconds: number;
 }

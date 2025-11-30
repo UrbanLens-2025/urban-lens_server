@@ -5,6 +5,7 @@ import { TagEntity } from '@/modules/utility/domain/Tag.entity';
 import { UpdateResult } from 'typeorm';
 import { UpdateTagDto } from '@/common/dto/account/UpdateTag.dto';
 import { ExistsDuplicateTagDto } from '@/common/dto/account/ExistsDuplicateTag.dto';
+import { PopularTagResponseDto } from '@/common/dto/utility/res/PopularTagResponse.dto';
 
 export const ITagService = Symbol('ITagService');
 export interface ITagService {
@@ -14,6 +15,8 @@ export interface ITagService {
 
   existsDuplicateTag(dto: ExistsDuplicateTagDto): Promise<boolean>;
   searchSelectable(query: PaginateQuery): Promise<Paginated<TagResponseDto>>;
+  getPopularLocationTags(limit?: number): Promise<PopularTagResponseDto[]>;
+  getPopularEventTags(limit?: number): Promise<PopularTagResponseDto[]>;
 }
 
 export namespace ITagService_QueryConfig {
