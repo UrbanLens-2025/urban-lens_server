@@ -84,9 +84,13 @@ export class LocationAdminController {
     @AuthUser() userDto: JwtTokenDto,
     @Body() dto: CreatePublicLocationDto,
   ) {
-    return this.locationManagementService.createPublicLocation({
-      ...dto,
-      accountId: userDto.sub,
+    return this.locationManagementService.createManyPublicLocations({
+      items: [
+        {
+          ...dto,
+          accountId: userDto.sub,
+        },
+      ],
     });
   }
 
@@ -107,13 +111,11 @@ export class LocationAdminController {
     @AuthUser() userDto: JwtTokenDto,
     @Body() dtos: CreateBatchPublicLocationDto,
   ) {
-    return Promise.allSettled(
-      dtos.items.map((dto) => {
-        return this.locationManagementService.createPublicLocation({
-          ...dto,
-          accountId: userDto.sub,
-        });
-      }),
-    );
+    return this.locationManagementService.createManyPublicLocations({
+      items: dtos.items.map((item) => ({
+        ...item,
+        accountId: userDto.sub,
+      })),
+    });
   }
 }

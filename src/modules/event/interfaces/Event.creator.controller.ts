@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Inject,
+  Ip,
   Param,
   ParseUUIDPipe,
   Post,
@@ -41,6 +42,13 @@ import {
 } from '@/modules/event/app/ITicketOrderQuery.service';
 import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
 import { ConfirmTicketUsageDto } from '@/common/dto/event/ConfirmTicketUsage.dto';
+import { CreateEventDto } from '@/common/dto/event/CreateEvent.dto';
+import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
+import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
+import { CancelEventBookingDto } from '@/common/dto/event/CancelEventBooking.dto';
+import { GetLocationBookingsByEventDto } from '@/common/dto/event/GetLocationBookingsByEvent.dto';
+import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
+import { CancelEventDto } from '@/common/dto/event/CancelEvent.dto';
 
 @ApiBearerAuth()
 @ApiTags('Event')
@@ -63,6 +71,93 @@ export class EventCreatorController {
     @Inject(IEventAttendanceManagementService)
     private readonly eventAttendanceManagementService: IEventAttendanceManagementService,
   ) {}
+
+  @ApiOperation({ summary: 'Create a new event' })
+  @Post()
+  createEvent(
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: CreateEventDto,
+  ): Promise<EventResponseDto> {
+    return this.eventManagementService.createEvent({
+      ...dto,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Cancel my event' })
+  @Delete('/:eventId/cancel')
+  cancelMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: CancelEventDto,
+  ) {
+    return this.eventManagementService.cancelEvent({
+      ...dto,
+      eventId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Add a location booking to my event' })
+  @Post('/:eventId/location-bookings')
+  addLocationBookingToMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: AddLocationBookingDto,
+  ) {
+    return this.eventManagementService.addLocationBooking({
+      ...dto,
+      eventId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Initiate payment for location booking' })
+  @Post('/:eventId/location-bookings/:locationBookingId/payment')
+  initiatePaymentForLocationBooking(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Ip() ipAddress: string,
+  ) {
+    return this.eventManagementService.initiateBookingPayment({
+      eventId,
+      locationBookingId,
+      accountId: userDto.sub,
+      accountName: userDto.email,
+      ipAddress,
+      returnUrl: '',
+    });
+  }
+
+  @ApiOperation({ summary: 'Cancel a location booking for my event' })
+  @Delete('/:eventId/location-bookings/:locationBookingId/cancel')
+  cancelLocationBooking(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: CancelEventBookingDto,
+  ) {
+    return this.eventManagementService.cancelEventBooking({
+      ...dto,
+      eventId,
+      locationBookingId,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Get location bookings for my event' })
+  @Get('/:eventId/location-bookings')
+  getLocationBookingsForMyEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @AuthUser() userDto: JwtTokenDto,
+  ): Promise<LocationBookingResponseDto[]> {
+    const dto: GetLocationBookingsByEventDto = {
+      eventId,
+    };
+
+    return this.eventQueryService.getLocationBookingsByEvent(dto);
+  }
 
   @ApiOperation({ summary: 'Get all my events' })
   @ApiPaginationQuery(IEventQueryService_QueryConfig.searchMyEvents())

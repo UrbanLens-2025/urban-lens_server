@@ -30,7 +30,11 @@ export class BookableLocationSearchService
         },
         relations: {
           bookingConfig: true,
+          availabilities: true,
           business: true,
+          tags: {
+            tag: true,
+          },
         },
       })
       .then((res) => this.mapTo(LocationResponseDto, res));
@@ -39,14 +43,16 @@ export class BookableLocationSearchService
   searchBookableLocations(
     dto: SearchBookableLocationsDto,
   ): Promise<Paginated<LocationResponseDto>> {
-    return paginate(dto.query, LocationRepositoryProvider(this.dataSource), {
-      ...IBookableLocationSearchService_QueryConfig.searchBookableLocations(),
-      where: {
-        ownershipType: LocationOwnershipType.OWNED_BY_BUSINESS,
-        bookingConfig: {
-          allowBooking: true,
+    const locationRepo = LocationRepositoryProvider(this.dataSource);
+
+    return locationRepo
+      .findBookableLocations(
+        dto.query,
+        IBookableLocationSearchService_QueryConfig.searchBookableLocations(),
+        {
+          bookingDates: dto.bookingDates,
         },
-      },
-    }).then((res) => this.mapToPaginated(LocationResponseDto, res));
+      )
+      .then((res) => this.mapToPaginated(LocationResponseDto, res));
   }
 }

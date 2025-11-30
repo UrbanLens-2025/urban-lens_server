@@ -1,3 +1,4 @@
+import { CoreActionDto } from '@/common/dto/CoreAction.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
@@ -11,7 +12,7 @@ import {
   MaxLength,
 } from 'class-validator';
 
-export class CreatePublicLocationDto {
+export class CreatePublicLocationDto extends CoreActionDto {
   // transient fields
   accountId: string;
 

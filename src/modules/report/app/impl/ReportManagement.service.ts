@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { IReportManagementService } from '@/modules/report/app/IReportManagement.service';
 import { ProcessReportDto } from '@/common/dto/report/ProcessReport.dto';
 import { ReportResponseDto } from '@/common/dto/report/res/Report.response.dto';
@@ -8,12 +8,21 @@ import { ReportResolvedByType } from '@/common/constants/ReportResolvedByType.co
 import { ReportResolutionActions } from '@/common/constants/ReportResolutionActions.constant';
 import { ReportEntity } from '@/modules/report/domain/Report.entity';
 import { ReportStatus } from '@/common/constants/ReportStatus.constant';
+import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class ReportManagementService
   extends CoreService
   implements IReportManagementService
 {
+  constructor(
+    @Inject(IEventManagementService)
+    private readonly eventManagementService: IEventManagementService,
+  ) {
+    super();
+  }
+
   processReport(dto: ProcessReportDto): Promise<ReportResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const reportRepo = ReportRepositoryProvider(em);
@@ -41,7 +50,7 @@ export class ReportManagementService
         report.resolvedById = dto.initiatedByAccountId;
       }
 
-      this.handleReportResolution(report, dto.resolutionAction);
+      await this.handleReportResolution(em, report, dto.resolutionAction);
 
       return reportRepo
         .save(report)
@@ -49,14 +58,18 @@ export class ReportManagementService
     });
   }
 
-  private handleReportResolution(
+  private async handleReportResolution(
+    em: EntityManager,
     report: ReportEntity,
     resolutionAction: ReportResolutionActions,
   ) {
     switch (resolutionAction) {
       case ReportResolutionActions.CANCEL_EVENT:
-        break;
-      case ReportResolutionActions.HIDE_EVENT:
+        await this.eventManagementService.cancelEvent({
+          cancellationReason: '',
+          eventId: report.targetId,
+          accountId: report.createdById,
+        });
         break;
       case ReportResolutionActions.NO_ACTION_TAKEN:
         break;

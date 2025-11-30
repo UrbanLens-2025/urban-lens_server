@@ -547,8 +547,21 @@ Select ${context.numberOfLocations} closest, copy REAL UUIDs from "id" field.`;
             cos(radians(l.longitude) - radians($2)) +
             sin(radians($1)) * sin(radians(l.latitude))
           )
-        ) as distance
+        ) as distance,
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', t.id,
+              'name', t.display_name
+            )
+          ) FILTER (WHERE t.id IS NOT NULL),
+          '[]'
+        ) as tags,
+        l.average_rating as "averageRating",
+        l.total_reviews as "totalReviews"
       FROM ${schema}.locations l
+      LEFT JOIN ${schema}.location_tags lt ON l.id = lt.location_id
+      LEFT JOIN ${schema}.tag t ON lt.tag_id = t.id
       WHERE l.is_visible_on_map = true
         AND (
           6371 * acos(
@@ -557,6 +570,7 @@ Select ${context.numberOfLocations} closest, copy REAL UUIDs from "id" field.`;
             sin(radians($1)) * sin(radians(l.latitude))
           )
         ) <= $3
+      GROUP BY l.id, l.name, l.address_line, l.latitude, l.longitude, l.image_url, l.average_rating, l.total_reviews
       ORDER BY distance ASC
       LIMIT $4
     `;

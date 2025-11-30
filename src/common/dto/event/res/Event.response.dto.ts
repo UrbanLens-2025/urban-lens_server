@@ -2,11 +2,14 @@ import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { EventStatus } from '@/common/constants/EventStatus.constant';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
-import { EventRequestResponseDto } from '@/common/dto/event/res/EventRequest.response.dto';
 import { EventTagsResponseDto } from '@/common/dto/event/res/EventTags.response.dto';
 import { SocialLink } from '@/common/json/SocialLink.json';
 import { EventTicketResponseDto } from '@/common/dto/event/res/EventTicket.response.dto';
 import { TagResponseDto } from '@/common/dto/account/res/TagResponse.dto';
+import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
+import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
+import { TicketOrderResponseDto } from '@/common/dto/event/res/TicketOrder.response.dto';
+import { ScheduledJobResponseDto } from '@/common/dto/scheduled-job/res/ScheduledJob.response.dto';
 
 @Exclude()
 export class EventResponseDto {
@@ -46,15 +49,24 @@ export class EventResponseDto {
   status: EventStatus;
 
   @Expose()
-  @Type(() => Date)
-  startDate: Date;
+  expectedNumberOfParticipants: number;
+
+  @Expose()
+  allowTickets: boolean;
 
   @Expose()
   @Type(() => Date)
-  endDate: Date;
+  startDate?: Date | null;
 
   @Expose()
-  locationId: string;
+  @Type(() => Date)
+  endDate?: Date | null;
+
+  @Expose()
+  cancellationReason?: string | null;
+
+  @Expose()
+  locationId?: string | null;
 
   @Expose()
   @Type(() => LocationResponseDto)
@@ -65,11 +77,14 @@ export class EventResponseDto {
   social?: SocialLink[] | null;
 
   @Expose()
-  referencedEventRequestId: string;
+  @Type(() => EventValidationDocumentsJson)
+  eventValidationDocuments: EventValidationDocumentsJson[];
 
   @Expose()
-  @Type(() => EventRequestResponseDto)
-  referencedEventRequest?: EventRequestResponseDto;
+  refundPolicy?: string | null;
+
+  @Expose()
+  termsAndConditions?: string | null;
 
   @Expose()
   @Transform(({ value }) => {
@@ -86,4 +101,32 @@ export class EventResponseDto {
   @Expose()
   @Type(() => EventTicketResponseDto)
   tickets?: EventTicketResponseDto[];
+
+  @Expose()
+  @Type(() => TicketOrderResponseDto)
+  ticketOrders?: TicketOrderResponseDto[];
+
+  @Expose()
+  @Type(() => LocationBookingResponseDto)
+  locationBookings?: LocationBookingResponseDto[];
+
+  @Expose()
+  hasPaidOut: boolean;
+
+  @Expose()
+  @Type(() => Date)
+  paidOutAt?: Date | null;
+
+  @Expose()
+  scheduledJobId?: number | null;
+
+  @Expose()
+  @Type(() => ScheduledJobResponseDto)
+  scheduledJob?: ScheduledJobResponseDto;
+
+  @Expose()
+  totalReviews: number;
+
+  @Expose()
+  avgRating: number;
 }

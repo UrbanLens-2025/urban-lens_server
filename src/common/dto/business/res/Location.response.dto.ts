@@ -5,6 +5,7 @@ import { LocationTagsResponseDto } from '@/common/dto/business/res/LocationTags.
 import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
 import { LocationBookingConfigResponseDto } from '@/common/dto/location-booking/res/LocationBookingConfig.response.dto';
 import { TagResponseDto } from '@/common/dto/account/res/TagResponse.dto';
+import { LocationAvailabilityResponseDto } from '@/common/dto/location-booking/res/LocationAvailability.response.dto';
 
 @Exclude()
 export class LocationResponseDto {
@@ -80,4 +81,20 @@ export class LocationResponseDto {
   @Expose()
   @Type(() => LocationBookingConfigResponseDto)
   bookingConfig: LocationBookingConfigResponseDto;
+
+  @Expose()
+  @Type(() => LocationAvailabilityResponseDto)
+  availabilities: LocationAvailabilityResponseDto[];
+
+  @Expose()
+  averageRating: number;
+
+  @Expose()
+  totalReviews: number;
+
+  @Expose()
+  totalCheckIns: number;
+
+  @Expose()
+  totalPosts: number;
 }

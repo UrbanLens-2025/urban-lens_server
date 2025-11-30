@@ -35,6 +35,13 @@ export class TicketOrderResponseDto {
   status: EventTicketOrderStatus;
 
   @Expose()
+  @Type(() => Date)
+  refundedAt?: Date | null;
+
+  @Expose()
+  refundReason?: string | null;
+
+  @Expose()
   referencedTransactionId: string | null;
 
   @Expose()

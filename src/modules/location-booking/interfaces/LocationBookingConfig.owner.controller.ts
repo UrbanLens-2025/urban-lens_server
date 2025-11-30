@@ -5,7 +5,6 @@ import {
   Inject,
   Param,
   ParseUUIDPipe,
-  Post,
   Put,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -14,7 +13,6 @@ import { Role } from '@/common/constants/Role.constant';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ILocationBookingConfigManagementService } from '@/modules/location-booking/app/ILocationBookingConfigManagement.service';
-import { AddLocationBookingConfigDto } from '@/common/dto/location-booking/AddLocationBookingConfig.dto';
 import { UpdateLocationBookingConfigDto } from '@/common/dto/location-booking/UpdateLocationBookingConfig.dto';
 
 @ApiTags('Location Booking Config')

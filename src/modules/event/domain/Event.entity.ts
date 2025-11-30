@@ -5,7 +5,6 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -14,10 +13,11 @@ import { EventStatus } from '@/common/constants/EventStatus.constant';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { SocialLink } from '@/common/json/SocialLink.json';
 import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
-import { EventRequestEntity } from '@/modules/event/domain/EventRequest.entity';
 import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
 import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
 import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
+import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
+import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
 
 @Entity({ name: EventEntity.TABLE_NAME })
 export class EventEntity {
@@ -48,10 +48,20 @@ export class EventEntity {
   description: string;
 
   @Column({ name: 'avatar_url', type: 'varchar', length: 500, nullable: true })
-  avatarUrl: string;
+  avatarUrl?: string | null;
 
   @Column({ name: 'cover_url', type: 'varchar', length: 500, nullable: true })
-  coverUrl: string;
+  coverUrl?: string | null;
+
+  @Column({
+    name: 'expected_number_of_participants',
+    type: 'int',
+    default: 0,
+  })
+  expectedNumberOfParticipants: number;
+
+  @Column({ name: 'allow_tickets', type: 'boolean', default: false })
+  allowTickets: boolean;
 
   @Column({ name: 'status', type: 'varchar', length: 50 })
   status: EventStatus;
@@ -72,15 +82,19 @@ export class EventEntity {
 
   @ManyToOne(() => LocationEntity, (location) => location.id, {
     createForeignKeyConstraints: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'location_id' })
-  location: LocationEntity;
+  location?: LocationEntity | null;
 
-  @Column({ name: 'location_id', type: 'uuid' })
-  locationId: string;
+  @Column({ name: 'location_id', type: 'uuid', nullable: true })
+  locationId?: string | null;
 
   @Column({ name: 'social', type: 'jsonb', nullable: true })
   social?: SocialLink[] | null;
+
+  @Column({ name: 'event_validation_documents', type: 'jsonb', default: '[]' })
+  eventValidationDocuments: EventValidationDocumentsJson[];
 
   @Column({ name: 'refund_policy', type: 'text', nullable: true })
   refundPolicy?: string | null;
@@ -88,19 +102,18 @@ export class EventEntity {
   @Column({ name: 'terms_and_conditions', type: 'text', nullable: true })
   termsAndConditions?: string | null;
 
+  @Column({
+    name: 'cancellation_reason',
+    type: 'varchar',
+    length: 555,
+    nullable: true,
+  })
+  cancellationReason?: string | null;
+
   @OneToMany(() => EventTagsEntity, (eventTags) => eventTags.event, {
     createForeignKeyConstraints: false,
   })
   tags: EventTagsEntity[];
-
-  @OneToOne(() => EventRequestEntity, (eventRequest) => eventRequest.id, {
-    createForeignKeyConstraints: false,
-  })
-  @JoinColumn({ name: 'referenced_event_request_id' })
-  referencedEventRequest: EventRequestEntity;
-
-  @Column({ name: 'referenced_event_request_id', type: 'uuid' })
-  referencedEventRequestId: string;
 
   @Column({ name: 'has_paid_out', type: 'boolean', default: false })
   hasPaidOut: boolean;
@@ -131,6 +144,15 @@ export class EventEntity {
     createForeignKeyConstraints: false,
   })
   ticketOrders: TicketOrderEntity[];
+
+  @OneToMany(
+    () => LocationBookingEntity,
+    (locationBooking) => locationBooking.referencedEvent,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
+  locationBookings: LocationBookingEntity[];
 
   // Analytics columns (migrated from analytic table)
   @Column({ name: 'total_reviews', type: 'int', default: 0 })
@@ -179,7 +201,18 @@ export class EventEntity {
     return correctStatus && hasLocation && hasDisplayName && hasDates;
   }
 
-  canBeUpdated() {
+  public canBeUpdated() {
+    const correctStatus =
+      this.status === EventStatus.DRAFT ||
+      this.status === EventStatus.PUBLISHED;
+    return correctStatus;
+  }
+
+  public canSafelyModifyBooking() {
+    return this.status === EventStatus.DRAFT;
+  }
+
+  public canBeCancelled() {
     const correctStatus =
       this.status === EventStatus.DRAFT ||
       this.status === EventStatus.PUBLISHED;

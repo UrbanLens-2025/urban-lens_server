@@ -1,6 +1,6 @@
 import { SearchBookableLocationsDto } from '@/common/dto/location-booking/SearchBookableLocations.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
-import { PaginateConfig, Paginated } from 'nestjs-paginate';
+import { FilterOperator, PaginateConfig, Paginated } from 'nestjs-paginate';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { GetBookableLocationByIdDto } from '@/common/dto/location-booking/GetBookableLocationById.dto';
 
@@ -22,9 +22,23 @@ export namespace IBookableLocationSearchService_QueryConfig {
     return {
       sortableColumns: ['createdAt', 'updatedAt'],
       defaultSortBy: [['createdAt', 'DESC']],
-      select: ['*', 'bookingConfig.*'],
       relations: {
         bookingConfig: true,
+        availabilities: true,
+        bookings: true,
+      },
+      searchableColumns: [
+        'name',
+        'addressLine',
+        'addressLevel1',
+        'addressLevel2',
+      ],
+      filterableColumns: {
+        'bookingConfig.maxCapacity': [FilterOperator.EQ, FilterOperator.GTE],
+        'bookingConfig.baseBookingPrice': [
+          FilterOperator.GTE,
+          FilterOperator.LTE,
+        ],
       },
     };
   }

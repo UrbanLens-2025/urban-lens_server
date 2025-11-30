@@ -1,12 +1,7 @@
 import { Module } from '@nestjs/common';
 import { EventInfraModule } from '@/modules/event/infra/event.infra.module';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
-import { EventRequestCreatorController } from '@/modules/event/interfaces/EventRequest.creator.controller';
-import { IEventRequestManagementService } from '@/modules/event/app/IEventRequestManagement.service';
-import { EventRequestManagementService } from '@/modules/event/app/impl/EventRequestManagement.service';
 import { LocationBookingModule } from '@/modules/location-booking/LocationBooking.module';
-import { IEventRequestQueryService } from '@/modules/event/app/IEventRequestQuery.service';
-import { EventRequestQueryService } from '@/modules/event/app/impl/EventRequestQuery.service';
 import { EventCreatorController } from '@/modules/event/interfaces/Event.creator.controller';
 import { EventPublicController } from '@/modules/event/interfaces/Event.public.controller';
 import { IEventQueryService } from '@/modules/event/app/IEventQuery.service';
@@ -30,6 +25,9 @@ import { EventAttendanceManagementService } from '@/modules/event/app/impl/Event
 import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
 import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
 import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPayout.listener';
+import { IEventAnalyticsService } from '@/modules/event/app/IEventAnalytics.service';
+import { EventAnalyticsService } from '@/modules/event/app/impl/EventAnalytics.service';
+import { EventAnalyticsDevOnlyController } from '@/modules/event/interfaces/EventAnalytics.dev-only.controller';
 
 @Module({
   imports: [
@@ -41,21 +39,13 @@ import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPa
     ScheduledJobsModule,
   ],
   controllers: [
-    EventRequestCreatorController,
     EventCreatorController,
     EventPublicController,
     EventUserController,
     EventAdminController,
+    EventAnalyticsDevOnlyController,
   ],
   providers: [
-    {
-      provide: IEventRequestManagementService,
-      useClass: EventRequestManagementService,
-    },
-    {
-      provide: IEventRequestQueryService,
-      useClass: EventRequestQueryService,
-    },
     {
       provide: IEventQueryService,
       useClass: EventQueryService,
@@ -88,7 +78,12 @@ import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPa
       provide: IEventAttendanceManagementService,
       useClass: EventAttendanceManagementService,
     },
+    {
+      provide: IEventAnalyticsService,
+      useClass: EventAnalyticsService,
+    },
     EventPayoutListener,
   ],
+  exports: [IEventManagementService],
 })
 export class EventModule {}

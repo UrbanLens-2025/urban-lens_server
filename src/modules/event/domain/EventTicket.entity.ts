@@ -4,11 +4,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
+import { TicketOrderDetailsEntity } from '@/modules/event/domain/TicketOrderDetails.entity';
 
 @Entity({ name: 'event_ticket' })
 export class EventTicketEntity {
@@ -80,6 +82,11 @@ export class EventTicketEntity {
 
   @Column({ name: 'event_id', type: 'uuid' })
   eventId: string;
+
+  @OneToMany(() => TicketOrderDetailsEntity, (detail) => detail.ticket, {
+    createForeignKeyConstraints: false,
+  })
+  ticketOrderDetails: TicketOrderDetailsEntity[];
 
   public canBePurchasedNow(): boolean {
     const now = new Date();

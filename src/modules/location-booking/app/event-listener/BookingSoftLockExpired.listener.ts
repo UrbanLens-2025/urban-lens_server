@@ -1,9 +1,5 @@
 import { CoreService } from '@/common/core/Core.service';
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import {
   DelayedMessageKeys,
@@ -12,9 +8,6 @@ import {
 import { DelayedMessageResponseWrapper } from '@/common/core/delayed-message/DelayedMessageResponseWrapper';
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
-import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
-import { EventRequestStatus } from '@/common/constants/EventRequestStatus.constant';
-import { EventRequestRepository } from '@/modules/event/infra/repository/EventRequest.repository';
 
 @Injectable()
 export class BookingSoftLockExpiredListener extends CoreService {
@@ -30,35 +23,17 @@ export class BookingSoftLockExpiredListener extends CoreService {
     return this.ensureTransaction(null, async (em) => {
       try {
         const locationBookingRepository = LocationBookingRepository(em);
-        const eventRequestRepository = EventRequestRepository(em);
+
         const locationBooking = await locationBookingRepository.findOneOrFail({
           where: {
             id: locationBookingId,
           },
-          relations: {
-            referencedEventRequest: true,
-          },
         });
 
+        // If approved (meaning no status change was made), set to expired.
         if (locationBooking.status === LocationBookingStatus.APPROVED) {
           locationBooking.status = LocationBookingStatus.EXPIRED_BEFORE_PAYMENT;
           await locationBookingRepository.save(locationBooking);
-
-          switch (locationBooking.bookingObject) {
-            case LocationBookingObject.FOR_EVENT: {
-              if (!locationBooking.referencedEventRequest) {
-                throw new InternalServerErrorException(
-                  'Location booking is for event but no referenced event request found.',
-                );
-              }
-
-              locationBooking.referencedEventRequest.status =
-                EventRequestStatus.FAILED;
-              await eventRequestRepository.save(
-                locationBooking.referencedEventRequest,
-              );
-            }
-          }
         }
 
         event.ack();

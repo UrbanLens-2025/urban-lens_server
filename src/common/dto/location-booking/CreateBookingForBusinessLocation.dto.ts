@@ -25,6 +25,7 @@ class BookingDateRangeDto {
 export class CreateBookingForBusinessLocationDto {
   // transient fields
   accountId: string;
+  targetId?: string | null;
 
   // body
   @IsUUID()
