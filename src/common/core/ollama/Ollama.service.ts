@@ -77,6 +77,18 @@ export class OllamaService {
       const tools = this.getDatabaseTools(schema);
       const conversationHistory: any[] = [];
 
+      // Validate currentLocation coordinates
+      if (
+        context.currentLocation.latitude == null ||
+        context.currentLocation.longitude == null ||
+        isNaN(context.currentLocation.latitude) ||
+        isNaN(context.currentLocation.longitude)
+      ) {
+        throw new Error(
+          `Invalid currentLocation coordinates: lat=${context.currentLocation.latitude}, lng=${context.currentLocation.longitude}`,
+        );
+      }
+
       // Initial prompt - store context for later use
       const initialPrompt = this.buildAgentPrompt(context);
       conversationHistory.push({
@@ -84,9 +96,9 @@ export class OllamaService {
         content:
           initialPrompt +
           '\n\n🚨 MANDATORY: Your FIRST response MUST call the tool:\nTOOL_CALL: query_nearby_locations\nPARAMETERS: {"latitude": ' +
-          context.currentLocation.latitude +
+          Number(context.currentLocation.latitude) +
           ', "longitude": ' +
-          context.currentLocation.longitude +
+          Number(context.currentLocation.longitude) +
           ', "radiusKm": ' +
           (context.maxRadiusKm || 10) +
           ', "limit": 6}\n\nDo NOT write anything else. Just call the tool.',
@@ -382,12 +394,12 @@ CRITICAL:
       .map(([tag, score]) => `${tag.replace('tag_', '')}:${score}`);
 
     return `Plan ${context.numberOfLocations} locs, ${context.maxRadiusKm || 10}km.
-Start: ${context.currentLocation.latitude}, ${context.currentLocation.longitude}
+Start: ${Number(context.currentLocation.latitude)}, ${Number(context.currentLocation.longitude)}
 Pref: ${topPreferences[0] || 'none'}
 
 ⚠️ Call tool FIRST (NO markdown):
 TOOL_CALL: query_nearby_locations
-PARAMETERS: {"latitude": ${context.currentLocation.latitude}, "longitude": ${context.currentLocation.longitude}, "radiusKm": ${context.maxRadiusKm || 10}, "limit": 6}
+PARAMETERS: {"latitude": ${Number(context.currentLocation.latitude)}, "longitude": ${Number(context.currentLocation.longitude)}, "radiusKm": ${context.maxRadiusKm || 10}, "limit": 6}
 
 Then respond EXACT format (NO ###, NO markdown):
 REASONING: [2 sentences Vietnamese]
