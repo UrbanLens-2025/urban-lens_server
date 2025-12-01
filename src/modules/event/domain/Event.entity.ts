@@ -145,15 +145,6 @@ export class EventEntity {
   })
   ticketOrders: TicketOrderEntity[];
 
-  @OneToMany(
-    () => LocationBookingEntity,
-    (locationBooking) => locationBooking.referencedEvent,
-    {
-      createForeignKeyConstraints: false,
-    },
-  )
-  locationBookings: LocationBookingEntity[];
-
   // Analytics columns (migrated from analytic table)
   @Column({ name: 'total_reviews', type: 'int', default: 0 })
   totalReviews: number;

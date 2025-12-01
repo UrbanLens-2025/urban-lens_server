@@ -25,6 +25,8 @@ import { InitiateEventBookingPaymentDto } from '@/common/dto/event/InitiateBooki
 import { AddLocationBookingDto } from '@/common/dto/event/AddLocationBooking.dto';
 import { CancelEventDto } from '@/common/dto/event/CancelEvent.dto';
 import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
+import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
+import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 
 @Injectable()
 export class EventManagementService
@@ -219,14 +221,12 @@ export class EventManagementService
   cancelEvent(dto: CancelEventDto): Promise<EventResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const eventRepo = EventRepository(em);
+      const locationBookingRepo = LocationBookingRepository(em);
       const event = await eventRepo
         .findOneOrFail({
           where: {
             id: dto.eventId,
             createdById: dto.accountId,
-          },
-          relations: {
-            locationBookings: true,
           },
         })
         .then((res) => {
@@ -237,6 +237,13 @@ export class EventManagementService
         });
 
       event.status = EventStatus.CANCELLED;
+      const locationBookings = await locationBookingRepo.find({
+        where: {
+          bookingObject: LocationBookingObject.FOR_EVENT,
+          targetId: dto.eventId,
+        },
+      });
+
 
       // refund tickets
       await this.ticketOrderManagementService.refundAllSuccessfulOrders({
@@ -247,7 +254,7 @@ export class EventManagementService
       });
 
       // cancel booking
-      for (const locationBooking of event.locationBookings) {
+      for (const locationBooking of locationBookings) {
         if (locationBooking.canBeCancelled()) {
           await this.locationBookingService.cancelBooking({
             accountId: dto.accountId,
@@ -265,15 +272,13 @@ export class EventManagementService
   addLocationBooking(dto: AddLocationBookingDto): Promise<EventResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const eventRepo = EventRepository(em);
+      const locationBookingRepo = LocationBookingRepository(em);
 
       const event = await eventRepo
         .findOneOrFail({
           where: {
             id: dto.eventId,
             createdById: dto.accountId,
-          },
-          relations: {
-            locationBookings: true,
           },
         })
         .then((res) => {
@@ -285,6 +290,13 @@ export class EventManagementService
 
           return res;
         });
+
+      const locationBookings = await locationBookingRepo.find({
+        where: {
+          bookingObject: LocationBookingObject.FOR_EVENT,
+          targetId: dto.eventId,
+        },
+      });
 
       // validate dates (each entry must be one day)
       // ? removed because of time zone issues
@@ -301,7 +313,7 @@ export class EventManagementService
       // validate selected dates (check for conflicts with existing bookings)
 
       // check if location booking already exists
-      const existingLocationBooking = event.locationBookings.find((booking) => {
+      const existingLocationBooking = locationBookings.find((booking) => {
         return booking.locationId === dto.locationId && booking.isActive();
       });
       if (existingLocationBooking) {
@@ -320,7 +332,7 @@ export class EventManagementService
 
       return this.mapTo(EventResponseDto, {
         ...event,
-        locationBookings: [...event.locationBookings, locationBooking],
+        locationBookings: [locationBooking],
       });
     });
   }
@@ -330,14 +342,11 @@ export class EventManagementService
   ): Promise<EventResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const eventRepo = EventRepository(em);
-
+      const locationBookingRepo = LocationBookingRepository(em);
       const event = await eventRepo
         .findOneOrFail({
           where: {
             id: dto.eventId,
-          },
-          relations: {
-            locationBookings: true,
           },
         })
         // check can confirm
@@ -350,7 +359,14 @@ export class EventManagementService
           return res;
         });
 
-      const locationBooking = event.locationBookings.find((booking) => {
+      const locationBookings = await locationBookingRepo.find({
+        where: {
+          bookingObject: LocationBookingObject.FOR_EVENT,
+          targetId: dto.eventId,
+        },
+      });
+
+      const locationBooking = locationBookings.find((booking) => {
         return booking.id === dto.locationBookingId;
       });
 
