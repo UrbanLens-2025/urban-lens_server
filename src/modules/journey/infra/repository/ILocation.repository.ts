@@ -12,9 +12,14 @@ export interface ILocationRepository {
   ): Promise<LocationEntity[]>;
 
   /**
-   * Find locations by IDs
+   * Find locations by IDs (with isVisibleOnMap filter)
    */
   findByIds(locationIds: string[]): Promise<LocationEntity[]>;
+
+  /**
+   * Find locations by IDs without isVisibleOnMap filter (for start/end locations)
+   */
+  findByIdsIgnoreVisibility(locationIds: string[]): Promise<LocationEntity[]>;
 
   /**
    * Find nearest location to given coordinates

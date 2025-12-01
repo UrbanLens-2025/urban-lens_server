@@ -362,4 +362,29 @@ export class LocationVoucherService implements ILocationVoucherService {
       throw new BadRequestException(error.message);
     }
   }
+
+  async getAllAvailableVouchers(query: PaginateQuery): Promise<Paginated<any>> {
+    try {
+      const now = new Date();
+      const queryBuilder = this.locationVoucherRepository.repo
+        .createQueryBuilder('voucher')
+        .leftJoinAndSelect('voucher.location', 'location')
+        .where('voucher.startDate <= :now', { now })
+        .andWhere('voucher.endDate >= :now', { now })
+        .andWhere('voucher.maxQuantity > 0');
+
+      return paginate(query, queryBuilder, {
+        sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
+        defaultSortBy: [['createdAt', 'DESC']],
+        searchableColumns: ['title', 'voucherCode'],
+        filterableColumns: {
+          voucherType: true,
+          locationId: true,
+          pricePoint: true,
+        },
+      });
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 }

@@ -679,8 +679,20 @@ export class JourneyPlannerService implements IJourneyPlannerService {
         this.userProfileRepository.findByAccountId(userId),
         dto.startLocationId
           ? this.locationRepository
-              .findByIds([dto.startLocationId])
-              .then((locs) => locs[0] || null)
+              .findByIdsIgnoreVisibility([dto.startLocationId])
+              .then((locs) => {
+                const loc = locs[0] || null;
+                if (loc) {
+                  this.logger.debug(
+                    `Found start location: ${loc.id}, lat: ${loc.latitude} (type: ${typeof loc.latitude}), lng: ${loc.longitude} (type: ${typeof loc.longitude}), isVisibleOnMap: ${loc.isVisibleOnMap}`,
+                  );
+                } else {
+                  this.logger.warn(
+                    `Start location with id ${dto.startLocationId} not found`,
+                  );
+                }
+                return loc;
+              })
           : this.locationRepository.findNearestLocation(
               dto.currentLatitude!,
               dto.currentLongitude!,
@@ -688,8 +700,20 @@ export class JourneyPlannerService implements IJourneyPlannerService {
             ),
         dto.endLocationId
           ? this.locationRepository
-              .findByIds([dto.endLocationId])
-              .then((locs) => locs[0] || null)
+              .findByIdsIgnoreVisibility([dto.endLocationId])
+              .then((locs) => {
+                const loc = locs[0] || null;
+                if (loc) {
+                  this.logger.debug(
+                    `Found end location: ${loc.id}, lat: ${loc.latitude} (type: ${typeof loc.latitude}), lng: ${loc.longitude} (type: ${typeof loc.longitude}), isVisibleOnMap: ${loc.isVisibleOnMap}`,
+                  );
+                } else {
+                  this.logger.warn(
+                    `End location with id ${dto.endLocationId} not found`,
+                  );
+                }
+                return loc;
+              })
           : Promise.resolve(null),
       ]);
 
@@ -703,30 +727,75 @@ export class JourneyPlannerService implements IJourneyPlannerService {
     let startLocation: LocationEntity | null = startLocationResult;
     let startPoint: RoutePoint;
 
-    if (dto.startLocationId && startLocation) {
+    if (dto.startLocationId) {
+      // If startLocationId is provided, it must be found
+      if (!startLocation) {
+        throw new NotFoundException(
+          `Start location with id ${dto.startLocationId} not found or not visible on map.`,
+        );
+      }
+      // Convert to number if they are strings (from decimal type in DB)
+      const lat = Number(startLocation.latitude);
+      const lng = Number(startLocation.longitude);
+
+      if (
+        startLocation.latitude == null ||
+        startLocation.longitude == null ||
+        isNaN(lat) ||
+        isNaN(lng)
+      ) {
+        throw new BadRequestException(
+          `Start location ${startLocation.id} has invalid coordinates (lat: ${startLocation.latitude}, lng: ${startLocation.longitude})`,
+        );
+      }
       startPoint = {
-        latitude: startLocation.latitude,
-        longitude: startLocation.longitude,
+        latitude: lat,
+        longitude: lng,
       };
       this.logger.log(
-        `Using provided start location: ${startLocation.name} (${startLocation.id})`,
+        `Using provided start location: ${startLocation.name} (${startLocation.id}) at (${startPoint.latitude}, ${startPoint.longitude})`,
       );
     } else if (startLocation) {
+      // Found nearest location to current position
+      // Convert to number if they are strings (from decimal type in DB)
+      const lat = Number(startLocation.latitude);
+      const lng = Number(startLocation.longitude);
+
+      if (
+        startLocation.latitude == null ||
+        startLocation.longitude == null ||
+        isNaN(lat) ||
+        isNaN(lng)
+      ) {
+        throw new BadRequestException(
+          `Nearest location ${startLocation.id} has invalid coordinates (lat: ${startLocation.latitude}, lng: ${startLocation.longitude})`,
+        );
+      }
       startPoint = {
-        latitude: startLocation.latitude,
-        longitude: startLocation.longitude,
+        latitude: lat,
+        longitude: lng,
       };
       this.logger.log(
-        `Found nearest location to current position: ${startLocation.name} (${startLocation.id})`,
+        `Found nearest location to current position: ${startLocation.name} (${startLocation.id}) at (${startPoint.latitude}, ${startPoint.longitude})`,
       );
     } else {
-      // Fallback to current position
+      // Fallback to current position (only when startLocationId is NOT provided)
+      if (
+        dto.currentLatitude == null ||
+        dto.currentLongitude == null ||
+        isNaN(dto.currentLatitude) ||
+        isNaN(dto.currentLongitude)
+      ) {
+        throw new BadRequestException(
+          'Current coordinates are required when startLocationId is not provided and no nearby location is found.',
+        );
+      }
       startPoint = {
-        latitude: dto.currentLatitude!,
-        longitude: dto.currentLongitude!,
+        latitude: dto.currentLatitude,
+        longitude: dto.currentLongitude,
       };
       this.logger.warn(
-        'No nearby location found, using current position as start point',
+        `No nearby location found, using current position as start point: (${startPoint.latitude}, ${startPoint.longitude})`,
       );
     }
 
@@ -735,12 +804,26 @@ export class JourneyPlannerService implements IJourneyPlannerService {
     let endPoint: RoutePoint | null = null;
 
     if (dto.endLocationId && endLocation) {
+      // Convert to number if they are strings (from decimal type in DB)
+      const lat = Number(endLocation.latitude);
+      const lng = Number(endLocation.longitude);
+
+      if (
+        endLocation.latitude == null ||
+        endLocation.longitude == null ||
+        isNaN(lat) ||
+        isNaN(lng)
+      ) {
+        throw new BadRequestException(
+          `End location ${endLocation.id} has invalid coordinates (lat: ${endLocation.latitude}, lng: ${endLocation.longitude})`,
+        );
+      }
       endPoint = {
-        latitude: endLocation.latitude,
-        longitude: endLocation.longitude,
+        latitude: lat,
+        longitude: lng,
       };
       this.logger.log(
-        `Using provided end location: ${endLocation.name} (${endLocation.id})`,
+        `Using provided end location: ${endLocation.name} (${endLocation.id}) at (${endPoint.latitude}, ${endPoint.longitude})`,
       );
     } else if (dto.endLatitude && dto.endLongitude) {
       endPoint = {
@@ -780,6 +863,19 @@ export class JourneyPlannerService implements IJourneyPlannerService {
       dto.numberOfLocations * 3,
     );
 
+    this.logger.debug(
+      `Found ${nearbyCandidates.length} locations within ${searchRadiusKm}km before filtering`,
+    );
+
+    // Exclude start and end locations from candidates (they will be added separately)
+    const beforeFilterCount = nearbyCandidates.length;
+    nearbyCandidates = nearbyCandidates.filter(
+      (loc) => !excludedIds.has(loc.id),
+    );
+    this.logger.debug(
+      `After excluding start/end locations: ${nearbyCandidates.length} locations (filtered out ${beforeFilterCount - nearbyCandidates.length})`,
+    );
+
     let currentRadius = searchRadiusKm;
     const maxExpandedRadius = 20;
     while (
@@ -797,17 +893,50 @@ export class JourneyPlannerService implements IJourneyPlannerService {
         currentRadius,
         dto.numberOfLocations * 3,
       );
-    }
 
-    if (nearbyCandidates.length === 0) {
-      throw new NotFoundException(
-        'No locations found in the specified area. Try increasing the search radius.',
+      this.logger.debug(
+        `Found ${nearbyCandidates.length} locations within ${currentRadius.toFixed(1)}km before filtering`,
+      );
+
+      // Exclude start and end locations from candidates
+      const beforeFilterCount = nearbyCandidates.length;
+      nearbyCandidates = nearbyCandidates.filter(
+        (loc) => !excludedIds.has(loc.id),
+      );
+      this.logger.debug(
+        `After excluding start/end locations: ${nearbyCandidates.length} locations (filtered out ${beforeFilterCount - nearbyCandidates.length})`,
       );
     }
 
-    this.logger.debug(
-      `Found ${nearbyCandidates.length} candidate locations within ${currentRadius.toFixed(1)}km`,
-    );
+    // If still no candidates after expansion, check if we have wishlist locations
+    if (nearbyCandidates.length === 0) {
+      if (filteredWishlistIds.length > 0) {
+        this.logger.warn(
+          `No nearby locations found, but ${filteredWishlistIds.length} wishlist location(s) will be used`,
+        );
+        // Continue with wishlist locations only - AI will handle them
+      } else {
+        throw new NotFoundException(
+          'No locations found in the specified area. Try increasing the search radius or adding locations to your wishlist.',
+        );
+      }
+    } else {
+      this.logger.debug(
+        `Found ${nearbyCandidates.length} candidate locations within ${currentRadius.toFixed(1)}km (excluding start/end locations)`,
+      );
+    }
+
+    // Validate startPoint has valid coordinates
+    if (
+      startPoint.latitude == null ||
+      startPoint.longitude == null ||
+      isNaN(startPoint.latitude) ||
+      isNaN(startPoint.longitude)
+    ) {
+      throw new BadRequestException(
+        'Invalid start location coordinates. Please provide valid startLocationId or currentLatitude/currentLongitude.',
+      );
+    }
 
     // Call AI agent to query database and plan journey
     const aiResponse = await this.ollamaService.generateJourneyWithDBAccess({
