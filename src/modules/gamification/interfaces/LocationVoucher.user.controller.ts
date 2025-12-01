@@ -56,6 +56,29 @@ export class LocationVoucherUserController {
   }
 
   @ApiOperation({
+    summary: 'Get all available vouchers for exchange',
+    description:
+      'Get all vouchers (free and paid) that are currently active and available for exchange, from all locations (including locations where user has not checked in)',
+  })
+  @ApiPaginationQuery({
+    sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['title', 'voucherCode'],
+    filterableColumns: {
+      voucherType: true,
+      locationId: true,
+      pricePoint: true,
+    },
+  })
+  @Get('/available')
+  getAllAvailableVouchers(
+    @Paginate() query: PaginateQuery,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.locationVoucherService.getAllAvailableVouchers(query);
+  }
+
+  @ApiOperation({
     summary: 'Get available vouchers by location',
     description:
       'Get all available vouchers for exchange at a specific location',
