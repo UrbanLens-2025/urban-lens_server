@@ -28,6 +28,7 @@ import { TransferFundsFromUserWalletDto } from '@/common/dto/wallet/TransferFund
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
+import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service';
 
 @ApiTags('_Development')
 @ApiBearerAuth()
@@ -42,6 +43,8 @@ export class WalletDevOnlyController {
     private readonly paymentGatewayPort: IPaymentGatewayPort,
     @Inject(IWalletTransactionManagementService)
     private readonly walletTransactionHandlerService: IWalletTransactionManagementService,
+    @Inject(IWalletActionService)
+    private readonly walletActionService: IWalletActionService,
     private readonly eventEmitter: EventEmitter2,
     private readonly dataSource: DataSource,
   ) {}
@@ -60,11 +63,12 @@ export class WalletDevOnlyController {
     @Query('transaction-number') transactionNo: number,
     @Query('transaction-id') transactionId: string,
   ) {
-    const payload = this.paymentGatewayPort.createMockProcessPaymentConfirmationPayload({
-      amount,
-      transactionNo: transactionNo,
-      transactionId,
-    });
+    const payload =
+      this.paymentGatewayPort.createMockProcessPaymentConfirmationPayload({
+        amount,
+        transactionNo: transactionNo,
+        transactionId,
+      });
     return this.walletExternalTransactionManagementService.confirmDepositTransaction(
       {
         queryParams: payload,
@@ -143,18 +147,28 @@ export class WalletDevOnlyController {
     };
 
     // Emit wallet creation event for each account
-    for (const account of accountsWithoutWallets) {
-      this.eventEmitter.emit(
-        USER_REGISTRATION_CONFIRMED,
-        new UserRegistrationConfirmedEvent(account as unknown as AccountEntity),
-      );
-      results.eventsEmitted++;
-      results.accounts.push({
-        id: account.id,
-        email: account.email,
-        role: account.role,
-      });
-    }
+    await this.dataSource.transaction(async (em) => {
+      for (const account of accountsWithoutWallets) {
+        this.eventEmitter.emit(
+          USER_REGISTRATION_CONFIRMED,
+          new UserRegistrationConfirmedEvent(
+            account as unknown as AccountEntity,
+          ),
+        );
+        results.eventsEmitted++;
+
+        await this.walletActionService.createDefaultWallet({
+          userId: account.id,
+          entityManager: em,
+        });
+
+        results.accounts.push({
+          id: account.id,
+          email: account.email,
+          role: account.role,
+        });
+      }
+    });
 
     return {
       success: true,
