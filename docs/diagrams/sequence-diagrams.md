@@ -9,7 +9,19 @@ sequenceDiagram
     participant PostService
     participant FileStorageService as IFileStorageService
     participant Database
+    participant Database
 
+    Client->>PostController: POST /user/post<br/>(CreatePostDto + JWT)
+    PostController->>PostService: createPost(dto)
+
+    PostService->>PostService: validate(dto)
+    PostService->>Database: SELECT account, check_in<br/>(for validation)
+    Database-->>PostService: data
+
+    alt Validation failed
+        PostService-->>PostController: BadRequestException /<br/>NotFoundException / ForbiddenException
+        PostController-->>Client: 400/404/403
+    end
     Client->>PostController: POST /user/post<br/>(CreatePostDto + JWT)
     PostController->>PostService: createPost(dto)
 
@@ -24,12 +36,33 @@ sequenceDiagram
 
     alt Image/Video URLs provided
         PostService->>FileStorageService: confirmUpload(imageUrls/videoIds)
+    alt Image/Video URLs provided
+        PostService->>FileStorageService: confirmUpload(imageUrls/videoIds)
         FileStorageService-->>PostService: success
     end
 
     PostService->>Database: INSERT INTO posts<br/>(content, type, rating, authorId,<br/>locationId, eventId, visibility,<br/>isVerified, imageUrls, ...)
     Database-->>PostService: savedPost
+    PostService->>Database: INSERT INTO posts<br/>(content, type, rating, authorId,<br/>locationId, eventId, visibility,<br/>isVerified, imageUrls, ...)
+    Database-->>PostService: savedPost
 
+    alt Post type is REVIEW
+        PostService->>Database: SELECT reviews<br/>WHERE locationId/eventId AND type=REVIEW
+        Database-->>PostService: reviews[]
+        PostService->>Database: UPDATE locations/events<br/>SET totalReviews, averageRating
+        Database-->>PostService: updated
+
+        PostService->>Database: UPDATE user_profiles<br/>SET totalReviews = totalReviews + 1
+        Database-->>PostService: updated
+    else Post type is BLOG
+        PostService->>Database: UPDATE user_profiles<br/>SET totalBlogs = totalBlogs + 1
+        Database-->>PostService: updated
+    end
+
+    PostService->>Database: SELECT post with relations<br/>(JOIN accounts, locations)
+    Database-->>PostService: createdPost
+
+    PostService->>PostService: mapRawPostToDto(createdPost)
     alt Post type is REVIEW
         PostService->>Database: SELECT reviews<br/>WHERE locationId/eventId AND type=REVIEW
         Database-->>PostService: reviews[]
@@ -52,6 +85,9 @@ sequenceDiagram
 ```
 
 **Figure 1:** Sequence diagram illustrating the flow of creating a new post, including database operations for validation, post creation, analytics updates, and user profile counters.
+**Figure 1:** Sequence diagram illustrating the flow of creating a new post, including database operations for validation, post creation, analytics updates, and user profile counters.
+
+## 2. Create Mission Flow
 
 ## 2. Create Mission Flow
 
@@ -343,3 +379,71 @@ sequenceDiagram
 ```
 
 **Figure 7:** Sequence diagram illustrating the flow of AI creating personal itinerary, including user preference analysis, location data gathering, AI agent processing with database access, route optimization, and comprehensive journey response generation.
+
+## 8. Get Free Vouchers List Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant VoucherController as LocationVoucherUserController
+    participant VoucherService as LocationVoucherService
+    participant Database
+
+    Client->>VoucherController: GET /user/location-voucher/free<br/>(PaginateQuery + JWT)
+    VoucherController->>VoucherService: getFreeAvailableVouchers(query)
+
+    VoucherService->>VoucherService: validate(query)
+    VoucherService->>Database: SELECT vouchers<br/>LEFT JOIN locations<br/>WHERE pricePoint = 0<br/>AND startDate <= now<br/>AND endDate >= now<br/>AND maxQuantity > 0<br/>ORDER BY createdAt DESC
+    Database-->>VoucherService: vouchers[] with full location data
+
+    VoucherService->>VoucherService: paginate(vouchers, query)<br/>map response (keep only location.name)
+    VoucherService-->>VoucherController: Paginated<VoucherWithLocationNameDto>
+    VoucherController-->>Client: 200 OK
+```
+
+**Figure 8:** Sequence diagram illustrating the flow of getting free vouchers list, including filtering by price point (0), active date range, availability, and returning vouchers with minimal location information (id, name only).
+
+## 9. Get Exchange Vouchers List Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant VoucherController as LocationVoucherUserController
+    participant VoucherService as LocationVoucherService
+    participant Database
+
+    Client->>VoucherController: GET /user/location-voucher/available<br/>(PaginateQuery + JWT)
+    VoucherController->>VoucherService: getAllAvailableVouchers(query)
+
+    VoucherService->>VoucherService: validate(query)
+    VoucherService->>Database: SELECT vouchers<br/>LEFT JOIN locations<br/>WHERE startDate <= now<br/>AND endDate >= now<br/>AND maxQuantity > 0<br/>ORDER BY createdAt DESC
+    Database-->>VoucherService: vouchers[] with location data
+
+    VoucherService->>VoucherService: paginate(vouchers, query)<br/>map to minimal response (voucher + location.name only)
+    VoucherService-->>VoucherController: Paginated<VoucherWithLocationNameDto>
+    VoucherController-->>Client: 200 OK
+```
+
+**Figure 9:** Sequence diagram illustrating the flow of getting all available vouchers for exchange, including both free and paid vouchers that are active and available, with minimal location information (id, name only).
+
+## 10. Get My Vouchers List Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant ExchangeController as VoucherExchangeUserController
+    participant ExchangeService as VoucherExchangeService
+    participant Database
+
+    Client->>ExchangeController: GET /user/voucher-exchange/vouchers<br/>(JWT)
+    ExchangeController->>ExchangeService: getUserVouchers(userId)
+
+    ExchangeService->>Database: SELECT user_location_voucher_exchange_history<br/>LEFT JOIN location_vouchers<br/>LEFT JOIN locations<br/>WHERE userProfileId = userId<br/>AND usedAt IS NULL<br/>ORDER BY exchangedAt DESC
+    Database-->>ExchangeService: exchangeHistory[] with voucher and location data
+
+    ExchangeService->>ExchangeService: filter available vouchers<br/>map to minimal response (voucher + location.name only)
+    ExchangeService-->>ExchangeController: UserVoucherResponseDto[]<br/>(voucher + location name only)
+    ExchangeController-->>Client: 200 OK
+```
+
+**Figure 10:** Sequence diagram illustrating the flow of getting user's owned vouchers, including filtering for unused vouchers and returning voucher information with minimal location data (id, name only).
