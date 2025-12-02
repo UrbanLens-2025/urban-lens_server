@@ -9,7 +9,19 @@ sequenceDiagram
     participant PostService
     participant FileStorageService as IFileStorageService
     participant Database
+    participant Database
 
+    Client->>PostController: POST /user/post<br/>(CreatePostDto + JWT)
+    PostController->>PostService: createPost(dto)
+
+    PostService->>PostService: validate(dto)
+    PostService->>Database: SELECT account, check_in<br/>(for validation)
+    Database-->>PostService: data
+
+    alt Validation failed
+        PostService-->>PostController: BadRequestException /<br/>NotFoundException / ForbiddenException
+        PostController-->>Client: 400/404/403
+    end
     Client->>PostController: POST /user/post<br/>(CreatePostDto + JWT)
     PostController->>PostService: createPost(dto)
 
@@ -24,12 +36,33 @@ sequenceDiagram
 
     alt Image/Video URLs provided
         PostService->>FileStorageService: confirmUpload(imageUrls/videoIds)
+    alt Image/Video URLs provided
+        PostService->>FileStorageService: confirmUpload(imageUrls/videoIds)
         FileStorageService-->>PostService: success
     end
 
     PostService->>Database: INSERT INTO posts<br/>(content, type, rating, authorId,<br/>locationId, eventId, visibility,<br/>isVerified, imageUrls, ...)
     Database-->>PostService: savedPost
+    PostService->>Database: INSERT INTO posts<br/>(content, type, rating, authorId,<br/>locationId, eventId, visibility,<br/>isVerified, imageUrls, ...)
+    Database-->>PostService: savedPost
 
+    alt Post type is REVIEW
+        PostService->>Database: SELECT reviews<br/>WHERE locationId/eventId AND type=REVIEW
+        Database-->>PostService: reviews[]
+        PostService->>Database: UPDATE locations/events<br/>SET totalReviews, averageRating
+        Database-->>PostService: updated
+
+        PostService->>Database: UPDATE user_profiles<br/>SET totalReviews = totalReviews + 1
+        Database-->>PostService: updated
+    else Post type is BLOG
+        PostService->>Database: UPDATE user_profiles<br/>SET totalBlogs = totalBlogs + 1
+        Database-->>PostService: updated
+    end
+
+    PostService->>Database: SELECT post with relations<br/>(JOIN accounts, locations)
+    Database-->>PostService: createdPost
+
+    PostService->>PostService: mapRawPostToDto(createdPost)
     alt Post type is REVIEW
         PostService->>Database: SELECT reviews<br/>WHERE locationId/eventId AND type=REVIEW
         Database-->>PostService: reviews[]
@@ -52,6 +85,9 @@ sequenceDiagram
 ```
 
 **Figure 1:** Sequence diagram illustrating the flow of creating a new post, including database operations for validation, post creation, analytics updates, and user profile counters.
+**Figure 1:** Sequence diagram illustrating the flow of creating a new post, including database operations for validation, post creation, analytics updates, and user profile counters.
+
+## 2. Create Mission Flow
 
 ## 2. Create Mission Flow
 
