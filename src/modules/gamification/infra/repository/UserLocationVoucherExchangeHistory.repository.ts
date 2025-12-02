@@ -25,11 +25,15 @@ export class UserLocationVoucherExchangeHistoryRepository {
   async findAvailableByUser(
     userProfileId: string,
   ): Promise<UserLocationVoucherExchangeHistoryEntity[]> {
-    return this.repo.find({
-      where: { userProfileId, usedAt: IsNull() },
-      relations: ['voucher', 'voucher.location'],
-      order: { createdAt: 'DESC' },
-    });
+    return this.repo
+      .createQueryBuilder('history')
+      .leftJoinAndSelect('history.voucher', 'voucher')
+      .leftJoin('voucher.location', 'location')
+      .addSelect(['location.id', 'location.name'])
+      .where('history.userProfileId = :userProfileId', { userProfileId })
+      .andWhere('history.usedAt IS NULL')
+      .orderBy('history.createdAt', 'DESC')
+      .getMany();
   }
 
   async findByLocation(

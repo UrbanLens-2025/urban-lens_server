@@ -343,3 +343,71 @@ sequenceDiagram
 ```
 
 **Figure 7:** Sequence diagram illustrating the flow of AI creating personal itinerary, including user preference analysis, location data gathering, AI agent processing with database access, route optimization, and comprehensive journey response generation.
+
+## 8. Get Free Vouchers List Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant VoucherController as LocationVoucherUserController
+    participant VoucherService as LocationVoucherService
+    participant Database
+
+    Client->>VoucherController: GET /user/location-voucher/free<br/>(PaginateQuery + JWT)
+    VoucherController->>VoucherService: getFreeAvailableVouchers(query)
+
+    VoucherService->>VoucherService: validate(query)
+    VoucherService->>Database: SELECT vouchers<br/>LEFT JOIN locations<br/>WHERE pricePoint = 0<br/>AND startDate <= now<br/>AND endDate >= now<br/>AND maxQuantity > 0<br/>ORDER BY createdAt DESC
+    Database-->>VoucherService: vouchers[] with full location data
+
+    VoucherService->>VoucherService: paginate(vouchers, query)<br/>map response (keep only location.name)
+    VoucherService-->>VoucherController: Paginated<VoucherWithLocationNameDto>
+    VoucherController-->>Client: 200 OK
+```
+
+**Figure 8:** Sequence diagram illustrating the flow of getting free vouchers list, including filtering by price point (0), active date range, availability, and returning vouchers with minimal location information (id, name only).
+
+## 9. Get Exchange Vouchers List Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant VoucherController as LocationVoucherUserController
+    participant VoucherService as LocationVoucherService
+    participant Database
+
+    Client->>VoucherController: GET /user/location-voucher/available<br/>(PaginateQuery + JWT)
+    VoucherController->>VoucherService: getAllAvailableVouchers(query)
+
+    VoucherService->>VoucherService: validate(query)
+    VoucherService->>Database: SELECT vouchers<br/>LEFT JOIN locations<br/>WHERE startDate <= now<br/>AND endDate >= now<br/>AND maxQuantity > 0<br/>ORDER BY createdAt DESC
+    Database-->>VoucherService: vouchers[] with location data
+
+    VoucherService->>VoucherService: paginate(vouchers, query)<br/>map to minimal response (voucher + location.name only)
+    VoucherService-->>VoucherController: Paginated<VoucherWithLocationNameDto>
+    VoucherController-->>Client: 200 OK
+```
+
+**Figure 9:** Sequence diagram illustrating the flow of getting all available vouchers for exchange, including both free and paid vouchers that are active and available, with minimal location information (id, name only).
+
+## 10. Get My Vouchers List Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant ExchangeController as VoucherExchangeUserController
+    participant ExchangeService as VoucherExchangeService
+    participant Database
+
+    Client->>ExchangeController: GET /user/voucher-exchange/vouchers<br/>(JWT)
+    ExchangeController->>ExchangeService: getUserVouchers(userId)
+
+    ExchangeService->>Database: SELECT user_location_voucher_exchange_history<br/>LEFT JOIN location_vouchers<br/>LEFT JOIN locations<br/>WHERE userProfileId = userId<br/>AND usedAt IS NULL<br/>ORDER BY exchangedAt DESC
+    Database-->>ExchangeService: exchangeHistory[] with voucher and location data
+
+    ExchangeService->>ExchangeService: filter available vouchers<br/>map to minimal response (voucher + location.name only)
+    ExchangeService-->>ExchangeController: UserVoucherResponseDto[]<br/>(voucher + location name only)
+    ExchangeController-->>Client: 200 OK
+```
+
+**Figure 10:** Sequence diagram illustrating the flow of getting user's owned vouchers, including filtering for unused vouchers and returning voucher information with minimal location data (id, name only).
