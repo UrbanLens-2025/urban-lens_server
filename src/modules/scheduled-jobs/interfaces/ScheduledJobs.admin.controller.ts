@@ -78,8 +78,8 @@ export class ScheduledJobsAdminController {
     example: dayjs().toDate(),
   })
   countByStatus(
-    @Query('startDate') startDate: Date,
-    @Query('endDate') endDate: Date,
+    @Query('startDate', new ParseDatePipe()) startDate: Date,
+    @Query('endDate', new ParseDatePipe()) endDate: Date,
   ) {
     const dto = new CountByStatusDto();
     dto.betweenDates = {

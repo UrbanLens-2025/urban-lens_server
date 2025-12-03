@@ -137,11 +137,19 @@ export class LocationBookingPayoutService
 
       // Transfer payout to system
       if (payoutAmountToSystem > 0) {
-        await this.walletTransactionCoordinator.transferFromEscrowToSystem({
-          entityManager: em,
-          amount: payoutAmountToSystem,
-          currency: SupportedCurrency.VND,
-        });
+        try {
+          await this.walletTransactionCoordinator.transferFromEscrowToSystem({
+            entityManager: em,
+            amount: payoutAmountToSystem,
+            currency: SupportedCurrency.VND,
+          });
+        } catch (error) {
+          this.logger.error(`Error transferring funds to system: ${error}`);
+          await scheduledJobRepository.updateToFailed({
+            jobIds: [dto.scheduledJobId],
+          });
+          throw error;
+        }
       }
 
       // transfer payout to host
@@ -152,12 +160,20 @@ export class LocationBookingPayoutService
             LocationOwnershipType.OWNED_BY_BUSINESS &&
           isNotBlank(booking.location.businessId)
         ) {
-          await this.walletTransactionCoordinator.transferFromEscrowToAccount({
-            entityManager: em,
-            amount: payoutAmountToHost,
-            currency: SupportedCurrency.VND,
-            destinationAccountId: booking.location.businessId,
-          });
+          try {
+            await this.walletTransactionCoordinator.transferFromEscrowToAccount({
+              entityManager: em,
+              amount: payoutAmountToHost,
+              currency: SupportedCurrency.VND,
+              destinationAccountId: booking.location.businessId,
+            });
+          } catch(error) {
+            this.logger.error(`Error transferring funds to system: ${error}`);
+            await scheduledJobRepository.updateToFailed({
+              jobIds: [dto.scheduledJobId],
+            });
+            throw error;
+          }
         }
       }
 
