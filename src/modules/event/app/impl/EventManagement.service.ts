@@ -201,6 +201,7 @@ export class EventManagementService
             payload: {
               eventId: event.id,
             },
+            associatedId: event.id,
           });
         event.scheduledJobId = job.id;
       } else {
@@ -243,7 +244,6 @@ export class EventManagementService
           targetId: dto.eventId,
         },
       });
-
 
       // refund tickets
       await this.ticketOrderManagementService.refundAllSuccessfulOrders({
@@ -349,7 +349,7 @@ export class EventManagementService
             id: dto.eventId,
           },
         })
-        // check can confirm
+        // check if event can still be updated
         .then((res) => {
           if (!res.canBeUpdated()) {
             throw new BadRequestException(
@@ -359,21 +359,16 @@ export class EventManagementService
           return res;
         });
 
-      const locationBookings = await locationBookingRepo.find({
+      // get the location booking in question
+      const locationBooking = await locationBookingRepo.findOneOrFail({
         where: {
+          id: dto.locationBookingId,
           bookingObject: LocationBookingObject.FOR_EVENT,
           targetId: dto.eventId,
         },
       });
 
-      const locationBooking = locationBookings.find((booking) => {
-        return booking.id === dto.locationBookingId;
-      });
-
-      if (!locationBooking) {
-        throw new BadRequestException('Location booking not found for event.');
-      }
-
+      // initiate payment in the location booking module
       const locationBookingResponse =
         await this.locationBookingService.payForBooking({
           ...dto,
@@ -381,6 +376,7 @@ export class EventManagementService
           entityManager: em,
         });
 
+      // after booking is paid, update the event with the confirmed location
       event.locationId = locationBookingResponse.locationId;
       await eventRepo.update(
         { id: event.id },

@@ -31,6 +31,27 @@ export class ScheduledJobEntity {
   @Column({ name: 'payload', type: 'jsonb' })
   payload: Record<string, any>;
 
-  @Column({ name: 'status', type: 'varchar', length: 100, default: ScheduledJobStatus.PENDING })
+  // stores the id of the associated entity
+  @Column({
+    name: 'associated_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  associatedId?: string | null;
+
+  @Column({
+    name: 'status',
+    type: 'varchar',
+    length: 100,
+    default: ScheduledJobStatus.PENDING,
+  })
   status: ScheduledJobStatus;
+
+  @Column({
+    name: 'closed_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  closedAt?: Date | null;
 }

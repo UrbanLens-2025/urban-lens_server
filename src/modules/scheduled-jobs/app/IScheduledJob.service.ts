@@ -13,11 +13,4 @@ export interface IScheduledJobService {
   createLongRunningScheduledJob<T extends ScheduledJobType>(
     dto: CreateScheduledJobDto<T>,
   ): Promise<ScheduledJobResponseDto>;
-
-  /**
-   * Create and immediately execute a short-running scheduled job (used for short-running jobs: Jobs that run within a few minutes or hours)
-   *
-   * This method pushes the job to a queue with delay.
-   */
-  createShortRunningScheduledJob(): Promise<void>;
 }

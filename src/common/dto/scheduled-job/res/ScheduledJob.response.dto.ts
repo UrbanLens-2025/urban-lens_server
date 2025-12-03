@@ -1,5 +1,6 @@
 import { Exclude, Expose, Type } from 'class-transformer';
 import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
+import { ScheduledJobStatus } from '@/common/constants/ScheduledJobStatus.constant';
 
 @Exclude()
 export class ScheduledJobResponseDto {
@@ -15,6 +16,9 @@ export class ScheduledJobResponseDto {
   updatedAt: Date;
 
   @Expose()
+  status: ScheduledJobStatus;
+
+  @Expose()
   jobType: ScheduledJobType;
 
   @Expose()
@@ -23,5 +27,11 @@ export class ScheduledJobResponseDto {
 
   @Expose()
   payload: Record<string, any>;
-}
 
+  @Expose()
+  associatedId: string;
+
+  @Expose()
+  @Type(() => Date)
+  closedAt: Date;
+}
