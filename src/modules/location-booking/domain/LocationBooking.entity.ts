@@ -145,6 +145,11 @@ export class LocationBookingEntity {
     return this.status === LocationBookingStatus.AWAITING_BUSINESS_PROCESSING;
   }
 
+  /**
+   * Checks if booking is in the right status.
+   * Req: APPROVED and softLockedUntil is in the future (meaning it's not expired yet)
+   * @returns true/false
+   */
   public canStartPayment(): boolean {
     const now = new Date();
     return (

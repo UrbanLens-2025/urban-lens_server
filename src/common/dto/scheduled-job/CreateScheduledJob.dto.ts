@@ -1,5 +1,5 @@
 import { CoreActionDto } from '@/common/dto/CoreAction.dto';
-import { IsDate, IsEnum, IsNotEmpty, IsObject } from 'class-validator';
+import { IsDate, IsEnum, IsNotEmpty, IsObject, IsString } from 'class-validator';
 import {
   type ScheduledJobPayload,
   ScheduledJobType,
@@ -15,6 +15,11 @@ export class CreateScheduledJobDto<
   @IsNotEmpty()
   @ApiProperty({ enum: ScheduledJobType })
   jobType: T;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'The id of the associated entity' })
+  associatedId: string;
 
   @IsDate()
   @IsAfterToday()
