@@ -82,24 +82,19 @@ export class EventAttendanceManagementService
 
       const eventAttendances: EventAttendanceEntity[] = [];
 
-      // Ensure orderDetails is populated or handle if it's not loaded
-      // The subscriber usually has the entity fully loaded or we assume it is.
-      // However, ticketOrder.orderDetails might be undefined if not loaded.
-      // In the subscriber it was accessed directly.
       if (ticketOrder.orderDetails) {
         for (const orderDetail of ticketOrder.orderDetails) {
-          for (let i = 0; i < orderDetail.quantity; i++) {
-            const eventAttendance = new EventAttendanceEntity();
-            eventAttendance.orderId = ticketOrder.id;
-            eventAttendance.status = EventAttendanceStatus.CREATED;
-            eventAttendance.eventId = ticketOrder.eventId;
-            eventAttendance.ticketId = orderDetail.ticketId;
-            eventAttendance.referencedTicketOrderId = ticketOrder.id;
-            eventAttendance.ownerId = accountDetails.id;
-            eventAttendance.ownerEmail = accountDetails.email;
-            eventAttendance.ownerPhoneNumber = accountDetails.phoneNumber;
-            eventAttendances.push(eventAttendance);
-          }
+          const eventAttendance = new EventAttendanceEntity();
+          eventAttendance.orderId = ticketOrder.id;
+          eventAttendance.status = EventAttendanceStatus.CREATED;
+          eventAttendance.eventId = ticketOrder.eventId;
+          eventAttendance.ticketId = orderDetail.ticketId;
+          eventAttendance.referencedTicketOrderId = ticketOrder.id;
+          eventAttendance.ownerId = accountDetails.id;
+          eventAttendance.ownerEmail = accountDetails.email;
+          eventAttendance.ownerPhoneNumber = accountDetails.phoneNumber;
+          eventAttendance.numberOfAttendees = orderDetail.quantity;
+          eventAttendances.push(eventAttendance);
         }
       } else {
         throw new InternalServerErrorException(

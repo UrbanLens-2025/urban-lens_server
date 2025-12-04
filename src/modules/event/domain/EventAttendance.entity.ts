@@ -65,6 +65,9 @@ export class EventAttendanceEntity {
   @Column({ name: 'owner_phone_number', type: 'varchar', length: 255, nullable: true, })
   ownerPhoneNumber?: string | null;
 
+  @Column({ name: 'number_of_attendees', type: 'int', default: 1 })
+  numberOfAttendees: number;
+
   @ManyToOne(() => TicketOrderEntity, (order) => order.id, {
     nullable: false,
     createForeignKeyConstraints: false,
