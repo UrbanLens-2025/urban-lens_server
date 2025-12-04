@@ -493,7 +493,6 @@ export class PostService
     // Fetch a fixed large batch (always the same for consistency)
     // This prevents duplicates because every page request ranks the same posts
     const fixedFetchLimit = 1000; // Fetch up to 1000 most recent posts
-    const minPostsNeeded = limit * page; // Minimum posts needed for current page
 
     const selectFields = this.getPostSelectFields();
     const postsQuery = this.postRepository.repo
@@ -521,15 +520,6 @@ export class PostService
       currentUserId,
     );
 
-    // Check if we have enough posts for the requested page
-    if (rankedPosts.length < minPostsNeeded) {
-      // Not enough posts after ranking, return empty for this page
-      return {
-        data: [],
-        meta: this.buildPaginationMeta(page, limit, total),
-      };
-    }
-
     // Paginate from ranked results
     const skip = (page - 1) * limit;
     const paginatedPosts = rankedPosts.slice(skip, skip + limit);
@@ -545,10 +535,6 @@ export class PostService
     };
   }
 
-  /**
-   * Rank posts by relevance score (personalized feed algorithm)
-   * Returns all posts sorted by relevance (no limit applied here)
-   */
   private async rankPostsByRelevance(
     posts: RawPost[],
     currentUserId: string,

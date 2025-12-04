@@ -282,7 +282,6 @@ window.addEventListener('load', () => {
   };
 });
 
-// === Role-based highlighting (highlight only matched segments, no infinite loop) ===
 const highlightRoles = (() => {
   const roleColors = {
     '/admin/': '#FF9E8A',

@@ -7,7 +7,12 @@ import {
   Patch,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { IPostService } from '../app/IPost.service';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
@@ -38,6 +43,20 @@ export class PostPublicController {
   @ApiOperation({ summary: 'Get feed of all public posts' })
   @Get('feed')
   @OptionalAuth()
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    example: 1,
+    description: 'Page number (1-based)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    example: 10,
+    description: 'Items per page',
+  })
   getBasicFeed(
     @Query() query: PaginationParams,
     @AuthUser() user?: JwtTokenDto,

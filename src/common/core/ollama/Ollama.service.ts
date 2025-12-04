@@ -222,6 +222,14 @@ export class OllamaService {
             this.logger.warn(
               `⚠️ AI returned only ${currentCount}/${neededCount} location IDs. Supplementing from tool result...`,
             );
+            this.logger.debug(
+              `🔍 lastToolResult has ${lastToolResult?.length || 0} locations:`,
+              lastToolResult?.slice(0, 5).map((l: any) => ({
+                id: l.id,
+                name: l.name,
+                distance: l.distance,
+              })) || 'null',
+            );
             if (lastToolResult && lastToolResult.length > 0) {
               // Extract locations from tool result
               const toolResultIds = lastToolResult
@@ -545,6 +553,14 @@ Select ${context.numberOfLocations} closest, copy REAL UUIDs from "id" field.`;
     // Limit to 6 locations for faster query and response (was 8)
     const limit = Math.min(params.limit || 6, 6);
 
+    // Ensure minimum radius of 5km to get enough locations
+    const minRadius = 5;
+    const radiusKm = Math.max(params.radiusKm, minRadius);
+
+    this.logger.debug(
+      `🔍 queryNearbyLocations: lat=${params.latitude}, lng=${params.longitude}, radius=${radiusKm}km (requested: ${params.radiusKm}km), limit=${limit}`,
+    );
+
     // Optimized query - removed image_url and tags aggregation for faster query
     // Tags not needed for AI selection, can be fetched later if needed
     const query = `
@@ -555,9 +571,11 @@ Select ${context.numberOfLocations} closest, copy REAL UUIDs from "id" field.`;
         l.longitude,
         (
           6371 * acos(
-            cos(radians($1)) * cos(radians(l.latitude)) *
-            cos(radians(l.longitude) - radians($2)) +
-            sin(radians($1)) * sin(radians(l.latitude))
+            GREATEST(-1, LEAST(1,
+              cos(radians($1)) * cos(radians(l.latitude)) *
+              cos(radians(l.longitude) - radians($2)) +
+              sin(radians($1)) * sin(radians(l.latitude))
+            ))
           )
         ) as distance,
         COALESCE(
@@ -577,9 +595,11 @@ Select ${context.numberOfLocations} closest, copy REAL UUIDs from "id" field.`;
       WHERE l.is_visible_on_map = true
         AND (
           6371 * acos(
-            cos(radians($1)) * cos(radians(l.latitude)) *
-            cos(radians(l.longitude) - radians($2)) +
-            sin(radians($1)) * sin(radians(l.latitude))
+            GREATEST(-1, LEAST(1,
+              cos(radians($1)) * cos(radians(l.latitude)) *
+              cos(radians(l.longitude) - radians($2)) +
+              sin(radians($1)) * sin(radians(l.latitude))
+            ))
           )
         ) <= $3
       GROUP BY l.id, l.name, l.address_line, l.latitude, l.longitude, l.image_url, l.average_rating, l.total_reviews
@@ -590,9 +610,33 @@ Select ${context.numberOfLocations} closest, copy REAL UUIDs from "id" field.`;
     const result = await this.dataSource.query(query, [
       params.latitude,
       params.longitude,
-      params.radiusKm,
+      radiusKm,
       limit,
     ]);
+
+    this.logger.debug(
+      `🔍 Query returned ${result.length} locations:`,
+      result.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        distance: r.distance,
+      })),
+    );
+
+    // If not enough locations and radius is small, retry with larger radius
+    const minRequiredLocations = 3; // Minimum for journey planning
+    if (result.length < minRequiredLocations && radiusKm < 20) {
+      this.logger.warn(
+        `⚠️ Only found ${result.length} locations with radius ${radiusKm}km. Retrying with 20km...`,
+      );
+      return this.queryNearbyLocations(
+        {
+          ...params,
+          radiusKm: 20, // Retry with larger radius
+        },
+        schema,
+      );
+    }
 
     return result;
   }
@@ -620,9 +664,11 @@ Select ${context.numberOfLocations} closest, copy REAL UUIDs from "id" field.`;
         l.longitude,
         (
           6371 * acos(
-            cos(radians($1)) * cos(radians(l.latitude)) *
-            cos(radians(l.longitude) - radians($2)) +
-            sin(radians($1)) * sin(radians(l.latitude))
+            GREATEST(-1, LEAST(1,
+              cos(radians($1)) * cos(radians(l.latitude)) *
+              cos(radians(l.longitude) - radians($2)) +
+              sin(radians($1)) * sin(radians(l.latitude))
+            ))
           )
         ) as distance,
         COALESCE(
