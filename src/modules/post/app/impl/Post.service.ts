@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { IPostService } from '../IPost.service';
@@ -36,6 +37,7 @@ import {
 import { ReactPostResponseDto } from '@/common/dto/post/ReactPost.response.dto';
 import { DeletePostResponseDto } from '@/common/dto/post/DeletePost.response.dto';
 import { UpdatePostVisibilityResponseDto } from '@/common/dto/post/UpdatePostVisibility.response.dto';
+import { BanPostResponseDto } from '@/common/dto/post/BanPost.response.dto';
 import { CommentRepository } from '../../infra/repository/Comment.repository';
 import { CommentEntity } from '../../domain/Comment.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
@@ -69,6 +71,7 @@ interface RawPost {
   post_locationid?: string;
   post_eventid?: string;
   post_isverified: boolean;
+  post_is_hidden?: boolean;
   post_visibility?: string;
   post_createdat: Date;
   post_updatedat: Date;
@@ -92,6 +95,8 @@ export class PostService
   extends BaseService<PostEntity>
   implements IPostService
 {
+  private readonly logger = new Logger(PostService.name);
+
   constructor(
     private readonly postRepository: PostRepository,
     private readonly reactRepository: ReactRepository,
@@ -117,6 +122,7 @@ export class PostService
       'post.location_id as post_locationid',
       'post.event_id as post_eventid',
       'post.is_verified as post_isverified',
+      'post.is_hidden as post_is_hidden',
       'post.visibility as post_visibility',
       'post.created_at as post_createdat',
       'post.updated_at as post_updatedat',
@@ -470,7 +476,17 @@ export class PostService
     postsQuery.orderBy('post.created_at', 'DESC').offset(skip).limit(limit);
 
     const posts = await postsQuery.getRawMany();
-    const processedPosts = await this.processPostsWithReactions(posts);
+
+    // Filter out banned posts manually as a safety check
+    const nonBannedPosts = posts.filter((post) => post.post_is_hidden !== true);
+
+    if (nonBannedPosts.length !== posts.length) {
+      this.logger.warn(
+        `getStandardFeed: Found ${posts.length - nonBannedPosts.length} banned posts in query results`,
+      );
+    }
+
+    const processedPosts = await this.processPostsWithReactions(nonBannedPosts);
 
     return {
       data: processedPosts,
@@ -514,11 +530,30 @@ export class PostService
 
     const allPosts = await postsQuery.getRawMany();
 
+    this.logger.debug(
+      `getPersonalizedFeed: Fetched ${allPosts.length} posts, checking for banned posts`,
+    );
+
+    // Filter out banned posts manually as a safety check
+    const nonBannedPosts = allPosts.filter(
+      (post) => post.post_is_hidden !== true,
+    );
+
+    if (nonBannedPosts.length !== allPosts.length) {
+      this.logger.warn(
+        `getPersonalizedFeed: Found ${allPosts.length - nonBannedPosts.length} banned posts in query results`,
+      );
+    }
+
     // Rank all fetched posts once
     const rankedPosts = await this.rankPostsByRelevance(
-      allPosts,
+      nonBannedPosts,
       currentUserId,
     );
+
+    // Use actual ranked posts count as total (not the full database count)
+    // because we only rank a fixed batch of posts
+    const actualTotal = rankedPosts.length;
 
     // Paginate from ranked results
     const skip = (page - 1) * limit;
@@ -531,7 +566,7 @@ export class PostService
 
     return {
       data: processedPosts,
-      meta: this.buildPaginationMeta(page, limit, total),
+      meta: this.buildPaginationMeta(page, limit, actualTotal),
     };
   }
 
@@ -1202,7 +1237,8 @@ export class PostService
         .createQueryBuilder('post')
         .leftJoin('accounts', 'account', 'account.id = post.author_id')
         .leftJoin('locations', 'location', 'location.id = post.location_id')
-        .where('post.author_id = :authorId', { authorId });
+        .where('post.author_id = :authorId', { authorId })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
 
       // Add type filter if specified
       if (postType) {
@@ -1218,7 +1254,8 @@ export class PostService
 
       const countQuery = this.postRepository.repo
         .createQueryBuilder('post')
-        .where('post.author_id = :authorId', { authorId });
+        .where('post.author_id = :authorId', { authorId })
+        .andWhere('post.is_hidden = :isHidden', { isHidden: false });
 
       if (postType) {
         countQuery.andWhere('post.type = :postType', { postType });
@@ -1586,6 +1623,68 @@ export class PostService
       };
     } catch (error) {
       console.error(error);
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async banPost(postId: string, reason?: string): Promise<BanPostResponseDto> {
+    try {
+      this.logger.debug(
+        `Banning post ${postId}${reason ? ` with reason: ${reason}` : ''}`,
+      );
+
+      const post = await this.postRepository.repo.findOne({
+        where: { postId },
+      });
+
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+
+      if (post.isHidden) {
+        throw new BadRequestException('Post is already banned');
+      }
+
+      // Use save() instead of update() to ensure entity is properly persisted
+      post.isHidden = true;
+      await this.postRepository.repo.save(post);
+
+      this.logger.debug(`Post ${postId} saved with isHidden = true`);
+
+      // Verify the update was successful by querying directly from database
+      const updatedPost = await this.postRepository.repo.findOne({
+        where: { postId },
+        select: ['postId', 'isHidden'],
+      });
+
+      if (!updatedPost || !updatedPost.isHidden) {
+        this.logger.error(
+          `Failed to verify ban for post ${postId}. Updated post: ${JSON.stringify(updatedPost)}`,
+        );
+        throw new InternalServerErrorException(
+          'Failed to ban post: update verification failed',
+        );
+      }
+
+      this.logger.log(`Post ${postId} banned successfully`);
+
+      return {
+        message: 'Post banned successfully',
+        postId,
+        isBanned: true,
+        reason,
+      };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      this.logger.error(
+        `Error banning post ${postId}: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException(error.message);
     }
   }

@@ -1,0 +1,51 @@
+import {
+  Body,
+  Controller,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Put,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Roles } from '@/common/Roles.decorator';
+import { Role } from '@/common/constants/Role.constant';
+import { IPostService } from '../app/IPost.service';
+import { BanPostBodyDto } from '@/common/dto/post/BanPostBody.dto';
+import { BanPostResponseDto } from '@/common/dto/post/BanPost.response.dto';
+
+@ApiTags('Post')
+@Controller('/admin/posts')
+@ApiBearerAuth()
+@Roles(Role.ADMIN)
+export class PostAdminController {
+  constructor(
+    @Inject(IPostService) private readonly postService: IPostService,
+  ) {}
+
+  @ApiOperation({ summary: 'Ban a post (hide it from public view)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Post banned successfully',
+    type: BanPostResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Post not found',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Post is already banned',
+  })
+  @Put('/:postId/ban')
+  async banPost(
+    @Param('postId', ParseUUIDPipe) postId: string,
+    @Body() dto?: BanPostBodyDto,
+  ): Promise<BanPostResponseDto> {
+    return this.postService.banPost(postId, dto?.reason);
+  }
+}
