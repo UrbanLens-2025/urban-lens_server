@@ -42,6 +42,9 @@ export class EventAttendanceResponseDto {
   @Expose()
   ticketId: string;
 
+  @Expose()
+  numberOfAttendees: number;
+
   // -- Relations --
 
   @Expose()
