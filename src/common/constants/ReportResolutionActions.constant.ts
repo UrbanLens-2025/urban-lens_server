@@ -1,6 +1,7 @@
 export enum PostReportResolutionActions {
   NO_ACTION_TAKEN = 'NO_ACTION_TAKEN',
   MALICIOUS_REPORT = 'MALICIOUS_REPORT',
+  BAN_POST = 'BAN_POST',
 }
 
 export enum LocationReportResolutionActions {

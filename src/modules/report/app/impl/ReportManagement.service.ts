@@ -10,6 +10,7 @@ import { ReportEntity } from '@/modules/report/domain/Report.entity';
 import { ReportStatus } from '@/common/constants/ReportStatus.constant';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
 import { EntityManager } from 'typeorm';
+import { IPostService } from '@/modules/post/app/IPost.service';
 
 @Injectable()
 export class ReportManagementService
@@ -19,6 +20,8 @@ export class ReportManagementService
   constructor(
     @Inject(IEventManagementService)
     private readonly eventManagementService: IEventManagementService,
+    @Inject(IPostService)
+    private readonly postService: IPostService,
   ) {
     super();
   }
@@ -74,6 +77,9 @@ export class ReportManagementService
       case ReportResolutionActions.NO_ACTION_TAKEN:
         break;
       case ReportResolutionActions.MALICIOUS_REPORT:
+        break;
+      case ReportResolutionActions.BAN_POST:
+        await this.postService.banPost(report.targetId);
         break;
     }
   }
