@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   HttpCode,
@@ -10,6 +11,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { RegisterDeviceDto } from '@/common/dto/notification/RegisterDevice.dto';
+import { DeregisterDeviceDto } from '@/common/dto/notification/DeregisterDevice.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -65,5 +67,15 @@ export class PushNotificationUserController {
     @Body() dto: SeenPushNotificationDto,
   ) {
     return this.firebaseNotificationService.seenNotification(userDto, dto);
+  }
+
+  @ApiOperation({ summary: 'Deregister a device from push notifications' })
+  @HttpCode(HttpStatus.OK)
+  @Delete('/deregister-device')
+  deregisterDevice(
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: DeregisterDeviceDto,
+  ) {
+    return this.firebaseNotificationService.deregisterDevice(userDto, dto);
   }
 }

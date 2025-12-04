@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RegisterDeviceDto } from '@/common/dto/notification/RegisterDevice.dto';
-import { FcmTokenRepository } from '@/modules/notification/infra/repository/FcmToken.repository';
+import { DeregisterDeviceDto } from '@/common/dto/notification/DeregisterDevice.dto';
+import {
+  FcmTokenRepository,
+  FcmTokenRepositoryProvider,
+} from '@/modules/notification/infra/repository/FcmToken.repository';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { CoreService } from '@/common/core/Core.service';
 import { FcmTokenEntity } from '@/modules/notification/domain/FcmToken.entity';
@@ -20,7 +24,7 @@ import {
 } from '@/modules/notification/app/IFirebaseNotification.service';
 import { PushNotificationEntity } from '@/modules/notification/domain/PushNotification.entity';
 import { PushNotificationStatus } from '@/common/constants/PushNotificationStatus.constant';
-import { In, UpdateResult } from 'typeorm';
+import { DeleteResult, In, UpdateResult } from 'typeorm';
 import { SeenPushNotificationDto } from '@/common/dto/notification/SeenPushNotification.dto';
 
 @Injectable()
@@ -28,7 +32,7 @@ export class FirebaseNotificationService
   extends CoreService
   implements IFirebaseNotificationService
 {
-  private readonly log = new Logger(FirebaseNotificationService.name);
+  private readonly logger = new Logger(FirebaseNotificationService.name);
 
   constructor(
     private readonly fcmTokenRepository: FcmTokenRepository,
@@ -42,16 +46,33 @@ export class FirebaseNotificationService
     dto: RegisterDeviceDto,
     userAgent: string,
   ) {
-    const entity = this.mapTo_Raw(FcmTokenEntity, dto);
-    entity.userId = userDto.sub;
-    entity.deviceInfo = userAgent;
-    this.log.debug(
+    this.logger.debug(
       'Registering device for user: ' +
         userDto.sub +
         ' with token: ' +
         dto.token,
     );
-    return this.fcmTokenRepository.repo.save(entity);
+    return this.ensureTransaction(null, async (em) => {
+      const fcmTokenRepo = FcmTokenRepositoryProvider(em);
+
+      // check if device is already registered
+      // permit registering multiple users with the same token
+      const existingToken = await fcmTokenRepo.findOne({
+        where: {
+          token: dto.token,
+          userId: userDto.sub,
+        },
+      });
+      if (existingToken) {
+        return existingToken;
+      }
+
+      // map and save
+      const entity = this.mapTo_Raw(FcmTokenEntity, dto);
+      entity.userId = userDto.sub;
+      entity.deviceInfo = userAgent;
+      return fcmTokenRepo.save(entity);
+    });
   }
 
   public async sendRawNotificationTo(dto: SendRawPushNotificationDto) {
@@ -66,6 +87,13 @@ export class FirebaseNotificationService
     pushNotificationEntity.payload = dto.payload;
     await this.pushNotificationRepository.repo.save(pushNotificationEntity);
 
+    this.logger.debug('Found tokens: ' + fcmTokens.length);
+
+    if (fcmTokens.length === 0) {
+      this.logger.debug('No FCM tokens found for user: ' + dto.toUserId);
+      return [];
+    }
+
     const promises: Promise<string>[] = [];
     fcmTokens.forEach((tokenEntity) => {
       promises.push(
@@ -76,7 +104,18 @@ export class FirebaseNotificationService
       );
     });
 
-    return Promise.all(promises);
+    const results = await Promise.allSettled(promises);
+    const successfulResults = results
+      .filter((result) => result.status === 'fulfilled')
+      .map((result) => result.value);
+
+    const failedResults = results
+      .filter((result) => result.status === 'rejected')
+      .map((result) => result.reason as Error);
+
+    console.log(failedResults);
+
+    return successfulResults;
   }
 
   public async sendNotificationTo(dto: SendPushNotificationDto) {
@@ -107,7 +146,18 @@ export class FirebaseNotificationService
       );
     });
 
-    return Promise.all(promises);
+    const results = await Promise.allSettled(promises);
+    const successfulResults = results
+      .filter((result) => result.status === 'fulfilled')
+      .map((result) => result.value);
+
+    const failedResults = results
+      .filter((result) => result.status === 'rejected')
+      .map((result) => result.reason as Error);
+
+    console.log(failedResults);
+
+    return successfulResults;
   }
 
   public async searchNotifications(userDto: JwtTokenDto, query: PaginateQuery) {
@@ -132,5 +182,24 @@ export class FirebaseNotificationService
         status: PushNotificationStatus.SEEN,
       },
     );
+  }
+
+  async deregisterDevice(
+    userDto: JwtTokenDto,
+    dto: DeregisterDeviceDto,
+  ): Promise<DeleteResult> {
+    this.logger.debug(
+      'Deregistering device for user: ' +
+        userDto.sub +
+        ' with token: ' +
+        dto.token,
+    );
+    return this.ensureTransaction(null, async (em) => {
+      const fcmTokenRepo = FcmTokenRepositoryProvider(em);
+      return fcmTokenRepo.delete({
+        userId: userDto.sub,
+        token: dto.token,
+      });
+    });
   }
 }
