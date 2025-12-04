@@ -26,6 +26,9 @@ export class ReviewWorkerService {
    * Rating 1-2: negative weight (-2, -1)
    * Rating 3: neutral (0)
    * Rating 4-5: positive weight (+1, +2)
+   * 
+   * PostgreSQL has a limit of 100 parameters per query.
+   * Each tag requires 3 parameters, so we can process max 33 tags per query.
    */
   async batchUpdateTagScoresFromReviews(
     userId: string,
@@ -37,48 +40,64 @@ export class ReviewWorkerService {
     }
 
     try {
-      const updates: string[] = [];
-      const params: any[] = [];
-      let paramIndex = 1;
+      // Filter out neutral scores first
+      const nonNeutralTags = tagScores.filter((tag) => tag.totalScore !== 0);
 
-      for (const tag of tagScores) {
-        if (tag.totalScore === 0) {
-          // Skip neutral scores (rating = 3)
-          continue;
-        }
-
-        const tagKey = `tag_${tag.id}`;
-        updates.push(
-          `$${paramIndex}::text, COALESCE((tag_scores->>$${paramIndex + 1}::text)::int, 0) + $${paramIndex + 2}::int`,
-        );
-        params.push(tagKey, tagKey, tag.totalScore);
-        paramIndex += 3;
-      }
-
-      if (updates.length === 0) {
+      if (nonNeutralTags.length === 0) {
         this.logger.debug(
           `All reviews were neutral (rating 3) for user ${userId}`,
         );
         return;
       }
 
-      params.push(userId);
+      // PostgreSQL limit: 100 parameters max
+      // Each tag needs 3 parameters (tagKey, tagKey, totalScore) + 1 for userId
+      // So max 33 tags per query: (33 * 3) + 1 = 100
+      const MAX_TAGS_PER_QUERY = 33;
+      const chunks: TagScore[][] = [];
 
-      const query = `
-        UPDATE "${this.schema}"."user_profiles"
-        SET tag_scores = COALESCE(tag_scores, '{}'::jsonb) || jsonb_build_object(
-          ${updates.join(', ')}
-        )
-        WHERE account_id = $${paramIndex}
-      `;
+      for (let i = 0; i < nonNeutralTags.length; i += MAX_TAGS_PER_QUERY) {
+        chunks.push(nonNeutralTags.slice(i, i + MAX_TAGS_PER_QUERY));
+      }
 
-      await this.dataSource.query(query, params);
+      // Process each chunk separately
+      for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const chunk = chunks[chunkIndex];
+        const updates: string[] = [];
+        const params: any[] = [];
+        let paramIndex = 1;
+
+        for (const tag of chunk) {
+          const tagKey = `tag_${tag.id}`;
+          updates.push(
+            `$${paramIndex}::text, COALESCE((tag_scores->>$${paramIndex + 1}::text)::int, 0) + $${paramIndex + 2}::int`,
+          );
+          params.push(tagKey, tagKey, tag.totalScore);
+          paramIndex += 3;
+        }
+
+        params.push(userId);
+
+        const query = `
+          UPDATE "${this.schema}"."user_profiles"
+          SET tag_scores = COALESCE(tag_scores, '{}'::jsonb) || jsonb_build_object(
+            ${updates.join(', ')}
+          )
+          WHERE account_id = $${paramIndex}
+        `;
+
+        await this.dataSource.query(query, params);
+
+        this.logger.debug(
+          `Processed chunk ${chunkIndex + 1}/${chunks.length} for user ${userId}: ${chunk.length} tags`,
+        );
+      }
 
       const positiveTags = tagScores.filter((t) => t.totalScore > 0);
       const negativeTags = tagScores.filter((t) => t.totalScore < 0);
 
       this.logger.log(
-        `✅ Updated tag scores for user ${userId}: ${positiveTags.length} positive tags, ${negativeTags.length} negative tags`,
+        `✅ Updated tag scores for user ${userId}: ${positiveTags.length} positive tags, ${negativeTags.length} negative tags (processed in ${chunks.length} chunk(s))`,
       );
     } catch (error) {
       this.logger.error(

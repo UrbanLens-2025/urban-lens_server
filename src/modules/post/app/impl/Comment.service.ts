@@ -20,7 +20,6 @@ import {
   CommentCreatedEvent,
 } from '@/modules/gamification/domain/events/CommentCreated.event';
 import { PostEntity } from '../../domain/Post.entity';
-import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 
 @Injectable()
 export class CommentService
