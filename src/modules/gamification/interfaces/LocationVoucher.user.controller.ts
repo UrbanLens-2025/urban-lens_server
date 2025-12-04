@@ -40,7 +40,10 @@ export class LocationVoucherUserController {
     @Paginate() query: PaginateQuery,
     @AuthUser() user: JwtTokenDto,
   ) {
-    return this.locationVoucherService.getFreeAvailableVouchers(query);
+    return this.locationVoucherService.getFreeAvailableVouchers(
+      query,
+      user.sub,
+    );
   }
 
   @ApiOperation({
@@ -75,7 +78,7 @@ export class LocationVoucherUserController {
     @Paginate() query: PaginateQuery,
     @AuthUser() user: JwtTokenDto,
   ) {
-    return this.locationVoucherService.getAllAvailableVouchers(query);
+    return this.locationVoucherService.getAllAvailableVouchers(query, user.sub);
   }
 
   @ApiOperation({

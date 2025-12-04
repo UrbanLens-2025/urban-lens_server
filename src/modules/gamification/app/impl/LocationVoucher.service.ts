@@ -13,12 +13,14 @@ import {
 } from '@/modules/gamification/domain/LocationVoucher.entity';
 import { LocationRepository } from '@/modules/business/infra/repository/Location.repository';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
+import { UserLocationVoucherExchangeHistoryRepository } from '@/modules/gamification/infra/repository/UserLocationVoucherExchangeHistory.repository';
 
 @Injectable()
 export class LocationVoucherService implements ILocationVoucherService {
   constructor(
     private readonly locationVoucherRepository: LocationVoucherRepository,
     private readonly locationRepository: LocationRepository,
+    private readonly userLocationVoucherExchangeHistoryRepository: UserLocationVoucherExchangeHistoryRepository,
   ) {}
 
   async createVoucher(
@@ -338,12 +340,18 @@ export class LocationVoucherService implements ILocationVoucherService {
 
   async getFreeAvailableVouchers(
     query: PaginateQuery,
+    userId?: string,
   ): Promise<Paginated<any>> {
     try {
       const now = new Date();
       const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
         .leftJoin('voucher.location', 'location')
+        .leftJoin(
+          'user_location_voucher_exchange_histories',
+          'exchange',
+          'exchange.voucher_id = voucher.id',
+        )
         .select([
           'voucher.id',
           'voucher.title',
@@ -360,10 +368,26 @@ export class LocationVoucherService implements ILocationVoucherService {
           'location.id',
           'location.name',
         ])
+        .addSelect('COUNT(exchange.id)', 'redeemed_count')
         .where('voucher.pricePoint = 0') // Free vouchers only
         .andWhere('voucher.startDate <= :now', { now })
         .andWhere('voucher.endDate >= :now', { now })
-        .andWhere('voucher.maxQuantity > 0');
+        .andWhere('voucher.maxQuantity > 0')
+        .groupBy('voucher.id')
+        .addGroupBy('location.id')
+        .having('voucher.maxQuantity > COALESCE(COUNT(exchange.id), 0)'); // Only vouchers with remaining quantity
+
+      // If userId is provided, filter out vouchers where user has reached redemption limit
+      if (userId) {
+        queryBuilder.andHaving(
+          `(voucher.user_redeemed_limit = 0 OR voucher.user_redeemed_limit > (
+            SELECT COUNT(*)::integer
+            FROM user_location_voucher_exchange_histories 
+            WHERE voucher_id = voucher.id AND user_profile_id = :userId
+          ))`,
+          { userId },
+        );
+      }
 
       return paginate(query, queryBuilder, {
         sortableColumns: ['createdAt', 'startDate', 'endDate'],
@@ -379,12 +403,20 @@ export class LocationVoucherService implements ILocationVoucherService {
     }
   }
 
-  async getAllAvailableVouchers(query: PaginateQuery): Promise<Paginated<any>> {
+  async getAllAvailableVouchers(
+    query: PaginateQuery,
+    userId?: string,
+  ): Promise<Paginated<any>> {
     try {
       const now = new Date();
       const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
         .leftJoin('voucher.location', 'location')
+        .leftJoin(
+          'user_location_voucher_exchange_histories',
+          'exchange',
+          'exchange.voucher_id = voucher.id',
+        )
         .select([
           'voucher.id',
           'voucher.title',
@@ -401,9 +433,25 @@ export class LocationVoucherService implements ILocationVoucherService {
           'location.id',
           'location.name',
         ])
+        .addSelect('COUNT(exchange.id)', 'redeemed_count')
         .where('voucher.startDate <= :now', { now })
         .andWhere('voucher.endDate >= :now', { now })
-        .andWhere('voucher.maxQuantity > 0');
+        .andWhere('voucher.maxQuantity > 0')
+        .groupBy('voucher.id')
+        .addGroupBy('location.id')
+        .having('voucher.maxQuantity > COALESCE(COUNT(exchange.id), 0)'); // Only vouchers with remaining quantity
+
+      // If userId is provided, filter out vouchers where user has reached redemption limit
+      if (userId) {
+        queryBuilder.andHaving(
+          `(voucher.user_redeemed_limit = 0 OR voucher.user_redeemed_limit > (
+            SELECT COUNT(*)::integer
+            FROM user_location_voucher_exchange_histories 
+            WHERE voucher_id = voucher.id AND user_profile_id = :userId
+          ))`,
+          { userId },
+        );
+      }
 
       return paginate(query, queryBuilder, {
         sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
