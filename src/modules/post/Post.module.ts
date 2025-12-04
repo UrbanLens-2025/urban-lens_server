@@ -81,5 +81,6 @@ import { PostAdminController } from '@/modules/post/interfaces/Post.admin.contro
     PostReactionPublisherListener,
     ReviewPostPublisherListener,
   ],
+  exports: [IPostService],
 })
 export class PostModule {}
