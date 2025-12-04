@@ -125,8 +125,16 @@ export class EventResponseDto {
   scheduledJob?: ScheduledJobResponseDto;
 
   @Expose()
+  @Transform(({ value }) => {
+    if (value === null || value === undefined) return 0;
+    return typeof value === 'string' ? parseInt(value, 10) : Number(value);
+  })
   totalReviews: number;
 
   @Expose()
+  @Transform(({ value }) => {
+    if (value === null || value === undefined) return 0;
+    return typeof value === 'string' ? parseFloat(value) : Number(value);
+  })
   avgRating: number;
 }
