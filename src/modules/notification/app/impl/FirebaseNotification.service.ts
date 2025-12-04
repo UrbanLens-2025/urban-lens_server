@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RegisterDeviceDto } from '@/common/dto/notification/RegisterDevice.dto';
+import { DeregisterDeviceDto } from '@/common/dto/notification/DeregisterDevice.dto';
 import {
   FcmTokenRepository,
   FcmTokenRepositoryProvider,
@@ -23,7 +24,7 @@ import {
 } from '@/modules/notification/app/IFirebaseNotification.service';
 import { PushNotificationEntity } from '@/modules/notification/domain/PushNotification.entity';
 import { PushNotificationStatus } from '@/common/constants/PushNotificationStatus.constant';
-import { In, UpdateResult } from 'typeorm';
+import { DeleteResult, In, UpdateResult } from 'typeorm';
 import { SeenPushNotificationDto } from '@/common/dto/notification/SeenPushNotification.dto';
 
 @Injectable()
@@ -85,6 +86,13 @@ export class FirebaseNotificationService
     pushNotificationEntity.status = PushNotificationStatus.UNSEEN;
     pushNotificationEntity.payload = dto.payload;
     await this.pushNotificationRepository.repo.save(pushNotificationEntity);
+
+    this.logger.debug('Found tokens: ' + fcmTokens.length);
+
+    if (fcmTokens.length === 0) {
+      this.logger.debug('No FCM tokens found for user: ' + dto.toUserId);
+      return [];
+    }
 
     const promises: Promise<string>[] = [];
     fcmTokens.forEach((tokenEntity) => {
@@ -174,5 +182,24 @@ export class FirebaseNotificationService
         status: PushNotificationStatus.SEEN,
       },
     );
+  }
+
+  async deregisterDevice(
+    userDto: JwtTokenDto,
+    dto: DeregisterDeviceDto,
+  ): Promise<DeleteResult> {
+    this.logger.debug(
+      'Deregistering device for user: ' +
+        userDto.sub +
+        ' with token: ' +
+        dto.token,
+    );
+    return this.ensureTransaction(null, async (em) => {
+      const fcmTokenRepo = FcmTokenRepositoryProvider(em);
+      return fcmTokenRepo.delete({
+        userId: userDto.sub,
+        token: dto.token,
+      });
+    });
   }
 }
