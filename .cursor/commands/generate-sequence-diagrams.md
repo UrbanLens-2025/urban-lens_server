@@ -112,6 +112,7 @@ When validation occurs, show it as a self-message:
 
 When showing conditional logic (approve/reject, found/not found):
 - Use `alt` blocks with clear labels
+- The alt failure flow should come first, then the success flow
 - Number messages sequentially even across branches
 - Show all paths clearly
 
@@ -121,4 +122,7 @@ When showing conditional logic (approve/reject, found/not found):
 - Show error paths only if they're significant to the business logic
 - Use clear, concise message descriptions
 - Maintain consistent numbering throughout the entire sequence
+- Only include core flows. Do not include stuff like "Confirm Upload for images..."
+- Do not include system actions like map to dto. 
+- After generating the sequence diagram, reread it for syntax errors. 
 

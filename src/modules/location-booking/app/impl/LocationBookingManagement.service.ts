@@ -33,6 +33,7 @@ import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
 import { DelayedMessageProvider } from '@/common/core/delayed-message/DelayedMessage.provider';
 import { DelayedMessageKeys } from '@/common/constants/DelayedMessageKeys.constant';
 import { CancelBookingDto } from '@/common/dto/location-booking/CancelBooking.dto';
+import { ILocationBookingPayoutService } from '@/modules/location-booking/app/ILocationBookingPayout.service';
 
 @Injectable()
 export class LocationBookingManagementService
@@ -40,7 +41,6 @@ export class LocationBookingManagementService
   implements ILocationBookingManagementService
 {
   private readonly MAX_TIME_TO_PAY_MS: number; // 12 hours
-  private readonly MILLIS_TO_EVENT_PAYOUT: number;
 
   constructor(
     private readonly configService: ConfigService<Environment>,
@@ -48,11 +48,10 @@ export class LocationBookingManagementService
     private readonly delayedMessageProvider: DelayedMessageProvider,
     @Inject(IWalletTransactionCoordinatorService)
     private readonly walletTransactionCoordinatorService: IWalletTransactionCoordinatorService,
-    @Inject(IScheduledJobService)
-    private readonly scheduledJobService: IScheduledJobService,
+    @Inject(ILocationBookingPayoutService)
+    private readonly locationBookingPayoutService: ILocationBookingPayoutService,
   ) {
     super();
-    this.MILLIS_TO_EVENT_PAYOUT = 1000 * 60 * 60 * 24 * 7; // TODO 7 days
     this.MAX_TIME_TO_PAY_MS = this.configService.getOrThrow<number>(
       'LOCATION_BOOKING_MAX_TIME_TO_PAY_MS',
     ); // 12 hours
@@ -195,6 +194,7 @@ export class LocationBookingManagementService
     return this.ensureTransaction(dto.entityManager, async (em) => {
       const locationBookingRepository = LocationBookingRepository(em);
 
+      // get the booking in question
       const booking = await locationBookingRepository.findOneOrFail({
         where: {
           id: dto.locationBookingId,
@@ -208,6 +208,7 @@ export class LocationBookingManagementService
         );
       }
 
+      // initiate transfer of funds from creator account to escrow account
       const transaction =
         await this.walletTransactionCoordinatorService.coordinateTransferToEscrow(
           {
@@ -221,40 +222,19 @@ export class LocationBookingManagementService
           },
         );
 
+      // if code reaches here, it means the payment has been made successfully
       booking.referencedTransactionId = transaction.id;
       booking.status = LocationBookingStatus.PAYMENT_RECEIVED;
 
-      // schedule job for payout to business after event completion
-      if (booking.amountToPay > 0) {
-        const maximumBookingDate = booking.dates.reduce((max, curr) => {
-          const currEnd = dayjs(curr.endDateTime);
-          return currEnd.isAfter(max) ? currEnd : max;
-        }, dayjs(0));
+      await locationBookingRepository.save(booking);
 
-        const executeAt = maximumBookingDate.add(
-          this.MILLIS_TO_EVENT_PAYOUT,
-          'milliseconds',
-        );
-        const job =
-          await this.scheduledJobService.createLongRunningScheduledJob({
-            entityManager: em,
-            executeAt: executeAt.toDate(),
-            jobType: ScheduledJobType.LOCATION_BOOKING_PAYOUT,
-            payload: {
-              locationBookingId: booking.id,
-            },
-          });
-        booking.scheduledPayoutJobId = job.id;
-      } else {
-        // in the case the booking was free
-        booking.paidOutAt = new Date();
-        booking.scheduledPayoutJobId = null;
-      }
+      const updatedBooking =
+        await this.locationBookingPayoutService.schedulePayoutBooking({
+          locationBookingId: booking.id,
+          entityManager: em,
+        });
 
-      return this.mapTo(
-        LocationBookingResponseDto,
-        await locationBookingRepository.save(booking),
-      );
+      return this.mapTo(LocationBookingResponseDto, updatedBooking);
     });
   }
 

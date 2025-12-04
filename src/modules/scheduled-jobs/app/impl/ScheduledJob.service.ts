@@ -27,14 +27,11 @@ export class ScheduledJobService
       scheduledJob.jobType = dto.jobType;
       scheduledJob.executeAt = dto.executeAt;
       scheduledJob.payload = dto.payload;
+      scheduledJob.associatedId = dto.associatedId;
 
       return scheduledJobRepository
         .save(scheduledJob)
         .then((res) => this.mapTo(ScheduledJobResponseDto, res));
     });
-  }
-
-  createShortRunningScheduledJob(): Promise<void> {
-    throw new Error('Method not implemented.');
   }
 }

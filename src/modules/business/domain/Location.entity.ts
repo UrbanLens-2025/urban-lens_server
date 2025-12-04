@@ -20,7 +20,6 @@ import { LocationOwnershipType } from '@/common/constants/LocationType.constant'
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
 import { InternalServerErrorException } from '@nestjs/common';
-import { LocationOpeningHoursEntity } from '@/modules/business/domain/LocationOpeningHours.entity';
 import { LocationAvailabilityEntity } from '@/modules/location-booking/domain/LocationAvailability.entity';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 
@@ -158,15 +157,6 @@ export class LocationEntity {
     createForeignKeyConstraints: false,
   })
   bookings: LocationBookingEntity[];
-
-  @OneToMany(
-    () => LocationOpeningHoursEntity,
-    (openingHours) => openingHours.location,
-    {
-      createForeignKeyConstraints: false,
-    },
-  )
-  openingHours: LocationOpeningHoursEntity[];
 
   // Analytics columns (migrated from location_analytics table)
   @Column({ name: 'total_posts', type: 'bigint', default: 0 })

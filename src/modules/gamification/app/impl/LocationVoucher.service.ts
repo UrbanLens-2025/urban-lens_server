@@ -343,7 +343,23 @@ export class LocationVoucherService implements ILocationVoucherService {
       const now = new Date();
       const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
-        .leftJoinAndSelect('voucher.location', 'location')
+        .leftJoin('voucher.location', 'location')
+        .select([
+          'voucher.id',
+          'voucher.title',
+          'voucher.description',
+          'voucher.voucherCode',
+          'voucher.voucherType',
+          'voucher.pricePoint',
+          'voucher.startDate',
+          'voucher.endDate',
+          'voucher.maxQuantity',
+          'voucher.userRedeemedLimit',
+          'voucher.imageUrl',
+          'voucher.createdAt',
+          'location.id',
+          'location.name',
+        ])
         .where('voucher.pricePoint = 0') // Free vouchers only
         .andWhere('voucher.startDate <= :now', { now })
         .andWhere('voucher.endDate >= :now', { now })
@@ -368,7 +384,23 @@ export class LocationVoucherService implements ILocationVoucherService {
       const now = new Date();
       const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
-        .leftJoinAndSelect('voucher.location', 'location')
+        .leftJoin('voucher.location', 'location')
+        .select([
+          'voucher.id',
+          'voucher.title',
+          'voucher.description',
+          'voucher.voucherCode',
+          'voucher.voucherType',
+          'voucher.pricePoint',
+          'voucher.startDate',
+          'voucher.endDate',
+          'voucher.maxQuantity',
+          'voucher.userRedeemedLimit',
+          'voucher.imageUrl',
+          'voucher.createdAt',
+          'location.id',
+          'location.name',
+        ])
         .where('voucher.startDate <= :now', { now })
         .andWhere('voucher.endDate >= :now', { now })
         .andWhere('voucher.maxQuantity > 0');
