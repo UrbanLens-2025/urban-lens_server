@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ILocationVoucherService } from '../ILocationVoucher.service';
@@ -14,14 +15,26 @@ import {
 import { LocationRepository } from '@/modules/business/infra/repository/Location.repository';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { UserLocationVoucherExchangeHistoryRepository } from '@/modules/gamification/infra/repository/UserLocationVoucherExchangeHistory.repository';
+import { UserLocationVoucherExchangeHistoryEntity } from '@/modules/gamification/domain/UserLocationVoucherExchangeHistory.entity';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class LocationVoucherService implements ILocationVoucherService {
+  private readonly logger = new Logger(LocationVoucherService.name);
+  private readonly exchangeHistoryTableName: string;
+
   constructor(
     private readonly locationVoucherRepository: LocationVoucherRepository,
     private readonly locationRepository: LocationRepository,
     private readonly userLocationVoucherExchangeHistoryRepository: UserLocationVoucherExchangeHistoryRepository,
-  ) {}
+    private readonly dataSource: DataSource,
+  ) {
+    // Get table name from entity metadata
+    const metadata = this.dataSource.getMetadata(
+      UserLocationVoucherExchangeHistoryEntity,
+    );
+    this.exchangeHistoryTableName = metadata.tableName;
+  }
 
   async createVoucher(
     locationId: string,
@@ -315,24 +328,263 @@ export class LocationVoucherService implements ILocationVoucherService {
   async getAvailableVouchersByLocation(
     locationId: string,
     query: PaginateQuery,
+    userId?: string,
   ): Promise<Paginated<any>> {
     try {
       const now = new Date();
+
       const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
-        .where('voucher.locationId = :locationId', { locationId })
-        .andWhere('voucher.startDate <= :now', { now })
-        .andWhere('voucher.endDate >= :now', { now })
-        .andWhere('voucher.maxQuantity > 0');
+        .leftJoin('voucher.location', 'location')
+        .select([
+          'voucher.id as id',
+          'voucher.title as title',
+          'voucher.description as description',
+          'voucher.voucher_code as voucherCode',
+          'voucher.voucher_type as voucherType',
+          'voucher.price_point as pricePoint',
+          'voucher.start_date as startDate',
+          'voucher.end_date as endDate',
+          'voucher.max_quantity as maxQuantity',
+          'voucher.user_redeemed_limit as userRedeemedLimit',
+          'voucher.image_url as imageUrl',
+          'voucher.created_at as createdAt',
+          'location.id as location_id',
+          'location.name as location_name',
+        ])
+        .where('voucher.location_id = :locationId', { locationId })
+        .andWhere('voucher.start_date <= :now', { now })
+        .andWhere('voucher.end_date >= :now', { now })
+        .andWhere('voucher.max_quantity > 0')
+        .andWhere('voucher.max_quantity IS NOT NULL');
 
-      return paginate(query, queryBuilder, {
-        sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
-        defaultSortBy: [['createdAt', 'DESC']],
-        searchableColumns: ['title', 'voucherCode'],
-        filterableColumns: {
-          voucherType: true,
-        },
+      // Get all vouchers first (before pagination)
+      const allVouchers = await queryBuilder.getRawMany();
+
+      // Get exchange counts for all vouchers
+      const voucherIds = allVouchers.map((v: any) => v.id);
+      const exchangeCounts =
+        voucherIds.length > 0
+          ? await this.userLocationVoucherExchangeHistoryRepository.repo
+              .createQueryBuilder('exchange')
+              .select('exchange.voucher_id', 'voucherId')
+              .addSelect('COUNT(exchange.id)', 'count')
+              .where('exchange.voucher_id IN (:...voucherIds)', { voucherIds })
+              .groupBy('exchange.voucher_id')
+              .getRawMany()
+          : [];
+
+      const exchangeCountMap = new Map(
+        exchangeCounts.map((e: any) => [e.voucherId, parseInt(e.count, 10)]),
+      );
+
+      // Get user exchange counts if userId provided
+      let userExchangeCountMap = new Map<string, number>();
+      if (userId && voucherIds.length > 0) {
+        const userExchangeCounts =
+          await this.userLocationVoucherExchangeHistoryRepository.repo
+            .createQueryBuilder('exchange')
+            .select('exchange.voucher_id', 'voucherId')
+            .addSelect('COUNT(exchange.id)', 'count')
+            .where('exchange.voucher_id IN (:...voucherIds)', { voucherIds })
+            .andWhere('exchange.user_profile_id = :userId', { userId })
+            .groupBy('exchange.voucher_id')
+            .getRawMany();
+
+        userExchangeCountMap = new Map(
+          userExchangeCounts.map((e: any) => [
+            e.voucherId,
+            parseInt(e.count, 10),
+          ]),
+        );
+      }
+
+      // Filter vouchers with remaining quantity and user limit
+      const filteredVouchers = allVouchers.filter((voucher: any) => {
+        const redeemedCount = exchangeCountMap.get(voucher.id) || 0;
+
+        // Try to find maxQuantity in all possible keys (case-insensitive)
+        // TypeORM getRawMany() may return keys as alias, column name, or lowercase depending on database driver
+        const allKeys = Object.keys(voucher);
+        const maxQuantityKey = allKeys.find(
+          (key) =>
+            key === 'maxQuantity' ||
+            key === 'max_quantity' ||
+            key.toLowerCase() === 'maxquantity' ||
+            key.toLowerCase() === 'max_quantity',
+        );
+        const maxQuantityRaw = maxQuantityKey
+          ? voucher[maxQuantityKey]
+          : (voucher.maxQuantity ?? voucher.max_quantity);
+
+        let maxQuantity = 0;
+
+        if (maxQuantityRaw !== null && maxQuantityRaw !== undefined) {
+          if (typeof maxQuantityRaw === 'string') {
+            maxQuantity = parseInt(maxQuantityRaw, 10);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          } else {
+            maxQuantity = Number(maxQuantityRaw);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          }
+        }
+
+        // If maxQuantity is 0 or null, skip this voucher (should not happen due to SQL filter, but safety check)
+        if (maxQuantity <= 0) {
+          this.logger.debug(
+            `Voucher ${voucher.id}: Invalid maxQuantity (maxQuantity: ${maxQuantity}, maxQuantityRaw: ${maxQuantityRaw}, maxQuantityKey: ${maxQuantityKey}, voucher keys: ${allKeys.join(', ')})`,
+          );
+          return false;
+        }
+
+        const hasRemainingQuantity = maxQuantity > redeemedCount;
+
+        if (!hasRemainingQuantity) {
+          this.logger.debug(
+            `Voucher ${voucher.id}: No remaining quantity (maxQuantity: ${maxQuantity}, maxQuantityRaw: ${maxQuantityRaw}, redeemed: ${redeemedCount})`,
+          );
+          return false;
+        }
+
+        // If userId provided, filter out vouchers where user has reached redemption limit
+        if (userId) {
+          const userRedeemedCount = userExchangeCountMap.get(voucher.id) || 0;
+          const userRedeemedLimit = voucher.userRedeemedLimit || 0;
+          if (userRedeemedLimit > 0 && userRedeemedCount >= userRedeemedLimit) {
+            this.logger.debug(
+              `Voucher ${voucher.id}: User reached limit (limit: ${userRedeemedLimit}, redeemed: ${userRedeemedCount})`,
+            );
+            return false;
+          }
+        }
+
+        return true;
       });
+      this.logger.debug(
+        `getAvailableVouchersByLocation: Filtered to ${filteredVouchers.length} vouchers`,
+      );
+
+      // Apply pagination manually
+      const page = query.page || 1;
+      const limit = query.limit || 10;
+      const skip = (page - 1) * limit;
+      const paginatedVouchers = filteredVouchers.slice(skip, skip + limit);
+      this.logger.debug(
+        `getAvailableVouchersByLocation: Paginated to ${paginatedVouchers.length} vouchers (page: ${page}, limit: ${limit})`,
+      );
+
+      // Map response
+      const mappedData = paginatedVouchers.map((voucher: any): any => {
+        const voucherId = voucher.id;
+        const userRedeemedCount = userId
+          ? userExchangeCountMap.get(voucherId) || 0
+          : 0;
+
+        // Find maxQuantity using same logic as filter
+        const allKeys = Object.keys(voucher);
+        const maxQuantityKey = allKeys.find(
+          (key) =>
+            key === 'maxQuantity' ||
+            key === 'max_quantity' ||
+            key.toLowerCase() === 'maxquantity' ||
+            key.toLowerCase() === 'max_quantity',
+        );
+        const maxQuantityRaw = maxQuantityKey
+          ? voucher[maxQuantityKey]
+          : (voucher.maxQuantity ?? voucher.max_quantity);
+        let maxQuantity = 0;
+        if (maxQuantityRaw !== null && maxQuantityRaw !== undefined) {
+          if (typeof maxQuantityRaw === 'string') {
+            maxQuantity = parseInt(maxQuantityRaw, 10);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          } else {
+            maxQuantity = Number(maxQuantityRaw);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          }
+        }
+
+        // Find userRedeemedLimit using same logic
+        const userRedeemedLimitKey = allKeys.find(
+          (key) =>
+            key === 'userRedeemedLimit' ||
+            key === 'user_redeemed_limit' ||
+            key.toLowerCase() === 'userredeemedlimit' ||
+            key.toLowerCase() === 'user_redeemed_limit',
+        );
+        const userRedeemedLimitRaw = userRedeemedLimitKey
+          ? voucher[userRedeemedLimitKey]
+          : (voucher.userRedeemedLimit ?? voucher.user_redeemed_limit);
+        const userRedeemedLimit =
+          userRedeemedLimitRaw !== null && userRedeemedLimitRaw !== undefined
+            ? typeof userRedeemedLimitRaw === 'string'
+              ? parseInt(userRedeemedLimitRaw, 10) || 0
+              : Number(userRedeemedLimitRaw) || 0
+            : 0;
+
+        // Find pricePoint using same logic
+        const pricePointKey = allKeys.find(
+          (key) =>
+            key === 'pricePoint' ||
+            key === 'price_point' ||
+            key.toLowerCase() === 'pricepoint' ||
+            key.toLowerCase() === 'price_point',
+        );
+        const pricePointRaw = pricePointKey
+          ? voucher[pricePointKey]
+          : (voucher.pricePoint ?? voucher.price_point);
+        const pricePoint =
+          pricePointRaw !== null && pricePointRaw !== undefined
+            ? typeof pricePointRaw === 'string'
+              ? parseInt(pricePointRaw, 10) || 0
+              : Number(pricePointRaw) || 0
+            : 0;
+
+        const isExchanged =
+          userId &&
+          userRedeemedLimit > 0 &&
+          userRedeemedCount >= userRedeemedLimit;
+
+        return {
+          id: voucherId,
+          title: voucher.title,
+          description: voucher.description,
+          voucherCode: voucher.voucherCode || voucher.voucher_code,
+          voucherType: voucher.voucherType || voucher.voucher_type,
+          pointsRequired: pricePoint,
+          startDate: voucher.startDate || voucher.start_date,
+          endDate: voucher.endDate || voucher.end_date,
+          maxQuantity,
+          userRedeemedLimit,
+          imageUrl: voucher.imageUrl || voucher.image_url,
+          createdAt: voucher.createdAt || voucher.created_at,
+          location: voucher.location_id
+            ? {
+                id: voucher.location_id,
+                name: voucher.location_name,
+              }
+            : undefined,
+          isExchanged: isExchanged || false,
+        };
+      });
+
+      return {
+        data: mappedData,
+        meta: {
+          itemsPerPage: limit,
+          totalItems: filteredVouchers.length,
+          currentPage: page,
+          totalPages: Math.ceil(filteredVouchers.length / limit),
+        },
+        links: {
+          first: `?page=1&limit=${limit}`,
+          last: `?page=${Math.ceil(filteredVouchers.length / limit)}&limit=${limit}`,
+          next:
+            page < Math.ceil(filteredVouchers.length / limit)
+              ? `?page=${page + 1}&limit=${limit}`
+              : null,
+          previous: page > 1 ? `?page=${page - 1}&limit=${limit}` : null,
+        },
+      } as Paginated<any>;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -344,60 +596,259 @@ export class LocationVoucherService implements ILocationVoucherService {
   ): Promise<Paginated<any>> {
     try {
       const now = new Date();
+
       const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
         .leftJoin('voucher.location', 'location')
-        .leftJoin(
-          'user_location_voucher_exchange_histories',
-          'exchange',
-          'exchange.voucher_id = voucher.id',
-        )
         .select([
-          'voucher.id',
-          'voucher.title',
-          'voucher.description',
-          'voucher.voucherCode',
-          'voucher.voucherType',
-          'voucher.pricePoint',
-          'voucher.startDate',
-          'voucher.endDate',
-          'voucher.maxQuantity',
-          'voucher.userRedeemedLimit',
-          'voucher.imageUrl',
-          'voucher.createdAt',
-          'location.id',
-          'location.name',
+          'voucher.id as id',
+          'voucher.title as title',
+          'voucher.description as description',
+          'voucher.voucher_code as voucherCode',
+          'voucher.voucher_type as voucherType',
+          'voucher.price_point as pricePoint',
+          'voucher.start_date as startDate',
+          'voucher.end_date as endDate',
+          'voucher.max_quantity as maxQuantity',
+          'voucher.user_redeemed_limit as userRedeemedLimit',
+          'voucher.image_url as imageUrl',
+          'voucher.created_at as createdAt',
+          'location.id as location_id',
+          'location.name as location_name',
         ])
-        .addSelect('COUNT(exchange.id)', 'redeemed_count')
-        .where('voucher.pricePoint = 0') // Free vouchers only
-        .andWhere('voucher.startDate <= :now', { now })
-        .andWhere('voucher.endDate >= :now', { now })
-        .andWhere('voucher.maxQuantity > 0')
-        .groupBy('voucher.id')
-        .addGroupBy('location.id')
-        .having('voucher.maxQuantity > COALESCE(COUNT(exchange.id), 0)'); // Only vouchers with remaining quantity
+        .where('voucher.price_point = 0') // Free vouchers only
+        .andWhere('voucher.start_date <= :now', { now })
+        .andWhere('voucher.end_date >= :now', { now })
+        .andWhere('voucher.max_quantity > 0')
+        .andWhere('voucher.max_quantity IS NOT NULL');
 
-      // If userId is provided, filter out vouchers where user has reached redemption limit
-      if (userId) {
-        queryBuilder.andHaving(
-          `(voucher.user_redeemed_limit = 0 OR voucher.user_redeemed_limit > (
-            SELECT COUNT(*)::integer
-            FROM user_location_voucher_exchange_histories 
-            WHERE voucher_id = voucher.id AND user_profile_id = :userId
-          ))`,
-          { userId },
+      // Get all vouchers first (before pagination)
+      const allVouchers = await queryBuilder.getRawMany();
+
+      // Get exchange counts for all vouchers
+      const voucherIds = allVouchers.map((v: any) => v.id);
+      const exchangeCounts =
+        voucherIds.length > 0
+          ? await this.userLocationVoucherExchangeHistoryRepository.repo
+              .createQueryBuilder('exchange')
+              .select('exchange.voucher_id', 'voucherId')
+              .addSelect('COUNT(exchange.id)', 'count')
+              .where('exchange.voucher_id IN (:...voucherIds)', { voucherIds })
+              .groupBy('exchange.voucher_id')
+              .getRawMany()
+          : [];
+
+      const exchangeCountMap = new Map(
+        exchangeCounts.map((e: any) => [e.voucherId, parseInt(e.count, 10)]),
+      );
+
+      // Get user exchange counts if userId provided
+      let userExchangeCountMap = new Map<string, number>();
+      if (userId && voucherIds.length > 0) {
+        const userExchangeCounts =
+          await this.userLocationVoucherExchangeHistoryRepository.repo
+            .createQueryBuilder('exchange')
+            .select('exchange.voucher_id', 'voucherId')
+            .addSelect('COUNT(exchange.id)', 'count')
+            .where('exchange.voucher_id IN (:...voucherIds)', { voucherIds })
+            .andWhere('exchange.user_profile_id = :userId', { userId })
+            .groupBy('exchange.voucher_id')
+            .getRawMany();
+
+        userExchangeCountMap = new Map(
+          userExchangeCounts.map((e: any) => [
+            e.voucherId,
+            parseInt(e.count, 10),
+          ]),
         );
       }
 
-      return paginate(query, queryBuilder, {
-        sortableColumns: ['createdAt', 'startDate', 'endDate'],
-        defaultSortBy: [['createdAt', 'DESC']],
-        searchableColumns: ['title', 'voucherCode'],
-        filterableColumns: {
-          voucherType: true,
-          locationId: true,
-        },
+      // Filter vouchers with remaining quantity and user limit
+      const filteredVouchers = allVouchers.filter((voucher: any) => {
+        const redeemedCount = exchangeCountMap.get(voucher.id) || 0;
+
+        // Try to find maxQuantity in all possible keys (case-insensitive)
+        // TypeORM getRawMany() may return keys as alias, column name, or lowercase depending on database driver
+        const allKeys = Object.keys(voucher);
+        const maxQuantityKey = allKeys.find(
+          (key) =>
+            key === 'maxQuantity' ||
+            key === 'max_quantity' ||
+            key.toLowerCase() === 'maxquantity' ||
+            key.toLowerCase() === 'max_quantity',
+        );
+        const maxQuantityRaw = maxQuantityKey
+          ? voucher[maxQuantityKey]
+          : (voucher.maxQuantity ?? voucher.max_quantity);
+
+        let maxQuantity = 0;
+
+        if (maxQuantityRaw !== null && maxQuantityRaw !== undefined) {
+          if (typeof maxQuantityRaw === 'string') {
+            maxQuantity = parseInt(maxQuantityRaw, 10);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          } else {
+            maxQuantity = Number(maxQuantityRaw);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          }
+        }
+
+        // If maxQuantity is 0 or null, skip this voucher (should not happen due to SQL filter, but safety check)
+        if (maxQuantity <= 0) {
+          this.logger.debug(
+            `Voucher ${voucher.id}: Invalid maxQuantity (maxQuantity: ${maxQuantity}, maxQuantityRaw: ${maxQuantityRaw}, maxQuantityKey: ${maxQuantityKey}, voucher keys: ${allKeys.join(', ')})`,
+          );
+          return false;
+        }
+
+        const hasRemainingQuantity = maxQuantity > redeemedCount;
+
+        if (!hasRemainingQuantity) {
+          this.logger.debug(
+            `Voucher ${voucher.id}: No remaining quantity (maxQuantity: ${maxQuantity}, maxQuantityRaw: ${maxQuantityRaw}, redeemed: ${redeemedCount})`,
+          );
+          return false;
+        }
+
+        // If userId provided, filter out vouchers where user has reached redemption limit
+        if (userId) {
+          const userRedeemedCount = userExchangeCountMap.get(voucher.id) || 0;
+          const userRedeemedLimit = voucher.userRedeemedLimit || 0;
+          if (userRedeemedLimit > 0 && userRedeemedCount >= userRedeemedLimit) {
+            this.logger.debug(
+              `Voucher ${voucher.id}: User reached limit (limit: ${userRedeemedLimit}, redeemed: ${userRedeemedCount})`,
+            );
+            return false;
+          }
+        }
+
+        return true;
       });
+      this.logger.debug(
+        `getFreeAvailableVouchers: Filtered to ${filteredVouchers.length} vouchers`,
+      );
+
+      // Apply pagination manually
+      const page = query.page || 1;
+      const limit = query.limit || 10;
+      const skip = (page - 1) * limit;
+      const paginatedVouchers = filteredVouchers.slice(skip, skip + limit);
+      this.logger.debug(
+        `getFreeAvailableVouchers: Paginated to ${paginatedVouchers.length} vouchers (page: ${page}, limit: ${limit})`,
+      );
+
+      // Map response
+      const mappedData = paginatedVouchers.map((voucher: any): any => {
+        const voucherId = voucher.id;
+        const userRedeemedCount = userId
+          ? userExchangeCountMap.get(voucherId) || 0
+          : 0;
+
+        // Find maxQuantity using same logic as filter
+        const allKeys = Object.keys(voucher);
+        const maxQuantityKey = allKeys.find(
+          (key) =>
+            key === 'maxQuantity' ||
+            key === 'max_quantity' ||
+            key.toLowerCase() === 'maxquantity' ||
+            key.toLowerCase() === 'max_quantity',
+        );
+        const maxQuantityRaw = maxQuantityKey
+          ? voucher[maxQuantityKey]
+          : (voucher.maxQuantity ?? voucher.max_quantity);
+        let maxQuantity = 0;
+        if (maxQuantityRaw !== null && maxQuantityRaw !== undefined) {
+          if (typeof maxQuantityRaw === 'string') {
+            maxQuantity = parseInt(maxQuantityRaw, 10);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          } else {
+            maxQuantity = Number(maxQuantityRaw);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          }
+        }
+
+        // Find userRedeemedLimit using same logic
+        const userRedeemedLimitKey = allKeys.find(
+          (key) =>
+            key === 'userRedeemedLimit' ||
+            key === 'user_redeemed_limit' ||
+            key.toLowerCase() === 'userredeemedlimit' ||
+            key.toLowerCase() === 'user_redeemed_limit',
+        );
+        const userRedeemedLimitRaw = userRedeemedLimitKey
+          ? voucher[userRedeemedLimitKey]
+          : (voucher.userRedeemedLimit ?? voucher.user_redeemed_limit);
+        const userRedeemedLimit =
+          userRedeemedLimitRaw !== null && userRedeemedLimitRaw !== undefined
+            ? typeof userRedeemedLimitRaw === 'string'
+              ? parseInt(userRedeemedLimitRaw, 10) || 0
+              : Number(userRedeemedLimitRaw) || 0
+            : 0;
+
+        // Find pricePoint using same logic
+        const pricePointKey = allKeys.find(
+          (key) =>
+            key === 'pricePoint' ||
+            key === 'price_point' ||
+            key.toLowerCase() === 'pricepoint' ||
+            key.toLowerCase() === 'price_point',
+        );
+        const pricePointRaw = pricePointKey
+          ? voucher[pricePointKey]
+          : (voucher.pricePoint ?? voucher.price_point);
+        const pricePoint =
+          pricePointRaw !== null && pricePointRaw !== undefined
+            ? typeof pricePointRaw === 'string'
+              ? parseInt(pricePointRaw, 10) || 0
+              : Number(pricePointRaw) || 0
+            : 0;
+
+        const isExchanged =
+          userId &&
+          userRedeemedLimit > 0 &&
+          userRedeemedCount >= userRedeemedLimit;
+
+        return {
+          id: voucherId,
+          title: voucher.title,
+          description: voucher.description,
+          voucherCode: voucher.voucherCode || voucher.voucher_code,
+          voucherType: voucher.voucherType || voucher.voucher_type,
+          pointsRequired: pricePoint,
+          startDate: voucher.startDate || voucher.start_date,
+          endDate: voucher.endDate || voucher.end_date,
+          maxQuantity,
+          userRedeemedLimit,
+          imageUrl: voucher.imageUrl || voucher.image_url,
+          createdAt: voucher.createdAt || voucher.created_at,
+          location: voucher.location_id
+            ? {
+                id: voucher.location_id,
+                name: voucher.location_name,
+              }
+            : undefined,
+          isExchanged: isExchanged || false,
+        };
+      });
+
+      return {
+        data: mappedData,
+        meta: {
+          itemsPerPage: limit,
+          totalItems: filteredVouchers.length,
+          currentPage: page,
+          totalPages: Math.ceil(filteredVouchers.length / limit),
+        },
+        links: {
+          first: `?page=1&limit=${limit}`,
+          last: `?page=${Math.ceil(filteredVouchers.length / limit)}&limit=${limit}`,
+          next:
+            page < Math.ceil(filteredVouchers.length / limit)
+              ? `?page=${page + 1}&limit=${limit}`
+              : null,
+          previous: page > 1 ? `?page=${page - 1}&limit=${limit}` : null,
+        },
+      } as Paginated<any>;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -409,60 +860,258 @@ export class LocationVoucherService implements ILocationVoucherService {
   ): Promise<Paginated<any>> {
     try {
       const now = new Date();
+
       const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
         .leftJoin('voucher.location', 'location')
-        .leftJoin(
-          'user_location_voucher_exchange_histories',
-          'exchange',
-          'exchange.voucher_id = voucher.id',
-        )
         .select([
-          'voucher.id',
-          'voucher.title',
-          'voucher.description',
-          'voucher.voucherCode',
-          'voucher.voucherType',
-          'voucher.pricePoint',
-          'voucher.startDate',
-          'voucher.endDate',
-          'voucher.maxQuantity',
-          'voucher.userRedeemedLimit',
-          'voucher.imageUrl',
-          'voucher.createdAt',
-          'location.id',
-          'location.name',
+          'voucher.id as id',
+          'voucher.title as title',
+          'voucher.description as description',
+          'voucher.voucher_code as voucherCode',
+          'voucher.voucher_type as voucherType',
+          'voucher.price_point as pricePoint',
+          'voucher.start_date as startDate',
+          'voucher.end_date as endDate',
+          'voucher.max_quantity as maxQuantity',
+          'voucher.user_redeemed_limit as userRedeemedLimit',
+          'voucher.image_url as imageUrl',
+          'voucher.created_at as createdAt',
+          'location.id as location_id',
+          'location.name as location_name',
         ])
-        .addSelect('COUNT(exchange.id)', 'redeemed_count')
-        .where('voucher.startDate <= :now', { now })
-        .andWhere('voucher.endDate >= :now', { now })
-        .andWhere('voucher.maxQuantity > 0')
-        .groupBy('voucher.id')
-        .addGroupBy('location.id')
-        .having('voucher.maxQuantity > COALESCE(COUNT(exchange.id), 0)'); // Only vouchers with remaining quantity
+        .where('voucher.start_date <= :now', { now })
+        .andWhere('voucher.end_date >= :now', { now })
+        .andWhere('voucher.max_quantity > 0')
+        .andWhere('voucher.max_quantity IS NOT NULL');
 
-      // If userId is provided, filter out vouchers where user has reached redemption limit
-      if (userId) {
-        queryBuilder.andHaving(
-          `(voucher.user_redeemed_limit = 0 OR voucher.user_redeemed_limit > (
-            SELECT COUNT(*)::integer
-            FROM user_location_voucher_exchange_histories 
-            WHERE voucher_id = voucher.id AND user_profile_id = :userId
-          ))`,
-          { userId },
+      // Get all vouchers first (before pagination)
+      const allVouchers = await queryBuilder.getRawMany();
+
+      // Get exchange counts for all vouchers
+      const voucherIds = allVouchers.map((v: any) => v.id);
+      const exchangeCounts =
+        voucherIds.length > 0
+          ? await this.userLocationVoucherExchangeHistoryRepository.repo
+              .createQueryBuilder('exchange')
+              .select('exchange.voucher_id', 'voucherId')
+              .addSelect('COUNT(exchange.id)', 'count')
+              .where('exchange.voucher_id IN (:...voucherIds)', { voucherIds })
+              .groupBy('exchange.voucher_id')
+              .getRawMany()
+          : [];
+
+      const exchangeCountMap = new Map(
+        exchangeCounts.map((e: any) => [e.voucherId, parseInt(e.count, 10)]),
+      );
+
+      // Get user exchange counts if userId provided
+      let userExchangeCountMap = new Map<string, number>();
+      if (userId && voucherIds.length > 0) {
+        const userExchangeCounts =
+          await this.userLocationVoucherExchangeHistoryRepository.repo
+            .createQueryBuilder('exchange')
+            .select('exchange.voucher_id', 'voucherId')
+            .addSelect('COUNT(exchange.id)', 'count')
+            .where('exchange.voucher_id IN (:...voucherIds)', { voucherIds })
+            .andWhere('exchange.user_profile_id = :userId', { userId })
+            .groupBy('exchange.voucher_id')
+            .getRawMany();
+
+        userExchangeCountMap = new Map(
+          userExchangeCounts.map((e: any) => [
+            e.voucherId,
+            parseInt(e.count, 10),
+          ]),
         );
       }
 
-      return paginate(query, queryBuilder, {
-        sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
-        defaultSortBy: [['createdAt', 'DESC']],
-        searchableColumns: ['title', 'voucherCode'],
-        filterableColumns: {
-          voucherType: true,
-          locationId: true,
-          pricePoint: true,
-        },
+      // Filter vouchers with remaining quantity and user limit
+      const filteredVouchers = allVouchers.filter((voucher: any) => {
+        const redeemedCount = exchangeCountMap.get(voucher.id) || 0;
+
+        // Try to find maxQuantity in all possible keys (case-insensitive)
+        // TypeORM getRawMany() may return keys as alias, column name, or lowercase depending on database driver
+        const allKeys = Object.keys(voucher);
+        const maxQuantityKey = allKeys.find(
+          (key) =>
+            key === 'maxQuantity' ||
+            key === 'max_quantity' ||
+            key.toLowerCase() === 'maxquantity' ||
+            key.toLowerCase() === 'max_quantity',
+        );
+        const maxQuantityRaw = maxQuantityKey
+          ? voucher[maxQuantityKey]
+          : (voucher.maxQuantity ?? voucher.max_quantity);
+
+        let maxQuantity = 0;
+
+        if (maxQuantityRaw !== null && maxQuantityRaw !== undefined) {
+          if (typeof maxQuantityRaw === 'string') {
+            maxQuantity = parseInt(maxQuantityRaw, 10);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          } else {
+            maxQuantity = Number(maxQuantityRaw);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          }
+        }
+
+        // If maxQuantity is 0 or null, skip this voucher (should not happen due to SQL filter, but safety check)
+        if (maxQuantity <= 0) {
+          this.logger.debug(
+            `Voucher ${voucher.id}: Invalid maxQuantity (maxQuantity: ${maxQuantity}, maxQuantityRaw: ${maxQuantityRaw}, maxQuantityKey: ${maxQuantityKey}, voucher keys: ${allKeys.join(', ')})`,
+          );
+          return false;
+        }
+
+        const hasRemainingQuantity = maxQuantity > redeemedCount;
+
+        if (!hasRemainingQuantity) {
+          this.logger.debug(
+            `Voucher ${voucher.id}: No remaining quantity (maxQuantity: ${maxQuantity}, maxQuantityRaw: ${maxQuantityRaw}, redeemed: ${redeemedCount})`,
+          );
+          return false;
+        }
+
+        // If userId provided, filter out vouchers where user has reached redemption limit
+        if (userId) {
+          const userRedeemedCount = userExchangeCountMap.get(voucher.id) || 0;
+          const userRedeemedLimit = voucher.userRedeemedLimit || 0;
+          if (userRedeemedLimit > 0 && userRedeemedCount >= userRedeemedLimit) {
+            this.logger.debug(
+              `Voucher ${voucher.id}: User reached limit (limit: ${userRedeemedLimit}, redeemed: ${userRedeemedCount})`,
+            );
+            return false;
+          }
+        }
+
+        return true;
       });
+      this.logger.debug(
+        `getAllAvailableVouchers: Filtered to ${filteredVouchers.length} vouchers`,
+      );
+
+      // Apply pagination manually
+      const page = query.page || 1;
+      const limit = query.limit || 10;
+      const skip = (page - 1) * limit;
+      const paginatedVouchers = filteredVouchers.slice(skip, skip + limit);
+      this.logger.debug(
+        `getAllAvailableVouchers: Paginated to ${paginatedVouchers.length} vouchers (page: ${page}, limit: ${limit})`,
+      );
+
+      // Map response
+      const mappedData = paginatedVouchers.map((voucher: any): any => {
+        const voucherId = voucher.id;
+        const userRedeemedCount = userId
+          ? userExchangeCountMap.get(voucherId) || 0
+          : 0;
+
+        // Find maxQuantity using same logic as filter
+        const allKeys = Object.keys(voucher);
+        const maxQuantityKey = allKeys.find(
+          (key) =>
+            key === 'maxQuantity' ||
+            key === 'max_quantity' ||
+            key.toLowerCase() === 'maxquantity' ||
+            key.toLowerCase() === 'max_quantity',
+        );
+        const maxQuantityRaw = maxQuantityKey
+          ? voucher[maxQuantityKey]
+          : (voucher.maxQuantity ?? voucher.max_quantity);
+        let maxQuantity = 0;
+        if (maxQuantityRaw !== null && maxQuantityRaw !== undefined) {
+          if (typeof maxQuantityRaw === 'string') {
+            maxQuantity = parseInt(maxQuantityRaw, 10);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          } else {
+            maxQuantity = Number(maxQuantityRaw);
+            if (isNaN(maxQuantity)) maxQuantity = 0;
+          }
+        }
+
+        // Find userRedeemedLimit using same logic
+        const userRedeemedLimitKey = allKeys.find(
+          (key) =>
+            key === 'userRedeemedLimit' ||
+            key === 'user_redeemed_limit' ||
+            key.toLowerCase() === 'userredeemedlimit' ||
+            key.toLowerCase() === 'user_redeemed_limit',
+        );
+        const userRedeemedLimitRaw = userRedeemedLimitKey
+          ? voucher[userRedeemedLimitKey]
+          : (voucher.userRedeemedLimit ?? voucher.user_redeemed_limit);
+        const userRedeemedLimit =
+          userRedeemedLimitRaw !== null && userRedeemedLimitRaw !== undefined
+            ? typeof userRedeemedLimitRaw === 'string'
+              ? parseInt(userRedeemedLimitRaw, 10) || 0
+              : Number(userRedeemedLimitRaw) || 0
+            : 0;
+
+        // Find pricePoint using same logic
+        const pricePointKey = allKeys.find(
+          (key) =>
+            key === 'pricePoint' ||
+            key === 'price_point' ||
+            key.toLowerCase() === 'pricepoint' ||
+            key.toLowerCase() === 'price_point',
+        );
+        const pricePointRaw = pricePointKey
+          ? voucher[pricePointKey]
+          : (voucher.pricePoint ?? voucher.price_point);
+        const pricePoint =
+          pricePointRaw !== null && pricePointRaw !== undefined
+            ? typeof pricePointRaw === 'string'
+              ? parseInt(pricePointRaw, 10) || 0
+              : Number(pricePointRaw) || 0
+            : 0;
+
+        const isExchanged =
+          userId &&
+          userRedeemedLimit > 0 &&
+          userRedeemedCount >= userRedeemedLimit;
+
+        return {
+          id: voucherId,
+          title: voucher.title,
+          description: voucher.description,
+          voucherCode: voucher.voucherCode || voucher.voucher_code,
+          voucherType: voucher.voucherType || voucher.voucher_type,
+          pointsRequired: pricePoint,
+          startDate: voucher.startDate || voucher.start_date,
+          endDate: voucher.endDate || voucher.end_date,
+          maxQuantity,
+          userRedeemedLimit,
+          imageUrl: voucher.imageUrl || voucher.image_url,
+          createdAt: voucher.createdAt || voucher.created_at,
+          location: voucher.location_id
+            ? {
+                id: voucher.location_id,
+                name: voucher.location_name,
+              }
+            : undefined,
+          isExchanged: isExchanged || false,
+        };
+      });
+
+      return {
+        data: mappedData,
+        meta: {
+          itemsPerPage: limit,
+          totalItems: filteredVouchers.length,
+          currentPage: page,
+          totalPages: Math.ceil(filteredVouchers.length / limit),
+        },
+        links: {
+          first: `?page=1&limit=${limit}`,
+          last: `?page=${Math.ceil(filteredVouchers.length / limit)}&limit=${limit}`,
+          next:
+            page < Math.ceil(filteredVouchers.length / limit)
+              ? `?page=${page + 1}&limit=${limit}`
+              : null,
+          previous: page > 1 ? `?page=${page - 1}&limit=${limit}` : null,
+        },
+      } as Paginated<any>;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
