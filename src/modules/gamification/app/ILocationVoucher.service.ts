@@ -35,6 +35,7 @@ export interface ILocationVoucherService {
   getAvailableVouchersByLocation(
     locationId: string,
     query: PaginateQuery,
+    userId?: string,
   ): Promise<Paginated<AvailableVoucherResponseDto>>;
 
   getFreeAvailableVouchers(

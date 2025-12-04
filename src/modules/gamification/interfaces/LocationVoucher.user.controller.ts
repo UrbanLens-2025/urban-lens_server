@@ -103,6 +103,7 @@ export class LocationVoucherUserController {
     return this.locationVoucherService.getAvailableVouchersByLocation(
       locationId,
       query,
+      user.sub,
     );
   }
 }

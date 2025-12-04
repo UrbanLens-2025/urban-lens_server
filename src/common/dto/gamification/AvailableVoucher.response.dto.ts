@@ -75,4 +75,19 @@ export class AvailableVoucherResponseDto {
     example: '2024-01-01T00:00:00Z',
   })
   createdAt: Date;
+
+  @ApiProperty({
+    description: 'Location basic info',
+    required: false,
+  })
+  location?: {
+    id: string;
+    name: string;
+  };
+
+  @ApiProperty({
+    description: 'Whether user has reached redemption limit for this voucher',
+    example: false,
+  })
+  isExchanged?: boolean;
 }
