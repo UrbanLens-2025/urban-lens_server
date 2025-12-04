@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   Logger,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ILocationVoucherService } from '../ILocationVoucher.service';
@@ -17,9 +18,14 @@ import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { UserLocationVoucherExchangeHistoryRepository } from '@/modules/gamification/infra/repository/UserLocationVoucherExchangeHistory.repository';
 import { UserLocationVoucherExchangeHistoryEntity } from '@/modules/gamification/domain/UserLocationVoucherExchangeHistory.entity';
 import { DataSource } from 'typeorm';
+import { UserLocationVoucherExchangeHistoryEntity } from '@/modules/gamification/domain/UserLocationVoucherExchangeHistory.entity';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class LocationVoucherService implements ILocationVoucherService {
+  private readonly logger = new Logger(LocationVoucherService.name);
+  private readonly exchangeHistoryTableName: string;
+
   private readonly logger = new Logger(LocationVoucherService.name);
   private readonly exchangeHistoryTableName: string;
 
@@ -27,6 +33,14 @@ export class LocationVoucherService implements ILocationVoucherService {
     private readonly locationVoucherRepository: LocationVoucherRepository,
     private readonly locationRepository: LocationRepository,
     private readonly userLocationVoucherExchangeHistoryRepository: UserLocationVoucherExchangeHistoryRepository,
+    private readonly dataSource: DataSource,
+  ) {
+    // Get table name from entity metadata
+    const metadata = this.dataSource.getMetadata(
+      UserLocationVoucherExchangeHistoryEntity,
+    );
+    this.exchangeHistoryTableName = metadata.tableName;
+  }
     private readonly dataSource: DataSource,
   ) {
     // Get table name from entity metadata
@@ -329,9 +343,11 @@ export class LocationVoucherService implements ILocationVoucherService {
     locationId: string,
     query: PaginateQuery,
     userId?: string,
+    userId?: string,
   ): Promise<Paginated<any>> {
     try {
       const now = new Date();
+
 
       const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
@@ -621,10 +637,25 @@ export class LocationVoucherService implements ILocationVoucherService {
     try {
       const now = new Date();
 
+
       const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
         .leftJoin('voucher.location', 'location')
         .select([
+          'voucher.id as id',
+          'voucher.title as title',
+          'voucher.description as description',
+          'voucher.voucher_code as voucherCode',
+          'voucher.voucher_type as voucherType',
+          'voucher.price_point as pricePoint',
+          'voucher.start_date as startDate',
+          'voucher.end_date as endDate',
+          'voucher.max_quantity as maxQuantity',
+          'voucher.user_redeemed_limit as userRedeemedLimit',
+          'voucher.image_url as imageUrl',
+          'voucher.created_at as createdAt',
+          'location.id as location_id',
+          'location.name as location_name',
           'voucher.id as id',
           'voucher.title as title',
           'voucher.description as description',
@@ -897,6 +928,7 @@ export class LocationVoucherService implements ILocationVoucherService {
           previous: page > 1 ? `?page=${page - 1}&limit=${limit}` : null,
         },
       } as Paginated<any>;
+      } as Paginated<any>;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -909,10 +941,25 @@ export class LocationVoucherService implements ILocationVoucherService {
     try {
       const now = new Date();
 
+
       const queryBuilder = this.locationVoucherRepository.repo
         .createQueryBuilder('voucher')
         .leftJoin('voucher.location', 'location')
         .select([
+          'voucher.id as id',
+          'voucher.title as title',
+          'voucher.description as description',
+          'voucher.voucher_code as voucherCode',
+          'voucher.voucher_type as voucherType',
+          'voucher.price_point as pricePoint',
+          'voucher.start_date as startDate',
+          'voucher.end_date as endDate',
+          'voucher.max_quantity as maxQuantity',
+          'voucher.user_redeemed_limit as userRedeemedLimit',
+          'voucher.image_url as imageUrl',
+          'voucher.created_at as createdAt',
+          'location.id as location_id',
+          'location.name as location_name',
           'voucher.id as id',
           'voucher.title as title',
           'voucher.description as description',
