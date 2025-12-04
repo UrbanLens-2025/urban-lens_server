@@ -30,6 +30,7 @@ import { PostCreatorController } from '@/modules/post/interfaces/Post.creator.co
 import { PostOwnerController } from '@/modules/post/interfaces/Post.owner.controller';
 import { IPostQueryService } from '@/modules/post/app/PostQuery.service';
 import { PostQueryService } from '@/modules/post/app/impl/PostQuery.service';
+import { PostAdminController } from '@/modules/post/interfaces/Post.admin.controller';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { PostQueryService } from '@/modules/post/app/impl/PostQuery.service';
     AnnouncementCreatorController,
     PostCreatorController,
     PostOwnerController,
+    PostAdminController,
   ],
   providers: [
     {
