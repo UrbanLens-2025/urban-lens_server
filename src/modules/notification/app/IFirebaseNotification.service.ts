@@ -1,6 +1,7 @@
 // firebase-notification.service.interface.ts
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { RegisterDeviceDto } from '@/common/dto/notification/RegisterDevice.dto';
+import { DeregisterDeviceDto } from '@/common/dto/notification/DeregisterDevice.dto';
 import { FcmTokenEntity } from '@/modules/notification/domain/FcmToken.entity';
 import { SendRawPushNotificationDto } from '@/common/dto/notification/SendRawPushNotification.dto';
 import { SendPushNotificationDto } from '@/common/dto/notification/SendPushNotification.dto';
@@ -11,7 +12,7 @@ import {
   PaginateQuery,
 } from 'nestjs-paginate';
 import { PushNotificationEntity } from '@/modules/notification/domain/PushNotification.entity';
-import { UpdateResult } from 'typeorm';
+import { DeleteResult, UpdateResult } from 'typeorm';
 import { SeenPushNotificationDto } from '@/common/dto/notification/SeenPushNotification.dto';
 
 export const IFirebaseNotificationService = Symbol(
@@ -37,6 +38,11 @@ export interface IFirebaseNotificationService {
     userDto: JwtTokenDto,
     dto: SeenPushNotificationDto,
   ): Promise<UpdateResult>;
+
+  deregisterDevice(
+    userDto: JwtTokenDto,
+    dto: DeregisterDeviceDto,
+  ): Promise<DeleteResult>;
 }
 
 export namespace IFirebaseNotificationService_QueryConfig {

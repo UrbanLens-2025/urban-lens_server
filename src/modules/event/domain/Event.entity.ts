@@ -175,8 +175,9 @@ export class EventEntity {
   public canBeFinished() {
     const isCorrectStatus = this.status === EventStatus.PUBLISHED;
     const now = new Date();
-    const isStartDateInPast = this.startDate && this.startDate < now;
-    const isEndDateInPast = this.endDate && this.endDate < now;
+    // todo: remove this once we have a way to set the start and end dates
+    const isStartDateInPast = (this.startDate && this.startDate < now) || true;
+    const isEndDateInPast = (this.endDate && this.endDate < now) || true;
     return isCorrectStatus && isStartDateInPast && isEndDateInPast;
   }
 

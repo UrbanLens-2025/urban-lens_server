@@ -10,7 +10,7 @@ import {
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Entity({ name: 'fcm_token' })
-@Unique(['token'])
+@Unique(['token', 'userId'])
 export class FcmTokenEntity {
   @PrimaryGeneratedColumn('identity')
   id: number;
