@@ -539,6 +539,30 @@ export class LocationVoucherService implements ILocationVoucherService {
               : Number(pricePointRaw) || 0
             : 0;
 
+        // Find startDate using same logic
+        const startDateKey = allKeys.find(
+          (key) =>
+            key === 'startDate' ||
+            key === 'start_date' ||
+            key.toLowerCase() === 'startdate' ||
+            key.toLowerCase() === 'start_date',
+        );
+        const startDate = startDateKey
+          ? voucher[startDateKey]
+          : (voucher.startDate ?? voucher.start_date);
+
+        // Find endDate using same logic
+        const endDateKey = allKeys.find(
+          (key) =>
+            key === 'endDate' ||
+            key === 'end_date' ||
+            key.toLowerCase() === 'enddate' ||
+            key.toLowerCase() === 'end_date',
+        );
+        const endDate = endDateKey
+          ? voucher[endDateKey]
+          : (voucher.endDate ?? voucher.end_date);
+
         const isExchanged =
           userId &&
           userRedeemedLimit > 0 &&
@@ -550,9 +574,9 @@ export class LocationVoucherService implements ILocationVoucherService {
           description: voucher.description,
           voucherCode: voucher.voucherCode || voucher.voucher_code,
           voucherType: voucher.voucherType || voucher.voucher_type,
-          pointsRequired: pricePoint,
-          startDate: voucher.startDate || voucher.start_date,
-          endDate: voucher.endDate || voucher.end_date,
+          pricePoint,
+          startDate,
+          endDate,
           maxQuantity,
           userRedeemedLimit,
           imageUrl: voucher.imageUrl || voucher.image_url,
@@ -803,6 +827,30 @@ export class LocationVoucherService implements ILocationVoucherService {
               : Number(pricePointRaw) || 0
             : 0;
 
+        // Find startDate using same logic
+        const startDateKey = allKeys.find(
+          (key) =>
+            key === 'startDate' ||
+            key === 'start_date' ||
+            key.toLowerCase() === 'startdate' ||
+            key.toLowerCase() === 'start_date',
+        );
+        const startDate = startDateKey
+          ? voucher[startDateKey]
+          : (voucher.startDate ?? voucher.start_date);
+
+        // Find endDate using same logic
+        const endDateKey = allKeys.find(
+          (key) =>
+            key === 'endDate' ||
+            key === 'end_date' ||
+            key.toLowerCase() === 'enddate' ||
+            key.toLowerCase() === 'end_date',
+        );
+        const endDate = endDateKey
+          ? voucher[endDateKey]
+          : (voucher.endDate ?? voucher.end_date);
+
         const isExchanged =
           userId &&
           userRedeemedLimit > 0 &&
@@ -814,9 +862,9 @@ export class LocationVoucherService implements ILocationVoucherService {
           description: voucher.description,
           voucherCode: voucher.voucherCode || voucher.voucher_code,
           voucherType: voucher.voucherType || voucher.voucher_type,
-          pointsRequired: pricePoint,
-          startDate: voucher.startDate || voucher.start_date,
-          endDate: voucher.endDate || voucher.end_date,
+          pricePoint,
+          startDate,
+          endDate,
           maxQuantity,
           userRedeemedLimit,
           imageUrl: voucher.imageUrl || voucher.image_url,
@@ -1066,6 +1114,30 @@ export class LocationVoucherService implements ILocationVoucherService {
               : Number(pricePointRaw) || 0
             : 0;
 
+        // Find startDate using same logic
+        const startDateKey = allKeys.find(
+          (key) =>
+            key === 'startDate' ||
+            key === 'start_date' ||
+            key.toLowerCase() === 'startdate' ||
+            key.toLowerCase() === 'start_date',
+        );
+        const startDate = startDateKey
+          ? voucher[startDateKey]
+          : (voucher.startDate ?? voucher.start_date);
+
+        // Find endDate using same logic
+        const endDateKey = allKeys.find(
+          (key) =>
+            key === 'endDate' ||
+            key === 'end_date' ||
+            key.toLowerCase() === 'enddate' ||
+            key.toLowerCase() === 'end_date',
+        );
+        const endDate = endDateKey
+          ? voucher[endDateKey]
+          : (voucher.endDate ?? voucher.end_date);
+
         const isExchanged =
           userId &&
           userRedeemedLimit > 0 &&
@@ -1077,9 +1149,9 @@ export class LocationVoucherService implements ILocationVoucherService {
           description: voucher.description,
           voucherCode: voucher.voucherCode || voucher.voucher_code,
           voucherType: voucher.voucherType || voucher.voucher_type,
-          pointsRequired: pricePoint,
-          startDate: voucher.startDate || voucher.start_date,
-          endDate: voucher.endDate || voucher.end_date,
+          pricePoint,
+          startDate,
+          endDate,
           maxQuantity,
           userRedeemedLimit,
           imageUrl: voucher.imageUrl || voucher.image_url,

@@ -27,10 +27,10 @@ export class AvailableVoucherResponseDto {
   voucherCode: string;
 
   @ApiProperty({
-    description: 'Points required to exchange this voucher',
+    description: 'Price point (points required to exchange this voucher)',
     example: 100,
   })
-  pointsRequired: number;
+  pricePoint: number;
 
   @ApiProperty({
     description: 'Maximum quantity available',
