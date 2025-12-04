@@ -23,20 +23,24 @@ export class FetchScheduledJobsCronService
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly configService: ConfigService<Environment>,
     private readonly eventEmitter: EventEmitter2,
-    @Inject(IScheduledJobService)
-    private readonly scheduledJobService: IScheduledJobService,
   ) {
     super();
   }
 
-  onModuleInit() {
+  async onModuleInit() {
     try {
+      // reset stale jobs in database
+      await this.ensureTransaction(null, async (em) => {
+        const scheduledJobRepository = ScheduledJobRepository(em);
+        await scheduledJobRepository.resetStaleJobs();
+      });
+
       const cronExpr = this.configService.getOrThrow<string>(
         'FETCH_SCHEDULED_JOBS_CRON_EXPRESSION',
       );
 
       this.logger.debug(
-        'Fetch scheduled jobs with cron expression: ' + cronExpr,
+        'Fetch scheduled jobs initialized with cron expression: ' + cronExpr,
       );
 
       const job = new CronJob(
@@ -60,8 +64,9 @@ export class FetchScheduledJobsCronService
   }
 
   private async handleFetchScheduledJobs() {
+    const now = new Date();
     this.logger.debug(
-      `Fetching scheduled jobs for ${new Date().toDateString()}`,
+      `Fetching scheduled jobs before ${now.toDateString()} at ${now.toTimeString()}`,
     );
 
     // Transaction 1: Only for fetching and updating job status

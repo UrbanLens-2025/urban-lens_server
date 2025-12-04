@@ -49,14 +49,9 @@ export class EventPayoutListener extends CoreService {
         this.logger.warn(
           `Event with ID ${eventId} is not eligible for payout.`,
         );
-        await scheduledJobRepository.update(
-          {
-            id: dto.jobId,
-          },
-          {
-            status: ScheduledJobStatus.FAILED,
-          },
-        );
+        await scheduledJobRepository.updateToFailed({
+          jobIds: [dto.jobId],
+        });
 
         return;
       }
@@ -76,14 +71,9 @@ export class EventPayoutListener extends CoreService {
         this.logger.log(
           `No revenue generated for Event ID ${eventId}. Skipping payout process.`,
         );
-        await scheduledJobRepository.update(
-          {
-            id: dto.jobId,
-          },
-          {
-            status: ScheduledJobStatus.COMPLETED,
-          },
-        );
+        await scheduledJobRepository.updateToCompleted({
+          jobIds: [dto.jobId],
+        });
         await eventRepository.update({ id: event.id }, { hasPaidOut: true });
         return;
       }
@@ -118,14 +108,9 @@ export class EventPayoutListener extends CoreService {
 
       // update the scheduled job as completed
       this.logger.log(`Payout for Event ID ${eventId} completed successfully.`);
-      await scheduledJobRepository.update(
-        {
-          id: dto.jobId,
-        },
-        {
-          status: ScheduledJobStatus.COMPLETED,
-        },
-      );
+      await scheduledJobRepository.updateToCompleted({
+        jobIds: [dto.jobId],
+      });
 
       await eventRepository.update(
         { id: event.id },
