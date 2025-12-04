@@ -77,4 +77,10 @@ export class WalletExternalTransactionResponseDto {
 
   @Expose()
   customMetadata?: Record<string, any> | null;
+
+  @Expose()
+  proofOfTransferImages: string[] | null;
+
+  @Expose()
+  transferBankTransactionId: string | null;
 }

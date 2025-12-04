@@ -21,6 +21,8 @@ export interface IScheduledJobManagementService {
   ): Promise<ScheduledJobResponseDto>;
 
   countByStatus(dto: CountByStatusDto): Promise<CountByStatusResponseDto>;
+
+  getScheduledJobById(id: number): Promise<ScheduledJobResponseDto>;
 }
 
 export namespace IScheduledJobManagementService_QueryConfig {

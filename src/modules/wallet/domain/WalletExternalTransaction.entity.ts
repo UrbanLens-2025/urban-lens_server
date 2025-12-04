@@ -131,6 +131,17 @@ export class WalletExternalTransactionEntity {
   )
   timeline: WalletExternalTransactionTimelineEntity[];
 
+  @Column({ name: 'proof_of_transfer_images', type: 'jsonb', nullable: true })
+  proofOfTransferImages: string[] | null;
+
+  @Column({
+    name: 'transfer_bank_transaction_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  transferBankTransactionId: string | null;
+
   public static createDepositTransaction(dto: {
     amount: number;
     walletId: string;
@@ -239,8 +250,13 @@ export class WalletExternalTransactionEntity {
     return this;
   }
 
-  public completeProcessing(): WalletExternalTransactionEntity {
+  public completeProcessing(
+    proofOfTransferImages: string[],
+    transferBankTransactionId: string,
+  ): WalletExternalTransactionEntity {
     this.status = WalletExternalTransactionStatus.TRANSFERRED;
+    this.proofOfTransferImages = proofOfTransferImages;
+    this.transferBankTransactionId = transferBankTransactionId;
     return this;
   }
 

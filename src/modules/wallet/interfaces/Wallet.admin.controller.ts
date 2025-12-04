@@ -26,6 +26,7 @@ import { MarkTransferFailedDto } from '@/common/dto/wallet/MarkTransferFailed.dt
 import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdrawTransaction.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { CompleteProcessingWithdrawTransactionDto } from '@/common/dto/wallet/CompleteProcessingWithdrawTransaction.dto';
 
 @ApiTags('Wallet')
 @ApiBearerAuth()
@@ -102,9 +103,11 @@ export class WalletAdminController {
   completeProcessingWithdrawTransaction(
     @Param('transactionId', ParseUUIDPipe) transactionId: string,
     @AuthUser() user: JwtTokenDto,
+    @Body() dto: CompleteProcessingWithdrawTransactionDto,
   ) {
     return this.walletExternalTransactionManagementService.completeProcessingWithdrawTransaction(
       {
+        ...dto,
         transactionId,
         accountId: user.sub,
         accountName: user.email,

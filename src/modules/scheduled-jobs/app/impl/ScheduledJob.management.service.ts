@@ -19,6 +19,16 @@ export class ScheduledJobManagementService
   extends CoreService
   implements IScheduledJobManagementService
 {
+  getScheduledJobById(id: number): Promise<ScheduledJobResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const scheduledJobRepository = ScheduledJobRepository(em);
+      const scheduledJob = await scheduledJobRepository.findOneOrFail({
+        where: { id },
+      });
+      return this.mapTo(ScheduledJobResponseDto, scheduledJob);
+    });
+  }
+
   findAllScheduledJobs(
     query: PaginateQuery,
   ): Promise<Paginated<ScheduledJobResponseDto>> {

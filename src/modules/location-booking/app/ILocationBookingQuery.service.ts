@@ -35,6 +35,7 @@ export namespace ILocationBookingQueryService_QueryConfig {
         createdBy: true,
         location: true,
         dates: true,
+        scheduledPayoutJob: true,
       },
     };
   }
