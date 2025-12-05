@@ -12,12 +12,13 @@ export const LocationBookingDateRepository = (
         locationId: string;
         startDate: Date;
         endDate: Date;
+        statuses: LocationBookingStatus[];
       },
     ) {
       return this.createQueryBuilder('booking_date')
         .leftJoinAndSelect('booking_date.booking', 'booking')
-        .where('booking.status = :status', {
-          status: LocationBookingStatus.PAYMENT_RECEIVED,
+        .where('booking.status IN (:...statuses)', {
+          statuses: payload.statuses,
         })
         .andWhere('booking.locationId = :locationId', {
           locationId: payload.locationId,
