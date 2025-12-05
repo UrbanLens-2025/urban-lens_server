@@ -1,4 +1,4 @@
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 
 export const LocationBookingRepository = (ctx: DataSource | EntityManager) =>

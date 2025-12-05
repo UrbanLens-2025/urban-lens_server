@@ -4,6 +4,7 @@ import {
   Get,
   Inject,
   Param,
+  ParseDatePipe,
   ParseUUIDPipe,
   Post,
   Query,
@@ -26,6 +27,7 @@ import { ILocationBookingManagementService } from '@/modules/location-booking/ap
 import { ProcessBookingDto } from '@/common/dto/location-booking/ProcessBooking.dto';
 import { GetBookedDatesByDateRangeDto } from '@/common/dto/location-booking/GetBookedDatesByDateRange.dto';
 import { BookedDatesResponseDto } from '@/common/dto/location-booking/res/BookedDate.response.dto';
+import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 
 @ApiTags('Location Bookings')
 @ApiBearerAuth()
@@ -90,5 +92,24 @@ export class LocationBookingOwnerController {
     @Query() dto: GetBookedDatesByDateRangeDto,
   ): Promise<BookedDatesResponseDto> {
     return this.locationBookingQueryService.getBookedDatesByDateRange(dto);
+  }
+
+  @ApiOperation({ summary: 'Get all bookings at location paged' })
+  @ApiPaginationQuery(
+    ILocationBookingQueryService_QueryConfig.searchBookingsByLocation(),
+  )
+  @Get('/all-bookings-at-location-paged/:locationId')
+  getAllBookingsAtLocationPaged(
+    @Paginate() query: PaginateQuery,
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Query('startDate', new ParseDatePipe()) startDate: Date,
+    @Query('endDate', new ParseDatePipe()) endDate: Date,
+  ) {
+    return this.locationBookingQueryService.getAllBookingsAtLocationPaged({
+      query,
+      locationId,
+      startDate,
+      endDate,
+    });
   }
 }
