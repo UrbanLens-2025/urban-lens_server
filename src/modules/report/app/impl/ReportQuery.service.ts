@@ -11,6 +11,18 @@ import { ReportResponseDto } from '@/common/dto/report/res/Report.response.dto';
 import { paginate, Paginated } from 'nestjs-paginate';
 import { CoreService } from '@/common/core/Core.service';
 import { ReportRepositoryProvider } from '@/modules/report/infra/repository/Report.repository';
+import { GetHighestReportedPostsDto } from '@/common/dto/report/GetHighestReportedPosts.dto';
+import { PostWithReportsResponseDto } from '@/common/dto/report/res/PostWithReports.response.dto';
+import { GetHighestReportedEventsDto } from '@/common/dto/report/GetHighestReportedEvents.dto';
+import { EventWithReportsResponseDto } from '@/common/dto/report/res/EventWithReports.response.dto';
+import {
+  ReportEntity,
+  ReportEntityType,
+} from '@/modules/report/domain/Report.entity';
+import { PostRepositoryProvider } from '@/modules/post/infra/repository/Post.repository';
+import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
+import { In } from 'typeorm';
+import { WithCustomPaginationDto } from '@/common/dto/WithCustomPagination.dto';
 
 @Injectable()
 export class ReportQueryService
@@ -71,5 +83,103 @@ export class ReportQueryService
       },
     });
     return this.mapTo(ReportResponseDto, report);
+  }
+
+  async getHighestReportedPosts(
+    dto: GetHighestReportedPostsDto,
+  ): Promise<WithCustomPaginationDto<PostWithReportsResponseDto>> {
+    const reportRepo = ReportRepositoryProvider(this.dataSource);
+    const postRepo = PostRepositoryProvider(this.dataSource);
+    const targets = await reportRepo.getTargetsWithHighestUnclosedReports({
+      targetType: ReportEntityType.POST,
+      limit: dto.query.limit,
+      page: dto.query.page,
+    });
+
+    const posts = await postRepo.find({
+      where: {
+        postId: In(targets.data.map((target) => target.target_id)),
+      },
+    });
+
+    const reports = await reportRepo.find({
+      where: {
+        targetId: In(targets.data.map((target) => target.target_id)),
+      },
+    });
+
+    // make a map of targetId to reports
+    const reportsMap = new Map<string, ReportEntity[]>();
+    reports.forEach((report) => {
+      reportsMap.set(report.targetId, [
+        ...(reportsMap.get(report.targetId) || []),
+        report,
+      ]);
+    });
+
+    // map to PostWithReportsResponseDto
+    const result = posts.map((post) => {
+      return {
+        ...post,
+        reports: reportsMap.get(post.postId) || [],
+      };
+    });
+
+    const data = this.mapToArray(PostWithReportsResponseDto, result);
+    return {
+      data,
+      count: targets.count,
+      page: dto.query.page,
+      limit: dto.query.limit,
+    } as unknown as WithCustomPaginationDto<PostWithReportsResponseDto>;
+  }
+
+  async getHighestReportedEvents(
+    dto: GetHighestReportedEventsDto,
+  ): Promise<WithCustomPaginationDto<EventWithReportsResponseDto>> {
+    const reportRepo = ReportRepositoryProvider(this.dataSource);
+    const eventRepo = EventRepository(this.dataSource);
+    const targets = await reportRepo.getTargetsWithHighestUnclosedReports({
+      targetType: ReportEntityType.EVENT,
+      limit: dto.query.limit,
+      page: dto.query.page,
+    });
+
+    const events = await eventRepo.find({
+      where: {
+        id: In(targets.data.map((target) => target.target_id)),
+      },
+    });
+
+    const reports = await reportRepo.find({
+      where: {
+        targetId: In(targets.data.map((target) => target.target_id)),
+      },
+    });
+
+    // make a map of targetId to reports
+    const reportsMap = new Map<string, ReportEntity[]>();
+    reports.forEach((report) => {
+      reportsMap.set(report.targetId, [
+        ...(reportsMap.get(report.targetId) || []),
+        report,
+      ]);
+    });
+
+    // map to EventWithReportsResponseDto
+    const result = events.map((event) => {
+      return {
+        ...event,
+        reports: reportsMap.get(event.id) || [],
+      };
+    });
+
+    const data = this.mapToArray(EventWithReportsResponseDto, result);
+    return {
+      data,
+      count: targets.count,
+      page: dto.query.page,
+      limit: dto.query.limit,
+    } as unknown as WithCustomPaginationDto<EventWithReportsResponseDto>;
   }
 }

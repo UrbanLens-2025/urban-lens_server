@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Inject, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -53,6 +62,34 @@ export class ReportAdminController {
     return this.reportQueryService.getReportsByTarget({
       ...dto,
       query,
+    });
+  }
+
+  @ApiOperation({ summary: 'Get highest reported post' })
+  @Get('/highest-reported-posts')
+  getHighestReportedPosts(
+    @Query('page', ParseIntPipe) page: number,
+    @Query('limit', ParseIntPipe) limit: number,
+  ) {
+    return this.reportQueryService.getHighestReportedPosts({
+      query: {
+        page,
+        limit,
+      },
+    });
+  }
+
+  @ApiOperation({ summary: 'Get highest reported events' })
+  @Get('/highest-reported-events')
+  getHighestReportedEvents(
+    @Query('page', ParseIntPipe) page: number,
+    @Query('limit', ParseIntPipe) limit: number,
+  ) {
+    return this.reportQueryService.getHighestReportedEvents({
+      query: {
+        page,
+        limit,
+      },
     });
   }
 
