@@ -141,6 +141,26 @@ export class LocationBookingEntity {
   cancellationReason?: string | null;
   // domain functions
 
+  getStartDate(): Date | null {
+    if (!this.dates || this.dates.length === 0) {
+      return null;
+    }
+
+    return this.dates.sort(
+      (a, b) => a.startDateTime.getTime() - b.startDateTime.getTime(),
+    )[0].startDateTime;
+  }
+
+  getEndDate(): Date | null {
+    if (!this.dates || this.dates.length === 0) {
+      return null;
+    }
+
+    return this.dates.sort(
+      (a, b) => b.endDateTime.getTime() - a.endDateTime.getTime(),
+    )[0].endDateTime;
+  }
+
   public canBeProcessed(): boolean {
     return this.status === LocationBookingStatus.AWAITING_BUSINESS_PROCESSING;
   }

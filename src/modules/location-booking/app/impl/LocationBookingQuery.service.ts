@@ -19,6 +19,7 @@ import { GetAllBookingsAtLocationByDateRangeDto } from '@/common/dto/location-bo
 import { LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import { GetAllBookingsAtLocationPagedDto } from '@/common/dto/location-booking/GetAllBookingsAtLocationPaged.dto';
+import { GetConflictingBookingsDto } from '@/common/dto/location-booking/GetConflictingBookings.dto';
 
 @Injectable()
 export class LocationBookingQueryService
@@ -101,5 +102,32 @@ export class LocationBookingQueryService
         },
       },
     }).then((res) => this.mapToPaginated(LocationBookingResponseDto, res));
+  }
+
+  async getConflictingBookings(
+    dto: GetConflictingBookingsDto,
+  ): Promise<LocationBookingResponseDto[]> {
+    const locationBookingRepository = LocationBookingRepository(
+      this.dataSource,
+    );
+    const locationBooking = await locationBookingRepository.findOneOrFail({
+      where: {
+        id: dto.locationBookingId,
+      },
+    });
+
+    const startDate = locationBooking.getStartDate();
+    const endDate = locationBooking.getEndDate();
+    if (!startDate || !endDate) {
+      return [];
+    }
+
+    return locationBookingRepository
+      .findConflictingBookings({
+        locationId: locationBooking.locationId,
+        startDate,
+        endDate,
+      })
+      .then((res) => this.mapToArray(LocationBookingResponseDto, res));
   }
 }

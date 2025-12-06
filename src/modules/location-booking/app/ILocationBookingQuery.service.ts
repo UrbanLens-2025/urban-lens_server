@@ -7,6 +7,7 @@ import { GetBookedDatesByDateRangeDto } from '@/common/dto/location-booking/GetB
 import { BookedDatesResponseDto } from '@/common/dto/location-booking/res/BookedDate.response.dto';
 import { GetAllBookingsAtLocationByDateRangeDto } from '@/common/dto/location-booking/GetAllBookingsAtLocationByDateRange.dto';
 import { GetAllBookingsAtLocationPagedDto } from '@/common/dto/location-booking/GetAllBookingsAtLocationPaged.dto';
+import { GetConflictingBookingsDto } from '@/common/dto/location-booking/GetConflictingBookings.dto';
 
 export const ILocationBookingQueryService = Symbol(
   'ILocationBookingQueryService',
@@ -27,6 +28,10 @@ export interface ILocationBookingQueryService {
   getAllBookingsAtLocationPaged(
     dto: GetAllBookingsAtLocationPagedDto,
   ): Promise<Paginated<LocationBookingResponseDto>>;
+
+  getConflictingBookings(
+    dto: GetConflictingBookingsDto,
+  ): Promise<LocationBookingResponseDto[]>;
 }
 
 export namespace ILocationBookingQueryService_QueryConfig {

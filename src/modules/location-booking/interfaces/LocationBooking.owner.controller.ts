@@ -112,4 +112,14 @@ export class LocationBookingOwnerController {
       endDate,
     });
   }
+
+  @ApiOperation({ summary: 'Get conflicting bookings' })
+  @Get('/conflicting-bookings/:locationBookingId')
+  getConflictingBookings(
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+  ) {
+    return this.locationBookingQueryService.getConflictingBookings({
+      locationBookingId,
+    });
+  }
 }
