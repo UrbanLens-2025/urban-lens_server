@@ -112,7 +112,9 @@ export namespace IEventQueryService_QueryConfig {
       sortableColumns: ['createdAt', 'updatedAt', 'displayName'],
       defaultSortBy: [['createdAt', 'DESC']],
       searchableColumns: ['displayName', 'description'],
-      filterableColumns: {},
+      filterableColumns: {
+        status: true,
+      },
       relations: {
         location: true,
         tags: {
@@ -128,7 +130,9 @@ export namespace IEventQueryService_QueryConfig {
       sortableColumns: ['createdAt', 'updatedAt', 'displayName'],
       defaultSortBy: [['createdAt', 'DESC']],
       searchableColumns: ['displayName', 'description'],
-      filterableColumns: {},
+      filterableColumns: {
+        status: true,
+      },
       relations: {
         location: true,
         tags: {
