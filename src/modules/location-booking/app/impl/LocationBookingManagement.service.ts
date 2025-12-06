@@ -292,7 +292,10 @@ export class LocationBookingManagementService
         });
       await this.processAndRejectBooking({
         accountId: dto.accountId,
-        bookingIds: conflictingBookings.map((b) => b.id),
+        bookingIds: conflictingBookings
+          .filter((b) => b.id !== booking.id) // exclude the current booking (this avoids a transaction deadlock)
+          .map((b) => b.id),
+        entityManager: em,
       });
 
       // emit events for notifications
@@ -312,7 +315,7 @@ export class LocationBookingManagementService
   processAndRejectBooking(
     dto: ProcessAndRejectBookingDto,
   ): Promise<LocationBookingResponseDto[]> {
-    return this.ensureTransaction(null, async (em) => {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
       const locationBookingRepository = LocationBookingRepository(em);
 
       // get all bookings in question

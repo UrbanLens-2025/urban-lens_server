@@ -1,7 +1,8 @@
+import { CoreActionDto } from '@/common/dto/CoreAction.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { ArrayMinSize, IsArray, IsNotEmpty, IsUUID } from 'class-validator';
 
-export class ProcessAndRejectBookingDto {
+export class ProcessAndRejectBookingDto extends CoreActionDto {
   accountId: string;
 
   @ApiProperty()
