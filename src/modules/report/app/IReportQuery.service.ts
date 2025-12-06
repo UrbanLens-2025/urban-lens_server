@@ -29,6 +29,7 @@ export namespace IReportQueryService_Config {
       filterableColumns: {
         status: true,
         targetType: true,
+        targetId: true,
         createdById: true,
       },
       relations: {
