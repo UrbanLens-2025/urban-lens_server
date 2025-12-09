@@ -67,4 +67,39 @@ export class UpdateLocationBookingConfigDto {
   @Type(() => Number)
   @IsOptional()
   maxCapacity?: number;
+
+  @ApiPropertyOptional({ example: true })
+  @IsBoolean()
+  @IsOptional()
+  refundEnabled?: boolean;
+
+  @ApiPropertyOptional({
+    example: 24,
+    description: 'X hours before the booking start time',
+  })
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  @IsOptional()
+  refundCutoffHours?: number;
+
+  @ApiPropertyOptional({
+    example: 0.8,
+    description: 'Refund percentage after the cutoff time',
+  })
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  @IsOptional()
+  refundPercentageAfterCutoff?: number;
+
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'Refund percentage before the cutoff time',
+  })
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  @IsOptional()
+  refundPercentageBeforeCutoff?: number;
 }

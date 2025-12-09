@@ -44,6 +44,15 @@ export const EventRepository = (ctx: DataSource | EntityManager) =>
         radius: payload.radiusInMeters,
       });
     },
+    updateToPaidOut(
+      this: Repository<EventEntity>,
+      payload: { eventId: string },
+    ) {
+      return this.update(payload.eventId, {
+        hasPaidOut: true,
+        paidOutAt: new Date(),
+      });
+    },
   });
 
 export type EventRepository = ReturnType<typeof EventRepository>;

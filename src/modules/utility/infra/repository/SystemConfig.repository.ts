@@ -1,9 +1,6 @@
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { SystemConfigEntity } from '@/modules/utility/domain/SystemConfig.entity';
-import {
-  DEFAULT_SYSTEM_CONFIG_VALUES,
-  SystemConfigKey,
-} from '@/common/constants/SystemConfigKey.constant';
+import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
 
 export const SystemConfigRepository = (ctx: DataSource | EntityManager) =>
   ctx.getRepository(SystemConfigEntity).extend({
