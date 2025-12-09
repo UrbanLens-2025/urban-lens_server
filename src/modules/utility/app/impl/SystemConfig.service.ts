@@ -33,7 +33,11 @@ export class SystemConfigService
     return this.ensureTransaction(null, async (em) => {
       // soft validation
       const validationResult = parseSystemConfigValue(dto.key, dto.value);
-      if (validationResult !== 0 && !!validationResult === false) {
+      if (
+        isNaN(validationResult) ||
+        validationResult === null ||
+        validationResult === undefined
+      ) {
         throw new BadRequestException('Invalid system config value');
       }
 
