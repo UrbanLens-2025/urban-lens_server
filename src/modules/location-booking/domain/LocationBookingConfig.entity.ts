@@ -68,6 +68,30 @@ export class LocationBookingConfigEntity {
   @Column({ name: 'max_capacity', type: 'int', default: 100 })
   maxCapacity: number;
 
+  @Column({ name: 'refund_enabled', type: 'boolean', default: true })
+  refundEnabled: boolean;
+
+  @Column({ name: 'refund_cutoff_hours', type: 'int', default: 24 })
+  refundCutoffHours: number;
+
+  @Column({
+    name: 'refund_percentage_before_cutoff',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    default: 1,
+  })
+  refundPercentageBeforeCutoff: number;
+
+  @Column({
+    name: 'refund_percentage_after_cutoff',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    default: 0.8,
+  })
+  refundPercentageAfterCutoff: number;
+
   public static createDefault(
     locationId: string,
     createdById: string,

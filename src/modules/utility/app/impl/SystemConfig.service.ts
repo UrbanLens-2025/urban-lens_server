@@ -1,7 +1,6 @@
 import {
-  DEFAULT_SYSTEM_CONFIG_VALUES,
   parseSystemConfigValue,
-  SystemConfigKey,
+  SystemConfigKey
 } from '@/common/constants/SystemConfigKey.constant';
 import { CoreService } from '@/common/core/Core.service';
 import { SystemConfigResponseDto } from '@/common/dto/utility/res/SystemConfig.response.dto';

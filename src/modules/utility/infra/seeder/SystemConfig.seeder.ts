@@ -4,10 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import { In } from 'typeorm';
 import { SystemConfigRepository } from '@/modules/utility/infra/repository/SystemConfig.repository';
-import {
-  DEFAULT_SYSTEM_CONFIG_VALUES,
-  SystemConfigKey,
-} from '@/common/constants/SystemConfigKey.constant';
+import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
 import { SystemConfigEntity } from '@/modules/utility/domain/SystemConfig.entity';
 
 @Injectable()

@@ -9,6 +9,7 @@ export const ILocationBookingConfigManagementService = Symbol(
 );
 export interface ILocationBookingConfigManagementService {
   updateConfig(dto: UpdateLocationBookingConfigDto): Promise<UpdateResult>;
+
   getConfig(
     dto: GetLocationBookingConfigDto,
   ): Promise<LocationBookingConfigResponseDto>;

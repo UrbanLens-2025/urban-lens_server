@@ -1,7 +1,4 @@
-import {
-  SystemConfigKey,
-  SystemConfigValue,
-} from '@/common/constants/SystemConfigKey.constant';
+import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
 import { SystemConfigResponseDto } from '@/common/dto/utility/res/SystemConfig.response.dto';
 import { UpdateSystemConfigValueDto } from '@/common/dto/utility/UpdateSystemConfigValue.dto';
 import { EntityManager } from 'typeorm';

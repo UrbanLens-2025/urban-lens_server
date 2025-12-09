@@ -180,7 +180,7 @@ export class LocationBookingPayoutService
               },
             );
           } catch (error) {
-            this.logger.error(`Error transferring funds to system: ${error}`);
+            this.logger.error(`Error transferring funds to host: ${error}`);
             await scheduledJobRepository.updateToFailed({
               jobIds: [dto.scheduledJobId],
             });

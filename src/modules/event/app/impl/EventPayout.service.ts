@@ -88,125 +88,124 @@ export class EventPayoutService
     });
   }
 
-  handleEventPayout(dto: HandleEventPayoutDto): Promise<unknown> {
-    return this.ensureTransaction(null, async (em) => {
-      const eventRepository = EventRepository(em);
-      const scheduledJobRepository = ScheduledJobRepository(em);
+  async handleEventPayout(dto: HandleEventPayoutDto): Promise<unknown> {
+    try {
+      return await this.ensureTransaction(null, async (em) => {
+        const eventRepository = EventRepository(em);
+        const scheduledJobRepository = ScheduledJobRepository(em);
 
-      const event = await eventRepository.findOne({
-        where: {
-          id: dto.eventId,
-        },
-        relations: {
-          ticketOrders: true,
-        },
-      });
-
-      if (!event) {
-        this.logger.warn(
-          `Event with ID ${dto.eventId} not found. Skipping payout process.`,
-        );
-        await scheduledJobRepository.updateToFailed({
-          jobIds: [dto.scheduledJobId],
-        });
-        return;
-      }
-
-      if (!event.canBePaidOut()) {
-        this.logger.warn(
-          `Event with ID ${dto.eventId} is not eligible for payout.`,
-        );
-        await scheduledJobRepository.updateToFailed({
-          jobIds: [dto.scheduledJobId],
+        const event = await eventRepository.findOne({
+          where: {
+            id: dto.eventId,
+          },
+          relations: {
+            ticketOrders: true,
+          },
         });
 
-        return;
-      }
+        if (!event) {
+          this.logger.warn(
+            `Event with ID ${dto.eventId} not found. Skipping payout process.`,
+          );
+          await scheduledJobRepository.updateToFailed({
+            jobIds: [dto.scheduledJobId],
+          });
+          return;
+        }
 
-      const totalRevenueFromTickets = event.ticketOrders.reduce(
-        (sum, order) => {
-          if (order.status === EventTicketOrderStatus.PAID) {
-            return sum + Number(order.totalPaymentAmount);
-          }
-          return sum;
-        },
-        0,
-      );
+        if (!event.canBePaidOut()) {
+          this.logger.warn(
+            `Event with ID ${dto.eventId} is not eligible for payout.`,
+          );
+          await scheduledJobRepository.updateToFailed({
+            jobIds: [dto.scheduledJobId],
+          });
 
-      if (totalRevenueFromTickets === 0) {
+          return;
+        }
+
+        const totalRevenueFromTickets = event.ticketOrders.reduce(
+          (sum, order) => {
+            if (order.status === EventTicketOrderStatus.PAID) {
+              return sum + Number(order.totalPaymentAmount);
+            }
+            return sum;
+          },
+          0,
+        );
+
+        if (totalRevenueFromTickets === 0) {
+          this.logger.log(
+            `No revenue generated for Event ID ${dto.eventId}. Skipping payout process.`,
+          );
+          await scheduledJobRepository.updateToCompleted({
+            jobIds: [dto.scheduledJobId],
+          });
+          await eventRepository.updateToPaidOut({
+            eventId: event.id,
+          });
+          return;
+        }
+
+        const systemCutPercentage =
+          await this.systemConfigService.getSystemConfigValue(
+            SystemConfigKey.EVENT_SYSTEM_PAYOUT_PERCENTAGE,
+            em,
+          );
+        const payoutAmountToSystem =
+          totalRevenueFromTickets * systemCutPercentage.value;
+        const payoutAmountToEventCreator =
+          totalRevenueFromTickets - payoutAmountToSystem;
+
         this.logger.log(
-          `No revenue generated for Event ID ${dto.eventId}. Skipping payout process.`,
+          `Processing payout for Event ID ${dto.eventId} (name: ${event.displayName}): Total Revenue = ${totalRevenueFromTickets}, System Cut = ${payoutAmountToSystem}, Payout to Creator = ${payoutAmountToEventCreator}`,
         );
-        await scheduledJobRepository.updateToCompleted({
-          jobIds: [dto.scheduledJobId],
-        });
-        await eventRepository.update({ id: event.id }, { hasPaidOut: true });
-        return;
-      }
 
-      const systemCutPercentage =
-        await this.systemConfigService.getSystemConfigValue(
-          SystemConfigKey.EVENT_SYSTEM_PAYOUT_PERCENTAGE,
-          em,
-        );
-      const payoutAmountToSystem =
-        totalRevenueFromTickets * systemCutPercentage.value;
-      const payoutAmountToEventCreator =
-        totalRevenueFromTickets - payoutAmountToSystem;
-
-      this.logger.log(
-        `Processing payout for Event ID ${dto.eventId} (name: ${event.displayName}): Total Revenue = ${totalRevenueFromTickets}, System Cut = ${payoutAmountToSystem}, Payout to Creator = ${payoutAmountToEventCreator}`,
-      );
-
-      // transfer to system
-      if (payoutAmountToSystem > 0) {
-        try {
+        // transfer to system
+        if (payoutAmountToSystem > 0) {
           await this.walletTransactionCoordinator.transferFromEscrowToSystem({
             entityManager: em,
             amount: payoutAmountToSystem,
             currency: SupportedCurrency.VND,
           });
-        } catch (error) {
-          this.logger.error(`Error transferring funds to system: ${error}`);
-          await scheduledJobRepository.updateToFailed({
-            jobIds: [dto.scheduledJobId],
-          });
-          throw error;
         }
-      }
 
-      // transfer to event creator
-      if (payoutAmountToEventCreator > 0) {
-        try {
+        // transfer to event creator
+        if (payoutAmountToEventCreator > 0) {
           await this.walletTransactionCoordinator.transferFromEscrowToAccount({
             entityManager: em,
             amount: payoutAmountToEventCreator,
             currency: SupportedCurrency.VND,
             destinationAccountId: event.createdById,
           });
-        } catch (error) {
-          this.logger.error(
-            `Error transferring funds to event creator: ${error}`,
-          );
-          await scheduledJobRepository.updateToFailed({
-            jobIds: [dto.scheduledJobId],
-          });
-          throw error;
         }
-      }
 
-      // update the scheduled job as completed
-      this.logger.log(
-        `Payout for Event ID ${dto.eventId} completed successfully.`,
-      );
-      await scheduledJobRepository.updateToCompleted({
-        jobIds: [dto.scheduledJobId],
+        // update the scheduled job as completed
+        this.logger.log(
+          `Payout for Event ID ${dto.eventId} completed successfully.`,
+        );
+        await scheduledJobRepository.updateToCompleted({
+          jobIds: [dto.scheduledJobId],
+        });
+
+        await eventRepository.updateToPaidOut({ eventId: event.id });
       });
-
-      await eventRepository.update(
-        { id: event.id },
-        { hasPaidOut: true, paidOutAt: new Date() },
+    } catch (error) {
+      this.logger.error(
+        `Transaction failed for Event ID ${dto.eventId}. Updating job status outside transaction.`,
       );
-    });
+      // Update job status in a separate transaction after rollback
+      try {
+        const scheduledJobRepository = ScheduledJobRepository(this.dataSource);
+        await scheduledJobRepository.updateToFailed({
+          jobIds: [dto.scheduledJobId],
+        });
+      } catch (statusUpdateError) {
+        this.logger.error(
+          `Failed to update job status to FAILED for job ID ${dto.scheduledJobId}: ${statusUpdateError}`,
+        );
+      }
+      throw error;
+    }
   }
 }
