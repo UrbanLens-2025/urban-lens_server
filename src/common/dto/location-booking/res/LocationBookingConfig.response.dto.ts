@@ -1,4 +1,4 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 
 @Exclude()
@@ -38,4 +38,18 @@ export class LocationBookingConfigResponseDto {
   @Expose()
   @Type(() => Date)
   deletedAt?: Date | null;
+
+  @Expose()
+  refundEnabled: boolean;
+
+  @Expose()
+  refundCutoffHours: number;
+
+  @Expose()
+  @Transform(({ value }) => Number(value))
+  refundPercentageBeforeCutoff: number;
+
+  @Expose()
+  @Transform(({ value }) => Number(value))
+  refundPercentageAfterCutoff: number;
 }
