@@ -9,6 +9,7 @@ export interface Environment {
   ENABLE_ACCOUNT_SEEDING: boolean;
   ENABLE_WALLET_SEEDING: boolean;
   ENABLE_REPORT_REASON_SEEDING: boolean;
+  ENABLE_SYSTEM_CONFIG_SEEDING: boolean;
 
   DATABASE_HOST: string;
   DATABASE_PORT: number;
@@ -69,6 +70,7 @@ export interface Environment {
   OLLAMA_MODEL?: string;
 
   MILLIS_TO_EVENT_PAYOUT: number;
+  MILLIS_TO_BOOKING_PAYOUT: number;
 
   FETCH_SCHEDULED_JOBS_CRON_EXPRESSION: string;
 
@@ -89,6 +91,7 @@ export const envConfig = joi.object<Environment>({
   ENABLE_ACCOUNT_SEEDING: joi.boolean().default(false),
   ENABLE_WALLET_SEEDING: joi.boolean().default(false),
   ENABLE_REPORT_REASON_SEEDING: joi.boolean().default(false),
+  ENABLE_SYSTEM_CONFIG_SEEDING: joi.boolean().default(false),
 
   DATABASE_HOST: joi.string().required(),
   DATABASE_PORT: joi.number().required(),
@@ -185,6 +188,7 @@ export const envConfig = joi.object<Environment>({
   OLLAMA_MODEL: joi.string().default('llama3.2'),
 
   MILLIS_TO_EVENT_PAYOUT: joi.number().default(1000 * 60 * 60 * 24 * 7), // 7 days
+  MILLIS_TO_BOOKING_PAYOUT: joi.number().default(1000 * 60 * 60 * 24 * 7), // 7 days
 
   FETCH_SCHEDULED_JOBS_CRON_EXPRESSION: joi.string().default('* * * * *'), // every minute
 

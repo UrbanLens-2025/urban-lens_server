@@ -10,7 +10,6 @@ import { PublishEventDto } from '@/common/dto/event/PublishEvent.dto';
 import { EventStatus } from '@/common/constants/EventStatus.constant';
 import { FinishEventDto } from '@/common/dto/event/FinishEvent.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
-import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob.service';
 import dayjs from 'dayjs';
 import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
 import { ConfigService } from '@nestjs/config';
@@ -27,6 +26,7 @@ import { CancelEventDto } from '@/common/dto/event/CancelEvent.dto';
 import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
+import { IEventPayoutService } from '@/modules/event/app/IEventPayout.service';
 
 @Injectable()
 export class EventManagementService
@@ -38,12 +38,12 @@ export class EventManagementService
   constructor(
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
-    @Inject(IScheduledJobService)
-    private readonly scheduledJobService: IScheduledJobService,
     @Inject(ILocationBookingManagementService)
     private readonly locationBookingService: ILocationBookingManagementService,
     @Inject(ITicketOrderManagementService)
     private readonly ticketOrderManagementService: ITicketOrderManagementService,
+    @Inject(IEventPayoutService)
+    private readonly eventPayoutService: IEventPayoutService,
     private readonly configService: ConfigService<Environment>,
   ) {
     super();
@@ -180,42 +180,16 @@ export class EventManagementService
 
       // TODO: Add more conditions here
 
-      const totalRevenueFromTickets = event.ticketOrders.reduce(
-        (sum, order) => {
-          return sum + Number(order.totalPaymentAmount);
-        },
-        0,
-      );
-
-      if (totalRevenueFromTickets > 0) {
-        // Trigger payout process to event owner after 1 week cooldown
-        const now = dayjs();
-        const executeAt = now
-          .add(this.MILLIS_TO_EVENT_PAYOUT, 'milliseconds')
-          .toDate();
-        const job =
-          await this.scheduledJobService.createLongRunningScheduledJob({
-            entityManager: em,
-            executeAt,
-            jobType: ScheduledJobType.EVENT_PAYOUT,
-            payload: {
-              eventId: event.id,
-            },
-            associatedId: event.id,
-          });
-        event.scheduledJobId = job.id;
-      } else {
-        event.hasPaidOut = true;
-        event.scheduledJobId = null;
-        event.paidOutAt = new Date();
-      }
-
       // save
       event.status = EventStatus.FINISHED;
+      await eventRepository.save(event);
 
-      return await eventRepository
-        .save(event)
-        .then((res) => this.mapTo(EventResponseDto, res));
+      const result = await this.eventPayoutService.scheduleEventPayout({
+        eventId: event.id,
+        entityManager: em,
+      });
+
+      return this.mapTo(EventResponseDto, result);
     });
   }
 

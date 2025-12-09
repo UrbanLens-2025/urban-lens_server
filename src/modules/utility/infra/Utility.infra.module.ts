@@ -7,6 +7,8 @@ import { TagCategoryEntity } from '@/modules/utility/domain/TagCategory.entity';
 import { TagCategoryRepository } from '@/modules/utility/infra/repository/TagCategory.repository';
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
 import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
+import { SystemConfigEntity } from '@/modules/utility/domain/SystemConfig.entity';
+import { SystemConfigSeeder } from '@/modules/utility/infra/seeder/SystemConfig.seeder';
 
 @Module({
   imports: [
@@ -17,9 +19,10 @@ import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
       TagCategoryEntity,
       LocationTagsEntity,
       EventTagsEntity,
+      SystemConfigEntity,
     ]),
   ],
-  providers: [TagCategoryRepository],
+  providers: [TagCategoryRepository, SystemConfigSeeder],
   exports: [TagCategoryRepository],
 })
 export class UtilityInfraModule {}
