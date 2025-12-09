@@ -6,11 +6,11 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend
-    participant EventCreatorController as :EventCreatorController
-    participant EventTicketManagementService as :EventTicketManagementService
-    participant EventRepository as :EventRepository
-    participant EventTicketRepository as :EventTicketRepository
+    participant Frontend as : Create ticket screen
+    participant EventCreatorController as : EventCreatorController
+    participant EventTicketManagementService as : EventTicketManagementService
+    participant EventRepository as : EventRepository
+    participant EventTicketRepository as : EventTicketRepository
     participant Database
 
     User->>Frontend: 1. Submit create ticket form

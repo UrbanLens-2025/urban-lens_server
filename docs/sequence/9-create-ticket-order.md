@@ -6,20 +6,20 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend
-    participant EventUserController as :EventUserController
-    participant TicketOrderManagementService as :TicketOrderManagementService
-    participant EventRepository as :EventRepository
-    participant EventTicketRepository as :EventTicketRepository
-    participant WalletTransactionCoordinatorService as :WalletTransactionCoordinatorService
-    participant WalletTransactionManagementService as :WalletTransactionManagementService
-    participant WalletActionService as :WalletActionService
-    participant WalletTransactionRepository as :WalletTransactionRepository
-    participant WalletRepository as :WalletRepository
-    participant TicketOrderRepository as :TicketOrderRepository
-    participant EventAttendanceManagementService as :EventAttendanceManagementService
-    participant AccountRepository as :AccountRepository
-    participant EventAttendanceRepository as :EventAttendanceRepository
+    participant Frontend as : Create Ticket Order Screen
+    participant EventUserController as : EventUserController
+    participant TicketOrderManagementService as : TicketOrderManagementService
+    participant EventRepository as : EventRepository
+    participant EventTicketRepository as : EventTicketRepository
+    participant WalletTransactionCoordinatorService as : WalletTransactionCoordinatorService
+    participant WalletTransactionManagementService as : WalletTransactionManagementService
+    participant WalletActionService as : WalletActionService
+    participant WalletTransactionRepository as : WalletTransactionRepository
+    participant WalletRepository as : WalletRepository
+    participant TicketOrderRepository as : TicketOrderRepository
+    participant EventAttendanceManagementService as : EventAttendanceManagementService
+    participant AccountRepository as : AccountRepository
+    participant EventAttendanceRepository as : EventAttendanceRepository
     participant Database
 
     User->>Frontend: 1. Submit create ticket order form

@@ -6,14 +6,12 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend
-    participant EventCreatorController as :EventCreatorController
-    participant EventManagementService as :EventManagementService
-    participant TagCategoryRepository as :TagCategoryRepository
-    participant EventRepository as :EventRepository
-    participant FileStorageService as :FileStorageService
-    participant PublicFileRepository as :PublicFileRepository
-    participant EventTagsRepository as :EventTagsRepository
+    participant Frontend as : Event Creation Screen
+    participant EventCreatorController as : EventCreatorController
+    participant EventManagementService as : EventManagementService
+    participant TagCategoryRepository as : TagCategoryRepository
+    participant EventRepository as : EventRepository
+    participant EventTagsRepository as : EventTagsRepository
     participant Database
 
     User->>Frontend: 1. Submit event creation form
@@ -38,26 +36,6 @@ sequenceDiagram
     deactivate Database
     EventRepository-->>EventManagementService: 11. Return event
     deactivate EventRepository
-    EventManagementService->>FileStorageService: 12. confirmUpload()
-    activate FileStorageService
-    FileStorageService->>PublicFileRepository: 13. find()
-    activate PublicFileRepository
-    PublicFileRepository->>Database: 14. Query public files by URLs
-    activate Database
-    Database-->>PublicFileRepository: 15. Return public files
-    deactivate Database
-    PublicFileRepository-->>FileStorageService: 16. Return public files
-    deactivate PublicFileRepository
-    FileStorageService->>PublicFileRepository: 17. save()
-    activate PublicFileRepository
-    PublicFileRepository->>Database: 18. Update public files status
-    activate Database
-    Database-->>PublicFileRepository: 19. Return updated files
-    deactivate Database
-    PublicFileRepository-->>FileStorageService: 20. Return updated files
-    deactivate PublicFileRepository
-    FileStorageService-->>EventManagementService: 21. Return public files
-    deactivate FileStorageService
     EventManagementService->>EventTagsRepository: 22. persistEntities()
     activate EventTagsRepository
     EventTagsRepository->>Database: 23. Insert event tags

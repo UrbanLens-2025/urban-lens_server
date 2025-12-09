@@ -6,7 +6,7 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend
+    participant Frontend as : Confirm Ticket Usage Screen
     participant EventCreatorController as :EventCreatorController
     participant EventAttendanceManagementService as :EventAttendanceManagementService
     participant EventRepository as :EventRepository

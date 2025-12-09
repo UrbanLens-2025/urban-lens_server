@@ -6,7 +6,7 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend as : Frontend
+    participant Frontend as : Create deposit screen
     participant WalletPrivateController as : WalletPrivateController
     participant WalletExternalTransactionManagementService as : WalletExternalTransactionManagementService
     participant WalletRepository as : WalletRepository

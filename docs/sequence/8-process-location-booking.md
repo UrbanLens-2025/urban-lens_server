@@ -6,10 +6,10 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend
-    participant LocationBookingOwnerController as :LocationBookingOwnerController
-    participant LocationBookingManagementService as :LocationBookingManagementService
-    participant LocationBookingRepository as :LocationBookingRepository
+    participant Frontend as : Location Booking Details Screen
+    participant LocationBookingOwnerController as : LocationBookingOwnerController
+    participant LocationBookingManagementService as : LocationBookingManagementService
+    participant LocationBookingRepository as : LocationBookingRepository
     participant Database
 
     User->>Frontend: 1. Submit process booking form
