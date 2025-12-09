@@ -23,9 +23,15 @@ import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.modu
 import { BookingPayoutListener } from '@/modules/location-booking/app/event-listener/BookingPayout.listener';
 import { ILocationBookingPayoutService } from '@/modules/location-booking/app/ILocationBookingPayout.service';
 import { LocationBookingPayoutService } from '@/modules/location-booking/app/impl/LocationBookingPayout.service';
+import { UtilityModule } from '@/modules/utility/Utility.module';
 
 @Module({
-  imports: [LocationReservationInfraModule, ScheduledJobsModule, WalletModule],
+  imports: [
+    LocationReservationInfraModule,
+    ScheduledJobsModule,
+    WalletModule,
+    UtilityModule,
+  ],
   controllers: [
     LocationAvailabilityOwnerController,
     LocationAvailabilityCreatorController,

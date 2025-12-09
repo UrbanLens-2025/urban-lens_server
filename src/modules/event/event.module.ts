@@ -28,6 +28,9 @@ import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPa
 import { IEventAnalyticsService } from '@/modules/event/app/IEventAnalytics.service';
 import { EventAnalyticsService } from '@/modules/event/app/impl/EventAnalytics.service';
 import { EventAnalyticsDevOnlyController } from '@/modules/event/interfaces/EventAnalytics.dev-only.controller';
+import { IEventPayoutService } from '@/modules/event/app/IEventPayout.service';
+import { EventPayoutService } from '@/modules/event/app/impl/EventPayout.service';
+import { UtilityModule } from '@/modules/utility/Utility.module';
 
 @Module({
   imports: [
@@ -37,6 +40,7 @@ import { EventAnalyticsDevOnlyController } from '@/modules/event/interfaces/Even
     LocationBookingModule,
     FileStorageModule,
     ScheduledJobsModule,
+    UtilityModule,
   ],
   controllers: [
     EventCreatorController,
@@ -81,6 +85,10 @@ import { EventAnalyticsDevOnlyController } from '@/modules/event/interfaces/Even
     {
       provide: IEventAnalyticsService,
       useClass: EventAnalyticsService,
+    },
+    {
+      provide: IEventPayoutService,
+      useClass: EventPayoutService,
     },
     EventPayoutListener,
   ],
