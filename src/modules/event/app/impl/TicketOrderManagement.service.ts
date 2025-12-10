@@ -144,6 +144,14 @@ export class TicketOrderManagementService
             accountName: dto.accountName,
             returnUrl: dto.returnUrl,
             ipAddress: dto.ipAddress,
+            note:
+              'Payment for order #' +
+              order.id +
+              ' for event: ' +
+              event.displayName +
+              ' (ID: ' +
+              event.id +
+              ')',
           },
         );
 
@@ -207,6 +215,14 @@ export class TicketOrderManagementService
               currency: SupportedCurrency.VND,
               destinationAccountId: ticketOrder.createdById,
               entityManager: em,
+              note:
+                'Refund for order #' +
+                ticketOrder.id +
+                ' for event: ' +
+                ticketOrder.event.displayName +
+                ' (ID: ' +
+                ticketOrder.eventId +
+                ')',
             },
           );
 

@@ -103,20 +103,6 @@ export class LocationBookingManagementV2Service
       const bookingPrice =
         location.bookingConfig.baseBookingPrice * totalNumberOfHoursBooked;
 
-      // deduct money from account
-      const transaction =
-        await this.walletTransactionCoordinatorService.coordinateTransferToEscrow(
-          {
-            entityManager: em,
-            accountName: 'Booking payment',
-            fromAccountId: dto.accountId,
-            amountToTransfer: bookingPrice,
-            currency: SupportedCurrency.VND,
-            ipAddress: '',
-            returnUrl: '',
-          },
-        );
-
       // save booking
       const booking = new LocationBookingEntity();
       booking.locationId = dto.locationId;
@@ -124,7 +110,6 @@ export class LocationBookingManagementV2Service
       booking.createdById = dto.accountId;
       booking.targetId = dto.targetId;
       booking.status = LocationBookingStatus.AWAITING_BUSINESS_PROCESSING;
-      booking.referencedTransactionId = transaction.id;
       booking.bookingConfigSnapshot = location.bookingConfig;
       booking.dates = dto.dates.map((d) =>
         this.mapTo_safe(LocationBookingDateEntity, {
@@ -133,7 +118,31 @@ export class LocationBookingManagementV2Service
         }),
       );
 
-      return locationBookingRepo.save(booking);
+      return locationBookingRepo.save(booking).then(async (res) => {
+        // deduct money from account
+        const transaction =
+          await this.walletTransactionCoordinatorService.coordinateTransferToEscrow(
+            {
+              entityManager: em,
+              accountName: 'Booking payment',
+              fromAccountId: dto.accountId,
+              amountToTransfer: bookingPrice,
+              currency: SupportedCurrency.VND,
+              ipAddress: '',
+              returnUrl: '',
+              note:
+                'Payment for booking #' +
+                res.id +
+                ' for location: ' +
+                location.name +
+                ' (ID: ' +
+                location.id +
+                ')',
+            },
+          );
+        res.referencedTransactionId = transaction.id;
+        return locationBookingRepo.save(res);
+      });
     }).then((res) => this.mapTo(LocationBookingResponseDto, res));
   }
 
@@ -179,6 +188,14 @@ export class LocationBookingManagementV2Service
               destinationAccountId: dto.accountId,
               amount: refundAmount,
               currency: SupportedCurrency.VND,
+              note:
+                'Refund for booking #' +
+                booking.id +
+                ' for location: ' +
+                booking.location.name +
+                ' (ID: ' +
+                booking.locationId +
+                ')',
             },
           );
         booking.refundTransactionId = refundTransaction.id;
@@ -188,7 +205,7 @@ export class LocationBookingManagementV2Service
 
       // if approved, refund based on location's booking policy fetched from the snapshot
       // if there's no snapshot, fallback to the default booking policy
-      if (booking.status === LocationBookingStatus.APPROVED) {
+      else if (booking.status === LocationBookingStatus.APPROVED) {
         const bookingConfig = booking.bookingConfigSnapshot
           ? new LocationBookingConfigEntity(booking.bookingConfigSnapshot)
           : await locationBookingConfigRepo.findOneOrFail({
@@ -210,6 +227,14 @@ export class LocationBookingManagementV2Service
               destinationAccountId: dto.accountId,
               amount: refundAmount,
               currency: SupportedCurrency.VND,
+              note:
+                'Refund for booking #' +
+                booking.id +
+                ' for location: ' +
+                booking.location.name +
+                ' (ID: ' +
+                booking.locationId +
+                ')',
             },
           );
         booking.refundTransactionId = refundTransaction.id;
@@ -261,6 +286,9 @@ export class LocationBookingManagementV2Service
               businessId: dto.accountId,
             },
           },
+          relations: {
+            location: true,
+          },
         });
 
         // can only cancel booking if booking date is in the past and is in a cancellable status
@@ -287,6 +315,14 @@ export class LocationBookingManagementV2Service
               destinationAccountId: booking.createdById,
               amount: totalAmountToRefund,
               currency: SupportedCurrency.VND,
+              note:
+                'Refund for booking #' +
+                booking.id +
+                ' for location: ' +
+                booking.location.name +
+                ' (ID: ' +
+                booking.locationId +
+                ')',
             },
           );
         booking.refundTransactionId = refundTransaction.id;
@@ -387,6 +423,9 @@ export class LocationBookingManagementV2Service
               businessId: dto.accountId,
             },
           },
+          relations: {
+            location: true,
+          },
         });
 
         if (bookings.length !== dto.bookingIds.length) {
@@ -417,6 +456,14 @@ export class LocationBookingManagementV2Service
                 destinationAccountId: booking.createdById,
                 amount: booking.amountToPay,
                 currency: SupportedCurrency.VND,
+                note:
+                  'Refund for booking #' +
+                  booking.id +
+                  ' for location: ' +
+                  booking.location.name +
+                  ' (ID: ' +
+                  booking.locationId +
+                  ')',
               },
             );
           booking.refundTransactionId = refundTransaction.id;

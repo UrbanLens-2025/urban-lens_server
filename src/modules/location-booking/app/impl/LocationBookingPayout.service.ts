@@ -151,6 +151,12 @@ export class LocationBookingPayoutService
             entityManager: em,
             amount: payoutAmountToSystem,
             currency: SupportedCurrency.VND,
+            note:
+              'Payout for location booking: ' +
+              booking.location.name +
+              ' (ID: ' +
+              booking.locationId +
+              ')',
           });
         } catch (error) {
           this.logger.error(`Error transferring funds to system: ${error}`);
@@ -177,6 +183,12 @@ export class LocationBookingPayoutService
                 amount: payoutAmountToHost,
                 currency: SupportedCurrency.VND,
                 destinationAccountId: booking.location.businessId,
+                note:
+                  'Payout for location booking: ' +
+                  booking.location.name +
+                  ' (ID: ' +
+                  booking.locationId +
+                  ')',
               },
             );
           } catch (error) {

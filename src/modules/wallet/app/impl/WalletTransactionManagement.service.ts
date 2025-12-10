@@ -32,6 +32,7 @@ export class WalletTransactionManagementService
     dto: TransferFundsFromUserWalletDto,
   ): Promise<WalletTransactionResponseDto> {
     return this.ensureTransaction(dto.entityManager, async (em) => {
+      dto.amountToTransfer = Number(dto.amountToTransfer);
       const walletRepository = WalletRepository(em);
       const walletTransactionRepository = WalletTransactionRepository(em);
 
@@ -139,6 +140,7 @@ export class WalletTransactionManagementService
     }
 
     return this.ensureTransaction(dto.entityManager, async (em) => {
+      dto.amountToTransfer = Number(dto.amountToTransfer);
       const walletRepository = WalletRepository(em);
       const walletTransactionRepository = WalletTransactionRepository(em);
 

@@ -63,7 +63,9 @@ export class LocationBookingManagementService
       'LOCATION_BOOKING_MAX_TIME_TO_PAY_MS',
     ); // 12 hours
   }
-  forceCancelBooking(dto: ForceCancelBookingDto): Promise<LocationBookingResponseDto> {
+  forceCancelBooking(
+    dto: ForceCancelBookingDto,
+  ): Promise<LocationBookingResponseDto> {
     throw new Error('Method not implemented.');
   }
   createBooking_ForBusinessLocation(
@@ -156,6 +158,9 @@ export class LocationBookingManagementService
           id: dto.locationBookingId,
           createdById: dto.accountId,
         },
+        relations: {
+          location: true,
+        },
       });
 
       if (!booking.canStartPayment()) {
@@ -175,6 +180,14 @@ export class LocationBookingManagementService
             accountName: dto.accountName,
             ipAddress: dto.ipAddress,
             returnUrl: dto.returnUrl,
+            note:
+              'Payment for booking #' +
+              booking.id +
+              ' for location: ' +
+              booking.location.name +
+              ' (ID: ' +
+              booking.location.id +
+              ')',
           },
         );
 
@@ -238,6 +251,14 @@ export class LocationBookingManagementService
               destinationAccountId: dto.accountId,
               amount: refundAmount,
               currency: SupportedCurrency.VND,
+              note:
+                'Refund for booking #' +
+                locationBooking.id +
+                ' for location: ' +
+                locationBooking.location.name +
+                ' (ID: ' +
+                locationBooking.locationId +
+                ')',
             },
           );
         locationBooking.refundTransactionId = refundTransaction.id;

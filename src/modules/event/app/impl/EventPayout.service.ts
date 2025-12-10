@@ -167,6 +167,12 @@ export class EventPayoutService
             entityManager: em,
             amount: payoutAmountToSystem,
             currency: SupportedCurrency.VND,
+            note:
+              'Payout for event: ' +
+              event.displayName +
+              ' (ID: ' +
+              event.id +
+              ')',
           });
         }
 
@@ -177,6 +183,12 @@ export class EventPayoutService
             amount: payoutAmountToEventCreator,
             currency: SupportedCurrency.VND,
             destinationAccountId: event.createdById,
+            note:
+              'Payout for event: ' +
+              event.displayName +
+              ' (ID: ' +
+              event.id +
+              ')',
           });
         }
 

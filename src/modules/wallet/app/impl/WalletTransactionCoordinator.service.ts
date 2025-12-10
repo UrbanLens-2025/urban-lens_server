@@ -29,6 +29,7 @@ export class WalletTransactionCoordinatorService
     dto: InitiateTransferToEscrowDto,
   ): Promise<WalletTransactionResponseDto> {
     return this.ensureTransaction(dto.entityManager, async (em) => {
+      dto.amountToTransfer = Number(dto.amountToTransfer);
       const walletRepository = WalletRepository(em);
 
       // get source wallet
@@ -71,6 +72,7 @@ export class WalletTransactionCoordinatorService
     dto: InitiateTransferFromEscrowToSystemDto,
   ): Promise<WalletTransactionResponseDto> {
     return this.ensureTransaction(dto.entityManager, async (em) => {
+      dto.amount = Number(dto.amount);
       const walletRepository = WalletRepository(em);
 
       const escrowWallet = await walletRepository.findOneOrFail({
@@ -103,6 +105,7 @@ export class WalletTransactionCoordinatorService
     dto: InitiateTransferFromEscrowToAccountDto,
   ): Promise<WalletTransactionResponseDto> {
     return this.ensureTransaction(dto.entityManager, async (em) => {
+      dto.amount = Number(dto.amount);
       const walletRepository = WalletRepository(em);
 
       // get source wallet
