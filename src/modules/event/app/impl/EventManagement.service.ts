@@ -30,6 +30,7 @@ import { LocationBookingRepository } from '@/modules/location-booking/infra/repo
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 import { IEventPayoutService } from '@/modules/event/app/IEventPayout.service';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
+import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 
 @Injectable()
 export class EventManagementService
@@ -148,6 +149,7 @@ export class EventManagementService
   publishEvent(dto: PublishEventDto): Promise<UpdateResult> {
     return this.ensureTransaction(null, async (em) => {
       const eventRepository = EventRepository(em);
+      const locationBookingRepo = LocationBookingRepository(em);
 
       const event = await eventRepository.findOneOrFail({
         where: {
@@ -162,6 +164,26 @@ export class EventManagementService
       if (!event.canBePublished()) {
         throw new BadRequestException(
           'Event is missing required information to be published. Requires: Location, Display Name, Start Date, End Date, Tickets.',
+        );
+      }
+
+      const locationBookings = await locationBookingRepo.find({
+        where: {
+          bookingObject: LocationBookingObject.FOR_EVENT,
+          targetId: dto.eventId,
+        },
+      });
+
+      const approvedLocationBookings = locationBookings
+        .filter((booking) => booking.status === LocationBookingStatus.APPROVED)
+        .map((booking) => booking.locationId);
+
+      if (
+        event.locationId &&
+        !approvedLocationBookings.includes(event.locationId)
+      ) {
+        throw new BadRequestException(
+          'Event cannot be published. Location booking is not approved.',
         );
       }
 
