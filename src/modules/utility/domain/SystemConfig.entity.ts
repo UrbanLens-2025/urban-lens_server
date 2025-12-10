@@ -3,9 +3,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Entity({ name: SystemConfigEntity.TABLE_NAME })
 export class SystemConfigEntity {
@@ -19,6 +22,16 @@ export class SystemConfigEntity {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
+
+  @ManyToOne(() => AccountEntity, (account) => account.id, {
+    createForeignKeyConstraints: false,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy?: AccountEntity | null;
+
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedById?: string | null;
 
   @Column({ name: 'key', type: 'varchar', length: 255 })
   key: SystemConfigKey;

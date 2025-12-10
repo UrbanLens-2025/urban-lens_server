@@ -1,10 +1,14 @@
 import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Exclude, Transform } from 'class-transformer';
+import { CoreActionDto } from '@/common/dto/CoreAction.dto';
 
-export class UpdateSystemConfigValueDto<T extends SystemConfigKey> {
+export class UpdateSystemConfigValueDto<T extends SystemConfigKey> extends CoreActionDto {
   key: T;
+
+  @Exclude()
+  accountId: string;
 
   @ApiProperty({
     description: 'The value of the system config to update',

@@ -5,6 +5,8 @@ import { Roles } from '@/common/Roles.decorator';
 import { ISystemConfigService } from '@/modules/utility/app/ISystemConfig.service';
 import { Body, Controller, Get, Inject, Param, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AuthUser } from '@/common/AuthUser.decorator';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 
 @Controller('/admin/system-config')
 @ApiBearerAuth()
@@ -41,10 +43,12 @@ export class SystemConfigAdminController {
   updateSystemConfigValue(
     @Param('key') key: string,
     @Body() dto: UpdateSystemConfigValueDto<SystemConfigKey>,
+    @AuthUser() user: JwtTokenDto,
   ) {
     return this.systemConfigService.updateSystemConfigValue({
       ...dto,
       key: key as SystemConfigKey,
+      accountId: user.sub,
     });
   }
 }

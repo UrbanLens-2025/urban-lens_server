@@ -1,6 +1,6 @@
 import {
   parseSystemConfigValue,
-  SystemConfigKey
+  SystemConfigKey,
 } from '@/common/constants/SystemConfigKey.constant';
 import { CoreService } from '@/common/core/Core.service';
 import { SystemConfigResponseDto } from '@/common/dto/utility/res/SystemConfig.response.dto';
@@ -20,7 +20,11 @@ export class SystemConfigService
   > {
     const systemConfigRepository = SystemConfigRepository(this.dataSource);
     return systemConfigRepository
-      .find()
+      .find({
+        relations: {
+          updatedBy: true,
+        },
+      })
       .then((res) =>
         this.mapToArray(SystemConfigResponseDto<SystemConfigKey>, res),
       );
@@ -48,6 +52,8 @@ export class SystemConfigService
       });
 
       systemConfig.value = String(dto.value);
+      systemConfig.updatedById = dto.accountId;
+
       return systemConfigRepository
         .save(systemConfig)
         .then((res) => this.mapTo(SystemConfigResponseDto<T>, res));
