@@ -93,6 +93,13 @@ export class EventAttendanceEntity {
   @Column({ name: 'ticket_id', type: 'uuid' })
   ticketId: string;
 
+  @Column({
+    name: 'checked_in_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  checkedInAt?: Date | null;
+
   public canCheckIn(): boolean {
     return this.status === EventAttendanceStatus.CREATED;
   }

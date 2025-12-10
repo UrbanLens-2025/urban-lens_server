@@ -73,22 +73,45 @@ export class TicketOrderQueryService
       });
   }
 
-  getOrderInEventById(
+  async getOrderInEventById(
     dto: GetOrderInEventByIdDto,
   ): Promise<TicketOrderResponseDto> {
     // First validate event ownership
     const eventRepository = EventRepository(this.dataSource);
     const ticketOrderRepository = TicketOrderRepository(this.dataSource);
 
-    return eventRepository
-      .findOneByOrFail({
-        id: dto.eventId,
-        createdById: dto.accountId,
+    const event = await eventRepository.findOneByOrFail({
+      id: dto.eventId,
+      createdById: dto.accountId,
+    });
+
+    return ticketOrderRepository
+      .findOneOrFail({
+        where: {
+          id: dto.orderId,
+          eventId: event.id,
+        },
+        relations: {
+          orderDetails: {
+            ticket: true,
+          },
+          createdBy: true,
+          referencedTransaction: true,
+          event: true,
+          eventAttendances: true,
+        },
       })
-      .then(() => {
-        return ticketOrderRepository
-          .findOrderInEventById(dto.orderId, dto.eventId)
-          .then((res) => this.mapTo(TicketOrderResponseDto, res));
-      });
+      .then((res) => this.mapTo(TicketOrderResponseDto, res));
+
+    // return eventRepository
+    //   .findOneByOrFail({
+    //     id: dto.eventId,
+    //     createdById: dto.accountId,
+    //   })
+    //   .then(() => {
+    //     return ticketOrderRepository
+    //       .findOrderInEventById(dto.orderId, dto.eventId)
+    //       .then((res) => this.mapTo(TicketOrderResponseDto, res));
+    //   });
   }
 }

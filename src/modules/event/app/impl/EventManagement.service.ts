@@ -7,7 +7,7 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { UpdateResult } from 'typeorm';
+import { In, UpdateResult } from 'typeorm';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
@@ -31,6 +31,7 @@ import { LocationBookingObject } from '@/common/constants/LocationBookingObject.
 import { IEventPayoutService } from '@/modules/event/app/IEventPayout.service';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
+import { HandleBookingRejectedDto } from '@/common/dto/location-booking/HandleBookingRejected.dto';
 
 @Injectable()
 export class EventManagementService
@@ -48,6 +49,29 @@ export class EventManagementService
     private readonly eventPayoutService: IEventPayoutService,
   ) {
     super();
+  }
+
+  handleBookingRejected(
+    dto: HandleBookingRejectedDto,
+  ): Promise<EventResponseDto[]> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const eventRepository = EventRepository(em);
+      const events = await eventRepository.find({
+        where: {
+          id: In(dto.eventId),
+        },
+      });
+
+      if (events.length !== dto.eventId.length) {
+        throw new BadRequestException('One or more events not found.');
+      }
+
+      for (const event of events) {
+        event.locationId = null;
+      }
+
+      return eventRepository.save(events);
+    }).then((res) => this.mapToArray(EventResponseDto, res));
   }
 
   createEvent(dto: CreateEventDto): Promise<EventResponseDto> {
@@ -171,16 +195,18 @@ export class EventManagementService
         where: {
           bookingObject: LocationBookingObject.FOR_EVENT,
           targetId: dto.eventId,
+          status: LocationBookingStatus.APPROVED,
         },
       });
 
-      const approvedLocationBookings = locationBookings
-        .filter((booking) => booking.status === LocationBookingStatus.APPROVED)
-        .map((booking) => booking.locationId);
+      const approvedLocationBookings = locationBookings.map(
+        (booking) => booking.locationId,
+      );
 
       if (
-        event.locationId &&
-        !approvedLocationBookings.includes(event.locationId)
+        approvedLocationBookings.length === 0 ||
+        (event.locationId &&
+          !approvedLocationBookings.includes(event.locationId))
       ) {
         throw new BadRequestException(
           'Event cannot be published. Location booking is not approved.',

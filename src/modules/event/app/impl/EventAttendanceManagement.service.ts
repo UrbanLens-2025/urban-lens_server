@@ -15,12 +15,73 @@ import {
 
 import { CreateEventAttendanceEntitiesFromTicketOrderDto } from '@/common/dto/event/CreateEventAttendanceEntitiesFromTicketOrder.dto';
 import { TicketOrderRepository } from '@/modules/event/infra/repository/TicketOrder.repository';
+import { ConfirmTicketUsageV2Dto } from '@/common/dto/event/ConfirmTicketUsageV2.dto';
+import { In } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  TICKETS_CHECKED_IN_EVENT,
+  TicketsCheckedInEvent,
+} from '@/modules/event/domain/events/TicketsCheckedIn.event';
 
 @Injectable()
 export class EventAttendanceManagementService
   extends CoreService
   implements IEventAttendanceManagementService
 {
+  constructor(private readonly eventEmitter: EventEmitter2) {
+    super();
+  }
+
+  confirmTicketUsageV2(
+    dto: ConfirmTicketUsageV2Dto,
+  ): Promise<EventAttendanceResponseDto[]> {
+    return this.ensureTransaction(null, async (em) => {
+      const eventRepo = EventRepository(em);
+      const eventAttendanceRepo = EventAttendanceRepository(em);
+
+      const event = await eventRepo.findOneOrFail({
+        where: { id: dto.eventId, createdById: dto.accountId },
+      });
+
+      if (!event.canCheckIn()) {
+        throw new BadRequestException('Event cannot be checked in');
+      }
+
+      const eventAttendances = await eventAttendanceRepo.find({
+        where: { id: In(dto.eventAttendanceIds) },
+      });
+
+      if (eventAttendances.length !== dto.eventAttendanceIds.length) {
+        throw new BadRequestException('Some event attendances not found');
+      }
+
+      for (const eventAttendance of eventAttendances) {
+        if (!eventAttendance.canCheckIn()) {
+          throw new BadRequestException(
+            `Event attendance ${eventAttendance.id} cannot be checked in`,
+          );
+        }
+
+        eventAttendance.status = EventAttendanceStatus.CHECKED_IN;
+        eventAttendance.checkedInAt = new Date();
+      }
+
+      return eventAttendanceRepo.save(eventAttendances);
+    })
+      .then((savedEventAttendances) => {
+        this.eventEmitter.emit(
+          TICKETS_CHECKED_IN_EVENT,
+          new TicketsCheckedInEvent(dto.ticketOrderId, savedEventAttendances),
+        );
+        return savedEventAttendances;
+      })
+      .then((savedEventAttendances) =>
+        savedEventAttendances.map((eventAttendance) =>
+          this.mapTo(EventAttendanceResponseDto, eventAttendance),
+        ),
+      );
+  }
+
   confirmTicketUsage(
     dto: ConfirmTicketUsageDto,
   ): Promise<EventAttendanceResponseDto> {
@@ -45,6 +106,7 @@ export class EventAttendanceManagementService
       }
 
       eventAttendance.status = EventAttendanceStatus.CHECKED_IN;
+      eventAttendance.checkedInAt = new Date();
 
       return eventAttendanceRepository
         .save(eventAttendance)
@@ -84,17 +146,19 @@ export class EventAttendanceManagementService
 
       if (ticketOrder.orderDetails) {
         for (const orderDetail of ticketOrder.orderDetails) {
-          const eventAttendance = new EventAttendanceEntity();
-          eventAttendance.orderId = ticketOrder.id;
-          eventAttendance.status = EventAttendanceStatus.CREATED;
-          eventAttendance.eventId = ticketOrder.eventId;
-          eventAttendance.ticketId = orderDetail.ticketId;
-          eventAttendance.referencedTicketOrderId = ticketOrder.id;
-          eventAttendance.ownerId = accountDetails.id;
-          eventAttendance.ownerEmail = accountDetails.email;
-          eventAttendance.ownerPhoneNumber = accountDetails.phoneNumber;
-          eventAttendance.numberOfAttendees = orderDetail.quantity;
-          eventAttendances.push(eventAttendance);
+          for (let i = 0; i < orderDetail.quantity; i++) {
+            const eventAttendance = new EventAttendanceEntity();
+            eventAttendance.orderId = ticketOrder.id;
+            eventAttendance.status = EventAttendanceStatus.CREATED;
+            eventAttendance.eventId = ticketOrder.eventId;
+            eventAttendance.ticketId = orderDetail.ticketId;
+            eventAttendance.referencedTicketOrderId = ticketOrder.id;
+            eventAttendance.ownerId = accountDetails.id;
+            eventAttendance.ownerEmail = accountDetails.email;
+            eventAttendance.ownerPhoneNumber = accountDetails.phoneNumber;
+            eventAttendance.numberOfAttendees = 1;
+            eventAttendances.push(eventAttendance);
+          }
         }
       } else {
         throw new InternalServerErrorException(

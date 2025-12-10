@@ -41,6 +41,7 @@ import { ILocationBookingPayoutService } from '@/modules/location-booking/app/IL
 import { ProcessAndApproveBookingDto } from '@/common/dto/location-booking/ProcessAndApproveBooking.dto';
 import { ProcessAndRejectBookingDto } from '@/common/dto/location-booking/ProcessAndRejectBooking.dto';
 import { ForceCancelBookingDto } from '@/common/dto/location-booking/ForceCancelBooking.dto';
+import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 
 @Injectable()
 export class LocationBookingManagementService

@@ -472,7 +472,31 @@ export class LocationBookingManagementV2Service
           booking.status = LocationBookingStatus.REJECTED;
         }
 
-        return locationBookingRepo.save(bookings);
+        return locationBookingRepo.save(bookings).then(async (res) => {
+          for (const booking of res) {
+            switch (booking.bookingObject) {
+              case LocationBookingObject.FOR_EVENT: {
+                const eventId = booking.targetId;
+                if (!eventId) {
+                  throw new InternalServerErrorException(
+                    'Event ID is required for event bookings.',
+                  );
+                }
+                await this.eventManagementService.handleBookingRejected({
+                  eventId: [eventId],
+                  entityManager: em,
+                });
+                break;
+              }
+              default: {
+                throw new InternalServerErrorException(
+                  'Unknown booking object.',
+                );
+              }
+            }
+          }
+          return res;
+        });
       })
         // event emitter
         .then((res) => {
