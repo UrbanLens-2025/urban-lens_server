@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { LocationReservationInfraModule } from '@/modules/location-booking/infra/LocationReservation.infra.module';
 import { LocationAvailabilityOwnerController } from '@/modules/location-booking/interfaces/LocationAvailability.owner.controller';
 import { ILocationAvailabilityManagementService } from '@/modules/location-booking/app/ILocationAvailabilityManagement.service';
@@ -25,6 +25,7 @@ import { ILocationBookingPayoutService } from '@/modules/location-booking/app/IL
 import { LocationBookingPayoutService } from '@/modules/location-booking/app/impl/LocationBookingPayout.service';
 import { UtilityModule } from '@/modules/utility/Utility.module';
 import { LocationBookingManagementV2Service } from '@/modules/location-booking/app/impl/LocationBookingManagementV2.service';
+import { EventModule } from '@/modules/event/event.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { LocationBookingManagementV2Service } from '@/modules/location-booking/a
     ScheduledJobsModule,
     WalletModule,
     UtilityModule,
+    forwardRef(() => EventModule),
   ],
   controllers: [
     LocationAvailabilityOwnerController,

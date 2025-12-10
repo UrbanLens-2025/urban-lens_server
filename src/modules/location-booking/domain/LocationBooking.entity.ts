@@ -18,6 +18,9 @@ import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob
 import { isNotBlank } from '@/common/utils/is-not-blank.util';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
+import { InternalServerErrorException } from '@nestjs/common';
+import dayjs from 'dayjs';
+import { Role } from '@/common/constants/Role.constant';
 
 @Entity({ name: LocationBookingEntity.TABLE_NAME })
 export class LocationBookingEntity {
@@ -140,6 +143,21 @@ export class LocationBookingEntity {
     nullable: true,
   })
   cancellationReason?: string | null;
+
+  @Column({
+    name: 'cancelled_by',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
+  cancelledBy?: Role.EVENT_CREATOR | Role.BUSINESS_OWNER | null;
+
+  @Column({
+    name: 'cancelled_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  cancelledAt?: Date | null;
 
   @Column({
     name: 'refunded_amount',
@@ -269,10 +287,18 @@ export class LocationBookingEntity {
       LocationBookingStatus.APPROVED,
     ];
 
-    // check if booking date is fully in the past
     const bookingDates = this.dates;
+    if (bookingDates === null || bookingDates === undefined) {
+      throw new InternalServerErrorException('Booking dates are not loaded');
+    }
 
-    return true;
+    // cannot cancel bookings if the booking date has started already
+    const now = dayjs();
+    const bookingDateHasStarted = bookingDates.some((date) =>
+      dayjs(date.startDateTime).isBefore(now),
+    );
+
+    return cancellableStatuses.includes(this.status) && !bookingDateHasStarted;
   }
 
   public isActive(): boolean {

@@ -10,6 +10,7 @@ export enum NotificationTypes {
   BOOKING_APPROVED = 'BOOKING_APPROVED',
   BOOKING_REJECTED = 'BOOKING_REJECTED',
   BOOKING_CANCELLED = 'BOOKING_CANCELLED',
+  BOOKING_FORCE_CANCELLED = 'BOOKING_FORCE_CANCELLED',
 }
 
 export const NotificationsConstant: {
@@ -69,6 +70,12 @@ export const NotificationsConstant: {
     payload: {
       title: 'Booking cancelled',
       body: 'A booking for your location {locationName} has been cancelled.',
+    },
+  },
+  [NotificationTypes.BOOKING_FORCE_CANCELLED]: {
+    payload: {
+      title: 'Booking force cancelled',
+      body: 'Your booking for {locationName} has been cancelled by the business owner due to unforeseen circumstances.',
     },
   },
 };

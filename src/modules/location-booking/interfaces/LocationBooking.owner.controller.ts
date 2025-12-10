@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -30,6 +31,7 @@ import { BookedDatesResponseDto } from '@/common/dto/location-booking/res/Booked
 import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 import { ProcessAndApproveBookingDto } from '@/common/dto/location-booking/ProcessAndApproveBooking.dto';
 import { ProcessAndRejectBookingDto } from '@/common/dto/location-booking/ProcessAndRejectBooking.dto';
+import { ForceCancelBookingDto } from '@/common/dto/location-booking/ForceCancelBooking.dto';
 
 @ApiTags('Location Bookings')
 @ApiBearerAuth()
@@ -136,6 +138,20 @@ export class LocationBookingOwnerController {
       locationId,
       startDate,
       endDate,
+    });
+  }
+
+  @ApiOperation({ summary: 'Force cancel a booking' })
+  @Delete('/force-cancel/:locationBookingId')
+  forceCancelBooking(
+    @AuthUser() userDto: JwtTokenDto,
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+    @Body() dto: ForceCancelBookingDto,
+  ) {
+    return this.locationBookingManagementService.forceCancelBooking({
+      ...dto,
+      accountId: userDto.sub,
+      bookingId: locationBookingId,
     });
   }
 

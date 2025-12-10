@@ -1,7 +1,12 @@
 import { CoreService } from '@/common/core/Core.service';
 import { UpdateEventDto } from '@/common/dto/event/UpdateEvent.dto';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { UpdateResult } from 'typeorm';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
@@ -10,13 +15,10 @@ import { PublishEventDto } from '@/common/dto/event/PublishEvent.dto';
 import { EventStatus } from '@/common/constants/EventStatus.constant';
 import { FinishEventDto } from '@/common/dto/event/FinishEvent.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
-import dayjs from 'dayjs';
-import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
-import { ConfigService } from '@nestjs/config';
-import { Environment } from '@/config/env.config';
 import { CancelEventBookingDto } from '@/common/dto/event/CancelEventBooking.dto';
 import { CreateEventDto } from '@/common/dto/event/CreateEvent.dto';
 import { EventTagsRepository } from '@/modules/event/infra/repository/EventTags.repository';
+import { HandleBookingForceCancelledDto } from '@/common/dto/event/HandleBookingForceCancelled.dto';
 import { CategoryType } from '@/common/constants/CategoryType.constant';
 import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
@@ -37,7 +39,7 @@ export class EventManagementService
   constructor(
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
-    @Inject(ILocationBookingManagementService)
+    @Inject(forwardRef(() => ILocationBookingManagementService))
     private readonly locationBookingService: ILocationBookingManagementService,
     @Inject(ITicketOrderManagementService)
     private readonly ticketOrderManagementService: ITicketOrderManagementService,
@@ -424,5 +426,22 @@ export class EventManagementService
         .save(event)
         .then((res) => this.mapTo(EventResponseDto, res));
     });
+  }
+
+  handleBookingForceCancelled(
+    dto: HandleBookingForceCancelledDto,
+  ): Promise<EventResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const eventRepository = EventRepository(em);
+      const event = await eventRepository.findOneOrFail({
+        where: {
+          id: dto.eventId,
+        },
+      });
+
+      event.locationId = null;
+
+      return eventRepository.save(event);
+    }).then((res) => this.mapTo(EventResponseDto, res));
   }
 }

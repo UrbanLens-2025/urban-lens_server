@@ -15,7 +15,13 @@ import { ILocationBookingManagementService } from '@/modules/location-booking/ap
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
 import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import dayjs from 'dayjs';
 import { In, UpdateResult } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -34,6 +40,15 @@ import {
   BookingCancelledEvent,
 } from '@/modules/location-booking/domain/event/BookingCancelled.event';
 import { ILocationBookingPayoutService } from '@/modules/location-booking/app/ILocationBookingPayout.service';
+import { ISystemConfigService } from '@/modules/utility/app/ISystemConfig.service';
+import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
+import {
+  BOOKING_FORCE_CANCELLED_EVENT,
+  BookingForceCancelledEvent,
+} from '@/modules/location-booking/domain/event/BookingForceCancelled.event';
+import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
+import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
+import { Role } from '@/common/constants/Role.constant';
 
 @Injectable()
 export class LocationBookingManagementV2Service
@@ -45,6 +60,10 @@ export class LocationBookingManagementV2Service
     private readonly walletTransactionCoordinatorService: IWalletTransactionCoordinatorService,
     @Inject(ILocationBookingPayoutService)
     private readonly locationBookingPayoutService: ILocationBookingPayoutService,
+    @Inject(ISystemConfigService)
+    private readonly systemConfigService: ISystemConfigService,
+    @Inject(forwardRef(() => IEventManagementService))
+    private readonly eventManagementService: IEventManagementService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     super();
@@ -214,7 +233,8 @@ export class LocationBookingManagementV2Service
 
       booking.status = LocationBookingStatus.CANCELLED;
       booking.cancellationReason = dto.cancellationReason;
-
+      booking.cancelledBy = Role.EVENT_CREATOR;
+      booking.cancelledAt = dayjs().toDate();
       return locationBookingRepo.save(booking);
     })
       .then((res) => {
@@ -230,25 +250,78 @@ export class LocationBookingManagementV2Service
   forceCancelBooking(
     dto: ForceCancelBookingDto,
   ): Promise<LocationBookingResponseDto> {
-    return this.ensureTransaction(dto.entityManager, async (em) => {
-      const locationBookingRepo = LocationBookingRepository(em);
+    return (
+      this.ensureTransaction(dto.entityManager, async (em) => {
+        const locationBookingRepo = LocationBookingRepository(em);
 
-      const booking = await locationBookingRepo.findOneOrFail({
-        where: {
-          id: dto.bookingId,
-          location: {
-            businessId: dto.accountId,
+        const booking = await locationBookingRepo.findOneOrFail({
+          where: {
+            id: dto.bookingId,
+            location: {
+              businessId: dto.accountId,
+            },
           },
-        },
-      });
+        });
 
-      // can only cancel booking if booking date is in the past and is in a cancellable status
-      // if(!booking.canBeCancelled()) {
+        // can only cancel booking if booking date is in the past and is in a cancellable status
+        if (!booking.canBeForceCancelled()) {
+          throw new BadRequestException(
+            'This booking cannot be force cancelled. It is either not in a cancellable status or the booking date is not in the past.',
+          );
+        }
 
-      // }
+        // refund 100% of the booking amount to the creator
+        const bookingAmount = booking.amountToPay;
+        // fine the host for violating the contract
+        const finePercentage =
+          await this.systemConfigService.getSystemConfigValue(
+            SystemConfigKey.LOCATION_BOOKING_FORCE_CANCELLATION_FINE_PERCENTAGE,
+            em,
+          );
+        const fineAmount = bookingAmount * finePercentage.value;
+        const totalAmountToRefund = bookingAmount + fineAmount;
+        const refundTransaction =
+          await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
+            {
+              entityManager: em,
+              destinationAccountId: booking.createdById,
+              amount: totalAmountToRefund,
+              currency: SupportedCurrency.VND,
+            },
+          );
+        booking.refundTransactionId = refundTransaction.id;
 
-      throw new Error('Not implemented');
-    });
+        // process the parent based on the booking type
+        switch (booking.bookingObject) {
+          case LocationBookingObject.FOR_EVENT: {
+            await this.eventManagementService.handleBookingForceCancelled({
+              eventId: booking.targetId!,
+            });
+            break;
+          }
+          default: {
+            throw new InternalServerErrorException('Unknown booking object.');
+          }
+        }
+
+        // update booking status to cancelled
+        booking.status = LocationBookingStatus.CANCELLED;
+        booking.cancellationReason = dto.cancellationReason;
+        booking.cancelledBy = Role.BUSINESS_OWNER;
+        booking.cancelledAt = dayjs().toDate();
+
+        return locationBookingRepo.save(booking);
+      })
+        // notify creator and host
+        .then((res) => {
+          this.eventEmitter.emit(
+            BOOKING_FORCE_CANCELLED_EVENT,
+            new BookingForceCancelledEvent(res.id),
+          );
+          return res;
+        })
+        .then((res) => this.mapTo(LocationBookingResponseDto, res))
+    );
   }
 
   processAndApproveBooking(

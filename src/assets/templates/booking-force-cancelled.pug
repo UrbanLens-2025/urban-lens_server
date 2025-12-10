@@ -1,0 +1,143 @@
+doctype html
+html(lang="en")
+    head
+        meta(http-equiv="Content-Type" content="text/html; charset=utf-8")
+        meta(name="viewport" content="width=device-width, initial-scale=1.0")
+        title Booking Force Cancelled
+        style.
+            /* Reset styles */
+            body {
+                margin: 0;
+                padding: 0;
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+            }
+            table, td, div {
+                border-collapse: collapse;
+            }
+            img {
+                -ms-interpolation-mode: bicubic;
+            }
+
+            /* Basic styling */
+            body, table, td, a {
+                font-family: Arial, sans-serif;
+                color: #333333;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                margin: 0;
+            }
+            a {
+                text-decoration: none;
+            }
+
+            /* Main content styles */
+            .content-table {
+                border: 1px solid #cccccc;
+                border-collapse: collapse;
+                background-color: #ffffff;
+            }
+            .header {
+                background-color: #212121;
+                padding: 40px 0 30px 0;
+            }
+            .header h1 {
+                color: #ffffff;
+            }
+            .body-section {
+                padding: 30px 30px 20px 30px;
+            }
+            .body-section h2 {
+                color: #333333;
+            }
+            .booking-details {
+                background-color: #fff3cd;
+                border: 1px solid #ffc107;
+                border-radius: 5px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+            .booking-details p {
+                margin: 8px 0;
+            }
+            .booking-details strong {
+                color: #212121;
+            }
+            .status-badge {
+                display: inline-block;
+                padding: 8px 16px;
+                background-color: #dc3545;
+                color: white;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+            .refund-notice {
+                background-color: #d1ecf1;
+                border: 1px solid #bee5eb;
+                border-radius: 5px;
+                padding: 15px;
+                margin: 20px 0;
+                color: #0c5460;
+            }
+            .footer {
+                background-color: #eeeded;
+                padding: 30px 30px 30px 30px;
+            }
+            .footer p {
+                margin: 0;
+                font-size: 12px;
+                color: #555555;
+            }
+
+            /* Media Queries for responsiveness */
+            @media only screen and (max-width: 600px) {
+                .content-table {
+                    width: 100% !important;
+                }
+                .body-section, .footer {
+                    padding: 20px !important;
+                }
+                .header h1 {
+                    font-size: 24px;
+                }
+            }
+    body(style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;")
+        table()
+            tr
+                td(style="padding: 20px 0 30px 0;")
+                    table.content-table()
+                        //- Header Section
+                        tr
+                            td.header()
+                                h1 Urban Lens
+                        //- Body Section
+                        tr
+                            td.body-section
+                                h2 Booking Force Cancelled
+                                p Hi there,
+                                p We regret to inform you that your booking has been cancelled by the business owner due to unforeseen circumstances.
+                                .booking-details
+                                    p
+                                        span.status-badge FORCE CANCELLED
+                                    p
+                                        strong Location:
+                                        |  #{locationName}
+                                .refund-notice
+                                    p
+                                        strong Refund Information:
+                                    p Your full booking amount plus a compensation fee has been refunded to your wallet. We sincerely apologize for any inconvenience this may have caused.
+                                p We understand this is disappointing and we're here to help you find an alternative location for your event.
+                                p If you have any questions or need assistance, please don't hesitate to contact our support team.
+                                p Thank you for your understanding.
+                                p Best regards,
+                                p The Urban Lens Team
+                        //- Footer Section
+                        tr
+                            td.footer
+                                table()
+                                    tr
+                                        td()
+                                            p &copy; 2025 Urban Lens. All rights reserved.
+
+

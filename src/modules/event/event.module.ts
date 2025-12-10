@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { EventInfraModule } from '@/modules/event/infra/event.infra.module';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 import { LocationBookingModule } from '@/modules/location-booking/LocationBooking.module';
@@ -37,10 +37,10 @@ import { UtilityModule } from '@/modules/utility/Utility.module';
     WalletModule,
     EventInfraModule,
     FileStorageModule,
-    LocationBookingModule,
     FileStorageModule,
     ScheduledJobsModule,
     UtilityModule,
+    forwardRef(() => LocationBookingModule),
   ],
   controllers: [
     EventCreatorController,
