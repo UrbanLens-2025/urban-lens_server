@@ -324,14 +324,14 @@ export class LocationBookingEntity {
       return true;
     }
 
-    for (const date of dates) {
-      if (
-        date.startDateTime <= eventStartDate &&
-        date.endDateTime >= eventEndDate
-      ) {
-        return true;
-      }
-    }
-    return false;
+    const earliestStartDate = dates.sort(
+      (a, b) => a.startDateTime.getTime() - b.startDateTime.getTime(),
+    )[0].startDateTime;
+
+    const latestEndDate = dates.sort(
+      (a, b) => b.endDateTime.getTime() - a.endDateTime.getTime(),
+    )[0].endDateTime;
+
+    return earliestStartDate <= eventStartDate && latestEndDate >= eventEndDate;
   }
 }

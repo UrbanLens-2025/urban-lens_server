@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsDate,
+  IsDecimal,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -9,6 +10,7 @@ import {
   IsString,
   IsUrl,
   Length,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -22,7 +24,6 @@ export class UpdateEventTicketDto {
 
   // persistent fields
   @IsString()
-  @IsNotEmpty()
   @MaxLength(255)
   @IsOptional()
   @ApiPropertyOptional()
@@ -91,4 +92,21 @@ export class UpdateEventTicketDto {
   @IsOptional()
   @ApiPropertyOptional()
   maxQuantityPerOrder?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiPropertyOptional()
+  allowRefunds?: boolean;
+
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(1)
+  @IsOptional()
+  @ApiPropertyOptional()
+  refundPercentageBeforeCutoff?: number;
+
+  @IsInt()
+  @IsOptional()
+  @ApiPropertyOptional({ default: 4 })
+  refundCutoffHoursAfterPayment?: number;
 }

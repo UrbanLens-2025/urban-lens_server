@@ -56,13 +56,18 @@ export class EventAttendanceEntity {
   @JoinColumn({ name: 'owner_id' })
   owner?: AccountEntity | null;
 
-  @Column({ name: 'owner_id', type: 'uuid', nullable: true, })
+  @Column({ name: 'owner_id', type: 'uuid', nullable: true })
   ownerId?: string | null;
 
-  @Column({ name: 'owner_email', type: 'varchar', length: 255, nullable: true, })
+  @Column({ name: 'owner_email', type: 'varchar', length: 255, nullable: true })
   ownerEmail?: string | null;
 
-  @Column({ name: 'owner_phone_number', type: 'varchar', length: 255, nullable: true, })
+  @Column({
+    name: 'owner_phone_number',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   ownerPhoneNumber?: string | null;
 
   @Column({ name: 'number_of_attendees', type: 'int', default: 1 })

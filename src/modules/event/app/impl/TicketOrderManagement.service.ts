@@ -19,6 +19,7 @@ import {
 } from '@/modules/event/domain/events/TicketOrderCreated.event';
 import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
 import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
+import { RefundOrderDto } from '@/common/dto/event/RefundOrder.dto';
 
 @Injectable()
 export class TicketOrderManagementService
@@ -234,6 +235,30 @@ export class TicketOrderManagementService
       }
 
       return this.mapToArray(TicketOrderResponseDto, refunds);
+    });
+  }
+
+  refundOrder(dto: RefundOrderDto): Promise<TicketOrderResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const ticketOrderRepo = TicketOrderRepository(em);
+      const ticketOrder = await ticketOrderRepo.findOneOrFail({
+        where: {
+          id: dto.orderId,
+          createdById: dto.accountId,
+        },
+        relations: {
+          eventAttendances: true,
+        },
+      });
+
+      // can only refund if order is paid
+      if (!ticketOrder.canBeRefunded()) {
+        throw new BadRequestException('Order cannot be refunded.');
+      }
+
+      // todo continue
+
+      return this.mapTo(TicketOrderResponseDto, ticketOrder);
     });
   }
 }

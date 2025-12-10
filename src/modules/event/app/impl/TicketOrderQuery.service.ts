@@ -44,6 +44,7 @@ export class TicketOrderQueryService
             ticket: true,
           },
           event: true,
+          eventAttendances: true,
         },
       })
       .then((res) => this.mapTo(TicketOrderResponseDto, res));

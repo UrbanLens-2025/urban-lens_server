@@ -5,6 +5,7 @@ import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto
 import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTransaction.response.dto';
 import { TicketOrderDetailsResponseDto } from '@/common/dto/event/res/TicketOrderDetails.response.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
+import { EventAttendanceResponseDto } from '@/common/dto/event/res/EventAttendance.response.dto';
 
 @Exclude()
 export class TicketOrderResponseDto {
@@ -64,4 +65,8 @@ export class TicketOrderResponseDto {
   @Expose()
   @Type(() => EventResponseDto)
   event?: EventResponseDto;
+
+  @Expose()
+  @Type(() => EventAttendanceResponseDto)
+  eventAttendances?: EventAttendanceResponseDto[];
 }
