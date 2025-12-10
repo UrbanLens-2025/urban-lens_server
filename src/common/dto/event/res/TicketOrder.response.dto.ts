@@ -6,6 +6,7 @@ import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTran
 import { TicketOrderDetailsResponseDto } from '@/common/dto/event/res/TicketOrderDetails.response.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 import { EventAttendanceResponseDto } from '@/common/dto/event/res/EventAttendance.response.dto';
+import { EventTicketResponseDto } from '@/common/dto/event/res/EventTicket.response.dto';
 
 @Exclude()
 export class TicketOrderResponseDto {
