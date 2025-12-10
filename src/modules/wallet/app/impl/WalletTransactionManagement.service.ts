@@ -75,6 +75,7 @@ export class WalletTransactionManagementService
       transaction.destinationWalletId = destinationWallet.id;
       transaction.amount = dto.amountToTransfer;
       transaction.currency = dto.currency;
+      transaction.note = dto.note;
 
       transaction.startTransfer(destinationWallet.id);
 
@@ -181,6 +182,7 @@ export class WalletTransactionManagementService
       transaction.destinationWalletId = destinationWallet.id;
       transaction.amount = dto.amountToTransfer;
       transaction.currency = dto.currency;
+      transaction.note = dto.note;
 
       transaction.startTransfer(destinationWallet.id);
 

@@ -10,4 +10,5 @@ export class InitiateTransferToEscrowDto extends CoreActionDto {
 
   ipAddress: string;
   returnUrl: string;
+  note?: string;
 }

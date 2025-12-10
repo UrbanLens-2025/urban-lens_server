@@ -5,4 +5,5 @@ export class InitiateTransferFromEscrowToAccountDto extends CoreActionDto {
   amount: number;
   currency: SupportedCurrency;
   destinationAccountId: string;
+  note?: string;
 }

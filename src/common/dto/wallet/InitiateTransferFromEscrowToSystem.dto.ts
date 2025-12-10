@@ -4,4 +4,5 @@ import { CoreActionDto } from '@/common/dto/CoreAction.dto';
 export class InitiateTransferFromEscrowToSystemDto extends CoreActionDto {
   amount: number;
   currency: SupportedCurrency;
+  note?: string;
 }
