@@ -139,7 +139,7 @@ export class LocationBookingOwnerController {
     });
   }
 
-  @ApiOperation({ summary: 'Get conflicting bookings' })
+  @ApiOperation({ summary: 'Get conflicting bookings', deprecated: true })
   @Get('/conflicting-bookings/:locationBookingId')
   getConflictingBookings(
     @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,

@@ -24,6 +24,7 @@ import { BookingPayoutListener } from '@/modules/location-booking/app/event-list
 import { ILocationBookingPayoutService } from '@/modules/location-booking/app/ILocationBookingPayout.service';
 import { LocationBookingPayoutService } from '@/modules/location-booking/app/impl/LocationBookingPayout.service';
 import { UtilityModule } from '@/modules/utility/Utility.module';
+import { LocationBookingManagementV2Service } from '@/modules/location-booking/app/impl/LocationBookingManagementV2.service';
 
 @Module({
   imports: [
@@ -57,7 +58,7 @@ import { UtilityModule } from '@/modules/utility/Utility.module';
     },
     {
       provide: ILocationBookingManagementService,
-      useClass: LocationBookingManagementService,
+      useClass: LocationBookingManagementV2Service,
     },
     {
       provide: ILocationBookingQueryService,

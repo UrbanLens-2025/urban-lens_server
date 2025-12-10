@@ -18,6 +18,7 @@ import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob
 import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
+import { InternalServerErrorException } from '@nestjs/common';
 
 @Entity({ name: EventEntity.TABLE_NAME })
 export class EventEntity {
@@ -186,11 +187,19 @@ export class EventEntity {
   }
 
   public canBePublished() {
+    const tickets = this.tickets;
+    if (tickets === null || tickets === undefined) {
+      throw new InternalServerErrorException('Event tickets are not loaded');
+    }
+
     const correctStatus = this.status === EventStatus.DRAFT;
     const hasLocation = this.locationId !== null;
     const hasDisplayName = this.displayName !== null;
     const hasDates = this.startDate !== null && this.endDate !== null;
-    return correctStatus && hasLocation && hasDisplayName && hasDates;
+    const hasTickets = tickets.length > 0;
+    return (
+      correctStatus && hasLocation && hasDisplayName && hasDates && hasTickets
+    );
   }
 
   public canBeUpdated() {

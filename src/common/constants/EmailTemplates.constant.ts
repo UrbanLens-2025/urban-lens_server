@@ -7,6 +7,9 @@ export enum EmailTemplates {
   LOCATION_REJECTED = './location-rejected',
   LOCATION_NEEDS_MORE_INFO = './location-needs-more-info',
   DEPOSIT_CONFIRMED = './deposit-confirmed',
+  BOOKING_APPROVED = './booking-approved',
+  BOOKING_REJECTED = './booking-rejected',
+  BOOKING_CANCELLED = './booking-cancelled',
 }
 
 export const EmailSubjects = {
@@ -18,4 +21,7 @@ export const EmailSubjects = {
   [EmailTemplates.LOCATION_REJECTED]: 'Location Request Rejected',
   [EmailTemplates.LOCATION_NEEDS_MORE_INFO]: 'Location Request Needs More Info',
   [EmailTemplates.DEPOSIT_CONFIRMED]: 'Deposit Confirmed',
+  [EmailTemplates.BOOKING_APPROVED]: 'Booking Approved!',
+  [EmailTemplates.BOOKING_REJECTED]: 'Booking Rejected',
+  [EmailTemplates.BOOKING_CANCELLED]: 'Booking Cancelled',
 };

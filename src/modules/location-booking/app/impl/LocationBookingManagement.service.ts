@@ -40,6 +40,7 @@ import { CancelBookingDto } from '@/common/dto/location-booking/CancelBooking.dt
 import { ILocationBookingPayoutService } from '@/modules/location-booking/app/ILocationBookingPayout.service';
 import { ProcessAndApproveBookingDto } from '@/common/dto/location-booking/ProcessAndApproveBooking.dto';
 import { ProcessAndRejectBookingDto } from '@/common/dto/location-booking/ProcessAndRejectBooking.dto';
+import { ForceCancelBookingDto } from '@/common/dto/location-booking/ForceCancelBooking.dto';
 
 @Injectable()
 export class LocationBookingManagementService
@@ -61,6 +62,9 @@ export class LocationBookingManagementService
     this.MAX_TIME_TO_PAY_MS = this.configService.getOrThrow<number>(
       'LOCATION_BOOKING_MAX_TIME_TO_PAY_MS',
     ); // 12 hours
+  }
+  forceCancelBooking(dto: ForceCancelBookingDto): Promise<LocationBookingResponseDto> {
+    throw new Error('Method not implemented.');
   }
   createBooking_ForBusinessLocation(
     dto: CreateBookingForBusinessLocationDto,
@@ -193,6 +197,9 @@ export class LocationBookingManagementService
   cancelBooking(dto: CancelBookingDto): Promise<LocationBookingResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const locationBookingRepository = LocationBookingRepository(em);
+      const locationBookingConfigRepository =
+        LocationBookingConfigRepository(em);
+
       const locationBooking = await locationBookingRepository
         .findOneOrFail({
           where: {
@@ -211,16 +218,31 @@ export class LocationBookingManagementService
 
       // refund booking amount to event creator if booking has been paid for
       if (locationBooking.status === LocationBookingStatus.PAYMENT_RECEIVED) {
+        const bookingConfig =
+          await locationBookingConfigRepository.findOneOrFail({
+            where: {
+              locationId: locationBooking.locationId,
+            },
+          });
+
+        const bookingStartDate = locationBooking.getStartDate()!;
+        const refundPercentage =
+          bookingConfig.getRefundPercentage(bookingStartDate);
+
+        const refundAmount = locationBooking.amountToPay * refundPercentage;
+
         const refundTransaction =
           await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
             {
               entityManager: em,
               destinationAccountId: dto.accountId,
-              amount: locationBooking.amountToPay,
+              amount: refundAmount,
               currency: SupportedCurrency.VND,
             },
           );
         locationBooking.refundTransactionId = refundTransaction.id;
+        locationBooking.refundedAmount = refundAmount;
+        locationBooking.refundedAt = dayjs().toDate();
       }
 
       locationBooking.status = LocationBookingStatus.CANCELLED;

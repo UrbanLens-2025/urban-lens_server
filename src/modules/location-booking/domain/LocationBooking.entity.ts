@@ -17,6 +17,7 @@ import { LocationBookingDateEntity } from '@/modules/location-booking/domain/Loc
 import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
 import { isNotBlank } from '@/common/utils/is-not-blank.util';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
+import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
 
 @Entity({ name: LocationBookingEntity.TABLE_NAME })
 export class LocationBookingEntity {
@@ -139,6 +140,65 @@ export class LocationBookingEntity {
     nullable: true,
   })
   cancellationReason?: string | null;
+
+  @Column({
+    name: 'refunded_amount',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  refundedAmount?: number | null;
+
+  @Column({
+    name: 'refunded_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  refundedAt?: Date | null;
+
+  @Column({
+    name: 'booking_config_snapshot',
+    type: 'jsonb',
+    nullable: true,
+  })
+  bookingConfigSnapshot?: LocationBookingConfigEntity | null;
+
+  @Column({
+    name: 'business_payout_transaction_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  businessPayoutTransactionId?: string | null;
+
+  @ManyToOne(
+    () => WalletTransactionEntity,
+    (walletTransaction) => walletTransaction.id,
+    {
+      createForeignKeyConstraints: false,
+      nullable: true,
+    },
+  )
+  @JoinColumn({ name: 'business_payout_transaction_id' })
+  businessPayoutTransaction?: WalletTransactionEntity | null;
+
+  @Column({
+    name: 'system_payout_transaction_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  systemPayoutTransactionId?: string | null;
+
+  @ManyToOne(
+    () => WalletTransactionEntity,
+    (walletTransaction) => walletTransaction.id,
+    {
+      createForeignKeyConstraints: false,
+      nullable: true,
+    },
+  )
+  @JoinColumn({ name: 'system_payout_transaction_id' })
+  systemPayoutTransaction?: WalletTransactionEntity | null;
   // domain functions
 
   getStartDate(): Date | null {
@@ -191,7 +251,6 @@ export class LocationBookingEntity {
     const cancellableStatuses = [
       LocationBookingStatus.APPROVED,
       LocationBookingStatus.AWAITING_BUSINESS_PROCESSING,
-      LocationBookingStatus.PAYMENT_RECEIVED,
     ];
 
     // check if booking date is in the past
@@ -204,11 +263,49 @@ export class LocationBookingEntity {
     return cancellableStatuses.includes(this.status) && !isPastBookingDate;
   }
 
+  public canBeForceCancelled(): boolean {
+    const cancellableStatuses = [
+      LocationBookingStatus.AWAITING_BUSINESS_PROCESSING,
+      LocationBookingStatus.APPROVED,
+    ];
+
+    // check if booking date is fully in the past
+    const bookingDates = this.dates;
+
+    return true;
+  }
+
   public isActive(): boolean {
     return (
       this.status === LocationBookingStatus.AWAITING_BUSINESS_PROCESSING ||
       this.status === LocationBookingStatus.APPROVED ||
       this.status === LocationBookingStatus.PAYMENT_RECEIVED
     );
+  }
+
+  /**
+   * Location booking dates must contain the event booking times
+   * @param dates
+   * @param eventStartDate
+   * @param eventEndDate
+   */
+  public static validateBookingTimes(
+    dates: { startDateTime: Date; endDateTime: Date }[],
+    eventStartDate?: Date | null,
+    eventEndDate?: Date | null,
+  ): boolean {
+    if (!eventStartDate || !eventEndDate) {
+      return true;
+    }
+
+    for (const date of dates) {
+      if (
+        date.startDateTime <= eventStartDate &&
+        date.endDateTime >= eventEndDate
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 }

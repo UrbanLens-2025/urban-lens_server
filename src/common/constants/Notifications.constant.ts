@@ -7,6 +7,9 @@ export enum NotificationTypes {
   LOCATION_REQUEST_REJECTED = 'LOCATION_REQUEST_REJECTED',
   LOCATION_REQUEST_NEEDS_MORE_INFO = 'LOCATION_REQUEST_NEEDS_MORE_INFO',
   WALLET_DEPOSIT_CONFIRMED = 'WALLET_DEPOSIT_CONFIRMED',
+  BOOKING_APPROVED = 'BOOKING_APPROVED',
+  BOOKING_REJECTED = 'BOOKING_REJECTED',
+  BOOKING_CANCELLED = 'BOOKING_CANCELLED',
 }
 
 export const NotificationsConstant: {
@@ -48,6 +51,24 @@ export const NotificationsConstant: {
     payload: {
       title: 'Deposit confirmed!',
       body: 'Your deposit of {amount} {currency} has been successfully added to your wallet.',
+    },
+  },
+  [NotificationTypes.BOOKING_APPROVED]: {
+    payload: {
+      title: 'Booking approved!',
+      body: 'Your booking for {locationName} has been approved.',
+    },
+  },
+  [NotificationTypes.BOOKING_REJECTED]: {
+    payload: {
+      title: 'Booking rejected',
+      body: 'Your booking for {locationName} has been rejected.',
+    },
+  },
+  [NotificationTypes.BOOKING_CANCELLED]: {
+    payload: {
+      title: 'Booking cancelled',
+      body: 'A booking for your location {locationName} has been cancelled.',
     },
   },
 };

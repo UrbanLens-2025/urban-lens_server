@@ -112,7 +112,10 @@ export class EventCreatorController {
     });
   }
 
-  @ApiOperation({ summary: 'Initiate payment for location booking' })
+  @ApiOperation({
+    summary: 'Initiate payment for location booking',
+    deprecated: true,
+  })
   @Post('/:eventId/location-bookings/:locationBookingId/payment')
   initiatePaymentForLocationBooking(
     @Param('eventId', ParseUUIDPipe) eventId: string,

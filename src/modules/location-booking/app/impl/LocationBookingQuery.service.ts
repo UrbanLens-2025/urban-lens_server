@@ -73,11 +73,13 @@ export class LocationBookingQueryService
 
     return locationBookingDateRepository
       .findBookedDatesByDateRange({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         locationId: dto.locationId,
         startDate: dto.startDate,
         endDate: dto.endDate,
-        statuses: [LocationBookingStatus.PAYMENT_RECEIVED],
+        statuses: [
+          LocationBookingStatus.AWAITING_BUSINESS_PROCESSING,
+          LocationBookingStatus.APPROVED,
+        ],
       })
       .then((results) => {
         const dates = results.map((result) => ({

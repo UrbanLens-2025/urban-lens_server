@@ -27,14 +27,13 @@ import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderM
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 import { IEventPayoutService } from '@/modules/event/app/IEventPayout.service';
+import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 
 @Injectable()
 export class EventManagementService
   extends CoreService
   implements IEventManagementService
 {
-  private readonly MILLIS_TO_EVENT_PAYOUT: number;
-
   constructor(
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
@@ -44,12 +43,8 @@ export class EventManagementService
     private readonly ticketOrderManagementService: ITicketOrderManagementService,
     @Inject(IEventPayoutService)
     private readonly eventPayoutService: IEventPayoutService,
-    private readonly configService: ConfigService<Environment>,
   ) {
     super();
-    this.MILLIS_TO_EVENT_PAYOUT = this.configService.getOrThrow<number>(
-      'MILLIS_TO_EVENT_PAYOUT',
-    );
   }
 
   createEvent(dto: CreateEventDto): Promise<EventResponseDto> {
@@ -118,14 +113,26 @@ export class EventManagementService
         );
       }
 
+      // published can only update description and images, exclude other fields
+      if (event.status === EventStatus.PUBLISHED) {
+        dto.displayName = undefined;
+        dto.startDate = undefined;
+        dto.endDate = undefined;
+        dto.eventValidationDocuments = undefined;
+        dto.expectedNumberOfParticipants = undefined;
+      }
+
       // Confirm uploads for image URLs and validation documents
-      const filesToConfirm = [
-        dto.avatarUrl,
-        dto.coverUrl,
-        ...(dto.eventValidationDocuments?.flatMap((i) => i.documentImageUrls) ??
-          []),
-      ];
-      await this.fileStorageService.confirmUpload(filesToConfirm, em);
+      await this.fileStorageService.confirmUpload(
+        [
+          dto.avatarUrl,
+          dto.coverUrl,
+          ...(dto.eventValidationDocuments?.flatMap(
+            (i) => i.documentImageUrls,
+          ) ?? []),
+        ],
+        em,
+      );
 
       const updatedEvent = this.mapTo_safe(EventEntity, dto);
       if (dto.eventValidationDocuments) {
@@ -140,14 +147,19 @@ export class EventManagementService
     return this.ensureTransaction(null, async (em) => {
       const eventRepository = EventRepository(em);
 
-      const event = await eventRepository.findOneByOrFail({
-        id: dto.eventId,
-        createdById: dto.accountId,
+      const event = await eventRepository.findOneOrFail({
+        where: {
+          id: dto.eventId,
+          createdById: dto.accountId,
+        },
+        relations: {
+          tickets: true,
+        },
       });
 
       if (!event.canBePublished()) {
         throw new BadRequestException(
-          'Event is missing required information to be published. Requires: Location, Display Name, Start Date, End Date.',
+          'Event is missing required information to be published. Requires: Location, Display Name, Start Date, End Date, Tickets.',
         );
       }
 
@@ -264,6 +276,22 @@ export class EventManagementService
 
           return res;
         });
+
+      // validate location booking times to have to contain the event booking times
+      if (
+        !LocationBookingEntity.validateBookingTimes(
+          dto.dates.map((i) => ({
+            startDateTime: i.startDateTime,
+            endDateTime: i.endDateTime,
+          })),
+          event.startDate,
+          event.endDate,
+        )
+      ) {
+        throw new BadRequestException(
+          'Location booking times must contain the event booking times.',
+        );
+      }
 
       const locationBookings = await locationBookingRepo.find({
         where: {
