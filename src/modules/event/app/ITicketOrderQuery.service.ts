@@ -37,6 +37,7 @@ export namespace ITicketOrderQueryService_QueryConfig {
       relations: {
         orderDetails: true,
         event: true,
+        eventAttendances: true,
       },
     };
   }
