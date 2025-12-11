@@ -2,6 +2,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -27,6 +28,8 @@ import {
   IEventAttendanceQueryService,
   IEventAttendanceQueryService_QueryConfig,
 } from '@/modules/event/app/IEventAttendanceQuery.service';
+import { RefundTicketDto } from '@/common/dto/event/RefundTicket.dto';
+import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
 
 @ApiTags('Event')
 @ApiBearerAuth()
@@ -40,6 +43,8 @@ export class EventUserController {
     private readonly ticketOrderQueryService: ITicketOrderQueryService,
     @Inject(IEventAttendanceQueryService)
     private readonly eventAttendanceQueryService: IEventAttendanceQueryService,
+    @Inject(IEventAttendanceManagementService)
+    private readonly eventAttendanceManagementService: IEventAttendanceManagementService,
   ) {}
 
   @ApiOperation({ summary: 'Create ticket order for an event' })
@@ -93,6 +98,18 @@ export class EventUserController {
     return this.eventAttendanceQueryService.searchMyEventAttendance({
       accountId: userDto.sub,
       query,
+    });
+  }
+
+  @ApiOperation({ summary: 'Refund an event attendance' })
+  @Delete('/attendance/refund')
+  refundEventAttendance(
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: RefundTicketDto,
+  ) {
+    return this.eventAttendanceManagementService.refundTicket({
+      ...dto,
+      accountId: userDto.sub,
     });
   }
 }

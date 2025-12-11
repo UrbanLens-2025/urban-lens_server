@@ -44,12 +44,14 @@ export class TicketOrderManagementService
         eventTicketRepository = EventTicketRepository(em),
         ticketOrderRepository = TicketOrderRepository(em);
 
+      // get event in question
       const event = await eventRepository
         .findOneOrFail({
           where: {
             id: dto.eventId,
           },
         })
+        // can only order tickets for a published event
         .then((res) => {
           if (!res.isPublished()) {
             throw new BadRequestException(
@@ -60,6 +62,7 @@ export class TicketOrderManagementService
           return res;
         });
 
+      // get event tickets in question
       const eventTickets = await eventTicketRepository
         .find({
           where: {
@@ -68,6 +71,7 @@ export class TicketOrderManagementService
           },
         })
         .then((res) => {
+          // validate that all tickets exist and are for the event
           if (res.length !== dto.items.length) {
             throw new BadRequestException(
               'One or more tickets are invalid or do not exist.',
@@ -76,18 +80,20 @@ export class TicketOrderManagementService
           return res;
         });
 
-      // validate ticket
+      // validate tickets: must be purchasable now and within quantity limits
       const errors: string[] = [];
       for (const item of dto.items) {
         const ticket = eventTickets.find((t) => t.id === item.ticketId);
         if (!ticket) continue;
 
+        // check ticket purchase eligibility
         if (!ticket.canBePurchasedNow()) {
           errors.push(
             `Ticket ${ticket.displayName} cannot be purchased at this time.`,
           );
         }
 
+        // validate quantity limits
         if (
           item.quantity > ticket.maxQuantityPerOrder ||
           item.quantity < ticket.minQuantityPerOrder
@@ -97,17 +103,19 @@ export class TicketOrderManagementService
           );
         }
 
+        // validate quantity available
         if (ticket.totalQuantityAvailable < item.quantity) {
           errors.push(
             `Not enough tickets available for ${ticket.displayName}. Requested: ${item.quantity}, Available: ${ticket.totalQuantityAvailable}`,
           );
         }
       }
+
       if (errors.length > 0) {
         throw new BadRequestException(errors);
       }
 
-      // create order
+      // create order and order details
       const orderDetails = eventTickets.map((ticket) => {
         const currentTicket = dto.items.find(
           (item) => item.ticketId === ticket.id,
@@ -135,6 +143,7 @@ export class TicketOrderManagementService
       order.currency = SupportedCurrency.VND;
       order.orderDetails = orderDetails;
 
+      // deduct money from account
       const walletTransaction =
         await this.walletTransactionCoordinatorService.coordinateTransferToEscrow(
           {
@@ -164,7 +173,7 @@ export class TicketOrderManagementService
           .save(order)
           // reserve ticket quantity
           .then(async (res) => {
-            await eventTicketRepository.reserveTickets({
+            await eventTicketRepository.markTicketOrdered({
               items: dto.items,
             });
             return res;
@@ -235,30 +244,6 @@ export class TicketOrderManagementService
       }
 
       return this.mapToArray(TicketOrderResponseDto, refunds);
-    });
-  }
-
-  refundOrder(dto: RefundOrderDto): Promise<TicketOrderResponseDto> {
-    return this.ensureTransaction(null, async (em) => {
-      const ticketOrderRepo = TicketOrderRepository(em);
-      const ticketOrder = await ticketOrderRepo.findOneOrFail({
-        where: {
-          id: dto.orderId,
-          createdById: dto.accountId,
-        },
-        relations: {
-          eventAttendances: true,
-        },
-      });
-
-      // can only refund if order is paid
-      if (!ticketOrder.canBeRefunded()) {
-        throw new BadRequestException('Order cannot be refunded.');
-      }
-
-      // todo continue
-
-      return this.mapTo(TicketOrderResponseDto, ticketOrder);
     });
   }
 }

@@ -8,7 +8,7 @@ export const EventTicketRepository = (ctx: DataSource | EntityManager) =>
      * Reserve tickets atomically: decrease available, increase reserved
      * Validates availability before updating
      */
-    async reserveTickets(
+    async markTicketOrdered(
       this: Repository<EventTicketEntity>,
       payload: {
         items: {
@@ -67,80 +67,55 @@ export const EventTicketRepository = (ctx: DataSource | EntityManager) =>
       });
     },
 
-    /**
-     * Release reserved tickets: decrease reserved, increase available
-     * Used when order is cancelled or payment fails
-     */
-    async releaseTickets(
+    async refundTickets(
       this: Repository<EventTicketEntity>,
       payload: {
         items: {
           ticketId: string;
-          quantity: number;
+          quantityRefunded: number;
         }[];
       },
-    ): Promise<EventTicketEntity[]> {
+    ) {
       const ticketIds = payload.items.map((item) => item.ticketId);
-
-      // Atomically update all tickets
-      const updatePromises = payload.items.map((item) =>
-        this.createQueryBuilder()
-          .update(EventTicketEntity)
-          .set({
-            quantityReserved: () => `"quantity_reserved" - :quantity`,
-            totalQuantityAvailable: () =>
-              `"total_quantity_available" + :quantity`,
-          })
-          .setParameter('quantity', item.quantity)
-          .where('id = :ticketId', { ticketId: item.ticketId })
-          .andWhere('"quantity_reserved" >= :quantity', {
-            quantity: item.quantity,
-          })
-          .execute(),
-      );
-
-      await Promise.all(updatePromises);
-
-      // Return updated tickets
-      return this.find({
+      const tickets = await this.find({
         where: { id: In(ticketIds) },
       });
-    },
 
-    /**
-     * Confirm tickets (payment received): decrease reserved, decrease total
-     * Finalizes the sale
-     */
-    async confirmTickets(
-      this: Repository<EventTicketEntity>,
-      payload: {
-        items: {
-          ticketId: string;
-          quantity: number;
-        }[];
-      },
-    ): Promise<EventTicketEntity[]> {
-      const ticketIds = payload.items.map((item) => item.ticketId);
+      if (tickets.length !== ticketIds.length) {
+        throw new BadRequestException('One or more tickets not found');
+      }
 
-      // Atomically update all tickets
+      const errors: string[] = [];
+      for (const item of payload.items) {
+        const ticket = tickets.find((t) => t.id === item.ticketId);
+        if (!ticket) continue;
+
+        if (ticket.quantityReserved < item.quantityRefunded) {
+          errors.push(
+            `Insufficient tickets reserved for ${ticket.displayName}. Requested: ${item.quantityRefunded}, Reserved: ${ticket.quantityReserved}`,
+          );
+        }
+      }
+
+      if (errors.length > 0) {
+        throw new BadRequestException(errors);
+      }
+
       const updatePromises = payload.items.map((item) =>
         this.createQueryBuilder()
           .update(EventTicketEntity)
           .set({
-            quantityReserved: () => `"quantity_reserved" - :quantity`,
-            totalQuantity: () => `"total_quantity" - :quantity`,
+            totalQuantityAvailable: () =>
+              `"total_quantity_available" + :quantityRefunded`,
+            quantityReserved: () => `"quantity_reserved" - :quantityRefunded`,
           })
-          .setParameter('quantity', item.quantity)
+          .setParameter('quantityRefunded', item.quantityRefunded)
           .where('id = :ticketId', { ticketId: item.ticketId })
-          .andWhere('"quantity_reserved" >= :quantity', {
-            quantity: item.quantity,
-          })
           .execute(),
       );
 
       await Promise.all(updatePromises);
 
-      // Return updated tickets
       return this.find({
         where: { id: In(ticketIds) },
       });

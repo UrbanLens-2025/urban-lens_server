@@ -9,6 +9,7 @@ import { SearchEventAttendanceDto } from '@/common/dto/event/SearchEventAttendan
 import { paginate, Paginated } from 'nestjs-paginate';
 import { EventAttendanceRepository } from '@/modules/event/infra/repository/EventAttendance.repository';
 import { SearchMyEventAttendanceDto } from '@/common/dto/event/SearchMyEventAttendance.dto';
+import { RefundTicketDto } from '@/common/dto/event/RefundTicket.dto';
 
 @Injectable()
 export class EventAttendanceQueryService
