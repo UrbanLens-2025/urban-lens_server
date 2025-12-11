@@ -1,105 +1,38 @@
+import { SummaryResponseDto } from '@/common/dto/dashboard/Summary.response.dto';
+import { GetSummaryQueryDto } from '@/common/dto/dashboard/GetSummary.query.dto';
 import {
-  PaginationParams,
-  PaginationResult,
-} from '@/common/services/base.service';
+  RevenueDataByDayDto,
+  RevenueDataByMonthDto,
+  RevenueDataByYearDto,
+  UserDataByDayDto,
+  UserDataByMonthDto,
+  UserDataByYearDto,
+} from '@/common/dto/dashboard/Analytics.response.dto';
+import { GetAnalyticsQueryDto } from '@/common/dto/dashboard/GetAnalytics.query.dto';
 
 export const IDashboardService = Symbol('IDashboardService');
 
 export interface IDashboardService {
   /**
-   * Get dashboard statistics overview
+   * Get summary cards for dashboard
    */
-  getOverview(): Promise<DashboardOverviewDto>;
+  getSummary(query: GetSummaryQueryDto): Promise<SummaryResponseDto>;
 
   /**
-   * Get user statistics
+   * Get analytics data for dashboard charts
+   * Returns array based on filter: day -> RevenueDataByDayDto[], month -> RevenueDataByMonthDto[], year -> RevenueDataByYearDto[]
    */
-  getUserStats(
-    params: PaginationParams,
-  ): Promise<PaginationResult<UserStatsDto>>;
+  getAnalytics(
+    query: GetAnalyticsQueryDto,
+  ): Promise<
+    RevenueDataByDayDto[] | RevenueDataByMonthDto[] | RevenueDataByYearDto[]
+  >;
 
   /**
-   * Get post statistics
+   * Get user analytics data for dashboard charts
+   * Returns array based on filter: day -> UserDataByDayDto[], month -> UserDataByMonthDto[], year -> UserDataByYearDto[]
    */
-  getPostStats(
-    params: PaginationParams,
-  ): Promise<PaginationResult<PostStatsDto>>;
-
-  /**
-   * Get location statistics
-   */
-  getLocationStats(
-    params: PaginationParams,
-  ): Promise<PaginationResult<LocationStatsDto>>;
-
-  /**
-   * Get event statistics
-   */
-  getEventStats(
-    params: PaginationParams,
-  ): Promise<PaginationResult<EventStatsDto>>;
-}
-
-export interface DashboardOverviewDto {
-  totalUsers: number;
-  totalPosts: number;
-  totalLocations: number;
-  totalEvents: number;
-  totalCheckIns: number;
-  totalReactions: number;
-  totalComments: number;
-  activeUsersLast7Days: number;
-  activeUsersLast30Days: number;
-  newUsersLast7Days: number;
-  newUsersLast30Days: number;
-}
-
-export interface UserStatsDto {
-  userId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  hasOnboarded: boolean;
-  isLocked: boolean;
-  totalPosts: number;
-  totalCheckIns: number;
-  totalFollowers: number;
-  totalFollowing: number;
-  createdAt: Date;
-}
-
-export interface PostStatsDto {
-  postId: string;
-  authorId: string;
-  authorName: string;
-  type: string;
-  totalUpvotes: number;
-  totalDownvotes: number;
-  totalComments: number;
-  isVerified: boolean;
-  isHidden: boolean;
-  createdAt: Date;
-}
-
-export interface LocationStatsDto {
-  locationId: string;
-  name: string;
-  addressLine: string;
-  totalCheckIns: number;
-  totalPosts: number;
-  averageRating: number;
-  isVisibleOnMap: boolean;
-  createdAt: Date;
-}
-
-export interface EventStatsDto {
-  eventId: string;
-  displayName: string;
-  status: string;
-  startDate: Date | null;
-  endDate: Date | null;
-  totalTickets: number;
-  soldTickets: number;
-  createdAt: Date;
+  getUserAnalytics(
+    query: GetAnalyticsQueryDto,
+  ): Promise<UserDataByDayDto[] | UserDataByMonthDto[] | UserDataByYearDto[]>;
 }
