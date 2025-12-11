@@ -223,7 +223,7 @@ export class DashboardService extends CoreService implements IDashboardService {
 
     // Users card
     const usersCard: SummaryCardDto = {
-      title: 'Người dùng',
+      title: 'Users',
       value: currentUsersCount,
     };
     if (!hasDateFilter) {
@@ -236,8 +236,8 @@ export class DashboardService extends CoreService implements IDashboardService {
       usersCard.trend = usersDelta >= 0 ? 'up' : 'down';
       usersCard.description =
         usersDelta >= 0
-          ? 'Tăng so với 7 ngày trước'
-          : 'Giảm so với 7 ngày trước';
+          ? 'Increased compared to 7 days ago'
+          : 'Decreased compared to 7 days ago';
     }
     summaryCards.push(usersCard);
 
@@ -257,7 +257,7 @@ export class DashboardService extends CoreService implements IDashboardService {
       );
       locationsCard.delta = Math.abs(locationsDelta);
       locationsCard.trend = locationsDelta >= 0 ? 'up' : 'down';
-      locationsCard.description = 'Điểm đang hiển thị';
+      locationsCard.description = 'Locations currently displayed';
     }
     summaryCards.push(locationsCard);
 
@@ -277,13 +277,13 @@ export class DashboardService extends CoreService implements IDashboardService {
       );
       eventsCard.delta = Math.abs(eventsDelta);
       eventsCard.trend = eventsDelta >= 0 ? 'up' : 'down';
-      eventsCard.description = 'Sự kiện sắp diễn ra';
+      eventsCard.description = 'Upcoming events';
     }
     summaryCards.push(eventsCard);
 
     // Wallet balance card
     const walletCard: SummaryCardDto = {
-      title: 'Tổng số dư ví',
+      title: 'Total Wallet Balance',
       value: Math.round(totalWalletBalance),
     };
     if (!hasDateFilter) {
@@ -316,15 +316,29 @@ export class DashboardService extends CoreService implements IDashboardService {
     const now = new Date();
     const filterType = query.filter || 'day'; // Default to 'day' if not specified
 
-    // Helper function to format month as T1, T2, ..., T12
+    // Helper function to format month as Jan, Feb, ..., Dec
     const formatMonth = (month: number): string => {
-      return `T${month}`;
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return months[month - 1] || 'Jan';
     };
 
-    // Helper function to format day of week as T2, T3, ..., CN
+    // Helper function to format day of week as Mon, Tue, ..., Sun
     const formatDayOfWeek = (dayOfWeek: number): string => {
-      const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-      return days[dayOfWeek] || 'CN';
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      return days[dayOfWeek] || 'Sun';
     };
 
     // 1. Revenue by day (last 7 days) - only if filter is 'day' or not specified
@@ -362,7 +376,7 @@ export class DashboardService extends CoreService implements IDashboardService {
         });
       });
 
-      // Ensure all 7 days are present (0=CN, 1=T2, 2=T3, 3=T4, 4=T5, 5=T6, 6=T7)
+      // Ensure all 7 days are present (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat)
       const allDays: RevenueDataByDayDto[] = [];
       for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
         if (dayMap.has(dayOfWeek)) {
@@ -464,15 +478,29 @@ export class DashboardService extends CoreService implements IDashboardService {
     const now = new Date();
     const filterType = query.filter || 'day'; // Default to 'day' if not specified
 
-    // Helper function to format month as T1, T2, ..., T12
+    // Helper function to format month as Jan, Feb, ..., Dec
     const formatMonth = (month: number): string => {
-      return `T${month}`;
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return months[month - 1] || 'Jan';
     };
 
-    // Helper function to format day of week as T2, T3, ..., CN
+    // Helper function to format day of week as Mon, Tue, ..., Sun
     const formatDayOfWeek = (dayOfWeek: number): string => {
-      const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-      return days[dayOfWeek] || 'CN';
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      return days[dayOfWeek] || 'Sun';
     };
 
     if (filterType === 'day') {
@@ -501,7 +529,7 @@ export class DashboardService extends CoreService implements IDashboardService {
         });
       });
 
-      // Ensure all 7 days are present (0=CN, 1=T2, 2=T3, 3=T4, 4=T5, 5=T6, 6=T7)
+      // Ensure all 7 days are present (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat)
       const allDays: UserDataByDayDto[] = [];
       for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
         if (dayMap.has(dayOfWeek)) {

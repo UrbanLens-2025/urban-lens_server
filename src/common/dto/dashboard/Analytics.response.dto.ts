@@ -2,8 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class RevenueDataByDayDto {
   @ApiProperty({
-    example: 'T2',
-    description: 'Day of week (T2=Monday, T3=Tuesday, ..., CN=Sunday)',
+    example: 'Mon',
+    description: 'Day of week (Mon=Monday, Tue=Tuesday, ..., Sun=Sunday)',
   })
   day: string;
 
@@ -16,8 +16,8 @@ export class RevenueDataByDayDto {
 
 export class RevenueDataByMonthDto {
   @ApiProperty({
-    example: 'T1',
-    description: 'Month (T1=January, T2=February, ..., T12=December)',
+    example: 'Jan',
+    description: 'Month (Jan=January, Feb=February, ..., Dec=December)',
   })
   month: string;
 
@@ -41,8 +41,8 @@ export class RevenueDataByYearDto {
 
 export class UserDataByDayDto {
   @ApiProperty({
-    example: 'T2',
-    description: 'Day of week (T2=Monday, T3=Tuesday, ..., CN=Sunday)',
+    example: 'Mon',
+    description: 'Day of week (Mon=Monday, Tue=Tuesday, ..., Sun=Sunday)',
   })
   day: string;
 
@@ -52,8 +52,8 @@ export class UserDataByDayDto {
 
 export class UserDataByMonthDto {
   @ApiProperty({
-    example: 'T1',
-    description: 'Month (T1=January, T2=February, ..., T12=December)',
+    example: 'Jan',
+    description: 'Month (Jan=January, Feb=February, ..., Dec=December)',
   })
   month: string;
 
