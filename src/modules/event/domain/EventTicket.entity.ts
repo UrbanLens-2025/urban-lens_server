@@ -97,16 +97,16 @@ export class EventTicketEntity {
     type: 'numeric',
     precision: 3,
     scale: 2,
-    nullable: true,
+    default: 1,
   })
-  refundPercentageBeforeCutoff?: number | null;
+  refundPercentageBeforeCutoff: number;
 
   @Column({
     name: 'refund_cutoff_hours_after_payment',
     type: 'int',
-    nullable: true,
+    default: 12,
   })
-  refundCutoffHoursAfterPayment?: number | null;
+  refundCutoffHoursAfterPayment: number;
 
   //#endregion
 
