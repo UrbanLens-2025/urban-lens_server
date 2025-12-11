@@ -6,18 +6,18 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend as : Create deposit screen
-    participant WalletPrivateController as : WalletPrivateController
-    participant WalletExternalTransactionManagementService as : WalletExternalTransactionManagementService
-    participant WalletRepository as : WalletRepository
-    participant WalletExternalTransactionRepository as : WalletExternalTransactionRepository
-    participant WalletExternalTransactionTimelineRepository as : WalletExternalTransactionTimelineRepository
-    participant PaymentGatewayPort as : PaymentGatewayPort
+    participant DepositScreen as :DepositScreen
+    participant WalletPrivateController as :WalletPrivateController
+    participant WalletExternalTransactionManagementService as :WalletExternalTransactionManagementService
+    participant WalletRepository as :WalletRepository
+    participant WalletExternalTransactionRepository as :WalletExternalTransactionRepository
+    participant WalletExternalTransactionTimelineRepository as :WalletExternalTransactionTimelineRepository
+    participant PaymentGatewayPort as :PaymentGatewayPort
     participant Database
 
-    User->>Frontend: 1. Submit deposit transaction form
-    activate Frontend
-    Frontend->>WalletPrivateController: 2. POST /external/deposit
+    User->>DepositScreen: 1. Submit deposit transaction form
+    activate DepositScreen
+    DepositScreen->>WalletPrivateController: 2. POST /external/deposit
     activate WalletPrivateController
     WalletPrivateController->>WalletExternalTransactionManagementService: 3. createDepositTransaction()
     activate WalletExternalTransactionManagementService
@@ -40,8 +40,8 @@ sequenceDiagram
     WalletExternalTransactionManagementService->>WalletExternalTransactionManagementService: 12. Validate pending transaction count
     alt Pending count exceeds maximum
         WalletExternalTransactionManagementService-->>WalletPrivateController: 13. Return error message
-        WalletPrivateController-->>Frontend: 14. Return error response
-        Frontend-->>User: 15. Show error message
+        WalletPrivateController-->>DepositScreen: 14. Return error response
+        DepositScreen-->>User: 15. Show error message
     else Pending count within limit
         WalletExternalTransactionManagementService->>WalletExternalTransactionRepository: 16. save()
         activate WalletExternalTransactionRepository
@@ -65,10 +65,9 @@ sequenceDiagram
         deactivate PaymentGatewayPort
         WalletExternalTransactionManagementService-->>WalletPrivateController: 26. Return success response
         deactivate WalletExternalTransactionManagementService
-        WalletPrivateController-->>Frontend: 27. Return success response
+        WalletPrivateController-->>DepositScreen: 27. Return success response
         deactivate WalletPrivateController
-        Frontend-->>User: 28. Show success message
-        deactivate Frontend
+        DepositScreen-->>User: 28. Show success message
+        deactivate DepositScreen
     end
 ```
-

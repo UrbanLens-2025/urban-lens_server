@@ -6,16 +6,16 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend as : Confirm Ticket Usage Screen
+    participant EventAttendanceScreen as :EventAttendanceScreen
     participant EventCreatorController as :EventCreatorController
     participant EventAttendanceManagementService as :EventAttendanceManagementService
     participant EventRepository as :EventRepository
     participant EventAttendanceRepository as :EventAttendanceRepository
     participant Database
 
-    User->>Frontend: 1. Submit confirm ticket usage form
-    activate Frontend
-    Frontend->>EventCreatorController: 2. POST /creator/events/:eventId/attendance/confirm-usage
+    User->>EventAttendanceScreen: 1. Submit confirm ticket usage form
+    activate EventAttendanceScreen
+    EventAttendanceScreen->>EventCreatorController: 2. POST /creator/events/:eventId/attendance/confirm-usage
     activate EventCreatorController
     EventCreatorController->>EventAttendanceManagementService: 3. confirmTicketUsage()
     activate EventAttendanceManagementService
@@ -38,14 +38,14 @@ sequenceDiagram
     EventAttendanceManagementService->>EventAttendanceManagementService: 12. Validate event can check in
     alt Event cannot check in
         EventAttendanceManagementService-->>EventCreatorController: 13. Return error message
-        EventCreatorController-->>Frontend: 14. Return error response
-        Frontend-->>User: 15. Show error message
+        EventCreatorController-->>EventAttendanceScreen: 14. Return error response
+        EventAttendanceScreen-->>User: 15. Show error message
     else Event can check in
         EventAttendanceManagementService->>EventAttendanceManagementService: 16. Validate user's ticket can check in
         alt User's ticket cannot check in
             EventAttendanceManagementService-->>EventCreatorController: 17. Return error message
-            EventCreatorController-->>Frontend: 18. Return error response
-            Frontend-->>User: 19. Show error message
+            EventCreatorController-->>EventAttendanceScreen: 18. Return error response
+            EventAttendanceScreen-->>User: 19. Show error message
         else User's ticket can check in
             EventAttendanceManagementService->>EventAttendanceRepository: 20. save()
             activate EventAttendanceRepository
@@ -57,10 +57,10 @@ sequenceDiagram
             deactivate EventAttendanceRepository
             EventAttendanceManagementService-->>EventCreatorController: 24. Return success response
             deactivate EventAttendanceManagementService
-            EventCreatorController-->>Frontend: 25. Return success response
+            EventCreatorController-->>EventAttendanceScreen: 25. Return success response
             deactivate EventCreatorController
-            Frontend-->>User: 26. Show success message
-            deactivate Frontend
+            EventAttendanceScreen-->>User: 26. Show success message
+            deactivate EventAttendanceScreen
         end
     end
 ```

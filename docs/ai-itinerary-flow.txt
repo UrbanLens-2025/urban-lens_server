@@ -1,0 +1,52 @@
+FLOW TẠO ITINERARY BẰNG AI
+============================
+
+SERVER GỬI CHO AI
+-----------------
+1. System Prompt:
+   - Role: HCMC travel agent
+   - Hướng dẫn 2 bước: gọi tool → return response
+   - Format response: REASONING, TIPS, LOCATION_IDS, ACTIVITIES
+
+2. Initial Prompt:
+   - Plan X locs, Y km radius
+   - Start: lat, lng
+   - Pref: top tag preference (hoặc "none")
+   - Force gọi tool query_nearby_locations đầu tiên
+
+3. Tool Results (sau khi AI gọi tool):
+   - JSON array với locations: {id, n: name, d: distance}
+   - UUID list để AI copy
+   - Format response mong muốn
+
+FLOW
+----
+1. Controller nhận request → JourneyPlannerService
+2. Fetch user profile, start/end locations
+3. Tìm candidate locations gần điểm bắt đầu (5-20km)
+4. Gọi AI agent (OllamaService)
+   - Iteration 1: AI gọi tool query_nearby_locations
+   - Iteration 2: AI return suggestedLocationIds, reasoning, tips
+5. Merge locations (AI + wishlist + start/end)
+6. Tối ưu route: Greedy Nearest Neighbor
+7. Build response với metrics và AI insights
+
+AI TOOLS
+--------
+- query_nearby_locations: Query locations trong bán kính
+- query_locations_by_tags: Query locations theo tags
+
+SO SÁNH
+-------
+AI: AI chọn locations, có reasoning/tips, chậm hơn
+Algorithm: Score và rank, không có insights, nhanh hơn
+
+TỐI ƯU
+-------
+- Parallel fetching
+- Batch API calls
+- Haversine → Google Maps
+
+CONFIG
+------
+OLLAMA_ENABLED, OLLAMA_HOST, OLLAMA_MODEL, GOOGLE_MAPS_API_KEY

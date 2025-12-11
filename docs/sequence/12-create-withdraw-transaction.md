@@ -15,9 +15,9 @@ sequenceDiagram
     participant WalletExternalTransactionTimelineRepository as : WalletExternalTransactionTimelineRepository
     participant Database
 
-    User->>Frontend: 1. Submit withdraw transaction form
-    activate Frontend
-    Frontend->>WalletPrivateController: 2. POST /private/wallet/external/withdraw
+    User->>WithdrawScreen: 1. Submit withdraw transaction form
+    activate WithdrawScreen
+    WithdrawScreen->>WalletPrivateController: 2. POST /private/wallet/external/withdraw
     activate WalletPrivateController
     WalletPrivateController->>WalletExternalTransactionManagementService: 3. createWithdrawTransaction()
     activate WalletExternalTransactionManagementService
@@ -32,8 +32,8 @@ sequenceDiagram
     WalletExternalTransactionManagementService->>WalletExternalTransactionManagementService: 8. Validate wallet balance sufficient
     alt Insufficient balance
         WalletExternalTransactionManagementService-->>WalletPrivateController: 9. Return error message
-        WalletPrivateController-->>Frontend: 10. Return error response
-        Frontend-->>User: 11. Show error message
+        WalletPrivateController-->>WithdrawScreen: 10. Return error response
+        WithdrawScreen-->>User: 11. Show error message
     else Balance sufficient
         WalletExternalTransactionManagementService->>WalletExternalTransactionRepository: 16. save()
         activate WalletExternalTransactionRepository
@@ -74,10 +74,9 @@ sequenceDiagram
         deactivate WalletExternalTransactionTimelineRepository
         WalletExternalTransactionManagementService-->>WalletPrivateController: 37. Return success response
         deactivate WalletExternalTransactionManagementService
-        WalletPrivateController-->>Frontend: 38. Return success response
+        WalletPrivateController-->>WithdrawScreen: 38. Return success response
         deactivate WalletPrivateController
-        Frontend-->>User: 39. Show success message
-        deactivate Frontend
+        WithdrawScreen-->>User: 39. Show success message
+        deactivate WithdrawScreen
     end
 ```
-

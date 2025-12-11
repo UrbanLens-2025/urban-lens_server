@@ -51,4 +51,3 @@ sequenceDiagram
     Frontend-->>User: 28. Show success message
     deactivate Frontend
 ```
-
