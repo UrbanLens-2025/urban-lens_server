@@ -1,411 +1,581 @@
 import { Injectable } from '@nestjs/common';
 import { IDashboardService } from '../IDashboard.service';
-import {
-  DashboardOverviewDto,
-  UserStatsDto,
-  PostStatsDto,
-  LocationStatsDto,
-  EventStatsDto,
-} from '../IDashboard.service';
 import { CoreService } from '@/common/core/Core.service';
-import {
-  PaginationParams,
-  PaginationResult,
-} from '@/common/services/base.service';
 import { AccountRepository } from '@/modules/account/infra/repository/Account.repository';
-import { PostRepository } from '@/modules/post/infra/repository/Post.repository';
 import { LocationRepository } from '@/modules/business/infra/repository/Location.repository';
-import { CheckInRepository } from '@/modules/business/infra/repository/CheckIn.repository';
-import { ReactRepository } from '@/modules/post/infra/repository/React.repository';
-import { CommentRepository } from '@/modules/post/infra/repository/Comment.repository';
-import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
-import { UserProfileRepository } from '@/modules/account/infra/repository/UserProfile.repository';
-import { AccountEntity } from '@/modules/account/domain/Account.entity';
-import { PostEntity } from '@/modules/post/domain/Post.entity';
-import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
-import { CheckInEntity } from '@/modules/business/domain/CheckIn.entity';
-import { ReactEntity } from '@/modules/post/domain/React.entity';
-import { CommentEntity } from '@/modules/post/domain/Comment.entity';
-import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
+import {
+  SummaryResponseDto,
+  SummaryCardDto,
+} from '@/common/dto/dashboard/Summary.response.dto';
+import { GetSummaryQueryDto } from '@/common/dto/dashboard/GetSummary.query.dto';
+import { WalletEntity } from '@/modules/wallet/domain/Wallet.entity';
+import { WalletType } from '@/common/constants/WalletType.constant';
+import { EventStatus } from '@/common/constants/EventStatus.constant';
+import {
+  RevenueDataByDayDto,
+  RevenueDataByMonthDto,
+  RevenueDataByYearDto,
+  UserDataByDayDto,
+  UserDataByMonthDto,
+  UserDataByYearDto,
+} from '@/common/dto/dashboard/Analytics.response.dto';
+import { WalletExternalTransactionEntity } from '@/modules/wallet/domain/WalletExternalTransaction.entity';
+import { WalletExternalTransactionDirection } from '@/common/constants/WalletExternalTransactionDirection.constant';
+import { WalletExternalTransactionStatus } from '@/common/constants/WalletExternalTransactionStatus.constant';
+import { GetAnalyticsQueryDto } from '@/common/dto/dashboard/GetAnalytics.query.dto';
 
 @Injectable()
 export class DashboardService extends CoreService implements IDashboardService {
   constructor(
     private readonly accountRepository: AccountRepository,
-    private readonly postRepository: PostRepository,
     private readonly locationRepository: LocationRepository,
-    private readonly checkInRepository: CheckInRepository,
-    private readonly reactRepository: ReactRepository,
-    private readonly commentRepository: CommentRepository,
-    private readonly userProfileRepository: UserProfileRepository,
   ) {
     super();
   }
 
-  async getOverview(): Promise<DashboardOverviewDto> {
+  async getSummary(query: GetSummaryQueryDto): Promise<SummaryResponseDto> {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    // Get all counts in parallel
+    // Parse dates from query or use defaults
+    // Format: YYYY-MM-DD
+    let startDate: Date | null = null;
+    let endDate: Date = now;
+    let comparisonEndDate: Date = sevenDaysAgo;
+
+    if (query.startDate) {
+      // Parse YYYY-MM-DD format and set to start of day (00:00:00)
+      const [year, month, day] = query.startDate.split('-').map(Number);
+      startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    }
+    if (query.endDate) {
+      // Parse YYYY-MM-DD format and set to end of day (23:59:59.999)
+      const [year, month, day] = query.endDate.split('-').map(Number);
+      endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+    }
+
+    // Calculate comparison end date (7 days before endDate)
+    comparisonEndDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const comparisonStartDate = startDate
+      ? new Date(
+          comparisonEndDate.getTime() -
+            (endDate.getTime() - startDate.getTime()),
+        )
+      : null;
+
+    const walletRepo = this.dataSource.getRepository(WalletEntity);
+
+    // Get all metrics in parallel
     const [
-      totalUsers,
-      totalPosts,
-      totalLocations,
-      totalEvents,
-      totalCheckIns,
-      totalReactions,
-      totalComments,
-      newUsersLast7Days,
-      newUsersLast30Days,
-      activeUsersLast7Days,
-      activeUsersLast30Days,
+      currentUsersCount,
+      previousUsersCount,
+      currentLocationsCount,
+      previousLocationsCount,
+      currentEventsCount,
+      previousEventsCount,
+      totalWalletBalance,
     ] = await Promise.all([
-      // Total users
-      this.accountRepository.repo.count(),
+      // Current period users
+      (async () => {
+        const qb = this.accountRepository.repo.createQueryBuilder('account');
+        if (startDate) {
+          qb.where('account.created_at >= :startDate', { startDate }).andWhere(
+            'account.created_at <= :endDate',
+            { endDate },
+          );
+        } else {
+          // No filter: get total count (all time)
+        }
+        return qb.getCount();
+      })(),
 
-      // Total posts
-      this.postRepository.repo.count({
-        where: { isHidden: false },
-      }),
+      // Previous period users (7 days ago or comparison period)
+      (async () => {
+        const qb = this.accountRepository.repo.createQueryBuilder('account');
+        if (startDate && comparisonStartDate) {
+          qb.where('account.created_at >= :comparisonStartDate', {
+            comparisonStartDate,
+          }).andWhere('account.created_at <= :comparisonEndDate', {
+            comparisonEndDate,
+          });
+        } else {
+          // No filter: get total count up to 7 days ago
+          qb.where('account.created_at <= :comparisonEndDate', {
+            comparisonEndDate,
+          });
+        }
+        return qb.getCount();
+      })(),
 
-      // Total locations
-      this.locationRepository.repo.count(),
+      // Current period locations (visible on map)
+      (async () => {
+        const qb = this.locationRepository.repo.createQueryBuilder('location');
+        qb.where('location.isVisibleOnMap = :isVisible', { isVisible: true });
+        if (startDate) {
+          qb.andWhere('location.created_at >= :startDate', {
+            startDate,
+          }).andWhere('location.created_at <= :endDate', { endDate });
+        }
+        // No filter: get all visible locations
+        return qb.getCount();
+      })(),
 
-      // Total events
-      this.dataSource.getRepository(EventEntity).count(),
+      // Previous period locations
+      (async () => {
+        const qb = this.locationRepository.repo.createQueryBuilder('location');
+        qb.where('location.isVisibleOnMap = :isVisible', { isVisible: true });
+        if (startDate && comparisonStartDate) {
+          qb.andWhere('location.created_at >= :comparisonStartDate', {
+            comparisonStartDate,
+          }).andWhere('location.created_at <= :comparisonEndDate', {
+            comparisonEndDate,
+          });
+        } else {
+          // No filter: get visible locations up to 7 days ago
+          qb.andWhere('location.created_at <= :comparisonEndDate', {
+            comparisonEndDate,
+          });
+        }
+        return qb.getCount();
+      })(),
 
-      // Total check-ins
-      this.checkInRepository.repo.count(),
+      (async () => {
+        const qb = this.dataSource
+          .getRepository(EventEntity)
+          .createQueryBuilder('event');
+        qb.where('event.status = :status', {
+          status: EventStatus.PUBLISHED,
+        }).andWhere('(event.end_date IS NULL OR event.end_date > :now)', {
+          now,
+        });
+        if (startDate) {
+          qb.andWhere('event.created_at >= :startDate', { startDate }).andWhere(
+            'event.created_at <= :endDate',
+            { endDate },
+          );
+        }
+        // No filter: get all upcoming events
+        return qb.getCount();
+      })(),
 
-      // Total reactions
-      this.reactRepository.repo.count(),
+      // Previous period events
+      (async () => {
+        const qb = this.dataSource
+          .getRepository(EventEntity)
+          .createQueryBuilder('event');
+        qb.where('event.status = :status', {
+          status: EventStatus.PUBLISHED,
+        }).andWhere(
+          '(event.end_date IS NULL OR event.end_date > :comparisonNow)',
+          { comparisonNow: comparisonEndDate },
+        );
+        if (startDate && comparisonStartDate) {
+          qb.andWhere('event.created_at >= :comparisonStartDate', {
+            comparisonStartDate,
+          }).andWhere('event.created_at <= :comparisonEndDate', {
+            comparisonEndDate,
+          });
+        } else {
+          // No filter: get upcoming events up to 7 days ago
+          qb.andWhere('event.created_at <= :comparisonEndDate', {
+            comparisonEndDate,
+          });
+        }
+        return qb.getCount();
+      })(),
 
-      // Total comments
-      this.commentRepository.repo.count(),
-
-      // New users last 7 days
-      this.accountRepository.repo
-        .createQueryBuilder('account')
-        .where('account.created_at >= :date', { date: sevenDaysAgo })
-        .getCount(),
-
-      // New users last 30 days
-      this.accountRepository.repo
-        .createQueryBuilder('account')
-        .where('account.created_at >= :date', { date: thirtyDaysAgo })
-        .getCount(),
-
-      // Active users last 7 days
-      this.getActiveUsersCount(sevenDaysAgo),
-
-      // Active users last 30 days
-      this.getActiveUsersCount(thirtyDaysAgo),
+      // Current total wallet balance (SYSTEM + ESCROW)
+      walletRepo
+        .createQueryBuilder('wallet')
+        .select(
+          'COALESCE(SUM(wallet.balance + wallet.locked_balance), 0)',
+          'total',
+        )
+        .where('wallet.wallet_type IN (:...types)', {
+          types: [WalletType.SYSTEM, WalletType.ESCROW],
+        })
+        .getRawOne()
+        .then((result) => parseFloat(result?.total || '0')),
     ]);
 
-    return {
-      totalUsers,
-      totalPosts,
-      totalLocations,
-      totalEvents,
-      totalCheckIns,
-      totalReactions,
-      totalComments,
-      activeUsersLast7Days,
-      activeUsersLast30Days,
-      newUsersLast7Days,
-      newUsersLast30Days,
-    };
-  }
-
-  /**
-   * Get count of active users (users with activity) since a date
-   */
-  private async getActiveUsersCount(sinceDate: Date): Promise<number> {
-    // Get unique user IDs from posts, check-ins, comments, and reacts
-    const [postAuthors, checkInUsers, commentAuthors, reactAuthors] =
-      await Promise.all([
-        this.postRepository.repo
-          .createQueryBuilder('post')
-          .select('DISTINCT post.author_id', 'authorId')
-          .where('post.created_at >= :date', { date: sinceDate })
-          .getRawMany(),
-
-        this.checkInRepository.repo
-          .createQueryBuilder('checkIn')
-          .select('DISTINCT checkIn.user_profile_id', 'userId')
-          .where('checkIn.created_at >= :date', { date: sinceDate })
-          .getRawMany(),
-
-        this.commentRepository.repo
-          .createQueryBuilder('comment')
-          .select('DISTINCT comment.author_id', 'authorId')
-          .where('comment.created_at >= :date', { date: sinceDate })
-          .getRawMany(),
-
-        this.reactRepository.repo
-          .createQueryBuilder('react')
-          .select('DISTINCT react.author_id', 'authorId')
-          .where('react.created_at >= :date', { date: sinceDate })
-          .getRawMany(),
-      ]);
-
-    // Combine all unique user IDs
-    const userIds = new Set<string>();
-    postAuthors.forEach((p) => userIds.add(p.authorId));
-    checkInUsers.forEach((c) => userIds.add(c.userId));
-    commentAuthors.forEach((c) => userIds.add(c.authorId));
-    reactAuthors.forEach((r) => userIds.add(r.authorId));
-
-    return userIds.size;
-  }
-
-  private normalizePaginationParams(params: PaginationParams = {}): {
-    page: number;
-    limit: number;
-    skip: number;
-  } {
-    const page = Math.max(params.page ?? 1, 1);
-    const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
-    const skip = (page - 1) * limit;
-    return { page, limit, skip };
-  }
-
-  private buildPaginationMeta(page: number, limit: number, totalItems: number) {
-    const totalPages = Math.ceil(totalItems / limit);
-    return {
-      page,
-      limit,
-      totalItems,
-      totalPages,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-    };
-  }
-
-  async getUserStats(
-    params: PaginationParams,
-  ): Promise<PaginationResult<UserStatsDto>> {
-    const { page, limit, skip } = this.normalizePaginationParams(params);
-
-    const queryBuilder = this.accountRepository.repo
-      .createQueryBuilder('account')
-      .leftJoin('account.userProfile', 'userProfile')
-      .select([
-        'account.id',
-        'account.email',
-        'account.firstName',
-        'account.lastName',
-        'account.role',
-        'account.hasOnboarded',
-        'account.isLocked',
-        'account.createdAt',
-        'userProfile.totalCheckIns',
-        'userProfile.totalFollowers',
-        'userProfile.totalFollowing',
-      ])
-      .addSelect(
-        (subQuery) =>
-          subQuery
-            .select('COUNT(post.post_id)', 'totalPosts')
-            .from(PostEntity, 'post')
-            .where('post.author_id = account.id')
-            .andWhere('post.is_hidden = :isHidden', { isHidden: false }),
-        'totalPosts',
+    // Get wallet balance 7 days ago for comparison
+    const walletBalance7DaysAgo = await walletRepo
+      .createQueryBuilder('wallet')
+      .select(
+        'COALESCE(SUM(wallet.balance + wallet.locked_balance), 0)',
+        'total',
       )
-      .orderBy('account.createdAt', 'DESC');
+      .where('wallet.wallet_type IN (:...types)', {
+        types: [WalletType.SYSTEM, WalletType.ESCROW],
+      })
+      .andWhere('wallet.created_at <= :sevenDaysAgo', {
+        sevenDaysAgo,
+      })
+      .getRawOne()
+      .then((result) => parseFloat(result?.total || '0'));
 
-    const total = await queryBuilder.getCount();
-    const accounts = await queryBuilder.skip(skip).limit(limit).getRawMany();
+    // Check if there's a date filter
+    const hasDateFilter = !!query.startDate || !!query.endDate;
 
-    const data: UserStatsDto[] = accounts.map((account) => ({
-      userId: account.account_id,
-      email: account.account_email,
-      firstName: account.account_first_name,
-      lastName: account.account_last_name,
-      role: account.account_role,
-      hasOnboarded: account.account_has_onboarded,
-      isLocked: account.account_is_locked,
-      totalPosts: parseInt(account.totalPosts || '0', 10),
-      totalCheckIns: account.userProfile_total_check_ins || 0,
-      totalFollowers: account.userProfile_total_followers || 0,
-      totalFollowing: account.userProfile_total_following || 0,
-      createdAt: account.account_created_at,
-    }));
+    // Build summary cards
+    const summaryCards: SummaryCardDto[] = [];
 
-    return {
-      data,
-      meta: this.buildPaginationMeta(page, limit, total),
+    // Users card
+    const usersCard: SummaryCardDto = {
+      title: 'Người dùng',
+      value: currentUsersCount,
     };
+    if (!hasDateFilter) {
+      const calculateDelta = (current: number, previous: number): number => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return ((current - previous) / previous) * 100;
+      };
+      const usersDelta = calculateDelta(currentUsersCount, previousUsersCount);
+      usersCard.delta = Math.abs(usersDelta);
+      usersCard.trend = usersDelta >= 0 ? 'up' : 'down';
+      usersCard.description =
+        usersDelta >= 0
+          ? 'Tăng so với 7 ngày trước'
+          : 'Giảm so với 7 ngày trước';
+    }
+    summaryCards.push(usersCard);
+
+    // Locations card
+    const locationsCard: SummaryCardDto = {
+      title: 'Locations',
+      value: currentLocationsCount,
+    };
+    if (!hasDateFilter) {
+      const calculateDelta = (current: number, previous: number): number => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return ((current - previous) / previous) * 100;
+      };
+      const locationsDelta = calculateDelta(
+        currentLocationsCount,
+        previousLocationsCount,
+      );
+      locationsCard.delta = Math.abs(locationsDelta);
+      locationsCard.trend = locationsDelta >= 0 ? 'up' : 'down';
+      locationsCard.description = 'Điểm đang hiển thị';
+    }
+    summaryCards.push(locationsCard);
+
+    // Events card
+    const eventsCard: SummaryCardDto = {
+      title: 'Events',
+      value: currentEventsCount,
+    };
+    if (!hasDateFilter) {
+      const calculateDelta = (current: number, previous: number): number => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return ((current - previous) / previous) * 100;
+      };
+      const eventsDelta = calculateDelta(
+        currentEventsCount,
+        previousEventsCount,
+      );
+      eventsCard.delta = Math.abs(eventsDelta);
+      eventsCard.trend = eventsDelta >= 0 ? 'up' : 'down';
+      eventsCard.description = 'Sự kiện sắp diễn ra';
+    }
+    summaryCards.push(eventsCard);
+
+    // Wallet balance card
+    const walletCard: SummaryCardDto = {
+      title: 'Tổng số dư ví',
+      value: Math.round(totalWalletBalance),
+    };
+    if (!hasDateFilter) {
+      const calculateDelta = (current: number, previous: number): number => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return ((current - previous) / previous) * 100;
+      };
+      const walletDelta = calculateDelta(
+        totalWalletBalance,
+        walletBalance7DaysAgo,
+      );
+      walletCard.delta = Math.abs(walletDelta);
+      walletCard.trend = walletDelta >= 0 ? 'up' : 'down';
+      walletCard.description = 'System + Escrow';
+    }
+    summaryCards.push(walletCard);
+
+    return summaryCards;
   }
 
-  async getPostStats(
-    params: PaginationParams,
-  ): Promise<PaginationResult<PostStatsDto>> {
-    const { page, limit, skip } = this.normalizePaginationParams(params);
+  async getAnalytics(
+    query: GetAnalyticsQueryDto,
+  ): Promise<
+    RevenueDataByDayDto[] | RevenueDataByMonthDto[] | RevenueDataByYearDto[]
+  > {
+    const externalTransactionRepo = this.dataSource.getRepository(
+      WalletExternalTransactionEntity,
+    );
 
-    const queryBuilder = this.postRepository.repo
-      .createQueryBuilder('post')
-      .leftJoin('post.author', 'author')
-      .select([
-        'post.postId',
-        'post.authorId',
-        'post.type',
-        'post.totalUpvotes',
-        'post.totalDownvotes',
-        'post.totalComments',
-        'post.isVerified',
-        'post.isHidden',
-        'post.createdAt',
-        'author.firstName',
-        'author.lastName',
-      ])
-      .where('post.isHidden = :isHidden', { isHidden: false })
-      .orderBy('post.createdAt', 'DESC');
+    const now = new Date();
+    const filterType = query.filter || 'day'; // Default to 'day' if not specified
 
-    const total = await queryBuilder.getCount();
-    const posts = await queryBuilder.skip(skip).limit(limit).getRawMany();
-
-    const data: PostStatsDto[] = posts.map((post) => ({
-      postId: post.post_post_id,
-      authorId: post.post_author_id,
-      authorName:
-        `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim(),
-      type: post.post_type,
-      totalUpvotes: post.post_total_upvotes || 0,
-      totalDownvotes: post.post_total_downvotes || 0,
-      totalComments: post.post_total_comments || 0,
-      isVerified: post.post_is_verified || false,
-      isHidden: post.post_is_hidden || false,
-      createdAt: post.post_created_at,
-    }));
-
-    return {
-      data,
-      meta: this.buildPaginationMeta(page, limit, total),
+    // Helper function to format month as T1, T2, ..., T12
+    const formatMonth = (month: number): string => {
+      return `T${month}`;
     };
+
+    // Helper function to format day of week as T2, T3, ..., CN
+    const formatDayOfWeek = (dayOfWeek: number): string => {
+      const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      return days[dayOfWeek] || 'CN';
+    };
+
+    // 1. Revenue by day (last 7 days) - only if filter is 'day' or not specified
+    if (filterType === 'day') {
+      // Calculate 7 days ago from now
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
+
+      const revenueByDayRaw = await externalTransactionRepo
+        .createQueryBuilder('transaction')
+        .select('EXTRACT(DOW FROM transaction.created_at)', 'dayOfWeek')
+        .addSelect(
+          `SUM(CASE WHEN transaction.direction = '${WalletExternalTransactionDirection.DEPOSIT}' AND transaction.status = '${WalletExternalTransactionStatus.COMPLETED}' THEN transaction.amount ELSE 0 END)`,
+          'deposit',
+        )
+        .addSelect(
+          `SUM(CASE WHEN transaction.direction = '${WalletExternalTransactionDirection.WITHDRAW}' AND transaction.status IN ('${WalletExternalTransactionStatus.TRANSFERRED}', '${WalletExternalTransactionStatus.COMPLETED}') THEN transaction.amount ELSE 0 END)`,
+          'withdraw',
+        )
+        .where('transaction.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+        .andWhere('transaction.created_at <= :now', { now })
+        .groupBy('EXTRACT(DOW FROM transaction.created_at)')
+        .orderBy('EXTRACT(DOW FROM transaction.created_at)', 'ASC')
+        .getRawMany();
+
+      // Create a map from query results (dayOfWeek -> data)
+      const dayMap = new Map<number, RevenueDataByDayDto>();
+      revenueByDayRaw.forEach((row) => {
+        const dayOfWeek = parseInt(row.dayOfWeek, 10);
+        dayMap.set(dayOfWeek, {
+          day: formatDayOfWeek(dayOfWeek),
+          deposit: Math.round(parseFloat(row.deposit || '0')),
+          withdraw: Math.round(parseFloat(row.withdraw || '0')),
+        });
+      });
+
+      // Ensure all 7 days are present (0=CN, 1=T2, 2=T3, 3=T4, 4=T5, 5=T6, 6=T7)
+      const allDays: RevenueDataByDayDto[] = [];
+      for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
+        if (dayMap.has(dayOfWeek)) {
+          allDays.push(dayMap.get(dayOfWeek)!);
+        } else {
+          allDays.push({
+            day: formatDayOfWeek(dayOfWeek),
+            deposit: 0,
+            withdraw: 0,
+          });
+        }
+      }
+
+      return allDays;
+    }
+
+    // 2. Revenue by month (12 months in current year) - only if filter is 'month'
+    if (filterType === 'month') {
+      const currentYear = now.getFullYear();
+      const yearStart = new Date(currentYear, 0, 1, 0, 0, 0, 0);
+      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+      const revenueByMonthRaw = await externalTransactionRepo
+        .createQueryBuilder('transaction')
+        .select('EXTRACT(MONTH FROM transaction.created_at)', 'month')
+        .addSelect(
+          `SUM(CASE WHEN transaction.direction = '${WalletExternalTransactionDirection.DEPOSIT}' AND transaction.status = '${WalletExternalTransactionStatus.COMPLETED}' THEN transaction.amount ELSE 0 END)`,
+          'deposit',
+        )
+        .addSelect(
+          `SUM(CASE WHEN transaction.direction = '${WalletExternalTransactionDirection.WITHDRAW}' AND transaction.status IN ('${WalletExternalTransactionStatus.TRANSFERRED}', '${WalletExternalTransactionStatus.COMPLETED}') THEN transaction.amount ELSE 0 END)`,
+          'withdraw',
+        )
+        .where('transaction.created_at >= :yearStart', { yearStart })
+        .andWhere('transaction.created_at <= :yearEnd', { yearEnd })
+        .groupBy('EXTRACT(MONTH FROM transaction.created_at)')
+        .orderBy('EXTRACT(MONTH FROM transaction.created_at)', 'ASC')
+        .getRawMany();
+
+      // Create a map from query results (month -> data)
+      const monthMap = new Map<number, RevenueDataByMonthDto>();
+      revenueByMonthRaw.forEach((row) => {
+        const month = parseInt(row.month, 10);
+        monthMap.set(month, {
+          month: formatMonth(month),
+          deposit: Math.round(parseFloat(row.deposit || '0')),
+          withdraw: Math.round(parseFloat(row.withdraw || '0')),
+        });
+      });
+
+      // Ensure all 12 months are present (1-12)
+      const allMonths: RevenueDataByMonthDto[] = [];
+      for (let month = 1; month <= 12; month++) {
+        if (monthMap.has(month)) {
+          allMonths.push(monthMap.get(month)!);
+        } else {
+          allMonths.push({
+            month: formatMonth(month),
+            deposit: 0,
+            withdraw: 0,
+          });
+        }
+      }
+
+      return allMonths;
+    }
+
+    // 3. Revenue by year (all years) - only if filter is 'year'
+    if (filterType === 'year') {
+      const revenueByYearRaw = await externalTransactionRepo
+        .createQueryBuilder('transaction')
+        .select('EXTRACT(YEAR FROM transaction.created_at)', 'year')
+        .addSelect(
+          `SUM(CASE WHEN transaction.direction = '${WalletExternalTransactionDirection.DEPOSIT}' AND transaction.status = '${WalletExternalTransactionStatus.COMPLETED}' THEN transaction.amount ELSE 0 END)`,
+          'deposit',
+        )
+        .addSelect(
+          `SUM(CASE WHEN transaction.direction = '${WalletExternalTransactionDirection.WITHDRAW}' AND transaction.status IN ('${WalletExternalTransactionStatus.TRANSFERRED}', '${WalletExternalTransactionStatus.COMPLETED}') THEN transaction.amount ELSE 0 END)`,
+          'withdraw',
+        )
+        .groupBy('EXTRACT(YEAR FROM transaction.created_at)')
+        .orderBy('EXTRACT(YEAR FROM transaction.created_at)', 'ASC')
+        .getRawMany();
+
+      return revenueByYearRaw.map((row) => ({
+        year: String(Math.floor(row.year)),
+        deposit: Math.round(parseFloat(row.deposit || '0')),
+        withdraw: Math.round(parseFloat(row.withdraw || '0')),
+      }));
+    }
+
+    // Default return (should not reach here, but TypeScript needs it)
+    return [];
   }
 
-  async getLocationStats(
-    params: PaginationParams,
-  ): Promise<PaginationResult<LocationStatsDto>> {
-    const { page, limit, skip } = this.normalizePaginationParams(params);
+  async getUserAnalytics(
+    query: GetAnalyticsQueryDto,
+  ): Promise<UserDataByDayDto[] | UserDataByMonthDto[] | UserDataByYearDto[]> {
+    const now = new Date();
+    const filterType = query.filter || 'day'; // Default to 'day' if not specified
 
-    const queryBuilder = this.locationRepository.repo
-      .createQueryBuilder('location')
-      .select([
-        'location.id',
-        'location.name',
-        'location.addressLine',
-        'location.isVisibleOnMap',
-        'location.createdAt',
-      ])
-      .addSelect(
-        (subQuery) =>
-          subQuery
-            .select('COUNT(checkIn.check_in_id)', 'totalCheckIns')
-            .from(CheckInEntity, 'checkIn')
-            .where('checkIn.location_id = location.id'),
-        'totalCheckIns',
-      )
-      .addSelect(
-        (subQuery) =>
-          subQuery
-            .select('COUNT(post.post_id)', 'totalPosts')
-            .from(PostEntity, 'post')
-            .where('post.location_id = location.id')
-            .andWhere('post.is_hidden = :isHidden', { isHidden: false }),
-        'totalPosts',
-      )
-      .addSelect(
-        (subQuery) =>
-          subQuery
-            .select('AVG(post.rating)', 'averageRating')
-            .from(PostEntity, 'post')
-            .where('post.location_id = location.id')
-            .andWhere('post.rating IS NOT NULL')
-            .andWhere('post.is_hidden = :isHidden', { isHidden: false }),
-        'averageRating',
-      )
-      .orderBy('location.createdAt', 'DESC');
-
-    const total = await queryBuilder.getCount();
-    const locations = await queryBuilder.skip(skip).limit(limit).getRawMany();
-
-    const data: LocationStatsDto[] = locations.map((location) => ({
-      locationId: location.location_id,
-      name: location.location_name,
-      addressLine: location.location_address_line,
-      totalCheckIns: parseInt(location.totalCheckIns || '0', 10),
-      totalPosts: parseInt(location.totalPosts || '0', 10),
-      averageRating: location.averageRating
-        ? parseFloat(location.averageRating)
-        : 0,
-      isVisibleOnMap: location.location_is_visible_on_map || false,
-      createdAt: location.location_created_at,
-    }));
-
-    return {
-      data,
-      meta: this.buildPaginationMeta(page, limit, total),
+    // Helper function to format month as T1, T2, ..., T12
+    const formatMonth = (month: number): string => {
+      return `T${month}`;
     };
-  }
 
-  async getEventStats(
-    params: PaginationParams,
-  ): Promise<PaginationResult<EventStatsDto>> {
-    const { page, limit, skip } = this.normalizePaginationParams(params);
-
-    const eventRepo = this.dataSource.getRepository(EventEntity);
-    const queryBuilder = eventRepo
-      .createQueryBuilder('event')
-      .select([
-        'event.id',
-        'event.displayName',
-        'event.status',
-        'event.startDate',
-        'event.endDate',
-        'event.createdAt',
-      ])
-      .addSelect(
-        (subQuery) =>
-          subQuery
-            .select('SUM(ticket.total_quantity)', 'totalTickets')
-            .from(EventTicketEntity, 'ticket')
-            .where('ticket.event_id = event.id'),
-        'totalTickets',
-      )
-      .addSelect(
-        (subQuery) =>
-          subQuery
-            .select(
-              'SUM(ticket.total_quantity - ticket.total_quantity_available)',
-              'soldTickets',
-            )
-            .from(EventTicketEntity, 'ticket')
-            .where('ticket.event_id = event.id'),
-        'soldTickets',
-      )
-      .orderBy('event.createdAt', 'DESC');
-
-    const total = await queryBuilder.getCount();
-    const events = await queryBuilder.skip(skip).limit(limit).getRawMany();
-
-    const data: EventStatsDto[] = events.map((event) => ({
-      eventId: event.event_id,
-      displayName: event.event_display_name,
-      status: event.event_status,
-      startDate: event.event_start_date,
-      endDate: event.event_end_date,
-      totalTickets: parseInt(event.totalTickets || '0', 10),
-      soldTickets: parseInt(event.soldTickets || '0', 10),
-      createdAt: event.event_created_at,
-    }));
-
-    return {
-      data,
-      meta: this.buildPaginationMeta(page, limit, total),
+    // Helper function to format day of week as T2, T3, ..., CN
+    const formatDayOfWeek = (dayOfWeek: number): string => {
+      const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      return days[dayOfWeek] || 'CN';
     };
+
+    if (filterType === 'day') {
+      // Calculate 7 days ago from now
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
+
+      const usersByDayRaw = await this.accountRepository.repo
+        .createQueryBuilder('account')
+        .select('EXTRACT(DOW FROM account.created_at)', 'dayOfWeek')
+        .addSelect('COUNT(account.id)', 'count')
+        .where('account.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+        .andWhere('account.created_at <= :now', { now })
+        .groupBy('EXTRACT(DOW FROM account.created_at)')
+        .orderBy('EXTRACT(DOW FROM account.created_at)', 'ASC')
+        .getRawMany();
+
+      // Create a map from query results (dayOfWeek -> data)
+      const dayMap = new Map<number, UserDataByDayDto>();
+      usersByDayRaw.forEach((row) => {
+        const dayOfWeek = parseInt(row.dayOfWeek, 10);
+        dayMap.set(dayOfWeek, {
+          day: formatDayOfWeek(dayOfWeek),
+          count: parseInt(row.count, 10),
+        });
+      });
+
+      // Ensure all 7 days are present (0=CN, 1=T2, 2=T3, 3=T4, 4=T5, 5=T6, 6=T7)
+      const allDays: UserDataByDayDto[] = [];
+      for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
+        if (dayMap.has(dayOfWeek)) {
+          allDays.push(dayMap.get(dayOfWeek)!);
+        } else {
+          allDays.push({
+            day: formatDayOfWeek(dayOfWeek),
+            count: 0,
+          });
+        }
+      }
+
+      return allDays;
+    }
+
+    // 2. Users by month (12 months in current year) - only if filter is 'month'
+    if (filterType === 'month') {
+      const currentYear = now.getFullYear();
+      const yearStart = new Date(currentYear, 0, 1, 0, 0, 0, 0);
+      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+      const usersByMonthRaw = await this.accountRepository.repo
+        .createQueryBuilder('account')
+        .select('EXTRACT(MONTH FROM account.created_at)', 'month')
+        .addSelect('COUNT(account.id)', 'count')
+        .where('account.created_at >= :yearStart', { yearStart })
+        .andWhere('account.created_at <= :yearEnd', { yearEnd })
+        .groupBy('EXTRACT(MONTH FROM account.created_at)')
+        .orderBy('EXTRACT(MONTH FROM account.created_at)', 'ASC')
+        .getRawMany();
+
+      // Create a map from query results (month -> data)
+      const monthMap = new Map<number, UserDataByMonthDto>();
+      usersByMonthRaw.forEach((row) => {
+        const month = parseInt(row.month, 10);
+        monthMap.set(month, {
+          month: formatMonth(month),
+          count: parseInt(row.count, 10),
+        });
+      });
+
+      // Ensure all 12 months are present (1-12)
+      const allMonths: UserDataByMonthDto[] = [];
+      for (let month = 1; month <= 12; month++) {
+        if (monthMap.has(month)) {
+          allMonths.push(monthMap.get(month)!);
+        } else {
+          allMonths.push({
+            month: formatMonth(month),
+            count: 0,
+          });
+        }
+      }
+
+      return allMonths;
+    }
+
+    // 3. Users by year (all years) - only if filter is 'year'
+    if (filterType === 'year') {
+      const usersByYearRaw = await this.accountRepository.repo
+        .createQueryBuilder('account')
+        .select('EXTRACT(YEAR FROM account.created_at)', 'year')
+        .addSelect('COUNT(account.id)', 'count')
+        .groupBy('EXTRACT(YEAR FROM account.created_at)')
+        .orderBy('EXTRACT(YEAR FROM account.created_at)', 'ASC')
+        .getRawMany();
+
+      return usersByYearRaw.map((row) => ({
+        year: String(Math.floor(row.year)),
+        count: parseInt(row.count, 10),
+      }));
+    }
+
+    // Default return (should not reach here, but TypeScript needs it)
+    return [];
   }
 }

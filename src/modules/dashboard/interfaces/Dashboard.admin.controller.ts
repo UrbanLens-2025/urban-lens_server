@@ -1,9 +1,23 @@
 import { Controller, Get, Inject, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { IDashboardService } from '@/modules/dashboard/app/IDashboard.service';
-import type { PaginationParams } from '@/common/services/base.service';
+import { GetSummaryQueryDto } from '@/common/dto/dashboard/GetSummary.query.dto';
+import { GetAnalyticsQueryDto } from '@/common/dto/dashboard/GetAnalytics.query.dto';
+import {
+  RevenueDataByDayDto,
+  RevenueDataByMonthDto,
+  RevenueDataByYearDto,
+  UserDataByDayDto,
+  UserDataByMonthDto,
+  UserDataByYearDto,
+} from '@/common/dto/dashboard/Analytics.response.dto';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -16,47 +30,62 @@ export class DashboardAdminController {
   ) {}
 
   @ApiOperation({
-    summary: 'Get dashboard overview statistics',
-    description: 'Get overall statistics for the dashboard',
+    summary: 'Get dashboard summary cards',
+    description:
+      'Get summary cards with metrics (users, locations, events, wallet balance). Can filter by date range.',
   })
-  @Get('/overview')
-  getOverview() {
-    return this.dashboardService.getOverview();
+  @Get('/summary')
+  getSummary(@Query() query: GetSummaryQueryDto) {
+    return this.dashboardService.getSummary(query);
   }
 
   @ApiOperation({
-    summary: 'Get user statistics',
-    description: 'Get paginated user statistics',
+    summary: 'Get dashboard analytics data',
+    description:
+      'Get analytics data for charts. Returns array based on filter: day -> revenue by day (last 7 days), month -> revenue by month (12 months in current year), year -> revenue by year (all years).',
   })
-  @Get('/users')
-  getUserStats(@Query() query: PaginationParams) {
-    return this.dashboardService.getUserStats(query);
+  @ApiResponse({
+    status: 200,
+    description: 'Revenue data by day (when filter=day)',
+    type: [RevenueDataByDayDto],
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Revenue data by month (when filter=month)',
+    type: [RevenueDataByMonthDto],
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Revenue data by year (when filter=year)',
+    type: [RevenueDataByYearDto],
+  })
+  @Get('/analytics')
+  getAnalytics(@Query() query: GetAnalyticsQueryDto) {
+    return this.dashboardService.getAnalytics(query);
   }
 
   @ApiOperation({
-    summary: 'Get post statistics',
-    description: 'Get paginated post statistics',
+    summary: 'Get user analytics data',
+    description:
+      'Get user analytics data for charts. Returns array based on filter: day -> users by day (last 7 days), month -> users by month (12 months in current year), year -> users by year (all years).',
   })
-  @Get('/posts')
-  getPostStats(@Query() query: PaginationParams) {
-    return this.dashboardService.getPostStats(query);
-  }
-
-  @ApiOperation({
-    summary: 'Get location statistics',
-    description: 'Get paginated location statistics',
+  @ApiResponse({
+    status: 200,
+    description: 'User data by day (when filter=day)',
+    type: [UserDataByDayDto],
   })
-  @Get('/locations')
-  getLocationStats(@Query() query: PaginationParams) {
-    return this.dashboardService.getLocationStats(query);
-  }
-
-  @ApiOperation({
-    summary: 'Get event statistics',
-    description: 'Get paginated event statistics',
+  @ApiResponse({
+    status: 200,
+    description: 'User data by month (when filter=month)',
+    type: [UserDataByMonthDto],
   })
-  @Get('/events')
-  getEventStats(@Query() query: PaginationParams) {
-    return this.dashboardService.getEventStats(query);
+  @ApiResponse({
+    status: 200,
+    description: 'User data by year (when filter=year)',
+    type: [UserDataByYearDto],
+  })
+  @Get('/analytics/users')
+  getUserAnalytics(@Query() query: GetAnalyticsQueryDto) {
+    return this.dashboardService.getUserAnalytics(query);
   }
 }

@@ -6,6 +6,7 @@ import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module
 import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.module';
 import { PostInfraModule } from '@/modules/post/infra/Post.infra.module';
 import { EventInfraModule } from '@/modules/event/infra/event.infra.module';
+import { WalletInfraModule } from '@/modules/wallet/infra/Wallet.infra.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { EventInfraModule } from '@/modules/event/infra/event.infra.module';
     BusinessInfraModule,
     PostInfraModule,
     EventInfraModule,
+    WalletInfraModule,
   ],
   controllers: [DashboardAdminController],
   providers: [
