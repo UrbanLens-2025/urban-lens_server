@@ -6,6 +6,7 @@ import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTran
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 import { LocationBookingDateResponseDto } from '@/common/dto/location-booking/res/LocationBookingDate.response.dto';
 import { ScheduledJobResponseDto } from '@/common/dto/scheduled-job/res/ScheduledJob.response.dto';
+import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 
 @Exclude()
 export class LocationBookingResponseDto {
@@ -70,4 +71,8 @@ export class LocationBookingResponseDto {
   @Expose()
   @Type(() => ScheduledJobResponseDto)
   scheduledPayoutJob?: ScheduledJobResponseDto;
+
+  @Expose()
+  @Type(() => EventResponseDto)
+  event?: EventResponseDto | null;
 }
