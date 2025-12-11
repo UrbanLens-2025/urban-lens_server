@@ -44,6 +44,9 @@ export class EventTicketResponseDto {
   tos?: string;
 
   @Expose()
+  totalQuantity: number;
+
+  @Expose()
   totalQuantityAvailable: number;
 
   @Expose()
@@ -69,4 +72,13 @@ export class EventTicketResponseDto {
   @Expose()
   @Type(() => EventResponseDto)
   event?: EventResponseDto;
+
+  @Expose()
+  refundPercentageBeforeCutoff?: number | null;
+
+  @Expose()
+  refundCutoffHoursAfterPayment?: number | null;
+
+  @Expose()
+  allowRefunds: boolean;
 }

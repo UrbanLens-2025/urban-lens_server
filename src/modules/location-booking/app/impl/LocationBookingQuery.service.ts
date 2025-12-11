@@ -16,27 +16,53 @@ import {
 } from '@/common/dto/location-booking/res/BookedDate.response.dto';
 import { LocationBookingDateRepository } from '@/modules/location-booking/infra/repository/LocationBookingDate.repository';
 import { GetAllBookingsAtLocationByDateRangeDto } from '@/common/dto/location-booking/GetAllBookingsAtLocationByDateRange.dto';
-import { LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { In, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import { GetAllBookingsAtLocationPagedDto } from '@/common/dto/location-booking/GetAllBookingsAtLocationPaged.dto';
 import { GetConflictingBookingsDto } from '@/common/dto/location-booking/GetConflictingBookings.dto';
+import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
+import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
+import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 
 @Injectable()
 export class LocationBookingQueryService
   extends CoreService
   implements ILocationBookingQueryService
 {
-  searchBookingsByLocation(
+  async searchBookingsByLocation(
     dto: SearchBookingsByLocationDto,
   ): Promise<Paginated<LocationBookingResponseDto>> {
-    return paginate(dto.query, LocationBookingRepository(this.dataSource), {
+    const eventRepo = EventRepository(this.dataSource);
+    const locationBookingRepo = LocationBookingRepository(this.dataSource);
+    const bookingData = await paginate(dto.query, locationBookingRepo, {
       ...ILocationBookingQueryService_QueryConfig.searchBookingsByLocation(),
       where: {
         location: {
           businessId: dto.accountId,
         },
       },
-    }).then((res) => this.mapToPaginated(LocationBookingResponseDto, res));
+    });
+
+    const eventIds = bookingData.data
+      .filter((item) => item.bookingObject === LocationBookingObject.FOR_EVENT)
+      .map((item) => item.targetId)
+      .filter((item) => item !== undefined && item !== null);
+    const eventData = await eventRepo.find({
+      where: {
+        id: In(eventIds),
+      },
+    });
+
+    return this.mapToPaginated(LocationBookingResponseDto, {
+      ...bookingData,
+      data: bookingData.data.map((item) => {
+        const event = eventData.find((event) => event.id === item.targetId);
+        return {
+          ...item,
+          event: event ? this.mapTo(EventResponseDto, event) : undefined,
+        };
+      }),
+    } as unknown as Paginated<LocationBookingResponseDto>);
   }
 
   getBookingForMyLocationById(

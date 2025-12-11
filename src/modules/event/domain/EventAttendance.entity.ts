@@ -12,6 +12,7 @@ import { EventAttendanceStatus } from '@/common/constants/EventAttendanceStatus.
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
+import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransaction.entity';
 
 @Entity({ name: EventAttendanceEntity.TABLE_NAME })
 export class EventAttendanceEntity {
@@ -100,7 +101,45 @@ export class EventAttendanceEntity {
   })
   checkedInAt?: Date | null;
 
+  @Column({
+    name: 'refunded_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  refundedAt?: Date | null;
+
+  @Column({ name: 'ticket_snapshot', type: 'jsonb', default: {} })
+  ticketSnapshot: EventTicketEntity;
+
+  @Column({ name: 'refund_transaction_id', type: 'uuid', nullable: true })
+  refundTransactionId?: string | null;
+
+  @ManyToOne(() => WalletTransactionEntity, (transaction) => transaction.id, {
+    nullable: true,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'refund_transaction_id' })
+  refundTransaction?: WalletTransactionEntity | null;
+
+  @Column({
+    name: 'refunded_amount',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  refundedAmount?: number | null;
+
   public canCheckIn(): boolean {
     return this.status === EventAttendanceStatus.CREATED;
+  }
+
+  canBeRefunded() {
+    return (
+      this.status === EventAttendanceStatus.CREATED &&
+      !this.checkedInAt &&
+      !this.refundedAt &&
+      !this.refundTransactionId
+    ); // can only refund if not checked in and not already refunded
   }
 }

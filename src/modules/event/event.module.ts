@@ -31,6 +31,7 @@ import { EventAnalyticsDevOnlyController } from '@/modules/event/interfaces/Even
 import { IEventPayoutService } from '@/modules/event/app/IEventPayout.service';
 import { EventPayoutService } from '@/modules/event/app/impl/EventPayout.service';
 import { UtilityModule } from '@/modules/utility/Utility.module';
+import { EventOwnerController } from '@/modules/event/interfaces/Event.owner.controller';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { UtilityModule } from '@/modules/utility/Utility.module';
     EventUserController,
     EventAdminController,
     EventAnalyticsDevOnlyController,
+    EventOwnerController,
   ],
   providers: [
     {

@@ -11,6 +11,7 @@ import {
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { TicketOrderDetailsEntity } from '@/modules/event/domain/TicketOrderDetails.entity';
+import dayjs from 'dayjs';
 
 @Entity({ name: 'event_ticket' })
 export class EventTicketEntity {
@@ -53,12 +54,15 @@ export class EventTicketEntity {
   @Column({ type: 'text', nullable: true })
   tos: string;
 
+  // total quantity of the ticket`
   @Column({ name: 'total_quantity', type: 'int', default: 0 })
   totalQuantity: number;
 
+  // total quantity for sale
   @Column({ name: 'total_quantity_available', type: 'int', default: 0 })
   totalQuantityAvailable: number;
 
+  // total quantity sold
   @Column({ name: 'quantity_reserved', type: 'int', default: 0 })
   quantityReserved: number;
 
@@ -93,16 +97,16 @@ export class EventTicketEntity {
     type: 'numeric',
     precision: 3,
     scale: 2,
-    nullable: true,
+    default: 1,
   })
-  refundPercentageBeforeCutoff?: number | null;
+  refundPercentageBeforeCutoff: number;
 
   @Column({
     name: 'refund_cutoff_hours_after_payment',
     type: 'int',
-    nullable: true,
+    default: 12,
   })
-  refundCutoffHoursAfterPayment?: number | null;
+  refundCutoffHoursAfterPayment: number;
 
   //#endregion
 
@@ -119,5 +123,25 @@ export class EventTicketEntity {
       now <= this.saleEndDate &&
       this.totalQuantityAvailable > 0
     );
+  }
+
+  public getRefundPercentage(purchaseDate: Date): false | number {
+    if (
+      !this.allowRefunds ||
+      !this.refundCutoffHoursAfterPayment ||
+      !this.refundPercentageBeforeCutoff
+    ) {
+      return false;
+    }
+
+    const now = dayjs();
+
+    const differenceInHours = now.diff(dayjs(purchaseDate), 'hour');
+
+    if (differenceInHours <= this.refundCutoffHoursAfterPayment) {
+      return this.refundPercentageBeforeCutoff;
+    }
+
+    return false; // after cutoff, no refund
   }
 }

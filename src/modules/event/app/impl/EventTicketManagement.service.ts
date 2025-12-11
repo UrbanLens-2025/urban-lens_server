@@ -42,8 +42,10 @@ export class EventTicketManagementService
       this.assignTo_safe(eventTicket, dto);
       eventTicket.createdById = dto.accountId;
       eventTicket.eventId = dto.eventId;
-      eventTicket.quantityReserved = 0;
       eventTicket.isActive = dto.isActive ?? true;
+      eventTicket.totalQuantity = dto.totalQuantityAvailable;
+      eventTicket.totalQuantityAvailable = dto.totalQuantityAvailable;
+      eventTicket.quantityReserved = 0;
       eventTicket.minQuantityPerOrder = dto.minQuantityPerOrder ?? 1;
       eventTicket.maxQuantityPerOrder = dto.maxQuantityPerOrder ?? 5;
 
@@ -75,8 +77,40 @@ export class EventTicketManagementService
       // confirm image URL upload if provided
       await this.fileStorageService.confirmUpload([dto.imageUrl], em);
 
+      // store original values before assignment overwrites them
+      const originalTotalQuantity = ticket.totalQuantity;
+      const originalTotalQuantityAvailable = ticket.totalQuantityAvailable;
+
       // update ticket
       this.assignTo_safeIgnoreEmpty(ticket, dto);
+
+      // if total quantity available is changed, then validate
+      // TODO stress test and validate
+      if (
+        dto.totalQuantityAvailable !== undefined &&
+        dto.totalQuantityAvailable !== originalTotalQuantityAvailable
+      ) {
+        const delta =
+          dto.totalQuantityAvailable - originalTotalQuantityAvailable;
+
+        if (delta > 0) {
+          // EC wants to increase the total quantity of the ticket
+          ticket.totalQuantityAvailable =
+            originalTotalQuantityAvailable + delta;
+          ticket.totalQuantity = originalTotalQuantity + delta;
+        } else if (delta < 0) {
+          // EC wants to decrease the total quantity of the ticket
+          if (originalTotalQuantityAvailable + delta < 0) {
+            throw new BadRequestException(
+              'Cannot decrease the total quantity of the ticket below the quantity available.',
+            );
+          }
+          ticket.totalQuantityAvailable =
+            originalTotalQuantityAvailable + delta;
+          ticket.totalQuantity = originalTotalQuantity + delta;
+        }
+      }
+
       const savedTicket = await eventTicketRepository.save(ticket);
 
       return this.mapTo(EventTicketResponseDto, savedTicket);

@@ -9,8 +9,6 @@ export const ITicketOrderManagementService = Symbol(
 export interface ITicketOrderManagementService {
   createOrder(dto: CreateTicketOrderDto): Promise<TicketOrderResponseDto>;
 
-  refundOrder(dto: RefundOrderDto): Promise<TicketOrderResponseDto>;
-
   refundAllSuccessfulOrders(
     dto: RefundAllSuccessfulOrdersDto,
   ): Promise<TicketOrderResponseDto[]>;

@@ -382,10 +382,15 @@ export class EventManagementService
           locationId: dto.locationId,
         });
 
-      return this.mapTo(EventResponseDto, {
-        ...event,
-        locationBookings: [locationBooking],
-      });
+      // add location to event
+      event.locationId = locationBooking.locationId;
+
+      return eventRepo.save(event).then((res) =>
+        this.mapTo(EventResponseDto, {
+          ...res,
+          locationBookings: [locationBooking],
+        }),
+      );
     });
   }
 
