@@ -83,6 +83,29 @@ export class EventTicketEntity {
   @Column({ name: 'event_id', type: 'uuid' })
   eventId: string;
 
+  //#region refunds
+
+  @Column({ name: 'allow_refunds', type: 'boolean', default: false })
+  allowRefunds: boolean;
+
+  @Column({
+    name: 'refund_percentage_before_cutoff',
+    type: 'numeric',
+    precision: 3,
+    scale: 2,
+    nullable: true,
+  })
+  refundPercentageBeforeCutoff?: number | null;
+
+  @Column({
+    name: 'refund_cutoff_hours_after_payment',
+    type: 'int',
+    nullable: true,
+  })
+  refundCutoffHoursAfterPayment?: number | null;
+
+  //#endregion
+
   @OneToMany(() => TicketOrderDetailsEntity, (detail) => detail.ticket, {
     createForeignKeyConstraints: false,
   })
@@ -91,7 +114,10 @@ export class EventTicketEntity {
   public canBePurchasedNow(): boolean {
     const now = new Date();
     return (
-      this.isActive && now >= this.saleStartDate && now <= this.saleEndDate
+      this.isActive &&
+      now >= this.saleStartDate &&
+      now <= this.saleEndDate &&
+      this.totalQuantityAvailable > 0
     );
   }
 }

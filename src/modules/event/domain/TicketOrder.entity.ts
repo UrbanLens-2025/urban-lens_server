@@ -15,6 +15,7 @@ import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant
 import { EventTicketOrderStatus } from '@/common/constants/EventTicketOrderStatus.constant';
 import { TicketOrderDetailsEntity } from '@/modules/event/domain/TicketOrderDetails.entity';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
+import { EventAttendanceEntity } from '@/modules/event/domain/EventAttendance.entity';
 
 @Entity({ name: TicketOrderEntity.TABLE_NAME })
 export class TicketOrderEntity {
@@ -116,11 +117,20 @@ export class TicketOrderEntity {
   })
   orderDetails: TicketOrderDetailsEntity[];
 
+  @OneToMany(() => EventAttendanceEntity, (attendance) => attendance.order, {
+    createForeignKeyConstraints: false,
+  })
+  eventAttendances: EventAttendanceEntity[];
+
   @BeforeInsert()
   generateOrderNumber() {
     const timestamp = Date.now().toString();
     const createdById = this.createdById.slice(0, 8).toUpperCase();
     const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
     this.orderNumber = `TO-${timestamp}-${createdById}${randomSuffix}`;
+  }
+
+  canBeRefunded(): boolean {
+    return this.status === EventTicketOrderStatus.PAID;
   }
 }

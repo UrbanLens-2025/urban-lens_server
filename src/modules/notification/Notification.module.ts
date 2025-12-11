@@ -13,6 +13,10 @@ import { LocationRequestApprovedListener } from '@/modules/notification/app/even
 import { LocationRequestNeedsMoreInfoListener } from '@/modules/notification/app/event-listeners/LocationRequestNeedsMoreInfo.listener';
 import { LocationRequestRejectedListener } from '@/modules/notification/app/event-listeners/LocationRequestRejected.listener';
 import { WalletDepositConfirmedListener } from '@/modules/notification/app/event-listeners/WalletDepositConfirmed.listener';
+import { BookingApprovedListener } from '@/modules/notification/app/event-listeners/BookingApproved.listener';
+import { BookingRejectedListener } from '@/modules/notification/app/event-listeners/BookingRejected.listener';
+import { BookingCancelledListener } from '@/modules/notification/app/event-listeners/BookingCancelled.listener';
+import { BookingForceCancelledListener } from '@/modules/notification/app/event-listeners/BookingForceCancelled.listener';
 import { ClientsModule } from '@nestjs/microservices';
 import { RabbitMQBaseClientConfig } from '@/config/rabbitmq.config';
 import { EmailConsumer } from '@/modules/notification/interfaces/consumers/Email.consumer';
@@ -51,6 +55,10 @@ import { IEmailSenderWorker } from '@/modules/notification/app/IEmailSender.work
     LocationRequestNeedsMoreInfoListener,
     LocationRequestRejectedListener,
     WalletDepositConfirmedListener,
+    BookingApprovedListener,
+    BookingRejectedListener,
+    BookingCancelledListener,
+    BookingForceCancelledListener,
   ],
   controllers: [
     PushNotificationUserController,

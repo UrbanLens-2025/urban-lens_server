@@ -5,6 +5,11 @@ import { GetReportsDto } from '@/common/dto/report/GetReports.dto';
 import { ReportResponseDto } from '@/common/dto/report/res/Report.response.dto';
 import { PaginateConfig, Paginated } from 'nestjs-paginate';
 import { ReportEntity } from '@/modules/report/domain/Report.entity';
+import { PostWithReportsResponseDto } from '@/common/dto/report/res/PostWithReports.response.dto';
+import { GetHighestReportedPostsDto } from '@/common/dto/report/GetHighestReportedPosts.dto';
+import { EventWithReportsResponseDto } from '@/common/dto/report/res/EventWithReports.response.dto';
+import { GetHighestReportedEventsDto } from '@/common/dto/report/GetHighestReportedEvents.dto';
+import { WithCustomPaginationDto } from '@/common/dto/WithCustomPagination.dto';
 
 export const IReportQueryService = Symbol('IReportQueryService');
 
@@ -18,6 +23,24 @@ export interface IReportQueryService {
   getMyReports(dto: GetMyReportsDto): Promise<Paginated<ReportResponseDto>>;
 
   getReportById(dto: GetReportByIdDto): Promise<ReportResponseDto>;
+
+  //
+
+  /**
+   * Gets the highest reported posts that are not processed yet.
+   * @param dto
+   */
+  getHighestReportedPosts(
+    dto: GetHighestReportedPostsDto,
+  ): Promise<WithCustomPaginationDto<PostWithReportsResponseDto>>;
+
+  /**
+   * Gets the highest reported events that are not processed yet.
+   * @param dto
+   */
+  getHighestReportedEvents(
+    dto: GetHighestReportedEventsDto,
+  ): Promise<WithCustomPaginationDto<EventWithReportsResponseDto>>;
 }
 
 export namespace IReportQueryService_Config {
@@ -29,6 +52,7 @@ export namespace IReportQueryService_Config {
       filterableColumns: {
         status: true,
         targetType: true,
+        targetId: true,
         createdById: true,
       },
       relations: {

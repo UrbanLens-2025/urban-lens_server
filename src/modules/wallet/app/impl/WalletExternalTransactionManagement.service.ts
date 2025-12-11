@@ -628,7 +628,10 @@ export class WalletExternalTransactionManagementService
           return res;
         });
 
-      transaction.completeProcessing();
+      transaction.completeProcessing(
+        dto.proofOfTransferImages,
+        dto.transferBankTransactionId,
+      );
 
       await externalTransactionRepository.save(transaction);
 

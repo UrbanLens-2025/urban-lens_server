@@ -7,6 +7,7 @@ export class TransferFundsFromUserWalletDto extends CoreActionDto {
   // transient fields
   ownerId: string;
   destinationWalletId: string;
+  note?: string;
 
   // request body
   @ApiProperty()

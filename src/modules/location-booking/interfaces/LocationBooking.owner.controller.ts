@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
+  ParseDatePipe,
   ParseUUIDPipe,
   Post,
   Query,
@@ -26,6 +28,10 @@ import { ILocationBookingManagementService } from '@/modules/location-booking/ap
 import { ProcessBookingDto } from '@/common/dto/location-booking/ProcessBooking.dto';
 import { GetBookedDatesByDateRangeDto } from '@/common/dto/location-booking/GetBookedDatesByDateRange.dto';
 import { BookedDatesResponseDto } from '@/common/dto/location-booking/res/BookedDate.response.dto';
+import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
+import { ProcessAndApproveBookingDto } from '@/common/dto/location-booking/ProcessAndApproveBooking.dto';
+import { ProcessAndRejectBookingDto } from '@/common/dto/location-booking/ProcessAndRejectBooking.dto';
+import { ForceCancelBookingDto } from '@/common/dto/location-booking/ForceCancelBooking.dto';
 
 @ApiTags('Location Bookings')
 @ApiBearerAuth()
@@ -66,7 +72,7 @@ export class LocationBookingOwnerController {
     });
   }
 
-  @ApiOperation({ summary: 'Process location booking' })
+  @ApiOperation({ summary: 'Process location booking', deprecated: true })
   @Post('/process/:locationBookingId')
   processLocationBooking(
     @AuthUser() userDto: JwtTokenDto,
@@ -80,6 +86,30 @@ export class LocationBookingOwnerController {
     });
   }
 
+  @ApiOperation({ summary: 'Approve location booking' })
+  @Post('/approve/:locationBookingId')
+  approveLocationBooking(
+    @AuthUser() userDto: JwtTokenDto,
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+  ): Promise<LocationBookingResponseDto> {
+    return this.locationBookingManagementService.processAndApproveBooking({
+      accountId: userDto.sub,
+      bookingId: locationBookingId,
+    });
+  }
+
+  @ApiOperation({ summary: 'Reject location bookings (batch)' })
+  @Post('/reject')
+  rejectLocationBookings(
+    @AuthUser() userDto: JwtTokenDto,
+    @Body() dto: ProcessAndRejectBookingDto,
+  ): Promise<LocationBookingResponseDto[]> {
+    return this.locationBookingManagementService.processAndRejectBooking({
+      ...dto,
+      accountId: userDto.sub,
+    });
+  }
+
   @ApiOperation({
     summary: 'Get booked dates by date range',
     description:
@@ -90,5 +120,48 @@ export class LocationBookingOwnerController {
     @Query() dto: GetBookedDatesByDateRangeDto,
   ): Promise<BookedDatesResponseDto> {
     return this.locationBookingQueryService.getBookedDatesByDateRange(dto);
+  }
+
+  @ApiOperation({ summary: 'Get all bookings at location paged' })
+  @ApiPaginationQuery(
+    ILocationBookingQueryService_QueryConfig.searchBookingsByLocation(),
+  )
+  @Get('/all-bookings-at-location-paged/:locationId')
+  getAllBookingsAtLocationPaged(
+    @Paginate() query: PaginateQuery,
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Query('startDate', new ParseDatePipe()) startDate: Date,
+    @Query('endDate', new ParseDatePipe()) endDate: Date,
+  ) {
+    return this.locationBookingQueryService.getAllBookingsAtLocationPaged({
+      query,
+      locationId,
+      startDate,
+      endDate,
+    });
+  }
+
+  @ApiOperation({ summary: 'Force cancel a booking' })
+  @Delete('/force-cancel/:locationBookingId')
+  forceCancelBooking(
+    @AuthUser() userDto: JwtTokenDto,
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+    @Body() dto: ForceCancelBookingDto,
+  ) {
+    return this.locationBookingManagementService.forceCancelBooking({
+      ...dto,
+      accountId: userDto.sub,
+      bookingId: locationBookingId,
+    });
+  }
+
+  @ApiOperation({ summary: 'Get conflicting bookings', deprecated: true })
+  @Get('/conflicting-bookings/:locationBookingId')
+  getConflictingBookings(
+    @Param('locationBookingId', ParseUUIDPipe) locationBookingId: string,
+  ) {
+    return this.locationBookingQueryService.getConflictingBookings({
+      locationBookingId,
+    });
   }
 }

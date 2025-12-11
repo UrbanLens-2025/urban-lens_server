@@ -8,6 +8,7 @@ import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { GetAccountByIdDto } from '@/common/dto/account/GetAccountById.dto';
 import { GetLeaderboardSnapshotDto } from '@/common/dto/account/GetLeaderboardSnapshot.dto';
 import { LeaderboardPeriodType } from '@/modules/gamification/domain/LeaderboardSnapshot.entity';
+import { GetMyBusinessesDto } from '@/common/dto/account/GetMyBusinesses.dto';
 
 export const IAccountQueryService = Symbol('IAccountQueryService');
 export interface IAccountQueryService {
@@ -22,6 +23,8 @@ export interface IAccountQueryService {
   ): Promise<Paginated<BusinessResponseDto>>;
   getAllAccounts(query: PaginateQuery): Promise<Paginated<AccountResponseDto>>;
   getAccountById(dto: GetAccountByIdDto): Promise<AccountResponseDto>;
+
+  getMyBusinesses(dto: GetMyBusinessesDto): Promise<BusinessResponseDto[]>;
 }
 
 export namespace IAccountQueryService_QueryConfig {

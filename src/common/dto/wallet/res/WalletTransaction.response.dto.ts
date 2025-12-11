@@ -33,6 +33,9 @@ export class WalletTransactionResponseDto {
   createdAt: Date;
 
   @Expose()
+  note?: string;
+
+  @Expose()
   @Type(() => WalletResponseDto)
   wallet?: WalletResponseDto;
 }

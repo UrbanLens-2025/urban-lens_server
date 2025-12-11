@@ -1,6 +1,7 @@
 import {
   IsBoolean,
   IsDate,
+  IsDecimal,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -8,6 +9,7 @@ import {
   IsString,
   IsUrl,
   Length,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -87,4 +89,21 @@ export class AddTicketToEventDto {
   @IsOptional()
   @ApiPropertyOptional({ default: 5 })
   maxQuantityPerOrder?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiPropertyOptional({ default: false })
+  allowRefunds?: boolean;
+
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(1)
+  @IsOptional()
+  @ApiPropertyOptional()
+  refundPercentageBeforeCutoff?: number;
+
+  @IsInt()
+  @IsOptional()
+  @ApiPropertyOptional({ default: 4 })
+  refundCutoffHoursAfterPayment?: number;
 }

@@ -22,6 +22,7 @@ import { GetLeaderboardSnapshotDto } from '@/common/dto/account/GetLeaderboardSn
 import { LeaderboardPeriodHelper } from '@/modules/gamification/app/helper/LeaderboardPeriod.helper';
 import { Inject } from '@nestjs/common';
 import { ILeaderboardSnapshotService } from '@/modules/gamification/app/ILeaderboardSnapshot.service';
+import { GetMyBusinessesDto } from '@/common/dto/account/GetMyBusinesses.dto';
 
 @Injectable({})
 export class AccountQueryService
@@ -178,5 +179,17 @@ export class AccountQueryService
       rankings,
       myRank,
     };
+  }
+
+  async getMyBusinesses(
+    dto: GetMyBusinessesDto,
+  ): Promise<BusinessResponseDto[]> {
+    const businessRepository = BusinessRepositoryProvider(this.dataSource);
+    const businesses = await businessRepository.find({
+      where: {
+        accountId: dto.accountId,
+      },
+    });
+    return this.mapToArray(BusinessResponseDto, businesses);
   }
 }

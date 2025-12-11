@@ -19,7 +19,11 @@ import {
   BOOKING_APPROVED_EVENT,
   BookingApprovedEvent,
 } from '@/modules/location-booking/domain/event/BookingApproved.event';
-import { UpdateResult } from 'typeorm';
+import {
+  BOOKING_REJECTED_EVENT,
+  BookingRejectedEvent,
+} from '@/modules/location-booking/domain/event/BookingRejected.event';
+import { In, UpdateResult } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import dayjs from 'dayjs';
@@ -34,6 +38,10 @@ import { DelayedMessageProvider } from '@/common/core/delayed-message/DelayedMes
 import { DelayedMessageKeys } from '@/common/constants/DelayedMessageKeys.constant';
 import { CancelBookingDto } from '@/common/dto/location-booking/CancelBooking.dto';
 import { ILocationBookingPayoutService } from '@/modules/location-booking/app/ILocationBookingPayout.service';
+import { ProcessAndApproveBookingDto } from '@/common/dto/location-booking/ProcessAndApproveBooking.dto';
+import { ProcessAndRejectBookingDto } from '@/common/dto/location-booking/ProcessAndRejectBooking.dto';
+import { ForceCancelBookingDto } from '@/common/dto/location-booking/ForceCancelBooking.dto';
+import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 
 @Injectable()
 export class LocationBookingManagementService
@@ -55,6 +63,11 @@ export class LocationBookingManagementService
     this.MAX_TIME_TO_PAY_MS = this.configService.getOrThrow<number>(
       'LOCATION_BOOKING_MAX_TIME_TO_PAY_MS',
     ); // 12 hours
+  }
+  forceCancelBooking(
+    dto: ForceCancelBookingDto,
+  ): Promise<LocationBookingResponseDto> {
+    throw new Error('Method not implemented.');
   }
   createBooking_ForBusinessLocation(
     dto: CreateBookingForBusinessLocationDto,
@@ -133,61 +146,7 @@ export class LocationBookingManagementService
   }
 
   processBooking(dto: ProcessBookingDto): Promise<UpdateResult> {
-    return this.ensureTransaction(null, async (em) => {
-      const locationBookingRepository = LocationBookingRepository(em);
-
-      const booking = await locationBookingRepository.findOneOrFail({
-        where: {
-          id: dto.bookingId,
-          location: {
-            businessId: dto.accountId, // you can only process your locations
-          },
-        },
-      });
-
-      if (!booking.canBeProcessed()) {
-        throw new BadRequestException(
-          'This booking cannot be processed. It is either already processed or cancelled.',
-        );
-      }
-
-      const now = new Date();
-
-      booking.status = dto.status;
-      booking.softLockedUntil = dayjs(now)
-        .add(this.MAX_TIME_TO_PAY_MS, 'milliseconds')
-        .toDate();
-      const updateResult = await locationBookingRepository.update(
-        { id: booking.id },
-        {
-          status: booking.status,
-          softLockedUntil: booking.softLockedUntil,
-        },
-      );
-
-      // this message will unlock the booking after the max time to pay
-      const result = this.delayedMessageProvider.sendDelayedMessage({
-        delayMs: this.MAX_TIME_TO_PAY_MS,
-        routingKey: DelayedMessageKeys.LOCATION_BOOKING_SOFT_LOCK_EXPIRED,
-        message: {
-          locationBookingId: booking.id,
-        },
-      });
-
-      if (!result) {
-        throw new InternalServerErrorException(
-          'Failed to send delayed message for location booking payment expired',
-        );
-      }
-
-      // emit events for notifications
-      this.eventEmitter.emit(
-        BOOKING_APPROVED_EVENT,
-        new BookingApprovedEvent(booking),
-      );
-
-      return updateResult;
-    });
+    throw new Error('Deprecated');
   }
 
   payForBooking(dto: PayForBookingDto): Promise<LocationBookingResponseDto> {
@@ -199,6 +158,9 @@ export class LocationBookingManagementService
         where: {
           id: dto.locationBookingId,
           createdById: dto.accountId,
+        },
+        relations: {
+          location: true,
         },
       });
 
@@ -219,6 +181,14 @@ export class LocationBookingManagementService
             accountName: dto.accountName,
             ipAddress: dto.ipAddress,
             returnUrl: dto.returnUrl,
+            note:
+              'Payment for booking #' +
+              booking.id +
+              ' for location: ' +
+              booking.location.name +
+              ' (ID: ' +
+              booking.location.id +
+              ')',
           },
         );
 
@@ -241,6 +211,9 @@ export class LocationBookingManagementService
   cancelBooking(dto: CancelBookingDto): Promise<LocationBookingResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const locationBookingRepository = LocationBookingRepository(em);
+      const locationBookingConfigRepository =
+        LocationBookingConfigRepository(em);
+
       const locationBooking = await locationBookingRepository
         .findOneOrFail({
           where: {
@@ -259,16 +232,39 @@ export class LocationBookingManagementService
 
       // refund booking amount to event creator if booking has been paid for
       if (locationBooking.status === LocationBookingStatus.PAYMENT_RECEIVED) {
+        const bookingConfig =
+          await locationBookingConfigRepository.findOneOrFail({
+            where: {
+              locationId: locationBooking.locationId,
+            },
+          });
+
+        const bookingStartDate = locationBooking.getStartDate()!;
+        const refundPercentage =
+          bookingConfig.getRefundPercentage(bookingStartDate);
+
+        const refundAmount = locationBooking.amountToPay * refundPercentage;
+
         const refundTransaction =
           await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
             {
               entityManager: em,
               destinationAccountId: dto.accountId,
-              amount: locationBooking.amountToPay,
+              amount: refundAmount,
               currency: SupportedCurrency.VND,
+              note:
+                'Refund for booking #' +
+                locationBooking.id +
+                ' for location: ' +
+                locationBooking.location.name +
+                ' (ID: ' +
+                locationBooking.locationId +
+                ')',
             },
           );
         locationBooking.refundTransactionId = refundTransaction.id;
+        locationBooking.refundedAmount = refundAmount;
+        locationBooking.refundedAt = dayjs().toDate();
       }
 
       locationBooking.status = LocationBookingStatus.CANCELLED;
@@ -278,6 +274,140 @@ export class LocationBookingManagementService
       return await locationBookingRepository
         .save(locationBooking)
         .then((res) => this.mapTo(LocationBookingResponseDto, res));
+    });
+  }
+
+  processAndApproveBooking(
+    dto: ProcessAndApproveBookingDto,
+  ): Promise<LocationBookingResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationBookingRepository = LocationBookingRepository(em);
+
+      // get the booking in question
+      const booking = await locationBookingRepository.findOneOrFail({
+        where: {
+          id: dto.bookingId,
+          location: {
+            businessId: dto.accountId, // you can only process your locations
+          },
+        },
+      });
+
+      // status check
+      if (!booking.canBeProcessed()) {
+        throw new BadRequestException(
+          'This booking cannot be processed. It is either already processed or cancelled.',
+        );
+      }
+
+      // soft lock the booking for the max time to pay. After this time, the booking will be expired and the lock will be released.
+      const now = new Date();
+      booking.status = LocationBookingStatus.APPROVED;
+      booking.softLockedUntil = dayjs(now)
+        .add(this.MAX_TIME_TO_PAY_MS, 'milliseconds')
+        .toDate();
+      await locationBookingRepository.update(
+        { id: booking.id },
+        {
+          status: booking.status,
+          softLockedUntil: booking.softLockedUntil,
+        },
+      );
+      const result = this.delayedMessageProvider.sendDelayedMessage({
+        delayMs: this.MAX_TIME_TO_PAY_MS,
+        routingKey: DelayedMessageKeys.LOCATION_BOOKING_SOFT_LOCK_EXPIRED,
+        message: {
+          locationBookingId: booking.id,
+        },
+      });
+
+      if (!result) {
+        throw new InternalServerErrorException(
+          'Failed to send delayed message for location booking payment expired',
+        );
+      }
+
+      // TODO reject all conflicting bookings
+      const conflictingBookings =
+        await locationBookingRepository.findConflictingBookings({
+          locationId: booking.locationId,
+          startDate: booking.getStartDate()!,
+          endDate: booking.getEndDate()!,
+        });
+      await this.processAndRejectBooking({
+        accountId: dto.accountId,
+        bookingIds: conflictingBookings
+          .filter((b) => b.id !== booking.id) // exclude the current booking (this avoids a transaction deadlock)
+          .map((b) => b.id),
+        entityManager: em,
+      });
+
+      // emit events for notifications
+      this.eventEmitter.emit(
+        BOOKING_APPROVED_EVENT,
+        new BookingApprovedEvent(booking),
+      );
+
+      const updatedBooking = await locationBookingRepository.findOneOrFail({
+        where: { id: booking.id },
+      });
+
+      return this.mapTo(LocationBookingResponseDto, updatedBooking);
+    });
+  }
+
+  processAndRejectBooking(
+    dto: ProcessAndRejectBookingDto,
+  ): Promise<LocationBookingResponseDto[]> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const locationBookingRepository = LocationBookingRepository(em);
+
+      // get all bookings in question
+      const bookings = await locationBookingRepository.find({
+        where: {
+          id: In(dto.bookingIds),
+          location: {
+            businessId: dto.accountId, // you can only process your locations
+          },
+        },
+      });
+
+      // validate all bookings were found
+      if (bookings.length !== dto.bookingIds.length) {
+        const foundIds = bookings.map((b) => b.id);
+        const missingIds = dto.bookingIds.filter(
+          (id) => !foundIds.includes(id),
+        );
+        throw new BadRequestException(
+          `One or more bookings not found or not accessible: ${missingIds.join(', ')}`,
+        );
+      }
+
+      // status check for all bookings
+      const invalidBookings = bookings.filter(
+        (booking) => !booking.canBeProcessed(),
+      );
+      if (invalidBookings.length > 0) {
+        throw new BadRequestException(
+          `One or more bookings cannot be processed. They are either already processed or cancelled: ${invalidBookings.map((b) => b.id).join(', ')}`,
+        );
+      }
+
+      // update status to REJECTED for all bookings
+      bookings.forEach((booking) => {
+        booking.status = LocationBookingStatus.REJECTED;
+      });
+      const updatedBookings = await locationBookingRepository.save(bookings);
+
+      // emit events for notifications
+      updatedBookings.forEach((booking) => {
+        this.eventEmitter.emit(
+          BOOKING_REJECTED_EVENT,
+          new BookingRejectedEvent(booking.id),
+        );
+      });
+
+      return this.mapToArray(LocationBookingResponseDto, updatedBookings);
     });
   }
 }

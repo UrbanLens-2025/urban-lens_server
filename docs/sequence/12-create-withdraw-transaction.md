@@ -6,13 +6,13 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant WithdrawScreen as :WithdrawScreen
-    participant WalletPrivateController as :WalletPrivateController
-    participant WalletExternalTransactionManagementService as :WalletExternalTransactionManagementService
-    participant WalletActionService as :WalletActionService
-    participant WalletExternalTransactionRepository as :WalletExternalTransactionRepository
-    participant WalletRepository as :WalletRepository
-    participant WalletExternalTransactionTimelineRepository as :WalletExternalTransactionTimelineRepository
+    participant Frontend as : Create withdraw screen
+    participant WalletPrivateController as : WalletPrivateController
+    participant WalletExternalTransactionManagementService as : WalletExternalTransactionManagementService
+    participant WalletActionService as : WalletActionService
+    participant WalletExternalTransactionRepository as : WalletExternalTransactionRepository
+    participant WalletRepository as : WalletRepository
+    participant WalletExternalTransactionTimelineRepository as : WalletExternalTransactionTimelineRepository
     participant Database
 
     User->>WithdrawScreen: 1. Submit withdraw transaction form

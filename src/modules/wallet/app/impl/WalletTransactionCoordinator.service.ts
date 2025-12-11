@@ -29,6 +29,7 @@ export class WalletTransactionCoordinatorService
     dto: InitiateTransferToEscrowDto,
   ): Promise<WalletTransactionResponseDto> {
     return this.ensureTransaction(dto.entityManager, async (em) => {
+      dto.amountToTransfer = Number(dto.amountToTransfer);
       const walletRepository = WalletRepository(em);
 
       // get source wallet
@@ -49,42 +50,21 @@ export class WalletTransactionCoordinatorService
       const sufficientBalance =
         sourceWallet.balance >= Number(dto.amountToTransfer);
 
-      if (sufficientBalance) {
-        /**
-         * Wallet has SUFFICIENT balance
-         * 1) Initiate funds transfer to escrow normally
-         */
-        return await this.transactionManagementService.transferFundsFromUserWallet(
-          {
-            entityManager: em,
-            destinationWalletId: DefaultSystemWallet.ESCROW,
-            sourceWalletId: sourceWallet.id,
-            ownerId: dto.fromAccountId,
-            amountToTransfer: Number(dto.amountToTransfer),
-            currency: dto.currency,
-          },
-        );
-      } else {
-        /**
-         * Wallet has INSUFFICIENT balance
-         * 1) Initiate external fund transfer process
-         * 2) Make sure after external fund transfer is completed, initiate internal transfer to escrow
-         */
-        // await this.externalTransactionManagementService.createDepositTransaction(
-        //   {
-        //     afterAction:
-        //       ExternalTransactionAfterFinishAction.TRANSFER_TO_ESCROW,
-        //     amount: dto.amountToTransfer,
-        //     currency: dto.currency,
-        //     accountId: dto.accountId,
-        //     accountName: dto.accountName,
-        //     ipAddress: dto.ipAddress,
-        //     returnUrl: dto.returnUrl,
-        //   },
-        // );
-
+      if (!sufficientBalance) {
         throw new BadRequestException('Insufficient funds');
       }
+
+      return await this.transactionManagementService.transferFundsFromUserWallet(
+        {
+          entityManager: em,
+          destinationWalletId: DefaultSystemWallet.ESCROW,
+          sourceWalletId: sourceWallet.id,
+          ownerId: dto.fromAccountId,
+          amountToTransfer: Number(dto.amountToTransfer),
+          currency: dto.currency,
+          note: dto.note,
+        },
+      );
     });
   }
 
@@ -92,6 +72,7 @@ export class WalletTransactionCoordinatorService
     dto: InitiateTransferFromEscrowToSystemDto,
   ): Promise<WalletTransactionResponseDto> {
     return this.ensureTransaction(dto.entityManager, async (em) => {
+      dto.amount = Number(dto.amount);
       const walletRepository = WalletRepository(em);
 
       const escrowWallet = await walletRepository.findOneOrFail({
@@ -114,6 +95,7 @@ export class WalletTransactionCoordinatorService
           amountToTransfer: dto.amount,
           currency: dto.currency,
           sourceWalletId: DefaultSystemWallet.ESCROW,
+          note: dto.note,
         },
       );
     });
@@ -123,6 +105,7 @@ export class WalletTransactionCoordinatorService
     dto: InitiateTransferFromEscrowToAccountDto,
   ): Promise<WalletTransactionResponseDto> {
     return this.ensureTransaction(dto.entityManager, async (em) => {
+      dto.amount = Number(dto.amount);
       const walletRepository = WalletRepository(em);
 
       // get source wallet
@@ -149,6 +132,7 @@ export class WalletTransactionCoordinatorService
           amountToTransfer: dto.amount,
           currency: dto.currency,
           sourceWalletId: DefaultSystemWallet.ESCROW,
+          note: dto.note,
         },
       );
     });

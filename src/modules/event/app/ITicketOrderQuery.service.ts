@@ -35,12 +35,9 @@ export namespace ITicketOrderQueryService_QueryConfig {
         status: true,
       },
       relations: {
-        createdBy: true,
-        referencedTransaction: true,
-        orderDetails: {
-          ticket: true,
-        },
+        orderDetails: true,
         event: true,
+        eventAttendances: true,
       },
     };
   }

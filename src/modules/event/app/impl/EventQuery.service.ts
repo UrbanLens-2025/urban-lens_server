@@ -155,7 +155,11 @@ export class EventQueryService
     return paginate(dto.query, EventRepository(this.dataSource), {
       ...IEventQueryService_QueryConfig.searchPublishedEvents(),
       where: {
-        status: EventStatus.PUBLISHED,
+        status: In([
+          EventStatus.PUBLISHED,
+          EventStatus.FINISHED,
+          EventStatus.CANCELLED,
+        ]),
       },
     }).then((res) => this.mapToPaginated(EventResponseDto, res));
   }
@@ -168,7 +172,11 @@ export class EventQueryService
       .findOneOrFail({
         where: {
           id: dto.eventId,
-          status: EventStatus.PUBLISHED,
+          status: In([
+            EventStatus.PUBLISHED,
+            EventStatus.FINISHED,
+            EventStatus.CANCELLED,
+          ]),
         },
         relations: {
           createdBy: true,

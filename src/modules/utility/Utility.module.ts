@@ -15,6 +15,9 @@ import { ProvinceService } from '@/modules/utility/app/impl/Province.service';
 import { ITagCategoryService } from '@/modules/utility/app/ITagCategory.service';
 import { TagCategoryService } from '@/modules/utility/app/impl/TagCategory.service';
 import { TagCategoryController } from '@/modules/utility/interfaces/TagCategory.controller';
+import { ISystemConfigService } from '@/modules/utility/app/ISystemConfig.service';
+import { SystemConfigService } from '@/modules/utility/app/impl/SystemConfig.service';
+import { SystemConfigAdminController } from '@/modules/utility/interfaces/SystemConfig.admin.controller';
 
 @Module({
   imports: [
@@ -40,6 +43,10 @@ import { TagCategoryController } from '@/modules/utility/interfaces/TagCategory.
       provide: ITagCategoryService,
       useClass: TagCategoryService,
     },
+    {
+      provide: ISystemConfigService,
+      useClass: SystemConfigService,
+    },
   ],
   controllers: [
     TagAdminController,
@@ -47,6 +54,8 @@ import { TagCategoryController } from '@/modules/utility/interfaces/TagCategory.
     AddressAdminController,
     AddressPublicController,
     TagCategoryController,
+    SystemConfigAdminController,
   ],
+  exports: [ISystemConfigService],
 })
 export class UtilityModule {}

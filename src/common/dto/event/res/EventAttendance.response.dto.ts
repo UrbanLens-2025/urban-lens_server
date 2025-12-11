@@ -45,6 +45,10 @@ export class EventAttendanceResponseDto {
   @Expose()
   numberOfAttendees: number;
 
+  @Expose()
+  @Type(() => Date)
+  checkedInAt?: Date | null;
+
   // -- Relations --
 
   @Expose()

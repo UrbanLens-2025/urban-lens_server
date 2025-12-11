@@ -33,6 +33,7 @@ export class WalletActionService
   depositFunds(rawDto: DepositFundsDto): Promise<WalletResponseDto> {
     return this.ensureTransaction(rawDto.entityManager, async (em) => {
       const dto = rawDto;
+      dto.amount = Number(dto.amount);
 
       this.logger.verbose(
         `Depositing ${dto.amount} ${dto.currency} to wallet ${dto.walletId}`,
@@ -75,6 +76,7 @@ export class WalletActionService
   withdrawFunds(rawDto: WithdrawFundsDto): Promise<WalletResponseDto> {
     return this.ensureTransaction(rawDto.entityManager, async (em) => {
       const dto = rawDto;
+      dto.amount = Number(dto.amount);
 
       this.logger.verbose(
         `Withdrawing ${dto.amount} ${dto.currency} from wallet ${dto.walletId}`,
@@ -123,6 +125,7 @@ export class WalletActionService
   lockFunds(rawDto: LockFundsDto): Promise<WalletResponseDto> {
     return this.ensureTransaction(rawDto.entityManager, async (em) => {
       const dto = rawDto;
+      dto.amount = Number(dto.amount);
 
       this.logger.verbose(
         `Locking ${dto.amount} ${dto.currency} in wallet ${dto.walletId}`,
@@ -171,6 +174,7 @@ export class WalletActionService
   unlockFunds(rawDto: UnlockFundsDto): Promise<WalletResponseDto> {
     return this.ensureTransaction(rawDto.entityManager, async (em) => {
       const dto = rawDto;
+      dto.amount = Number(dto.amount);
 
       this.logger.verbose(
         `Unlocking ${dto.amount} ${dto.currency} in wallet ${dto.walletId}`,
@@ -226,6 +230,7 @@ export class WalletActionService
   ): Promise<WalletResponseDto> {
     return this.ensureTransaction(rawDto.entityManager, async (em) => {
       const dto = rawDto;
+      dto.amount = Number(dto.amount);
 
       this.logger.verbose(
         `Permanently withdrawing ${dto.amount} ${dto.currency} locked funds from wallet ${dto.walletId}`,

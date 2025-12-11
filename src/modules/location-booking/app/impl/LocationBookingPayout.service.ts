@@ -2,6 +2,7 @@ import { LocationOwnershipType } from '@/common/constants/LocationType.constant'
 import { ScheduledJobStatus } from '@/common/constants/ScheduledJobStatus.constant';
 import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
+import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
 import { CoreService } from '@/common/core/Core.service';
 import { HandleLocationBookingPayoutDto } from '@/common/dto/location-booking/HandleLocationBookingPayout.dto';
 import { SchedulePayoutBookingDto } from '@/common/dto/location-booking/SchedulePayoutBooking.dto';
@@ -12,6 +13,7 @@ import { LocationBookingEntity } from '@/modules/location-booking/domain/Locatio
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob.service';
 import { ScheduledJobRepository } from '@/modules/scheduled-jobs/infra/repository/ScheduledJob.repository';
+import { ISystemConfigService } from '@/modules/utility/app/ISystemConfig.service';
 import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -23,19 +25,21 @@ export class LocationBookingPayoutService
   implements ILocationBookingPayoutService
 {
   private readonly logger = new Logger(LocationBookingPayoutService.name);
-  private readonly MILLIS_TO_EVENT_PAYOUT: number;
-  private readonly SYSTEM_CUT_PERCENTAGE: number;
+  private readonly MILLIS_TO_BOOKING_PAYOUT: number;
 
   constructor(
     @Inject(IScheduledJobService)
     private readonly scheduledJobService: IScheduledJobService,
     @Inject(IWalletTransactionCoordinatorService)
     private readonly walletTransactionCoordinator: IWalletTransactionCoordinatorService,
+    @Inject(ISystemConfigService)
+    private readonly systemConfigService: ISystemConfigService,
     private readonly configService: ConfigService<Environment>,
   ) {
     super();
-    this.MILLIS_TO_EVENT_PAYOUT = 1000 * 60 * 60 * 24 * 7; // TODO 7 days
-    this.SYSTEM_CUT_PERCENTAGE = 0.1; // TODO
+    this.MILLIS_TO_BOOKING_PAYOUT = this.configService.getOrThrow<number>(
+      'MILLIS_TO_BOOKING_PAYOUT',
+    );
   }
 
   /**
@@ -64,7 +68,7 @@ export class LocationBookingPayoutService
         }, dayjs(0));
 
         const executeAt = maximumBookingDate.add(
-          this.MILLIS_TO_EVENT_PAYOUT,
+          this.MILLIS_TO_BOOKING_PAYOUT,
           'milliseconds',
         );
         const job =
@@ -127,8 +131,13 @@ export class LocationBookingPayoutService
         return;
       }
 
+      const systemCutPercentage =
+        await this.systemConfigService.getSystemConfigValue(
+          SystemConfigKey.LOCATION_BOOKING_SYSTEM_PAYOUT_PERCENTAGE,
+          em,
+        );
       const payoutAmountToSystem =
-        totalRevenueFromBooking * this.SYSTEM_CUT_PERCENTAGE;
+        totalRevenueFromBooking * systemCutPercentage.value;
       const payoutAmountToHost = totalRevenueFromBooking - payoutAmountToSystem;
 
       this.logger.log(
@@ -142,6 +151,12 @@ export class LocationBookingPayoutService
             entityManager: em,
             amount: payoutAmountToSystem,
             currency: SupportedCurrency.VND,
+            note:
+              'Payout for location booking: ' +
+              booking.location.name +
+              ' (ID: ' +
+              booking.locationId +
+              ')',
           });
         } catch (error) {
           this.logger.error(`Error transferring funds to system: ${error}`);
@@ -155,20 +170,29 @@ export class LocationBookingPayoutService
       // transfer payout to host
       if (payoutAmountToHost > 0) {
         // TODO consider case location is owned publicly or is not in the system
+        // ! for now, ignoring public locations and locations not in the system
         if (
           booking.location.ownershipType ===
             LocationOwnershipType.OWNED_BY_BUSINESS &&
           isNotBlank(booking.location.businessId)
         ) {
           try {
-            await this.walletTransactionCoordinator.transferFromEscrowToAccount({
-              entityManager: em,
-              amount: payoutAmountToHost,
-              currency: SupportedCurrency.VND,
-              destinationAccountId: booking.location.businessId,
-            });
-          } catch(error) {
-            this.logger.error(`Error transferring funds to system: ${error}`);
+            await this.walletTransactionCoordinator.transferFromEscrowToAccount(
+              {
+                entityManager: em,
+                amount: payoutAmountToHost,
+                currency: SupportedCurrency.VND,
+                destinationAccountId: booking.location.businessId,
+                note:
+                  'Payout for location booking: ' +
+                  booking.location.name +
+                  ' (ID: ' +
+                  booking.locationId +
+                  ')',
+              },
+            );
+          } catch (error) {
+            this.logger.error(`Error transferring funds to host: ${error}`);
             await scheduledJobRepository.updateToFailed({
               jobIds: [dto.scheduledJobId],
             });

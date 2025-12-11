@@ -6,14 +6,12 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend
-    participant LocationRequestBusinessController as :LocationRequestBusinessController
-    participant LocationRequestManagementService as :LocationRequestManagementService
-    participant BusinessRepository as :BusinessRepository
-    participant FileStorageService as :FileStorageService
-    participant PublicFileRepository as :PublicFileRepository
-    participant LocationRequestRepository as :LocationRequestRepository
-    participant LocationRequestTagsRepository as :LocationRequestTagsRepository
+    participant Frontend as : Create Location Request Screen
+    participant LocationRequestBusinessController as : LocationRequestBusinessController
+    participant LocationRequestManagementService as : LocationRequestManagementService
+    participant BusinessRepository as : BusinessRepository
+    participant LocationRequestRepository as : LocationRequestRepository
+    participant LocationRequestTagsRepository as : LocationRequestTagsRepository
     participant Database
 
     User->>Frontend: 1. Submit location request form
@@ -36,26 +34,6 @@ sequenceDiagram
         LocationRequestBusinessController-->>Frontend: 10. Return error response
         Frontend-->>User: 11. Show error message
     else Business can create location
-        LocationRequestManagementService->>FileStorageService: 12. confirmUpload()
-        activate FileStorageService
-        FileStorageService->>PublicFileRepository: 13. find()
-        activate PublicFileRepository
-        PublicFileRepository->>Database: 14. Query public files by URLs
-        activate Database
-        Database-->>PublicFileRepository: 15. Return public files
-        deactivate Database
-        PublicFileRepository-->>FileStorageService: 16. Return public files
-        deactivate PublicFileRepository
-        FileStorageService->>PublicFileRepository: 17. save()
-        activate PublicFileRepository
-        PublicFileRepository->>Database: 18. Update public files status
-        activate Database
-        Database-->>PublicFileRepository: 19. Return updated files
-        deactivate Database
-        PublicFileRepository-->>FileStorageService: 20. Return updated files
-        deactivate PublicFileRepository
-        FileStorageService-->>LocationRequestManagementService: 21. Return public files
-        deactivate FileStorageService
         LocationRequestManagementService->>LocationRequestRepository: 22. save()
         activate LocationRequestRepository
         LocationRequestRepository->>Database: 23. Insert location request

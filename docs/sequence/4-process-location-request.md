@@ -6,16 +6,16 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend
-    participant LocationRequestAdminController as :LocationRequestAdminController
-    participant LocationRequestManagementService as :LocationRequestManagementService
-    participant LocationRequestRepository as :LocationRequestRepository
-    participant LocationManagementService as :LocationManagementService
-    participant LocationRepository as :LocationRepository
-    participant LocationRequestTagsRepository as :LocationRequestTagsRepository
-    participant LocationTagsRepository as :LocationTagsRepository
-    participant LocationBookingConfigManagementService as :LocationBookingConfigManagementService
-    participant EventEmitter as :EventEmitter
+    participant Frontend as : Location Request Detail Screen
+    participant LocationRequestAdminController as : LocationRequestAdminController
+    participant LocationRequestManagementService as : LocationRequestManagementService
+    participant LocationRequestRepository as : LocationRequestRepository
+    participant LocationManagementService as : LocationManagementService
+    participant LocationRepository as : LocationRepository
+    participant LocationRequestTagsRepository as : LocationRequestTagsRepository
+    participant LocationTagsRepository as : LocationTagsRepository
+    participant LocationBookingConfigManagementService as : LocationBookingConfigManagementService
+    participant EventEmitter as : EventEmitter
     participant Database
 
     User->>Frontend: 1. Submit process location request form

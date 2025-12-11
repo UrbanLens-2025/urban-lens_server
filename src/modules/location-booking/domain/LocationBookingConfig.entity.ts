@@ -12,6 +12,7 @@ import {
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
+import dayjs from 'dayjs';
 
 @Entity({ name: LocationBookingConfigEntity.TABLE_NAME })
 export class LocationBookingConfigEntity {
@@ -68,6 +69,52 @@ export class LocationBookingConfigEntity {
   @Column({ name: 'max_capacity', type: 'int', default: 100 })
   maxCapacity: number;
 
+  @Column({ name: 'refund_enabled', type: 'boolean', default: true })
+  refundEnabled: boolean;
+
+  @Column({ name: 'refund_cutoff_hours', type: 'int', default: 24 })
+  refundCutoffHours: number;
+
+  @Column({
+    name: 'refund_percentage_before_cutoff',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    default: 1,
+  })
+  refundPercentageBeforeCutoff: number;
+
+  @Column({
+    name: 'refund_percentage_after_cutoff',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    default: 0.8,
+  })
+  refundPercentageAfterCutoff: number;
+
+  constructor(data?: LocationBookingConfigEntity) {
+    if (data) {
+      // ! might error here
+      this.locationId = data.locationId;
+      this.location = data.location;
+      this.createdAt = data.createdAt;
+      this.updatedAt = data.updatedAt;
+      this.createdById = data.createdById;
+      this.allowBooking = data.allowBooking;
+      this.baseBookingPrice = data.baseBookingPrice;
+      this.currency = data.currency;
+      this.maxBookingDurationMinutes = data.maxBookingDurationMinutes;
+      this.minBookingDurationMinutes = data.minBookingDurationMinutes;
+      this.minGapBetweenBookingsMinutes = data.minGapBetweenBookingsMinutes;
+      this.maxCapacity = data.maxCapacity;
+      this.refundEnabled = data.refundEnabled;
+      this.refundCutoffHours = data.refundCutoffHours;
+      this.refundPercentageBeforeCutoff = data.refundPercentageBeforeCutoff;
+      this.refundPercentageAfterCutoff = data.refundPercentageAfterCutoff;
+    }
+  }
+
   public static createDefault(
     locationId: string,
     createdById: string,
@@ -83,5 +130,20 @@ export class LocationBookingConfigEntity {
     config.minGapBetweenBookingsMinutes = 15;
     config.createdById = createdById;
     return config;
+  }
+
+  public getRefundPercentage(bookingStartDate: Date): number {
+    const now = dayjs();
+
+    const cutoffTime = dayjs(bookingStartDate).subtract(
+      this.refundCutoffHours,
+      'hour',
+    );
+
+    if (now.isAfter(cutoffTime)) {
+      return this.refundPercentageAfterCutoff;
+    }
+
+    return this.refundPercentageBeforeCutoff;
   }
 }

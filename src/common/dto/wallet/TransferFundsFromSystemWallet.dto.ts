@@ -7,6 +7,7 @@ import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.cons
 export class TransferFundsFromSystemWalletDto extends CoreActionDto {
   // transient fields
   destinationWalletId: string;
+  note?: string;
 
   // request body
   @ApiProperty({ enum: DefaultSystemWallet })

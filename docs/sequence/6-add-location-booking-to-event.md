@@ -6,7 +6,7 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend
+    participant Frontend as Add Location Booking screen
     participant EventCreatorController as :EventCreatorController
     participant EventManagementService as :EventManagementService
     participant EventRepository as :EventRepository

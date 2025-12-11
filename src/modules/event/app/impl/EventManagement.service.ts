@@ -1,8 +1,13 @@
 import { CoreService } from '@/common/core/Core.service';
 import { UpdateEventDto } from '@/common/dto/event/UpdateEvent.dto';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { UpdateResult } from 'typeorm';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
+import { In, UpdateResult } from 'typeorm';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
@@ -10,14 +15,10 @@ import { PublishEventDto } from '@/common/dto/event/PublishEvent.dto';
 import { EventStatus } from '@/common/constants/EventStatus.constant';
 import { FinishEventDto } from '@/common/dto/event/FinishEvent.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
-import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob.service';
-import dayjs from 'dayjs';
-import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
-import { ConfigService } from '@nestjs/config';
-import { Environment } from '@/config/env.config';
 import { CancelEventBookingDto } from '@/common/dto/event/CancelEventBooking.dto';
 import { CreateEventDto } from '@/common/dto/event/CreateEvent.dto';
 import { EventTagsRepository } from '@/modules/event/infra/repository/EventTags.repository';
+import { HandleBookingForceCancelledDto } from '@/common/dto/event/HandleBookingForceCancelled.dto';
 import { CategoryType } from '@/common/constants/CategoryType.constant';
 import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
@@ -27,29 +28,50 @@ import { CancelEventDto } from '@/common/dto/event/CancelEvent.dto';
 import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
+import { IEventPayoutService } from '@/modules/event/app/IEventPayout.service';
+import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
+import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
+import { HandleBookingRejectedDto } from '@/common/dto/location-booking/HandleBookingRejected.dto';
 
 @Injectable()
 export class EventManagementService
   extends CoreService
   implements IEventManagementService
 {
-  private readonly MILLIS_TO_EVENT_PAYOUT: number;
-
   constructor(
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
-    @Inject(IScheduledJobService)
-    private readonly scheduledJobService: IScheduledJobService,
-    @Inject(ILocationBookingManagementService)
+    @Inject(forwardRef(() => ILocationBookingManagementService))
     private readonly locationBookingService: ILocationBookingManagementService,
     @Inject(ITicketOrderManagementService)
     private readonly ticketOrderManagementService: ITicketOrderManagementService,
-    private readonly configService: ConfigService<Environment>,
+    @Inject(IEventPayoutService)
+    private readonly eventPayoutService: IEventPayoutService,
   ) {
     super();
-    this.MILLIS_TO_EVENT_PAYOUT = this.configService.getOrThrow<number>(
-      'MILLIS_TO_EVENT_PAYOUT',
-    );
+  }
+
+  handleBookingRejected(
+    dto: HandleBookingRejectedDto,
+  ): Promise<EventResponseDto[]> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const eventRepository = EventRepository(em);
+      const events = await eventRepository.find({
+        where: {
+          id: In(dto.eventId),
+        },
+      });
+
+      if (events.length !== dto.eventId.length) {
+        throw new BadRequestException('One or more events not found.');
+      }
+
+      for (const event of events) {
+        event.locationId = null;
+      }
+
+      return eventRepository.save(events);
+    }).then((res) => this.mapToArray(EventResponseDto, res));
   }
 
   createEvent(dto: CreateEventDto): Promise<EventResponseDto> {
@@ -118,14 +140,26 @@ export class EventManagementService
         );
       }
 
+      // published can only update description and images, exclude other fields
+      if (event.status === EventStatus.PUBLISHED) {
+        dto.displayName = undefined;
+        dto.startDate = undefined;
+        dto.endDate = undefined;
+        dto.eventValidationDocuments = undefined;
+        dto.expectedNumberOfParticipants = undefined;
+      }
+
       // Confirm uploads for image URLs and validation documents
-      const filesToConfirm = [
-        dto.avatarUrl,
-        dto.coverUrl,
-        ...(dto.eventValidationDocuments?.flatMap((i) => i.documentImageUrls) ??
-          []),
-      ];
-      await this.fileStorageService.confirmUpload(filesToConfirm, em);
+      await this.fileStorageService.confirmUpload(
+        [
+          dto.avatarUrl,
+          dto.coverUrl,
+          ...(dto.eventValidationDocuments?.flatMap(
+            (i) => i.documentImageUrls,
+          ) ?? []),
+        ],
+        em,
+      );
 
       const updatedEvent = this.mapTo_safe(EventEntity, dto);
       if (dto.eventValidationDocuments) {
@@ -139,15 +173,43 @@ export class EventManagementService
   publishEvent(dto: PublishEventDto): Promise<UpdateResult> {
     return this.ensureTransaction(null, async (em) => {
       const eventRepository = EventRepository(em);
+      const locationBookingRepo = LocationBookingRepository(em);
 
-      const event = await eventRepository.findOneByOrFail({
-        id: dto.eventId,
-        createdById: dto.accountId,
+      const event = await eventRepository.findOneOrFail({
+        where: {
+          id: dto.eventId,
+          createdById: dto.accountId,
+        },
+        relations: {
+          tickets: true,
+        },
       });
 
       if (!event.canBePublished()) {
         throw new BadRequestException(
-          'Event is missing required information to be published. Requires: Location, Display Name, Start Date, End Date.',
+          'Event is missing required information to be published. Requires: Location, Display Name, Start Date, End Date, Tickets.',
+        );
+      }
+
+      const locationBookings = await locationBookingRepo.find({
+        where: {
+          bookingObject: LocationBookingObject.FOR_EVENT,
+          targetId: dto.eventId,
+          status: LocationBookingStatus.APPROVED,
+        },
+      });
+
+      const approvedLocationBookings = locationBookings.map(
+        (booking) => booking.locationId,
+      );
+
+      if (
+        approvedLocationBookings.length === 0 ||
+        (event.locationId &&
+          !approvedLocationBookings.includes(event.locationId))
+      ) {
+        throw new BadRequestException(
+          'Event cannot be published. Location booking is not approved.',
         );
       }
 
@@ -180,42 +242,16 @@ export class EventManagementService
 
       // TODO: Add more conditions here
 
-      const totalRevenueFromTickets = event.ticketOrders.reduce(
-        (sum, order) => {
-          return sum + Number(order.totalPaymentAmount);
-        },
-        0,
-      );
-
-      if (totalRevenueFromTickets > 0) {
-        // Trigger payout process to event owner after 1 week cooldown
-        const now = dayjs();
-        const executeAt = now
-          .add(this.MILLIS_TO_EVENT_PAYOUT, 'milliseconds')
-          .toDate();
-        const job =
-          await this.scheduledJobService.createLongRunningScheduledJob({
-            entityManager: em,
-            executeAt,
-            jobType: ScheduledJobType.EVENT_PAYOUT,
-            payload: {
-              eventId: event.id,
-            },
-            associatedId: event.id,
-          });
-        event.scheduledJobId = job.id;
-      } else {
-        event.hasPaidOut = true;
-        event.scheduledJobId = null;
-        event.paidOutAt = new Date();
-      }
-
       // save
       event.status = EventStatus.FINISHED;
+      await eventRepository.save(event);
 
-      return await eventRepository
-        .save(event)
-        .then((res) => this.mapTo(EventResponseDto, res));
+      const result = await this.eventPayoutService.scheduleEventPayout({
+        eventId: event.id,
+        entityManager: em,
+      });
+
+      return this.mapTo(EventResponseDto, result);
     });
   }
 
@@ -290,6 +326,22 @@ export class EventManagementService
 
           return res;
         });
+
+      // validate location booking times to have to contain the event booking times
+      if (
+        !LocationBookingEntity.validateBookingTimes(
+          dto.dates.map((i) => ({
+            startDateTime: i.startDateTime,
+            endDateTime: i.endDateTime,
+          })),
+          event.startDate,
+          event.endDate,
+        )
+      ) {
+        throw new BadRequestException(
+          'Location booking times must contain the event booking times.',
+        );
+      }
 
       const locationBookings = await locationBookingRepo.find({
         where: {
@@ -422,5 +474,22 @@ export class EventManagementService
         .save(event)
         .then((res) => this.mapTo(EventResponseDto, res));
     });
+  }
+
+  handleBookingForceCancelled(
+    dto: HandleBookingForceCancelledDto,
+  ): Promise<EventResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const eventRepository = EventRepository(em);
+      const event = await eventRepository.findOneOrFail({
+        where: {
+          id: dto.eventId,
+        },
+      });
+
+      event.locationId = null;
+
+      return eventRepository.save(event);
+    }).then((res) => this.mapTo(EventResponseDto, res));
   }
 }

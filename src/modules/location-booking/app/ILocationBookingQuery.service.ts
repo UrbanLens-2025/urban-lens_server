@@ -1,10 +1,13 @@
 import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 import { SearchBookingsByLocationDto } from '@/common/dto/location-booking/SearchBookingsByLocation.dto';
-import { PaginateConfig, Paginated } from 'nestjs-paginate';
+import { PaginateConfig, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { GetBookingByIdDto } from '@/common/dto/location-booking/GetBookingById.dto';
 import { GetBookedDatesByDateRangeDto } from '@/common/dto/location-booking/GetBookedDatesByDateRange.dto';
 import { BookedDatesResponseDto } from '@/common/dto/location-booking/res/BookedDate.response.dto';
+import { GetAllBookingsAtLocationByDateRangeDto } from '@/common/dto/location-booking/GetAllBookingsAtLocationByDateRange.dto';
+import { GetAllBookingsAtLocationPagedDto } from '@/common/dto/location-booking/GetAllBookingsAtLocationPaged.dto';
+import { GetConflictingBookingsDto } from '@/common/dto/location-booking/GetConflictingBookings.dto';
 
 export const ILocationBookingQueryService = Symbol(
   'ILocationBookingQueryService',
@@ -21,6 +24,14 @@ export interface ILocationBookingQueryService {
   getBookedDatesByDateRange(
     dto: GetBookedDatesByDateRangeDto,
   ): Promise<BookedDatesResponseDto>;
+
+  getAllBookingsAtLocationPaged(
+    dto: GetAllBookingsAtLocationPagedDto,
+  ): Promise<Paginated<LocationBookingResponseDto>>;
+
+  getConflictingBookings(
+    dto: GetConflictingBookingsDto,
+  ): Promise<LocationBookingResponseDto[]>;
 }
 
 export namespace ILocationBookingQueryService_QueryConfig {
@@ -35,6 +46,7 @@ export namespace ILocationBookingQueryService_QueryConfig {
         createdBy: true,
         location: true,
         dates: true,
+        scheduledPayoutJob: true,
       },
     };
   }

@@ -6,7 +6,7 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend as : Frontend
+    participant Frontend as : Business Detail Screen
     participant AccountAdminController as : AccountAdminController
     participant AccountProfileManagementService as : AccountProfileManagementService
     participant BusinessRepository as : BusinessRepository
