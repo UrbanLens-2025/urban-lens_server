@@ -78,4 +78,3 @@ sequenceDiagram
         deactivate Frontend
     end
 ```
-

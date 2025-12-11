@@ -6,16 +6,16 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend
+    participant CreateTicketScreen as :CreateTicketScreen
     participant EventCreatorController as :EventCreatorController
     participant EventTicketManagementService as :EventTicketManagementService
     participant EventRepository as :EventRepository
     participant EventTicketRepository as :EventTicketRepository
     participant Database
 
-    User->>Frontend: 1. Submit create ticket form
-    activate Frontend
-    Frontend->>EventCreatorController: 2. POST /creator/events/:eventId/tickets
+    User->>CreateTicketScreen: 1. Submit create ticket form
+    activate CreateTicketScreen
+    CreateTicketScreen->>EventCreatorController: 2. POST /creator/events/:eventId/tickets
     activate EventCreatorController
     EventCreatorController->>EventTicketManagementService: 3. createEventTicket()
     activate EventTicketManagementService
@@ -38,9 +38,8 @@ sequenceDiagram
     EventTicketManagementService->>EventTicketManagementService: 12. Map to response DTO
     EventTicketManagementService-->>EventCreatorController: 13. Return success response
     deactivate EventTicketManagementService
-    EventCreatorController-->>Frontend: 14. Return success response
+    EventCreatorController-->>CreateTicketScreen: 14. Return success response
     deactivate EventCreatorController
-    Frontend-->>User: 15. Show success message
-    deactivate Frontend
+    CreateTicketScreen-->>User: 15. Show success message
+    deactivate CreateTicketScreen
 ```
-

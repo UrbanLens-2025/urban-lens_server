@@ -6,7 +6,7 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend
+    participant TicketPurchaseScreen as :TicketPurchaseScreen
     participant EventUserController as :EventUserController
     participant TicketOrderManagementService as :TicketOrderManagementService
     participant EventRepository as :EventRepository
@@ -22,9 +22,9 @@ sequenceDiagram
     participant EventAttendanceRepository as :EventAttendanceRepository
     participant Database
 
-    User->>Frontend: 1. Submit create ticket order form
-    activate Frontend
-    Frontend->>EventUserController: 2. POST /user/event/:eventId/create-order
+    User->>TicketPurchaseScreen: 1. Submit create ticket order form
+    activate TicketPurchaseScreen
+    TicketPurchaseScreen->>EventUserController: 2. POST /user/event/:eventId/create-order
     activate EventUserController
     EventUserController->>TicketOrderManagementService: 3. createOrder()
     activate TicketOrderManagementService
@@ -47,8 +47,8 @@ sequenceDiagram
     TicketOrderManagementService->>TicketOrderManagementService: 20. Validate ticket purchaseability and quantity
     alt Ticket validation fails
         TicketOrderManagementService-->>EventUserController: 21. Return error message
-        EventUserController-->>Frontend: 22. Return error response
-        Frontend-->>User: 23. Show error message
+        EventUserController-->>TicketPurchaseScreen: 22. Return error response
+        TicketPurchaseScreen-->>User: 23. Show error message
     else Ticket validation succeeds
         TicketOrderManagementService->>WalletTransactionCoordinatorService: 24. coordinateTransferToEscrow()
         activate WalletTransactionCoordinatorService
@@ -162,10 +162,9 @@ sequenceDiagram
         deactivate EventAttendanceManagementService
         TicketOrderManagementService-->>EventUserController: 84. Return success response
         deactivate TicketOrderManagementService
-        EventUserController-->>Frontend: 85. Return success response
+        EventUserController-->>TicketPurchaseScreen: 85. Return success response
         deactivate EventUserController
-        Frontend-->>User: 86. Show success message
-        deactivate Frontend
+        TicketPurchaseScreen-->>User: 86. Show success message
+        deactivate TicketPurchaseScreen
     end
 ```
-

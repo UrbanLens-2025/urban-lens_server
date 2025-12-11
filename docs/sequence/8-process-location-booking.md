@@ -6,15 +6,15 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant Frontend
+    participant LocationBookingManagementScreen as :LocationBookingManagementScreen
     participant LocationBookingOwnerController as :LocationBookingOwnerController
     participant LocationBookingManagementService as :LocationBookingManagementService
     participant LocationBookingRepository as :LocationBookingRepository
     participant Database
 
-    User->>Frontend: 1. Submit process booking form
-    activate Frontend
-    Frontend->>LocationBookingOwnerController: 2. POST /owner/location-bookings/process/:locationBookingId
+    User->>LocationBookingManagementScreen: 1. Submit process booking form
+    activate LocationBookingManagementScreen
+    LocationBookingManagementScreen->>LocationBookingOwnerController: 2. POST /owner/location-bookings/process/:locationBookingId
     activate LocationBookingOwnerController
     LocationBookingOwnerController->>LocationBookingManagementService: 3. processBooking()
     activate LocationBookingManagementService
@@ -29,8 +29,8 @@ sequenceDiagram
     LocationBookingManagementService->>LocationBookingManagementService: 8. Validate booking can be processed
     alt Booking cannot be processed
         LocationBookingManagementService-->>LocationBookingOwnerController: 9. Return error message
-        LocationBookingOwnerController-->>Frontend: 10. Return error response
-        Frontend-->>User: 11. Show error message
+        LocationBookingOwnerController-->>LocationBookingManagementScreen: 10. Return error response
+        LocationBookingManagementScreen-->>User: 11. Show error message
     else Booking can be processed
         LocationBookingManagementService->>LocationBookingRepository: 12. update()
         activate LocationBookingRepository
@@ -42,10 +42,9 @@ sequenceDiagram
         deactivate LocationBookingRepository
         LocationBookingManagementService-->>LocationBookingOwnerController: 20. Return success response
         deactivate LocationBookingManagementService
-        LocationBookingOwnerController-->>Frontend: 21. Return success response
+        LocationBookingOwnerController-->>LocationBookingManagementScreen: 21. Return success response
         deactivate LocationBookingOwnerController
-        Frontend-->>User: 22. Show success message
-        deactivate Frontend
+        LocationBookingManagementScreen-->>User: 22. Show success message
+        deactivate LocationBookingManagementScreen
     end
 ```
-

@@ -47,4 +47,3 @@ sequenceDiagram
     deactivate AccountAdminController
     deactivate Frontend
 ```
-
