@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class SummaryCardDto {
   @ApiProperty({
     description: 'Title of the summary card',
-    example: 'Người dùng',
+    example: 'Users',
   })
   title: string;
 
@@ -29,7 +29,7 @@ export class SummaryCardDto {
 
   @ApiPropertyOptional({
     description: 'Description of the metric (only when no date filter)',
-    example: 'Tăng so với 7 ngày trước',
+    example: 'Increased compared to 7 days ago',
   })
   description?: string;
 }
