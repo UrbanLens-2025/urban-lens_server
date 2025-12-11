@@ -68,7 +68,7 @@ export class EventAttendanceRefundedListener extends CoreService {
           (sum, a) => sum + Number(a.refundedAmount ?? 0),
           0,
         );
-        const eventName = attendances[0]?.event?.name ?? 'Event';
+        const eventName = attendances[0]?.event?.displayName ?? 'Event';
         const currency = SupportedCurrency.VND;
 
         notificationPromises.push(
