@@ -62,7 +62,9 @@ export class AddTicketToEventDto {
 
   @IsInt()
   @Min(0)
-  @ApiProperty()
+  @ApiProperty({
+    description: 'This will be the initial total quantity of the ticket.',
+  })
   totalQuantityAvailable: number;
 
   @Type(() => Date)

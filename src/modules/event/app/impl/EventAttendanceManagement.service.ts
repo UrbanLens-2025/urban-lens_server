@@ -9,6 +9,7 @@ import { EventRepository } from '@/modules/event/infra/repository/Event.reposito
 import { EventAttendanceRepository } from '@/modules/event/infra/repository/EventAttendance.repository';
 import {
   BadRequestException,
+  Inject,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -22,13 +23,23 @@ import {
   TICKETS_CHECKED_IN_EVENT,
   TicketsCheckedInEvent,
 } from '@/modules/event/domain/events/TicketsCheckedIn.event';
+import { RefundTicketDto } from '@/common/dto/event/RefundTicket.dto';
+import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
+import { EventTicketRepository } from '@/modules/event/infra/repository/EventTicket.repository';
+import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
+import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
+import { EVENT_ATTENDANCE_REFUNDED, EventAttendanceRefundedEvent } from '@/modules/event/domain/events/EventAttendanceRefunded.event';
 
 @Injectable()
 export class EventAttendanceManagementService
   extends CoreService
   implements IEventAttendanceManagementService
 {
-  constructor(private readonly eventEmitter: EventEmitter2) {
+  constructor(
+    private readonly eventEmitter: EventEmitter2,
+    @Inject(IWalletTransactionCoordinatorService)
+    private readonly walletTransactionCoordinatorService: IWalletTransactionCoordinatorService,
+  ) {
     super();
   }
 
@@ -80,6 +91,100 @@ export class EventAttendanceManagementService
           this.mapTo(EventAttendanceResponseDto, eventAttendance),
         ),
       );
+  }
+
+  refundTicket(dto: RefundTicketDto): Promise<EventAttendanceResponseDto[]> {
+    return this.ensureTransaction(null, async (em) => {
+      const eventAttendanceRepo = EventAttendanceRepository(em);
+      const eventTicketRepo = EventTicketRepository(em);
+
+      const eventAttendances = await eventAttendanceRepo.find({
+        where: { id: In(dto.eventAttendanceIds) },
+      });
+
+      if (eventAttendances.length !== dto.eventAttendanceIds.length) {
+        throw new BadRequestException('Some event attendances not found');
+      }
+
+      if (
+        eventAttendances.some(
+          (eventAttendance) => eventAttendance.ownerId !== dto.accountId,
+        )
+      ) {
+        throw new BadRequestException(
+          'You are not authorized to refund this event attendance',
+        );
+      }
+
+      // todo: possible n+1 issue here
+      for (const eventAttendance of eventAttendances) {
+        if (!eventAttendance.canBeRefunded()) {
+          throw new BadRequestException('Event attendance cannot be refunded');
+        }
+
+        // calculate refund amount based on ticket settings
+        let ticket: EventTicketEntity | null = null;
+        if (
+          eventAttendance.ticketSnapshot &&
+          eventAttendance.ticketSnapshot?.['id'] === eventAttendance.ticketId
+        ) {
+          // has ticket snapshot -> use it
+          ticket = eventAttendance.ticketSnapshot;
+        } else {
+          ticket = await eventTicketRepo.findOneOrFail({
+            where: {
+              id: eventAttendance.ticketId,
+            },
+          });
+        }
+        const refundPercentage = ticket.getRefundPercentage(
+          eventAttendance.createdAt,
+        );
+        if (refundPercentage === false) {
+          throw new BadRequestException('Ticket does not allow refunds');
+        }
+        const refundAmount = ticket.price * refundPercentage;
+        const refundTransaction =
+          await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
+            {
+              entityManager: em,
+              destinationAccountId: eventAttendance.ownerId!,
+              amount: refundAmount,
+              currency: SupportedCurrency.VND,
+            },
+          );
+
+        eventAttendance.refundTransactionId = refundTransaction.id;
+        eventAttendance.refundedAmount = refundAmount;
+        eventAttendance.status = EventAttendanceStatus.CANCELLED;
+        eventAttendance.refundedAt = new Date();
+      }
+
+      return (
+        eventAttendanceRepo
+          .save(eventAttendances)
+          // update ticket available quantity and total_reserved
+          .then(async (res) => {
+            await eventTicketRepo.refundTickets({
+              items: eventAttendances.map((eventAttendance) => ({
+                ticketId: eventAttendance.ticketId,
+                quantityRefunded: 1,
+              })),
+            });
+            return res;
+          })
+      );
+    }) // emit event
+      .then((res) => {
+        this.eventEmitter.emit(
+          EVENT_ATTENDANCE_REFUNDED,
+          new EventAttendanceRefundedEvent(
+            res.map((eventAttendance) => eventAttendance.id),
+          ),
+        );
+        return res;
+      })
+      .then((res) => this.mapToArray(EventAttendanceResponseDto, res));
   }
 
   confirmTicketUsage(
@@ -157,6 +262,7 @@ export class EventAttendanceManagementService
             eventAttendance.ownerEmail = accountDetails.email;
             eventAttendance.ownerPhoneNumber = accountDetails.phoneNumber;
             eventAttendance.numberOfAttendees = 1;
+            eventAttendance.ticketSnapshot = orderDetail.ticketSnapshot;
             eventAttendances.push(eventAttendance);
           }
         }

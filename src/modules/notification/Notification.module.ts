@@ -17,6 +17,7 @@ import { BookingApprovedListener } from '@/modules/notification/app/event-listen
 import { BookingRejectedListener } from '@/modules/notification/app/event-listeners/BookingRejected.listener';
 import { BookingCancelledListener } from '@/modules/notification/app/event-listeners/BookingCancelled.listener';
 import { BookingForceCancelledListener } from '@/modules/notification/app/event-listeners/BookingForceCancelled.listener';
+import { EventAttendanceRefundedListener } from '@/modules/notification/app/event-listeners/EventAttendanceRefunded.listener';
 import { ClientsModule } from '@nestjs/microservices';
 import { RabbitMQBaseClientConfig } from '@/config/rabbitmq.config';
 import { EmailConsumer } from '@/modules/notification/interfaces/consumers/Email.consumer';
@@ -59,6 +60,7 @@ import { IEmailSenderWorker } from '@/modules/notification/app/IEmailSender.work
     BookingRejectedListener,
     BookingCancelledListener,
     BookingForceCancelledListener,
+    EventAttendanceRefundedListener,
   ],
   controllers: [
     PushNotificationUserController,

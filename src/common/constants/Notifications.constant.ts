@@ -11,6 +11,7 @@ export enum NotificationTypes {
   BOOKING_REJECTED = 'BOOKING_REJECTED',
   BOOKING_CANCELLED = 'BOOKING_CANCELLED',
   BOOKING_FORCE_CANCELLED = 'BOOKING_FORCE_CANCELLED',
+  EVENT_ATTENDANCE_REFUNDED = 'EVENT_ATTENDANCE_REFUNDED',
 }
 
 export const NotificationsConstant: {
@@ -76,6 +77,12 @@ export const NotificationsConstant: {
     payload: {
       title: 'Booking force cancelled',
       body: 'Your booking for {locationName} has been cancelled by the business owner due to unforeseen circumstances.',
+    },
+  },
+  [NotificationTypes.EVENT_ATTENDANCE_REFUNDED]: {
+    payload: {
+      title: 'Tickets refunded',
+      body: 'You have refunded {ticketCount} ticket(s) for {eventName}. {refundAmount} {currency} has been credited to your wallet.',
     },
   },
 };

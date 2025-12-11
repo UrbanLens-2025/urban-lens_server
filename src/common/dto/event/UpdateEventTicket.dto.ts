@@ -65,7 +65,10 @@ export class UpdateEventTicketDto {
   @IsInt()
   @Min(0)
   @IsOptional()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description:
+      'This will be the new total quantity of the ticket you want. This will be validated on the backend.',
+  })
   totalQuantityAvailable?: number;
 
   @Type(() => Date)

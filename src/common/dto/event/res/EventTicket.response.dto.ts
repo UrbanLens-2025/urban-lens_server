@@ -44,6 +44,9 @@ export class EventTicketResponseDto {
   tos?: string;
 
   @Expose()
+  totalQuantity: number;
+
+  @Expose()
   totalQuantityAvailable: number;
 
   @Expose()
