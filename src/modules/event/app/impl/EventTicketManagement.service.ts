@@ -45,6 +45,7 @@ export class EventTicketManagementService
       eventTicket.isActive = dto.isActive ?? true;
       eventTicket.totalQuantity = dto.totalQuantityAvailable;
       eventTicket.totalQuantityAvailable = dto.totalQuantityAvailable;
+      eventTicket.quantityReserved = 0;
       eventTicket.minQuantityPerOrder = dto.minQuantityPerOrder ?? 1;
       eventTicket.maxQuantityPerOrder = dto.maxQuantityPerOrder ?? 5;
 
@@ -76,29 +77,37 @@ export class EventTicketManagementService
       // confirm image URL upload if provided
       await this.fileStorageService.confirmUpload([dto.imageUrl], em);
 
+      // store original values before assignment overwrites them
+      const originalTotalQuantity = ticket.totalQuantity;
+      const originalTotalQuantityAvailable = ticket.totalQuantityAvailable;
+
       // update ticket
       this.assignTo_safeIgnoreEmpty(ticket, dto);
 
       // if total quantity available is changed, then validate
+      // TODO stress test and validate
       if (
         dto.totalQuantityAvailable !== undefined &&
-        dto.totalQuantityAvailable !== ticket.totalQuantity
+        dto.totalQuantityAvailable !== originalTotalQuantityAvailable
       ) {
-        const delta = dto.totalQuantityAvailable - ticket.totalQuantity;
+        const delta =
+          dto.totalQuantityAvailable - originalTotalQuantityAvailable;
 
         if (delta > 0) {
           // EC wants to increase the total quantity of the ticket
-          ticket.totalQuantityAvailable += delta;
-          ticket.totalQuantity += delta;
+          ticket.totalQuantityAvailable =
+            originalTotalQuantityAvailable + delta;
+          ticket.totalQuantity = originalTotalQuantity + delta;
         } else if (delta < 0) {
           // EC wants to decrease the total quantity of the ticket
-          if (ticket.totalQuantityAvailable + delta < 0) {
+          if (originalTotalQuantityAvailable + delta < 0) {
             throw new BadRequestException(
               'Cannot decrease the total quantity of the ticket below the quantity available.',
             );
           }
-          ticket.totalQuantityAvailable += delta;
-          ticket.totalQuantity += delta;
+          ticket.totalQuantityAvailable =
+            originalTotalQuantityAvailable + delta;
+          ticket.totalQuantity = originalTotalQuantity + delta;
         }
       }
 

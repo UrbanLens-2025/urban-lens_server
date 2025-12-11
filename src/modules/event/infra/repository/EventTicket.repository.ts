@@ -76,23 +76,30 @@ export const EventTicketRepository = (ctx: DataSource | EntityManager) =>
         }[];
       },
     ) {
-      const ticketIds = payload.items.map((item) => item.ticketId);
+      // aggregate quantities per ticketId (handles duplicate ticketIds)
+      const aggregatedItems = new Map<string, number>();
+      for (const item of payload.items) {
+        const current = aggregatedItems.get(item.ticketId) ?? 0;
+        aggregatedItems.set(item.ticketId, current + item.quantityRefunded);
+      }
+
+      const uniqueTicketIds = Array.from(aggregatedItems.keys());
       const tickets = await this.find({
-        where: { id: In(ticketIds) },
+        where: { id: In(uniqueTicketIds) },
       });
 
-      if (tickets.length !== ticketIds.length) {
+      if (tickets.length !== uniqueTicketIds.length) {
         throw new BadRequestException('One or more tickets not found');
       }
 
       const errors: string[] = [];
-      for (const item of payload.items) {
-        const ticket = tickets.find((t) => t.id === item.ticketId);
+      for (const [ticketId, totalQuantity] of aggregatedItems) {
+        const ticket = tickets.find((t) => t.id === ticketId);
         if (!ticket) continue;
 
-        if (ticket.quantityReserved < item.quantityRefunded) {
+        if (ticket.quantityReserved < totalQuantity) {
           errors.push(
-            `Insufficient tickets reserved for ${ticket.displayName}. Requested: ${item.quantityRefunded}, Reserved: ${ticket.quantityReserved}`,
+            `Insufficient tickets reserved for ${ticket.displayName}. Requested: ${totalQuantity}, Reserved: ${ticket.quantityReserved}`,
           );
         }
       }
@@ -101,23 +108,27 @@ export const EventTicketRepository = (ctx: DataSource | EntityManager) =>
         throw new BadRequestException(errors);
       }
 
-      const updatePromises = payload.items.map((item) =>
-        this.createQueryBuilder()
-          .update(EventTicketEntity)
-          .set({
-            totalQuantityAvailable: () =>
-              `"total_quantity_available" + :quantityRefunded`,
-            quantityReserved: () => `"quantity_reserved" - :quantityRefunded`,
-          })
-          .setParameter('quantityRefunded', item.quantityRefunded)
-          .where('id = :ticketId', { ticketId: item.ticketId })
-          .execute(),
+      const updatePromises = Array.from(aggregatedItems.entries()).map(
+        ([ticketId, quantityRefunded]) =>
+          this.createQueryBuilder()
+            .update(EventTicketEntity)
+            .set({
+              totalQuantityAvailable: () =>
+                `"total_quantity_available" + :quantityRefunded`,
+              quantityReserved: () => `"quantity_reserved" - :quantityRefunded`,
+            })
+            .setParameter('quantityRefunded', quantityRefunded)
+            .where('id = :ticketId', { ticketId })
+            .andWhere('"quantity_reserved" >= :quantityRefunded', {
+              quantityRefunded,
+            })
+            .execute(),
       );
 
       await Promise.all(updatePromises);
 
       return this.find({
-        where: { id: In(ticketIds) },
+        where: { id: In(uniqueTicketIds) },
       });
     },
   });

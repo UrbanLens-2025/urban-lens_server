@@ -27,8 +27,12 @@ import { RefundTicketDto } from '@/common/dto/event/RefundTicket.dto';
 import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
 import { EventTicketRepository } from '@/modules/event/infra/repository/EventTicket.repository';
 import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
+import { plainToInstance } from 'class-transformer';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
-import { EVENT_ATTENDANCE_REFUNDED, EventAttendanceRefundedEvent } from '@/modules/event/domain/events/EventAttendanceRefunded.event';
+import {
+  EVENT_ATTENDANCE_REFUNDED,
+  EventAttendanceRefundedEvent,
+} from '@/modules/event/domain/events/EventAttendanceRefunded.event';
 
 @Injectable()
 export class EventAttendanceManagementService
@@ -102,10 +106,12 @@ export class EventAttendanceManagementService
         where: { id: In(dto.eventAttendanceIds) },
       });
 
+      // sanity check
       if (eventAttendances.length !== dto.eventAttendanceIds.length) {
         throw new BadRequestException('Some event attendances not found');
       }
 
+      // ownership
       if (
         eventAttendances.some(
           (eventAttendance) => eventAttendance.ownerId !== dto.accountId,
@@ -113,6 +119,18 @@ export class EventAttendanceManagementService
       ) {
         throw new BadRequestException(
           'You are not authorized to refund this event attendance',
+        );
+      }
+
+      // same event check
+      if (
+        eventAttendances.some(
+          (eventAttendance) =>
+            eventAttendance.eventId !== eventAttendances[0].eventId,
+        )
+      ) {
+        throw new BadRequestException(
+          'Event attendances must be for the same event',
         );
       }
 
@@ -128,8 +146,14 @@ export class EventAttendanceManagementService
           eventAttendance.ticketSnapshot &&
           eventAttendance.ticketSnapshot?.['id'] === eventAttendance.ticketId
         ) {
-          // has ticket snapshot -> use it
-          ticket = eventAttendance.ticketSnapshot;
+          // has ticket snapshot -> convert JSONB to entity instance for methods
+          ticket = plainToInstance(
+            EventTicketEntity,
+            eventAttendance.ticketSnapshot,
+            {
+              excludeExtraneousValues: false,
+            },
+          );
         } else {
           ticket = await eventTicketRepo.findOneOrFail({
             where: {

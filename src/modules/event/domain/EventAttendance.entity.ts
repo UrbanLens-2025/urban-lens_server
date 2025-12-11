@@ -128,13 +128,18 @@ export class EventAttendanceEntity {
     scale: 2,
     nullable: true,
   })
-  refundedAmount: number;
+  refundedAmount?: number | null;
 
   public canCheckIn(): boolean {
     return this.status === EventAttendanceStatus.CREATED;
   }
 
   canBeRefunded() {
-    return this.status === EventAttendanceStatus.CREATED && !this.checkedInAt; // can only refund if not checked in
+    return (
+      this.status === EventAttendanceStatus.CREATED &&
+      !this.checkedInAt &&
+      !this.refundedAt &&
+      !this.refundTransactionId
+    ); // can only refund if not checked in and not already refunded
   }
 }
