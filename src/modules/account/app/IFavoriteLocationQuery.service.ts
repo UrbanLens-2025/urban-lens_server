@@ -1,4 +1,5 @@
 import { GetMyFavoritesQueryDto } from '@/common/dto/account/GetMyFavoritesQuery.dto';
+import { GetFavoriteLocationByIdDto } from '@/common/dto/account/GetFavoriteLocationById.dto';
 import { Paginated, PaginateConfig } from 'nestjs-paginate';
 import { FavoriteLocationEntity } from '@/modules/account/domain/FavoriteLocation.entity';
 import { FavoriteLocationResponseDto } from '@/common/dto/account/res/FavoriteLocation.response.dto';
@@ -11,6 +12,10 @@ export interface IFavoriteLocationQueryService {
   getMyFavorites(
     dto: GetMyFavoritesQueryDto,
   ): Promise<Paginated<FavoriteLocationResponseDto>>;
+
+  getFavoriteLocationById(
+    dto: GetFavoriteLocationByIdDto,
+  ): Promise<FavoriteLocationResponseDto>;
 }
 
 export namespace IFavoriteLocationQueryService_QueryConfig {

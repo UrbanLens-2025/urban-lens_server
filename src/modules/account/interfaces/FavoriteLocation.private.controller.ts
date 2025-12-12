@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Inject, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   IFavoriteLocationQueryService,
@@ -58,6 +67,18 @@ export class FavoriteLocationPrivateController {
     return this.favoriteLocationQueryService.getMyFavorites({
       query,
       accountId: user.sub,
+    });
+  }
+
+  @Get('/:locationId')
+  @ApiOperation({ summary: 'Get favorite location by ID' })
+  getFavoriteLocationById(
+    @AuthUser() user: JwtTokenDto,
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+  ) {
+    return this.favoriteLocationQueryService.getFavoriteLocationById({
+      accountId: user.sub,
+      locationId,
     });
   }
 }
