@@ -1,0 +1,56 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    title Your Post Has Been Removed
+    style.
+      body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background: #dc3545; color: white; padding: 20px; text-align: center; }
+      .content { padding: 20px; background: #f9f9f9; }
+      .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+      .post-content { background: white; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 3px solid #dc3545; }
+      .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+  body
+    .container
+      .header
+        h1 ⚠️ Post Removed
+        p Your Post Has Been Removed from Urban Lens
+      
+      .content
+        p Dear User,
+        
+        p We are writing to inform you that your post has been removed from Urban Lens for violating our community guidelines.
+        
+        .warning-box
+          p <strong>Reason:</strong>
+          p #{reason}
+        
+        if postContent
+          .post-content
+            p <strong>Removed Post Content:</strong>
+            p <em>#{postContent}</em>
+        
+        p <strong>What this means:</strong>
+        ul
+          li Your post is no longer visible to other users
+          li The post has been removed from all feeds and search results
+          li You can still view the post in your account, but it will be marked as removed
+        
+        p <strong>What you can do:</strong>
+        ul
+          li Review our community guidelines to understand what content is allowed
+          li If you believe this was a mistake, you can contact our support team
+          li Create new posts that comply with our guidelines
+        
+        p We encourage you to continue participating in our community while following our guidelines.
+        
+        p If you have any questions or concerns, please don't hesitate to contact our support team.
+        
+        p Best regards,<br>
+          The Urban Lens Team
+      
+      .footer
+        p © 2024 Urban Lens. All rights reserved.
+        p This is an automated message. Please do not reply to this email.
+

@@ -13,6 +13,7 @@ export enum NotificationTypes {
   BOOKING_FORCE_CANCELLED = 'BOOKING_FORCE_CANCELLED',
   EVENT_ATTENDANCE_REFUNDED = 'EVENT_ATTENDANCE_REFUNDED',
   NEW_POST = 'NEW_POST',
+  POST_BANNED = 'POST_BANNED',
 }
 
 export const NotificationsConstant: {
@@ -90,6 +91,12 @@ export const NotificationsConstant: {
     payload: {
       title: '{authorName} posted something new',
       body: '{postContent}',
+    },
+  },
+  [NotificationTypes.POST_BANNED]: {
+    payload: {
+      title: 'Your post has been removed',
+      body: '{reason}',
     },
   },
 };

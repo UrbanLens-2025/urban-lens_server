@@ -51,6 +51,10 @@ import {
   PostCreatedEvent,
 } from '@/modules/gamification/domain/events/PostCreated.event';
 import {
+  POST_BANNED_EVENT,
+  PostBannedEvent,
+} from '@/modules/post/domain/events/PostBanned.event';
+import {
   POST_REACTED_EVENT,
   PostReactedEvent,
 } from '@/modules/post/domain/events/PostReacted.event';
@@ -1851,53 +1855,56 @@ export class PostService
     }
   }
 
-  async banPost(postId: string, reason?: string): Promise<BanPostResponseDto> {
+  async banPost(
+    postId: string,
+    reason?: string,
+    entityManager?: EntityManager,
+  ): Promise<BanPostResponseDto> {
     try {
       this.logger.debug(
         `Banning post ${postId}${reason ? ` with reason: ${reason}` : ''}`,
       );
 
-      const post = await this.postRepository.repo.findOne({
-        where: { postId },
+      return await (
+        entityManager || this.postRepository.repo.manager
+      ).transaction(async (transactionalEntityManager) => {
+        const postRepo = transactionalEntityManager.getRepository(PostEntity);
+        // Find post with author relation
+        const post = await postRepo.findOne({
+          where: { postId },
+          relations: ['author'],
+          select: ['postId', 'isHidden', 'authorId', 'author'],
+        });
+
+        if (!post) {
+          throw new NotFoundException('Post not found');
+        }
+
+        if (post.isHidden) {
+          throw new BadRequestException('Post is already banned');
+        }
+
+        await postRepo.update({ postId }, { isHidden: true });
+
+        this.logger.log(`Post ${postId} banned successfully`);
+
+        if (post.authorId) {
+          setImmediate(() => {
+            const postBannedEvent = new PostBannedEvent();
+            postBannedEvent.postId = postId;
+            postBannedEvent.authorId = post.authorId;
+            postBannedEvent.reason = reason;
+            this.eventEmitter.emit(POST_BANNED_EVENT, postBannedEvent);
+          });
+        }
+
+        return {
+          message: 'Post banned successfully',
+          postId,
+          isBanned: true,
+          reason,
+        };
       });
-
-      if (!post) {
-        throw new NotFoundException('Post not found');
-      }
-
-      if (post.isHidden) {
-        throw new BadRequestException('Post is already banned');
-      }
-
-      // Use save() instead of update() to ensure entity is properly persisted
-      post.isHidden = true;
-      await this.postRepository.repo.save(post);
-
-      this.logger.debug(`Post ${postId} saved with isHidden = true`);
-
-      // Verify the update was successful by querying directly from database
-      const updatedPost = await this.postRepository.repo.findOne({
-        where: { postId },
-        select: ['postId', 'isHidden'],
-      });
-
-      if (!updatedPost || !updatedPost.isHidden) {
-        this.logger.error(
-          `Failed to verify ban for post ${postId}. Updated post: ${JSON.stringify(updatedPost)}`,
-        );
-        throw new InternalServerErrorException(
-          'Failed to ban post: update verification failed',
-        );
-      }
-
-      this.logger.log(`Post ${postId} banned successfully`);
-
-      return {
-        message: 'Post banned successfully',
-        postId,
-        isBanned: true,
-        reason,
-      };
     } catch (error) {
       if (
         error instanceof NotFoundException ||
