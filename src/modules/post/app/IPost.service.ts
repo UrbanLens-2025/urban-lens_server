@@ -1,4 +1,5 @@
 import { CreatePostDto } from '@/common/dto/post/CreatePost.dto';
+import { UpdatePostDto } from '@/common/dto/post/UpdatePost.dto';
 import { DeletePostDto } from '@/common/dto/post/DeletePost.dto';
 import { ReactPostDto } from '@/common/dto/post/ReactPost.dto';
 import { GetMyPostsQueryDto } from '@/common/dto/post/GetMyPostsQuery.dto';
@@ -24,6 +25,11 @@ export interface IPostService {
     params: PaginationParams,
   ): Promise<PaginationResult<PostResponseDto>>;
   createPost(dto: CreatePostDto): Promise<PostResponseDto>;
+  updatePost(
+    postId: string,
+    dto: UpdatePostDto,
+    userId: string,
+  ): Promise<PostResponseDto>;
   getPostById(postId: string, userId?: string): Promise<PostResponseDto>;
   reactPost(dto: ReactPostDto): Promise<ReactPostResponseDto>;
   deletePost(dto: DeletePostDto): Promise<DeletePostResponseDto>;
