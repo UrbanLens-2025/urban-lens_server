@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { ReportPenaltyActions } from '@/common/constants/ReportPenaltyActions.constant';
 import { ReportResolutionActions } from '@/common/constants/ReportResolutionActions.constant';
 
 export class ProcessReportDto {
@@ -7,6 +8,15 @@ export class ProcessReportDto {
   @IsNotEmpty()
   @ApiProperty({ enum: ReportResolutionActions })
   resolutionAction: ReportResolutionActions;
+
+  @IsEnum(ReportPenaltyActions)
+  @IsNotEmpty()
+  @ApiProperty({
+    enum: ReportPenaltyActions,
+    description:
+      'Optional penalty action to apply to the reported entity or user',
+  })
+  penaltyAction: ReportPenaltyActions;
 
   @IsString()
   @IsOptional()

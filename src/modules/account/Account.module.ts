@@ -28,6 +28,8 @@ import { FavoriteLocationQueryService } from '@/modules/account/app/impl/Favorit
 import { FavoriteLocationPrivateController } from '@/modules/account/interfaces/FavoriteLocation.private.controller';
 import { IAccountManagementService } from '@/modules/account/app/IAccountManagement.service';
 import { AccountManagementService } from '@/modules/account/app/impl/AccountManagement.service';
+import { IAccountWarningService } from '@/modules/account/app/IAccountWarning.service';
+import { AccountWarningService } from '@/modules/account/app/impl/AccountWarning.service';
 
 @Module({
   imports: [
@@ -77,8 +79,12 @@ import { AccountManagementService } from '@/modules/account/app/impl/AccountMana
       provide: IAccountManagementService,
       useClass: AccountManagementService,
     },
+    {
+      provide: IAccountWarningService,
+      useClass: AccountWarningService,
+    },
     AccountHelper,
   ],
-  exports: [AccountHelper],
+  exports: [AccountHelper, IAccountWarningService],
 })
 export class AccountModule {}

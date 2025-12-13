@@ -11,14 +11,18 @@ import { Reflector } from '@nestjs/core';
 import { OPTIONAL_AUTH_KEY } from '@/common/decorators/OptionalAuth.decorator';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
+import { CoreService } from '@/common/core/Core.service';
+import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
 
 @Injectable()
-export class JwtAuthGuard implements CanActivate {
+export class JwtAuthGuard extends CoreService implements CanActivate {
   constructor(
     private readonly jwtService: TokenService,
     private readonly reflector: Reflector,
     private readonly configService: ConfigService<Environment>,
-  ) {}
+  ) {
+    super();
+  }
 
   private readonly LOGGER = new Logger(JwtAuthGuard.name);
 
@@ -39,16 +43,16 @@ export class JwtAuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     // valdiate the webhook path
-    if(isWebhookPath) {
+    if (isWebhookPath) {
       this.LOGGER.debug('Validating webhook path');
-      const apiKey = request.headers['x-secret-key']
-      if(!apiKey) {
+      const apiKey = request.headers['x-secret-key'];
+      if (!apiKey) {
         throw new UnauthorizedException('No API key provided');
       }
 
       this.LOGGER.debug('Received API key');
 
-      if(apiKey !== this.configService.getOrThrow<string>('WEBHOOK_API_KEY')) {
+      if (apiKey !== this.configService.getOrThrow<string>('WEBHOOK_API_KEY')) {
         throw new UnauthorizedException('Invalid API key');
       }
 
@@ -78,7 +82,7 @@ export class JwtAuthGuard implements CanActivate {
 
       decodedToken.mapToHeader(request);
 
-      return true;
+      return this.isAllowedToLogin(decodedToken.sub);
     } catch (e) {
       if (shouldIgnoreAuth) {
         this.LOGGER.warn(
@@ -91,5 +95,28 @@ export class JwtAuthGuard implements CanActivate {
         throw new UnauthorizedException('Invalid token');
       }
     }
+  }
+
+  public async isAllowedToLogin(accountId: string): Promise<boolean> {
+    return this.ensureTransaction(null, async (em) => {
+      const accountRepo = AccountRepositoryProvider(em);
+      const account = await accountRepo.findOne({
+        where: {
+          id: accountId,
+        },
+      });
+
+      if (!account) {
+        throw new UnauthorizedException('Account not found');
+      }
+
+      if (account.isSuspended()) {
+        throw new UnauthorizedException(
+          `Account is suspended until ${account.suspendedUntil?.toLocaleDateString('vi-VN')} for reason: ${account.suspensionReason}`,
+        );
+      }
+
+      return true;
+    });
   }
 }

@@ -6,6 +6,7 @@ import { ReportTargetPostResponseDto } from '@/common/dto/report/res/ReportTarge
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
 import { ReportReasonResponseDto } from '@/common/dto/report/res/ReportReason.response.dto';
+import { ReportPenaltyActions } from '@/common/constants/ReportPenaltyActions.constant';
 import { ReportResolutionActions } from '@/common/constants/ReportResolutionActions.constant';
 import { ReportResolvedByType } from '@/common/constants/ReportResolvedByType.constant';
 
@@ -37,6 +38,9 @@ export class ReportResponseDto {
 
   @Expose()
   resolutionAction?: ReportResolutionActions | null;
+
+  @Expose()
+  penaltyAction?: ReportPenaltyActions | null;
 
   @Expose()
   resolvedByType?: ReportResolvedByType | null;

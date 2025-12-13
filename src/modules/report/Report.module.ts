@@ -16,8 +16,9 @@ import { IReportManagementService } from '@/modules/report/app/IReportManagement
 import { ReportManagementService } from '@/modules/report/app/impl/ReportManagement.service';
 import { EventModule } from '@/modules/event/event.module';
 import { PostModule } from '@/modules/post/Post.module';
+import { AccountModule } from '@/modules/account/Account.module';
 @Module({
-  imports: [ReportInfraModule, EventModule, PostModule],
+  imports: [ReportInfraModule, EventModule, PostModule, AccountModule],
   providers: [
     {
       provide: IReportCreationService,

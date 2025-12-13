@@ -12,6 +12,7 @@ import { FollowEntity } from '@/modules/account/domain/Follow.entity';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { AccountRepository } from '@/modules/account/infra/repository/Account.repository';
 import { FavoriteLocationEntity } from '@/modules/account/domain/FavoriteLocation.entity';
+import { AccountWarningEntity } from '@/modules/account/domain/AccountWarning.entity';
 
 const repositories = [
   UserTagsRepository,
@@ -31,6 +32,7 @@ const repositories = [
       FollowEntity,
       AccountEntity,
       FavoriteLocationEntity,
+      AccountWarningEntity,
     ]),
   ],
   providers: repositories,
