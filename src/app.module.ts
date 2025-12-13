@@ -45,6 +45,7 @@ import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.modu
 import { DelayedMessageModule } from '@/common/core/delayed-message/DelayedMessage.module';
 import { ContentModerationModule } from '@/modules/content-moderation/ContentModeration.module';
 import { DashboardModule } from '@/modules/dashboard/Dashboard.module';
+import { AIModule } from '@/modules/ai/AI.module';
 @Module({
   imports: [
     // DevtoolsModule.register({
@@ -103,6 +104,7 @@ import { DashboardModule } from '@/modules/dashboard/Dashboard.module';
     DelayedMessageModule,
     ContentModerationModule,
     DashboardModule,
+    AIModule,
   ],
   controllers: [
     AppController,
