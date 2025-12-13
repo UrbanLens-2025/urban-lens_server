@@ -6,13 +6,15 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  DeleteDateColumn,
   ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import dayjs from 'dayjs';
+import { LocationSuspensionEntity } from '@/modules/business/domain/LocationSuspension.entity';
+import { LocationSuspensionType } from '@/common/constants/LocationSuspensionType.constant';
 
 @Entity({ name: LocationBookingConfigEntity.TABLE_NAME })
 export class LocationBookingConfigEntity {
@@ -92,6 +94,15 @@ export class LocationBookingConfigEntity {
     default: 0.8,
   })
   refundPercentageAfterCutoff: number;
+
+  @OneToMany(
+    () => LocationSuspensionEntity,
+    (suspension) => suspension.location,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
+  suspensions: LocationSuspensionEntity[];
 
   constructor(data?: LocationBookingConfigEntity) {
     if (data) {

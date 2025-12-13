@@ -21,6 +21,8 @@ import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/L
 import { InternalServerErrorException } from '@nestjs/common';
 import dayjs from 'dayjs';
 import { Role } from '@/common/constants/Role.constant';
+import { LocationSuspensionEntity } from '@/modules/business/domain/LocationSuspension.entity';
+import { LocationSuspensionType } from '@/common/constants/LocationSuspensionType.constant';
 
 @Entity({ name: LocationBookingEntity.TABLE_NAME })
 export class LocationBookingEntity {

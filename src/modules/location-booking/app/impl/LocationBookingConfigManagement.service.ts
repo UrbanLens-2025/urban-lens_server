@@ -6,8 +6,10 @@ import { ILocationBookingConfigManagementService } from '@/modules/location-book
 import { UpdateResult } from 'typeorm';
 import { LocationBookingConfigRepository } from '@/modules/location-booking/infra/repository/LocationBookingConfig.repository';
 import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateDefaultLocationBookingConfigDto } from '@/common/dto/location-booking/CreateDefaultLocationBookingConfig.dto';
+import { LocationSuspensionRepository } from '@/modules/business/infra/repository/LocationSuspension.repository';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class LocationBookingConfigManagementService
@@ -31,14 +33,27 @@ export class LocationBookingConfigManagementService
   }
 
   updateConfig(dto: UpdateLocationBookingConfigDto): Promise<UpdateResult> {
-    return this.ensureTransaction(null, async (manager) => {
+    return this.ensureTransaction(null, async (em) => {
       const locationBookingConfigRepository =
-        LocationBookingConfigRepository(manager);
+        LocationBookingConfigRepository(em);
+      const locationSuspensionRepository = LocationSuspensionRepository(em);
 
-      const config = await locationBookingConfigRepository.findOneByOrFail({
-        locationId: dto.locationId,
-        createdById: dto.accountId,
+      const config = await locationBookingConfigRepository.findOneOrFail({
+        where: {
+          locationId: dto.locationId,
+          createdById: dto.accountId,
+        },
       });
+
+      const activeSuspension =
+        await locationSuspensionRepository.getActiveBookingSuspension({
+          locationId: dto.locationId,
+        });
+      if (activeSuspension) {
+        throw new BadRequestException(
+          `Booking is currently suspended until ${dayjs(activeSuspension.suspendedUntil).format('DD/MM/YYYY HH:mm')} for reason: ${activeSuspension.suspensionReason}`,
+        );
+      }
 
       const updatedConfig = this.assignTo_safe(config, dto);
 

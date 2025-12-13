@@ -7,6 +7,7 @@ import { CheckInRepository } from './repository/CheckIn.repository';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationRequestTagsEntity } from '@/modules/business/domain/LocationRequestTags.entity';
 import { LocationTagsEntity } from '@/modules/business/domain/LocationTags.entity';
+import { LocationSuspensionEntity } from '@/modules/business/domain/LocationSuspension.entity';
 
 const repositories = [LocationRepository, CheckInRepository];
 
@@ -18,6 +19,7 @@ const repositories = [LocationRepository, CheckInRepository];
       CheckInEntity,
       LocationRequestEntity,
       LocationRequestTagsEntity,
+      LocationSuspensionEntity,
     ]),
   ],
   providers: [...repositories],

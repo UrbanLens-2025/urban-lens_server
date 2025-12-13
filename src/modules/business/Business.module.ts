@@ -27,6 +27,8 @@ import { getRabbitMQConfig } from '@/config/rabbitmq.config';
 import { LocationDevOnlyController } from '@/modules/business/interfaces/Location.dev-only.controller';
 import { LocationCheckInAnalyticsListener } from '@/modules/business/app/event-listeners/LocationCheckInAnalytics.listener';
 import { LocationBookingModule } from '@/modules/location-booking/LocationBooking.module';
+import { ILocationSuspensionService } from '@/modules/business/app/ILocationSuspension.service';
+import { LocationSuspensionService } from '@/modules/business/app/impl/LocationSuspension.service';
 
 @Module({
   imports: [
@@ -68,6 +70,10 @@ import { LocationBookingModule } from '@/modules/location-booking/LocationBookin
     {
       provide: ILocationManagementService,
       useClass: LocationManagementService,
+    },
+    {
+      provide: ILocationSuspensionService,
+      useClass: LocationSuspensionService,
     },
     CheckInTagPublisherListener,
     LocationCheckInAnalyticsListener,

@@ -27,6 +27,10 @@ import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { AddLocationTagDto } from '@/common/dto/business/AddLocationTag.dto';
 import { RemoveLocationTagDto } from '@/common/dto/business/RemoveLocationTag.dto';
+import {
+  ILocationSuspensionService,
+  ILocationSuspensionService_QueryConfig,
+} from '@/modules/business/app/ILocationSuspension.service';
 
 @ApiBearerAuth()
 @ApiTags('Location')
@@ -38,6 +42,8 @@ export class LocationOwnerController {
     private readonly locationQueryService: ILocationQueryService,
     @Inject(ILocationManagementService)
     private readonly locationManagementService: ILocationManagementService,
+    @Inject(ILocationSuspensionService)
+    private readonly locationSuspensionService: ILocationSuspensionService,
   ) {}
 
   @ApiOperation({ summary: 'Get my created locations' })
@@ -104,6 +110,26 @@ export class LocationOwnerController {
       ...dto,
       locationId,
       accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Get all suspensions for my location' })
+  @ApiPaginationQuery(
+    ILocationSuspensionService_QueryConfig.getAllSuspensions(),
+  )
+  @Get('/:locationId/suspensions')
+  getSuspensionsForMyLocation(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Paginate() query: PaginateQuery,
+  ) {
+    return this.locationSuspensionService.getAllSuspensions({
+      query: {
+        ...query,
+        filter: {
+          ...query.filter,
+          locationId: '$eq:' + locationId,
+        },
+      },
     });
   }
 }
