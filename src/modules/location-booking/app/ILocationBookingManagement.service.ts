@@ -7,6 +7,7 @@ import { CancelBookingDto } from '@/common/dto/location-booking/CancelBooking.dt
 import { ProcessAndApproveBookingDto } from '@/common/dto/location-booking/ProcessAndApproveBooking.dto';
 import { ProcessAndRejectBookingDto } from '@/common/dto/location-booking/ProcessAndRejectBooking.dto';
 import { ForceCancelBookingDto } from '@/common/dto/location-booking/ForceCancelBooking.dto';
+import { ForceRefundBookingDto } from '@/common/dto/location-booking/ForceRefundBooking.dto';
 
 export const ILocationBookingManagementService = Symbol(
   'ILocationBookingManagementService',
@@ -40,4 +41,8 @@ export interface ILocationBookingManagementService {
   processAndRejectBooking(
     dto: ProcessAndRejectBookingDto,
   ): Promise<LocationBookingResponseDto[]>;
+
+  forceRefundBooking(
+    dto: ForceRefundBookingDto,
+  ): Promise<LocationBookingResponseDto>;
 }

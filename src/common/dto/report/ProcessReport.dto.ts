@@ -11,21 +11,14 @@ export class ProcessReportDto {
 
   @IsEnum(ReportPenaltyActions)
   @IsNotEmpty()
-  @ApiProperty({
-    enum: ReportPenaltyActions,
-    description:
-      'Optional penalty action to apply to the reported entity or user',
-  })
+  @ApiProperty({ enum: ReportPenaltyActions })
   penaltyAction: ReportPenaltyActions;
 
   @IsString()
   @IsOptional()
-  @ApiPropertyOptional({
-    description: 'Additional notes for processing decision',
-    example: 'Reviewed and approved action',
-  })
+  @ApiPropertyOptional()
   notes?: string;
 
-  initiatedByAccountId?: string | null; // null if system initiated
   reportId: string;
+  initiatedByAccountId?: string | null;
 }

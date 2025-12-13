@@ -78,6 +78,6 @@ import { LocationSuspensionService } from '@/modules/business/app/impl/LocationS
     CheckInTagPublisherListener,
     LocationCheckInAnalyticsListener,
   ],
-  exports: [BusinessInfraModule],
+  exports: [BusinessInfraModule, ILocationSuspensionService],
 })
 export class BusinessModule {}

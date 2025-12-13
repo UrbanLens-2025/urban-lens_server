@@ -49,6 +49,7 @@ import {
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
 import { Role } from '@/common/constants/Role.constant';
+import { ForceRefundBookingDto } from '@/common/dto/location-booking/ForceRefundBooking.dto';
 
 @Injectable()
 export class LocationBookingManagementV2Service
@@ -332,6 +333,7 @@ export class LocationBookingManagementV2Service
           case LocationBookingObject.FOR_EVENT: {
             await this.eventManagementService.handleBookingForceCancelled({
               eventId: booking.targetId!,
+              entityManager: em,
             });
             break;
           }
@@ -508,5 +510,64 @@ export class LocationBookingManagementV2Service
         })
         .then((res) => this.mapToArray(LocationBookingResponseDto, res))
     );
+  }
+
+  forceRefundBooking(
+    dto: ForceRefundBookingDto,
+  ): Promise<LocationBookingResponseDto> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const locationBookingRepository = LocationBookingRepository(em);
+
+      const locationBooking = await locationBookingRepository.findOneOrFail({
+        where: {
+          createdById: dto.accountId,
+          locationId: dto.locationId,
+        },
+      });
+
+      if (
+        locationBooking.paidOutAt &&
+        new Date(locationBooking.paidOutAt) < new Date()
+      ) {
+        throw new BadRequestException(
+          'This booking has already been paid out. Cannot refund.',
+        );
+      }
+
+      const refundAmount = locationBooking.amountToPay * dto.refundPercentage;
+      const refundTransaction =
+        await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
+          {
+            entityManager: em,
+            destinationAccountId: dto.accountId,
+            amount: refundAmount,
+            currency: SupportedCurrency.VND,
+          },
+        );
+      locationBooking.refundTransactionId = refundTransaction.id;
+      locationBooking.refundedAmount = refundAmount;
+      locationBooking.refundedAt = dayjs().toDate();
+
+      // TODO: CHECK THIS OUT. If forced refund and then cancel booking, what's the logic?
+      if (dto.shouldCancelBooking) {
+        locationBooking.status = LocationBookingStatus.CANCELLED;
+        switch (locationBooking.bookingObject) {
+          case LocationBookingObject.FOR_EVENT: {
+            await this.eventManagementService.handleBookingForceCancelled({
+              eventId: locationBooking.targetId!,
+              entityManager: em,
+            });
+            break;
+          }
+          default: {
+            throw new InternalServerErrorException('Unknown booking object.');
+          }
+        }
+      }
+
+      return locationBookingRepository
+        .save(locationBooking)
+        .then((res) => this.mapTo(LocationBookingResponseDto, res));
+    });
   }
 }

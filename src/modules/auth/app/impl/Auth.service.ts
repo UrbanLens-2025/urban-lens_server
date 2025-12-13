@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { RegisterDto } from '@/common/dto/auth/Register.dto';
 import { TokenService } from '@/common/core/token/token.service';
@@ -264,6 +265,12 @@ export class AuthService extends CoreService implements IAuthService {
   ): Promise<UserLoginResponseDto> {
     if (!user) {
       throw new BadRequestException('User not found');
+    }
+
+    if (user.isSuspended()) {
+      throw new UnauthorizedException(
+        `Account is suspended until ${user.suspendedUntil?.toLocaleDateString('vi-VN')} for reason: ${user.suspensionReason}`,
+      );
     }
 
     const isPasswordValid = await bcrypt.compare(

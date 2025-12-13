@@ -41,12 +41,13 @@ export class LocationSuspensionEntity {
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     createForeignKeyConstraints: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'suspended_by' })
-  suspendedBy: AccountEntity;
+  suspendedBy?: AccountEntity | null;
 
-  @Column({ name: 'suspended_by', type: 'uuid' })
-  suspendedById: string;
+  @Column({ name: 'suspended_by', type: 'uuid', nullable: true })
+  suspendedById?: string | null;
 
   @Column({ name: 'suspension_type', type: 'varchar', length: 50 })
   suspensionType: LocationSuspensionType;

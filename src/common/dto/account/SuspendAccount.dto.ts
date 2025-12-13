@@ -5,5 +5,5 @@ export class SuspendAccountDto extends CoreActionDto {
   suspensionReason: string;
   targetId: string;
 
-  accountId: string;
+  accountId?: string | null;
 }

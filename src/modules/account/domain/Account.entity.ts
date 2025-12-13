@@ -78,7 +78,7 @@ export class AccountEntity {
   suspensionReason: string | null;
 
   @Column({ name: 'suspended_by', type: 'uuid', nullable: true })
-  suspendedById: string | null;
+  suspendedById?: string | null;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     createForeignKeyConstraints: false,
@@ -122,7 +122,7 @@ export class AccountEntity {
   public suspend(
     suspendedUntil: Date,
     suspensionReason: string,
-    suspendedById: string,
+    suspendedById?: string | null,
   ): AccountEntity {
     this.suspendedUntil = suspendedUntil;
     this.suspensionReason = suspensionReason;

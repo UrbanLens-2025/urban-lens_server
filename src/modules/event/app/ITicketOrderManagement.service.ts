@@ -12,4 +12,6 @@ export interface ITicketOrderManagementService {
   refundAllSuccessfulOrders(
     dto: RefundAllSuccessfulOrdersDto,
   ): Promise<TicketOrderResponseDto[]>;
+
+  forceRefundOrder(dto: RefundOrderDto): Promise<TicketOrderResponseDto>;
 }

@@ -94,6 +94,6 @@ import { EventOwnerController } from '@/modules/event/interfaces/Event.owner.con
     },
     EventPayoutListener,
   ],
-  exports: [IEventManagementService],
+  exports: [IEventManagementService, ITicketOrderManagementService],
 })
 export class EventModule {}
