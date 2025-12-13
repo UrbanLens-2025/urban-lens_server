@@ -19,11 +19,13 @@ import { IFollowService } from '../app/IFollow.service';
 import { FollowDto } from '@/common/dto/account/Follow.dto';
 import { UnfollowDto } from '@/common/dto/account/Unfollow.dto';
 import { GetFollowersQueryDto } from '@/common/dto/account/GetFollowersQuery.dto';
+import { CheckFollowResponseDto } from '@/common/dto/account/CheckFollow.response.dto';
 import { JwtAuthGuard } from '@/common/JwtAuth.guard';
 import { RolesGuard } from '@/common/Roles.guard';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { FollowEntityType } from '../domain/Follow.entity';
+import { ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('Follow')
 @Controller('user/follow')
@@ -67,6 +69,34 @@ export class FollowUserController {
     @Query() query: GetFollowersQueryDto,
   ) {
     return this.followService.getFollowing(user.sub, query);
+  }
+
+  @Get('check/user/:userId')
+  @ApiOperation({
+    summary: 'Check if following a user',
+    description: 'Check if current user is following the specified user',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID of the user to check',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Returns whether the current user is following the specified user',
+    type: CheckFollowResponseDto,
+  })
+  async checkFollowingUser(
+    @AuthUser() user: JwtTokenDto,
+    @Param('userId') userId: string,
+  ): Promise<CheckFollowResponseDto> {
+    const isFollowing = await this.followService.isFollowing(
+      user.sub,
+      userId,
+      FollowEntityType.USER,
+    );
+    return { isFollowing };
   }
 
   @Get('check/:entityId/:entityType')
