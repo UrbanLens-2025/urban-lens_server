@@ -127,6 +127,14 @@ export class QRCodeScanService implements IQRCodeScanService {
         };
       }
 
+      // Check if mission has target = 1 and user has already scanned
+      // If target = 1, user can only scan once
+      if (mission.target === 1 && userProgress.progress >= 1) {
+        throw new BadRequestException(
+          'This mission can only be scanned once. You have already completed this mission.',
+        );
+      }
+
       // Update progress (each scan = +1)
       const newProgress = Math.min(userProgress.progress + 1, mission.target);
       const isCompleted = newProgress >= mission.target;
@@ -427,6 +435,14 @@ export class QRCodeScanService implements IQRCodeScanService {
       // Skip if already completed - don't include in results
       if (userProgress.completed) {
         continue;
+      }
+
+      // Check if mission has target = 1 and user has already scanned
+      // If target = 1, user can only scan once
+      if (mission.target === 1 && userProgress.progress >= 1) {
+        throw new BadRequestException(
+          'This mission can only be scanned once. You have already completed this mission.',
+        );
       }
 
       const newProgress = Math.min(userProgress.progress + 1, mission.target);
