@@ -820,6 +820,55 @@ Select ${context.numberOfLocations} closest, copy REAL UUIDs from "id" field.`;
   }
 
   /**
+   * Generic chat method for dynamic prompts
+   */
+  async chat(dto: {
+    prompt: string;
+    systemMessage?: string;
+  }): Promise<{ content: string; model: string }> {
+    if (!this.enabled) {
+      throw new Error('Ollama is not enabled');
+    }
+
+    try {
+      const messages: any[] = [];
+
+      // Add system message if provided
+      if (dto.systemMessage) {
+        messages.push({
+          role: 'system',
+          content: dto.systemMessage,
+        });
+      }
+
+      // Add user prompt
+      messages.push({
+        role: 'user',
+        content: dto.prompt,
+      });
+
+      const response = await this.ollama.chat({
+        model: this.model,
+        messages,
+        options: {
+          temperature: 0.7,
+          num_predict: 500,
+          top_p: 0.9,
+          num_thread: 8,
+        },
+      });
+
+      return {
+        content: response.message.content,
+        model: this.model,
+      };
+    } catch (error) {
+      this.logger.error('Ollama chat error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Health check
    */
   async healthCheck(): Promise<boolean> {
