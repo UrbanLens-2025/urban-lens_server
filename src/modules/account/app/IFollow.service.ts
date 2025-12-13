@@ -3,6 +3,7 @@ import { UnfollowDto } from '@/common/dto/account/Unfollow.dto';
 import { GetFollowersQueryDto } from '@/common/dto/account/GetFollowersQuery.dto';
 import { PaginationResult } from '@/common/services/base.service';
 import { FollowResponseDto } from '@/common/dto/account/Follow.response.dto';
+import { CheckFollowResponseDto } from '@/common/dto/account/CheckFollow.response.dto';
 
 export const IFollowService = Symbol('IFollowService');
 
