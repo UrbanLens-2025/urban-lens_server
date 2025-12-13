@@ -12,6 +12,7 @@ export enum NotificationTypes {
   BOOKING_CANCELLED = 'BOOKING_CANCELLED',
   BOOKING_FORCE_CANCELLED = 'BOOKING_FORCE_CANCELLED',
   EVENT_ATTENDANCE_REFUNDED = 'EVENT_ATTENDANCE_REFUNDED',
+  NEW_POST = 'NEW_POST',
 }
 
 export const NotificationsConstant: {
@@ -83,6 +84,12 @@ export const NotificationsConstant: {
     payload: {
       title: 'Tickets refunded',
       body: 'You have refunded {ticketCount} ticket(s) for {eventName}. {refundAmount} {currency} has been credited to your wallet.',
+    },
+  },
+  [NotificationTypes.NEW_POST]: {
+    payload: {
+      title: '{authorName} posted something new',
+      body: '{postContent}',
     },
   },
 };

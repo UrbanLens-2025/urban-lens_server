@@ -10,6 +10,7 @@ import {
 import { IPostService } from '../IPost.service';
 import { PostRepository } from '@/modules/post/infra/repository/Post.repository';
 import { CreatePostDto } from '@/common/dto/post/CreatePost.dto';
+import { UpdatePostDto } from '@/common/dto/post/UpdatePost.dto';
 import { GetMyPostsQueryDto } from '@/common/dto/post/GetMyPostsQuery.dto';
 import { AnalyticEntityType } from '@/common/constants/AnalyticEntityType.constant';
 import {
@@ -845,6 +846,229 @@ export class PostService
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException(error);
+    }
+  }
+
+  async updatePost(
+    postId: string,
+    dto: UpdatePostDto,
+    userId: string,
+  ): Promise<PostResponseDto> {
+    try {
+      // Find the post
+      const post = await this.postRepository.repo.findOne({
+        where: { postId },
+        relations: ['author'],
+      });
+
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+
+      // Check authorization - only author can edit
+      if (!post.author || post.author.id !== userId) {
+        throw new ForbiddenException('You are not allowed to edit this post');
+      }
+
+      // Validate post type if provided
+      const postType = dto.type || post.type;
+      if (dto.type === PostType.BLOG && !dto.visibility && !post.visibility) {
+        throw new BadRequestException('Visibility is required for blog posts');
+      }
+
+      if (postType === PostType.REVIEW) {
+        const locationId =
+          dto.locationId !== undefined ? dto.locationId : post.locationId;
+        const eventId = dto.eventId !== undefined ? dto.eventId : post.eventId;
+        if (!locationId && !eventId) {
+          throw new BadRequestException(
+            'Review posts must have either locationId or eventId',
+          );
+        }
+      }
+
+      // Track if rating changed for analytics update
+      const oldRating = post.rating;
+      const oldLocationId = post.locationId;
+      const oldEventId = post.eventId;
+      const ratingChanged =
+        dto.rating !== undefined && dto.rating !== oldRating;
+      const locationChanged =
+        dto.locationId !== undefined && dto.locationId !== oldLocationId;
+      const eventChanged =
+        dto.eventId !== undefined && dto.eventId !== oldEventId;
+
+      // Check if user has checked in at location (for review posts)
+      let isVerified = post.isVerified;
+      if (postType === PostType.REVIEW && dto.locationId && userId) {
+        const checkIn = await this.checkInRepository.repo.findOne({
+          where: {
+            userProfileId: userId,
+            locationId: dto.locationId,
+          },
+        });
+        isVerified = !!checkIn;
+      }
+
+      const result = await this.postRepository.repo.manager.transaction(
+        async (transactionalEntityManager) => {
+          // Confirm upload for new images if provided
+          if (dto.imageUrls && dto.imageUrls.length > 0) {
+            await this.fileStorageService.confirmUpload(
+              dto.imageUrls,
+              transactionalEntityManager,
+            );
+          }
+
+          // Confirm upload for new videos if provided
+          if (dto.videoIds && dto.videoIds.length > 0) {
+            await this.fileStorageService.confirmUpload(
+              dto.videoIds,
+              transactionalEntityManager,
+            );
+          }
+
+          // Build update object with only provided fields
+          const updateData: Partial<PostEntity> = {};
+          if (dto.content !== undefined) updateData.content = dto.content;
+          if (dto.imageUrls !== undefined) updateData.imageUrls = dto.imageUrls;
+          if (dto.type !== undefined) updateData.type = dto.type;
+          if (dto.visibility !== undefined)
+            updateData.visibility = dto.visibility;
+          if (dto.rating !== undefined) updateData.rating = dto.rating;
+          if (dto.locationId !== undefined)
+            updateData.locationId = dto.locationId;
+          if (dto.eventId !== undefined) updateData.eventId = dto.eventId;
+          if (isVerified !== post.isVerified)
+            updateData.isVerified = isVerified;
+
+          // Clear rating for blog posts
+          if (dto.type === PostType.BLOG) {
+            updateData.rating = undefined;
+          }
+
+          // Update the post
+          await transactionalEntityManager.update(
+            PostEntity,
+            { postId },
+            updateData,
+          );
+
+          // If rating changed or location/event changed, update analytics
+          if (
+            postType === PostType.REVIEW &&
+            (ratingChanged || locationChanged || eventChanged)
+          ) {
+            // Update old location/event analytics if changed
+            if (locationChanged && oldLocationId) {
+              await this.updateEntityRating(
+                oldLocationId,
+                AnalyticEntityType.LOCATION,
+                transactionalEntityManager,
+              );
+            }
+            if (eventChanged && oldEventId) {
+              await this.updateEntityRating(
+                oldEventId,
+                AnalyticEntityType.EVENT,
+                transactionalEntityManager,
+              );
+            }
+
+            // Update new location/event analytics
+            const newLocationId =
+              dto.locationId !== undefined ? dto.locationId : post.locationId;
+            const newEventId =
+              dto.eventId !== undefined ? dto.eventId : post.eventId;
+            if (newLocationId) {
+              await this.updateEntityRating(
+                newLocationId,
+                AnalyticEntityType.LOCATION,
+                transactionalEntityManager,
+              );
+            }
+            if (newEventId) {
+              await this.updateEntityRating(
+                newEventId,
+                AnalyticEntityType.EVENT,
+                transactionalEntityManager,
+              );
+            }
+          }
+
+          // Get updated post
+          const postRepo = transactionalEntityManager.getRepository(PostEntity);
+          const updatedPost = await postRepo.findOne({
+            where: { postId },
+          });
+          return updatedPost;
+        },
+      );
+
+      if (!result) {
+        throw new NotFoundException('Post not found after update');
+      }
+
+      // Get the updated post with all relations
+      const selectFields = this.getPostSelectFields();
+      const queryBuilder = this.postRepository.repo
+        .createQueryBuilder('post')
+        .leftJoin('accounts', 'account', 'account.id = post.author_id')
+        .leftJoin('locations', 'location', 'location.id = post.location_id')
+        .where('post.post_id = :postId', { postId });
+
+      // Add all select fields
+      selectFields.forEach((field) => {
+        queryBuilder.addSelect(field);
+      });
+
+      const updatedPostRaw = await queryBuilder.getRawOne();
+
+      if (!updatedPostRaw) {
+        throw new NotFoundException('Post not found after update');
+      }
+
+      // Get user reaction and follow status if userId is provided
+      let currentUserReaction: ReactType | null = null;
+      let isFollowing = false;
+
+      if (userId) {
+        const [reaction, follow] = await Promise.all([
+          this.reactRepository.repo.findOne({
+            where: {
+              entityId: postId,
+              entityType: ReactEntityType.POST,
+              authorId: userId,
+            },
+          }),
+          this.followRepository.repo.findOne({
+            where: {
+              followerId: userId,
+              entityId: updatedPostRaw.author_id,
+              entityType: FollowEntityType.USER,
+            },
+          }),
+        ]);
+
+        currentUserReaction = reaction?.type || null;
+        isFollowing = !!follow;
+      }
+
+      return this.mapRawPostToDto(
+        updatedPostRaw,
+        currentUserReaction,
+        isFollowing,
+      );
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      console.error(error);
+      throw new InternalServerErrorException(error.message);
     }
   }
 
