@@ -59,6 +59,13 @@ export class ItineraryLocationResponseDto {
   location: LocationResponseDto;
 
   @ApiProperty({
+    description: 'Whether the current user has checked in at this location',
+    example: false,
+  })
+  @Expose()
+  isCheckedIn: boolean;
+
+  @ApiProperty({
     description: 'Created at timestamp',
   })
   @Expose()

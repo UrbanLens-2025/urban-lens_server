@@ -16,6 +16,7 @@ import { ItineraryLocationRepository } from '../../infra/ItineraryLocation.repos
 import { IItineraryService } from '../IItinerary.service';
 import { ItinerarySource } from '@/common/constants/ItinerarySource.constant';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
+import { CheckInRepository } from '@/modules/business/infra/repository/CheckIn.repository';
 // import { GoogleMapsService } from '@/common/core/google-maps/GoogleMaps.service';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class ItineraryService implements IItineraryService {
     private readonly dataSource: DataSource,
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
+    private readonly checkInRepository: CheckInRepository,
   ) {}
 
   async createItinerary(
@@ -236,6 +238,31 @@ export class ItineraryService implements IItineraryService {
 
     if (itinerary.userId !== userId) {
       throw new ForbiddenException('You do not have access to this itinerary');
+    }
+
+    // Check which locations the user has checked in
+    if (itinerary.locations && itinerary.locations.length > 0) {
+      const locationIds = itinerary.locations.map((loc) => loc.locationId);
+
+      // Query all check-ins for this user at these locations in one query
+      const checkIns = await this.checkInRepository.repo
+        .createQueryBuilder('checkIn')
+        .where('checkIn.userProfileId = :userId', { userId })
+        .andWhere('checkIn.locationId IN (:...locationIds)', { locationIds })
+        .select(['checkIn.locationId'])
+        .getMany();
+
+      // Create a Set of checked-in location IDs for quick lookup
+      const checkedInLocationIds = new Set(
+        checkIns.map((checkIn) => checkIn.locationId),
+      );
+
+      // Add isCheckedIn property to each location
+      itinerary.locations.forEach((location) => {
+        (location as any).isCheckedIn = checkedInLocationIds.has(
+          location.locationId,
+        );
+      });
     }
 
     return itinerary;
