@@ -9,6 +9,7 @@ import {
   Min,
 } from 'class-validator';
 import { LeaderboardPeriodType } from '@/modules/gamification/domain/LeaderboardSnapshot.entity';
+import { IsValidPeriodValue } from '@/common/decorators/IsValidPeriodValue.decorator';
 
 export class GetLeaderboardSnapshotDto {
   @ApiProperty({
@@ -21,12 +22,13 @@ export class GetLeaderboardSnapshotDto {
 
   @ApiProperty({
     description:
-      'Period value: YYYY-MM for monthly, YYYY for yearly, YYYY-season for seasonal (e.g., 2025-spring). If not provided, uses current period.',
+      'Period value format: YYYY-WW for weekly (e.g., 2025-W12), YYYY-MM for monthly (e.g., 2025-12), YYYY for yearly (e.g., 2025), YYYY-season for seasonal (e.g., 2025-spring). If not provided, uses current period.',
     example: '2025-11',
     required: false,
   })
   @IsOptional()
   @IsString()
+  @IsValidPeriodValue()
   periodValue?: string;
 
   @ApiProperty({

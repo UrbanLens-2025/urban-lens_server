@@ -10,10 +10,12 @@ import { GoogleMapsModule } from '@/common/core/google-maps/GoogleMaps.module';
 import { TokenModule } from '@/common/core/token/token.module';
 import { OllamaModule } from '@/common/core/ollama/Ollama.module';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
+import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.module';
 
 @Module({
   imports: [
     JourneyInfraModule,
+    BusinessInfraModule,
     GoogleMapsModule,
     TokenModule,
     OllamaModule,
