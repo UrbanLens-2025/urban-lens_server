@@ -12,11 +12,7 @@ export class ProcessLocationRequestDto {
     enum: LocationRequestStatus,
     example: LocationRequestStatus.APPROVED,
   })
-  @IsIn([
-    LocationRequestStatus.APPROVED,
-    LocationRequestStatus.NEEDS_MORE_INFO,
-    LocationRequestStatus.REJECTED,
-  ])
+  @IsIn([LocationRequestStatus.APPROVED, LocationRequestStatus.REJECTED])
   @IsNotEmpty()
   status: LocationRequestStatus;
 

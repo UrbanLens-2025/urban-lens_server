@@ -120,10 +120,7 @@ export class LocationRequestEntity {
   createdLocation: LocationEntity;
 
   canBeUpdated(): boolean {
-    const updatableStatuses = [
-      LocationRequestStatus.AWAITING_ADMIN_REVIEW,
-      LocationRequestStatus.NEEDS_MORE_INFO,
-    ];
+    const updatableStatuses = [LocationRequestStatus.AWAITING_ADMIN_REVIEW];
     return updatableStatuses.includes(this.status);
   }
 

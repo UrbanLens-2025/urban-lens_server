@@ -358,11 +358,6 @@ export class LocationRequestManagementService
                   locationRequest,
                 } satisfies LocationRequestApprovedEvent);
                 break;
-              case LocationRequestStatus.NEEDS_MORE_INFO:
-                this.eventEmitter.emit(LOCATION_REQUEST_NEEDS_MORE_INFO_EVENT, {
-                  locationRequest,
-                } satisfies LocationRequestApprovedEvent);
-                break;
             }
 
             return res;

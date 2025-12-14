@@ -228,31 +228,14 @@ export class WalletExternalTransactionManagementService
 
       const externalTransactionTimelineRepository =
         WalletExternalTransactionTimelineRepository(em);
+      const externalTransactionRepository =
+        WalletExternalTransactionRepository(em);
 
       if (!confirmationResponse.transactionId) {
         throw new BadRequestException(
           'Missing transaction ID in payment confirmation',
         );
       }
-
-      if (!confirmationResponse.success) {
-        this.logger.error('Payment confirmation failed');
-        await externalTransactionTimelineRepository.save(
-          externalTransactionTimelineRepository.create({
-            transactionId: confirmationResponse.transactionId,
-            action: WalletExternalTransactionAction.CONFIRM_DEPOSIT_TRANSACTION,
-            actorType: WalletExternalTransactionActor.EXTERNAL_SYSTEM,
-            actorName: 'PaymentGateway',
-            statusChangedTo: WalletExternalTransactionStatus.FAILED,
-            note: `Payment gateway reported failure during payment confirmation`,
-            metadata: confirmationResponse.rawResponse,
-          }),
-        );
-        throw new InternalServerErrorException('Payment confirmation failed');
-      }
-
-      const externalTransactionRepository =
-        WalletExternalTransactionRepository(em);
 
       const transaction = await externalTransactionRepository.findOne({
         where: {
@@ -271,6 +254,31 @@ export class WalletExternalTransactionManagementService
       const now = new Date();
       if (transaction.expiresAt && transaction.expiresAt < now) {
         throw new BadRequestException('Deposit transaction has expired');
+      }
+
+      if (!confirmationResponse.success) {
+        this.logger.error('Payment confirmation failed');
+        await externalTransactionTimelineRepository.save(
+          externalTransactionTimelineRepository.create({
+            transactionId: confirmationResponse.transactionId,
+            action: WalletExternalTransactionAction.CONFIRM_DEPOSIT_TRANSACTION,
+            actorType: WalletExternalTransactionActor.EXTERNAL_SYSTEM,
+            actorName: 'PaymentGateway',
+            statusChangedTo: WalletExternalTransactionStatus.FAILED,
+            note: `Payment gateway reported failure during payment confirmation`,
+            metadata: confirmationResponse.rawResponse,
+          }),
+        );
+
+        const result = await externalTransactionRepository.update(
+          {
+            id: confirmationResponse.transactionId,
+          },
+          {
+            status: WalletExternalTransactionStatus.FAILED,
+          },
+        );
+        return result;
       }
 
       transaction.confirmPayment({

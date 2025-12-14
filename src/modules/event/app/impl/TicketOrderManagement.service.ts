@@ -180,7 +180,7 @@ export class TicketOrderManagementService
           .save(order)
           // reserve ticket quantity
           .then(async (res) => {
-            await eventTicketRepository.markTicketOrdered({
+            await eventTicketRepository.reserveTickets({
               items: dto.items,
             });
             return res;

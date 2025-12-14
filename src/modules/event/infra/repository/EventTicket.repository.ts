@@ -2,20 +2,22 @@ import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
 import { BadRequestException } from '@nestjs/common';
 
+export type ReserveTicketsPayload = {
+  items: {
+    ticketId: string;
+    quantity: number;
+  }[];
+};
+
 export const EventTicketRepository = (ctx: DataSource | EntityManager) =>
   ctx.getRepository(EventTicketEntity).extend({
     /**
      * Reserve tickets atomically: decrease available, increase reserved
      * Validates availability before updating
      */
-    async markTicketOrdered(
+    async reserveTickets(
       this: Repository<EventTicketEntity>,
-      payload: {
-        items: {
-          ticketId: string;
-          quantity: number;
-        }[];
-      },
+      payload: ReserveTicketsPayload,
     ): Promise<EventTicketEntity[]> {
       const ticketIds = payload.items.map((item) => item.ticketId);
       const tickets = await this.find({
