@@ -148,6 +148,8 @@ export class AccountQueryService
   ): Promise<LeaderboardResponseDto> {
     const periodValue =
       dto.periodValue || LeaderboardPeriodHelper.getPeriodValue(dto.periodType);
+    const currentPeriodValue =
+      LeaderboardPeriodHelper.getPeriodValue(dto.periodType);
 
     // Try to get snapshot data
     let rankings = await this.leaderboardSnapshotService.getLeaderboardSnapshot(
@@ -157,7 +159,7 @@ export class AccountQueryService
     );
 
     // If no snapshot found and querying current period, fallback to real-time leaderboard
-    if (rankings.length === 0 && !dto.periodValue) {
+    if (rankings.length === 0 && periodValue === currentPeriodValue) {
       // Use real-time leaderboard for current period with limit
       const realTimeLeaderboard = await this.getLeaderboard(
         currentUserId,

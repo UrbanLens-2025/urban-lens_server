@@ -1,0 +1,210 @@
+========================================
+HƯỚNG DẪN CÀI ĐẶT OLLAMA
+========================================
+
+Ollama là công cụ cho phép chạy các mô hình ngôn ngữ lớn (LLM) trên máy tính local.
+
+========================================
+1. TẢI OLLAMA
+========================================
+
+Cách 1: Tải từ website chính thức
+- Truy cập: https://ollama.com/download
+- Chọn phiên bản phù hợp với hệ điều hành của bạn:
+  * macOS: Tải file .dmg
+  * Windows: Tải file .exe
+  * Linux: Tải file .deb hoặc .rpm
+
+Cách 2: Sử dụng command line (macOS/Linux)
+- macOS: 
+  curl -fsSL https://ollama.com/install.sh | sh
+
+- Linux:
+  curl -fsSL https://ollama.com/install.sh | sh
+
+========================================
+2. CÀI ĐẶT
+========================================
+
+macOS:
+1. Mở file .dmg đã tải về
+2. Kéo Ollama vào thư mục Applications
+3. Mở Ollama từ Applications
+4. Cho phép Ollama chạy trong System Preferences > Security & Privacy
+
+Windows:
+1. Chạy file .exe đã tải về
+2. Làm theo hướng dẫn trong installer
+3. Ollama sẽ tự động chạy sau khi cài đặt
+
+Linux:
+- Debian/Ubuntu:
+  sudo dpkg -i ollama_*.deb
+  sudo apt-get install -f
+
+- Red Hat/CentOS/Fedora:
+  sudo rpm -Uvh ollama_*.rpm
+
+========================================
+3. KIỂM TRA CÀI ĐẶT
+========================================
+
+Mở terminal/command prompt và chạy:
+  ollama --version
+
+Nếu hiển thị version number thì đã cài đặt thành công.
+
+========================================
+4. TẢI MÔ HÌNH (MODEL)
+========================================
+
+Ollama hỗ trợ nhiều mô hình khác nhau. Một số mô hình phổ biến:
+
+- llama2: Mô hình cơ bản, nhẹ
+  ollama pull llama2
+
+- llama3: Phiên bản mới hơn của llama
+  ollama pull llama3
+
+- mistral: Mô hình hiệu suất cao
+  ollama pull mistral
+
+- codellama: Mô hình chuyên về code
+  ollama pull codellama
+
+- phi3: Mô hình nhỏ gọn, nhanh
+  ollama pull phi3
+
+Để xem danh sách các mô hình có sẵn:
+  ollama list
+
+========================================
+5. SỬ DỤNG CƠ BẢN
+========================================
+
+Chạy mô hình trong terminal:
+  ollama run <model-name>
+
+Ví dụ:
+  ollama run llama2
+
+Chat với mô hình:
+  >>> Hello, how are you?
+  >>> What is the capital of France?
+
+Thoát khỏi chat:
+  /bye hoặc Ctrl+D
+
+========================================
+6. SỬ DỤNG QUA API
+========================================
+
+Ollama cung cấp REST API tại: http://localhost:11434
+
+Ví dụ sử dụng với curl:
+  curl http://localhost:11434/api/generate -d '{
+    "model": "llama2",
+    "prompt": "Why is the sky blue?",
+    "stream": false
+  }'
+
+Ví dụ với JavaScript/Node.js:
+  const response = await fetch('http://localhost:11434/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama2',
+      prompt: 'Why is the sky blue?',
+      stream: false
+    })
+  });
+
+========================================
+7. QUẢN LÝ MÔ HÌNH
+========================================
+
+Xem danh sách mô hình đã tải:
+  ollama list
+
+Xóa mô hình:
+  ollama rm <model-name>
+
+Xem thông tin mô hình:
+  ollama show <model-name>
+
+Copy mô hình:
+  ollama cp <source-model> <new-model-name>
+
+========================================
+8. CẤU HÌNH VÀ TỐI ƯU
+========================================
+
+Thay đổi port mặc định (11434):
+  OLLAMA_HOST=0.0.0.0:8080 ollama serve
+
+Sử dụng GPU (nếu có):
+  Ollama tự động phát hiện và sử dụng GPU nếu có sẵn.
+  Để kiểm tra:
+    ollama ps
+
+Giới hạn bộ nhớ:
+  OLLAMA_NUM_GPU=1 ollama serve
+
+========================================
+9. TROUBLESHOOTING
+========================================
+
+Lỗi: "ollama: command not found"
+- Đảm bảo Ollama đã được cài đặt đúng cách
+- Thêm Ollama vào PATH nếu cần
+
+Lỗi: "Connection refused"
+- Kiểm tra Ollama đã chạy chưa:
+  ollama serve
+- Kiểm tra firewall settings
+
+Lỗi: "Out of memory"
+- Tải mô hình nhỏ hơn
+- Giảm số lượng GPU được sử dụng
+- Tăng RAM hoặc swap space
+
+Lỗi trên macOS: "Ollama cannot be opened"
+- Vào System Preferences > Security & Privacy
+- Click "Open Anyway" trong phần General
+
+========================================
+10. TÀI LIỆU THAM KHẢO
+========================================
+
+Website chính thức: https://ollama.com
+GitHub: https://github.com/ollama/ollama
+Documentation: https://github.com/ollama/ollama/blob/main/docs/README.md
+API Documentation: https://github.com/ollama/ollama/blob/main/docs/api.md
+
+========================================
+11. VÍ DỤ SỬ DỤNG TRONG PROJECT
+========================================
+
+Nếu project này sử dụng Ollama, có thể tích hợp như sau:
+
+1. Khởi động Ollama service:
+   ollama serve
+
+2. Tải mô hình cần thiết:
+   ollama pull llama2
+
+3. Sử dụng trong code:
+   - Gọi API tại http://localhost:11434
+   - Hoặc sử dụng Ollama SDK cho ngôn ngữ tương ứng
+
+========================================
+LƯU Ý
+========================================
+
+- Ollama yêu cầu kết nối internet để tải mô hình lần đầu
+- Mỗi mô hình có thể tốn vài GB dung lượng ổ cứng
+- Hiệu suất phụ thuộc vào phần cứng (CPU/GPU/RAM)
+- Mô hình lớn hơn thường cho kết quả tốt hơn nhưng chậm hơn
+
+========================================
+
