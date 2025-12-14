@@ -5,7 +5,12 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { IReportManagementService } from '@/modules/report/app/IReportManagement.service';
-import { ProcessReportDto } from '@/common/dto/report/ProcessReport.dto';
+import {
+  CommonPenaltyPayloadDto,
+  CommonResolutionPayloadDto,
+  ProcessReportDto,
+  ResolutionPayloadDto,
+} from '@/common/dto/report/ProcessReport.dto';
 import { ReportResponseDto } from '@/common/dto/report/res/Report.response.dto';
 import { CoreService } from '@/common/core/Core.service';
 import { ReportRepositoryProvider } from '@/modules/report/infra/repository/Report.repository';
@@ -29,11 +34,11 @@ import { IAccountWarningService } from '@/modules/account/app/IAccountWarning.se
 import { PostRepositoryProvider } from '@/modules/post/infra/repository/Post.repository';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
-import { _ } from 'ollama/dist/shared/ollama.27169772.cjs';
 import dayjs from 'dayjs';
 import { ILocationSuspensionService } from '@/modules/business/app/ILocationSuspension.service';
 import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
+import { isNotBlank } from '@/common/utils/is-not-blank.util';
 
 @Injectable()
 export class ReportManagementService
@@ -88,11 +93,27 @@ export class ReportManagementService
         report.resolvedById = dto.initiatedByAccountId;
       }
 
-      return reportRepo.save(report).then(async (res) => {
-        await this.handleReportResolution(em, report, dto.resolutionAction);
-        await this.handlePenaltyAction(em, report, dto.penaltyAction);
-        return res;
-      });
+      return reportRepo
+        .save(report)
+        .then(async (res) => {
+          await this.handleReportResolution(
+            em,
+            res,
+            dto.resolutionAction,
+            dto.resolutionPayload,
+          );
+
+          return res;
+        })
+        .then(async (res) => {
+          await this.handlePenaltyAction(
+            em,
+            res,
+            dto.penaltyAction,
+            dto.penaltyPayload,
+          );
+          return res;
+        });
     })
       .then((res) => {
         this.eventEmitter.emit(
@@ -108,66 +129,118 @@ export class ReportManagementService
     em: EntityManager,
     report: ReportEntity,
     resolutionAction: ReportResolutionActions,
+    resolutionPayload: CommonResolutionPayloadDto,
   ) {
     switch (resolutionAction) {
-      case ReportResolutionActions.CANCEL_EVENT:
-        this.logger.log(`Cancelling event: ${report.targetId}`);
-        break;
-      case ReportResolutionActions.SUSPEND_EVENT:
-        this.logger.log(`Suspending event: ${report.targetId}`);
-        break;
-      case ReportResolutionActions.NO_ACTION_TAKEN:
+      case ReportResolutionActions.NO_ACTION_TAKEN: {
         this.logger.log('No action taken');
+        if (!isNotBlank(resolutionPayload.reason)) {
+          throw new BadRequestException(
+            'Reason is required for NO_ACTION_TAKEN',
+          );
+        }
         break;
-      case ReportResolutionActions.MALICIOUS_REPORT:
+      }
+      case ReportResolutionActions.MALICIOUS_REPORT: {
         this.logger.log('Malicious report');
+        if (!isNotBlank(resolutionPayload.reason)) {
+          throw new BadRequestException(
+            'Reason is required for MALICIOUS_REPORT',
+          );
+        }
         break;
+      }
       case ReportResolutionActions.PARTIAL_TICKET_REFUND:
         this.logger.log('Partial ticket refund');
+        if (!isNotBlank(resolutionPayload.refundPercentage)) {
+          throw new BadRequestException(
+            'Refund percentage is required for PARTIAL_TICKET_REFUND',
+          );
+        }
+        if (!isNotBlank(resolutionPayload.shouldCancelTickets)) {
+          throw new BadRequestException(
+            'Should cancel tickets is required for PARTIAL_TICKET_REFUND',
+          );
+        }
+        if (!isNotBlank(resolutionPayload.reason)) {
+          throw new BadRequestException(
+            'Reason is required for PARTIAL_TICKET_REFUND',
+          );
+        }
         await this.ticketOrderManagementService.forceRefundOrder({
           entityManager: em,
           eventId: report.targetId,
           accountId: report.createdById,
-          refundPercentage: 0.1, // TODO
-          refundReason: 'Reported as malicious',
-          shouldCancelTickets: false, // TODO
+          refundPercentage: resolutionPayload.refundPercentage,
+          refundReason: resolutionPayload.reason,
+          shouldCancelTickets: resolutionPayload.shouldCancelTickets,
         });
         break;
       case ReportResolutionActions.FULL_TICKET_REFUND:
         this.logger.log('Full ticket refund');
+        if (!isNotBlank(resolutionPayload.shouldCancelTickets)) {
+          throw new BadRequestException(
+            'Should cancel tickets is required for FULL_TICKET_REFUND',
+          );
+        }
+        if (!isNotBlank(resolutionPayload.reason)) {
+          throw new BadRequestException(
+            'Reason is required for FULL_TICKET_REFUND',
+          );
+        }
         await this.ticketOrderManagementService.forceRefundOrder({
           entityManager: em,
           eventId: report.targetId,
           accountId: report.createdById,
           refundPercentage: 1,
-          refundReason: 'Reported as malicious', // TODO
-          shouldCancelTickets: false, // TODO
+          refundReason: resolutionPayload.reason,
+          shouldCancelTickets: resolutionPayload.shouldCancelTickets,
         });
         break;
       case ReportResolutionActions.PARTIAL_BOOKING_REFUND:
         this.logger.log('Partial booking refund');
+        if (!isNotBlank(resolutionPayload.refundPercentage)) {
+          throw new BadRequestException(
+            'Refund percentage is required for PARTIAL_BOOKING_REFUND',
+          );
+        }
+        if (!isNotBlank(resolutionPayload.shouldCancelBooking)) {
+          throw new BadRequestException(
+            'Should cancel booking is required for PARTIAL_BOOKING_REFUND',
+          );
+        }
         await this.locationBookingManagementService.forceRefundBooking({
           accountId: report.createdById,
           locationId: report.targetId,
           entityManager: em,
-          refundPercentage: 0.1,
-          shouldCancelBooking: false, // TODO
+          refundPercentage: resolutionPayload.refundPercentage,
+          shouldCancelBooking: resolutionPayload.shouldCancelBooking,
         });
         break;
       case ReportResolutionActions.FULL_BOOKING_REFUND:
         this.logger.log('Full booking refund');
+        if (!isNotBlank(resolutionPayload.shouldCancelBooking)) {
+          throw new BadRequestException(
+            'Should cancel booking is required for FULL_BOOKING_REFUND',
+          );
+        }
         await this.locationBookingManagementService.forceRefundBooking({
           accountId: report.createdById,
           locationId: report.targetId,
           entityManager: em,
           refundPercentage: 1,
-          shouldCancelBooking: false, // TODO
+          shouldCancelBooking: resolutionPayload.shouldCancelBooking,
         });
         break;
       case ReportResolutionActions.BAN_POST: {
         this.logger.log(`Banning post: ${report.targetId}`);
-        const reason = ''; // todo
-        await this.postService.banPost(report.targetId, reason);
+        if (!isNotBlank(resolutionPayload.reason)) {
+          throw new BadRequestException('Reason is required for BAN_POST');
+        }
+        await this.postService.banPost(
+          report.targetId,
+          resolutionPayload.reason,
+        );
         break;
       }
     }
@@ -177,6 +250,7 @@ export class ReportManagementService
     em: EntityManager,
     report: ReportEntity,
     penaltyAction: ReportPenaltyActions,
+    penaltyPayload: CommonPenaltyPayloadDto,
   ): Promise<void> {
     this.logger.log(`Processing penalty action: ${penaltyAction}`);
     this.logger.log(
@@ -189,43 +263,69 @@ export class ReportManagementService
         break;
       case ReportPenaltyActions.WARN_USER: {
         this.logger.log('Warn user penalty');
+        if (!isNotBlank(penaltyPayload.reason)) {
+          throw new BadRequestException('Reason is required for WARN_USER');
+        }
         const targetId = await this.getTargetAccountId(report, em);
         await this.accountWarningService.sendWarning({
           accountId: targetId,
-          warningNote: 'Warning for reporting malicious content',
+          warningNote: penaltyPayload.reason,
           entityManager: em,
         });
         break;
       }
       case ReportPenaltyActions.SUSPEND_ACCOUNT: {
         this.logger.log('Suspend account penalty');
+        if (!isNotBlank(penaltyPayload.suspendUntil)) {
+          throw new BadRequestException(
+            'Suspend until is required for SUSPEND_ACCOUNT',
+          );
+        }
+        if (!isNotBlank(penaltyPayload.reason)) {
+          throw new BadRequestException(
+            'Reason is required for SUSPEND_ACCOUNT',
+          );
+        }
         const targetId = await this.getTargetAccountId(report, em);
         await this.accountWarningService.suspendAccount({
           targetId,
           accountId: report.resolvedById ?? null,
-          suspendUntil: new Date(),
-          suspensionReason: '',
+          suspendUntil: penaltyPayload.suspendUntil,
+          suspensionReason: penaltyPayload.reason,
         });
         break;
       }
       case ReportPenaltyActions.BAN_ACCOUNT: {
         this.logger.log('Ban account penalty');
+        if (!isNotBlank(penaltyPayload.reason)) {
+          throw new BadRequestException('Reason is required for BAN_ACCOUNT');
+        }
         const targetId = await this.getTargetAccountId(report, em);
         await this.accountWarningService.suspendAccount({
           targetId,
           accountId: report.resolvedById ?? null,
           suspendUntil: dayjs().add(999, 'years').toDate(),
-          suspensionReason: '',
+          suspensionReason: penaltyPayload.reason,
         });
         break;
       }
       case ReportPenaltyActions.SUSPEND_LOCATION_BOOKING:
         this.logger.log('Suspend location booking penalty');
+        if (!isNotBlank(penaltyPayload.suspendUntil)) {
+          throw new BadRequestException(
+            'Suspend until is required for SUSPEND_LOCATION_BOOKING',
+          );
+        }
+        if (!isNotBlank(penaltyPayload.reason)) {
+          throw new BadRequestException(
+            'Reason is required for SUSPEND_LOCATION_BOOKING',
+          );
+        }
         await this.locationSuspensionService.suspendLocationBooking({
           entityManager: em,
           accountId: report.resolvedById,
-          suspendedUntil: dayjs().add(999, 'years').toDate(), // TODO
-          suspensionReason: '',
+          suspendedUntil: penaltyPayload.suspendUntil,
+          suspensionReason: penaltyPayload.reason,
           locationBookingId: report.targetId,
         });
         break;
