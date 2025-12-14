@@ -11,7 +11,6 @@ import { IBookableLocationSearchService } from '@/modules/location-booking/app/I
 import { BookableLocationSearchService } from '@/modules/location-booking/app/impl/BookableLocationSearch.service';
 import { LocationCreatorController } from '@/modules/location-booking/interfaces/Location.creator.controller';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
-import { LocationBookingManagementService } from '@/modules/location-booking/app/impl/LocationBookingManagement.service';
 import { LocationBookingOwnerController } from '@/modules/location-booking/interfaces/LocationBooking.owner.controller';
 import { LocationBookingCreatorController } from '@/modules/location-booking/interfaces/LocationBooking.creator.controller';
 import { ILocationBookingQueryService } from '@/modules/location-booking/app/ILocationBookingQuery.service';
