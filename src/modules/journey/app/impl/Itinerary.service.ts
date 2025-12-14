@@ -8,6 +8,7 @@ import { DataSource } from 'typeorm';
 import { CreateItineraryDto } from '@/common/dto/journey/CreateItinerary.dto';
 import { CreateItineraryFromAIDto } from '@/common/dto/journey/CreateItineraryFromAI.dto';
 import { UpdateItineraryDto } from '@/common/dto/journey/UpdateItinerary.dto';
+import { FinishItineraryDto } from '@/common/dto/journey/FinishItinerary.dto';
 import { ItineraryEntity } from '../../domain/Itinerary.entity';
 import { ItineraryLocationEntity } from '../../domain/ItineraryLocation.entity';
 import { ItineraryRepository } from '../../infra/Itinerary.repository';
@@ -339,6 +340,47 @@ export class ItineraryService implements IItineraryService {
 
       if (!result) {
         throw new NotFoundException('Failed to update itinerary');
+      }
+      return result as ItineraryEntity;
+    });
+  }
+
+  async finishItinerary(
+    userId: string,
+    itineraryId: string,
+    dto: FinishItineraryDto,
+  ): Promise<ItineraryEntity> {
+    const itinerary = await this.getItineraryById(userId, itineraryId);
+
+    return this.dataSource.transaction(async (manager) => {
+      const updateData: any = {
+        isFinished: dto.isFinished,
+      };
+
+      // Set finishedAt timestamp when marking as finished
+      if (dto.isFinished) {
+        updateData.finishedAt = new Date();
+      } else {
+        // Clear finishedAt when unmarking as finished
+        // Use null to clear nullable field in TypeORM
+        updateData.finishedAt = null;
+      }
+
+      await manager.update(ItineraryEntity, itineraryId, updateData);
+
+      // Fetch complete itinerary with relations
+      const result = await manager.getRepository(ItineraryEntity).findOne({
+        where: { id: itineraryId },
+        relations: ['locations', 'locations.location'],
+        order: {
+          locations: {
+            order: 'ASC',
+          },
+        },
+      });
+
+      if (!result) {
+        throw new NotFoundException('Failed to update itinerary finish status');
       }
       return result as ItineraryEntity;
     });

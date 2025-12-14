@@ -75,6 +75,16 @@ export class ItineraryEntity {
   @Column({ name: 'total_travel_minutes', type: 'integer', default: 0 })
   totalTravelMinutes: number;
 
+  @Column({ name: 'is_finished', type: 'boolean', default: false })
+  isFinished: boolean;
+
+  @Column({
+    name: 'finished_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  finishedAt?: Date;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 

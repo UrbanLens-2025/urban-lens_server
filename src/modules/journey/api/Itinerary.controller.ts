@@ -26,6 +26,7 @@ import { CreateItineraryDto } from '@/common/dto/journey/CreateItinerary.dto';
 import { CreateItineraryFromAIDto } from '@/common/dto/journey/CreateItineraryFromAI.dto';
 import { ItineraryResponseDto } from '@/common/dto/journey/Itinerary.response.dto';
 import { UpdateItineraryDto } from '@/common/dto/journey/UpdateItinerary.dto';
+import { FinishItineraryDto } from '@/common/dto/journey/FinishItinerary.dto';
 import { IItineraryService } from '../app/IItinerary.service';
 
 @ApiTags('Itinerary')
@@ -196,6 +197,42 @@ export class ItineraryController {
     @Body() dto: UpdateItineraryDto,
   ): Promise<ItineraryResponseDto> {
     const itinerary = await this.itineraryService.updateItinerary(
+      user.sub,
+      id,
+      dto,
+    );
+    return plainToInstance(ItineraryResponseDto, itinerary, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  @Patch(':id/finish')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Update itinerary finish status',
+    description:
+      'Mark an itinerary as finished or unfinished. When marking as finished, the finishedAt timestamp will be set.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Itinerary finish status updated successfully',
+    type: ItineraryResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Itinerary not found',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Access forbidden',
+  })
+  async finishItinerary(
+    @AuthUser() user: JwtTokenDto,
+    @Param('id') id: string,
+    @Body() dto: FinishItineraryDto,
+  ): Promise<ItineraryResponseDto> {
+    const itinerary = await this.itineraryService.finishItinerary(
       user.sub,
       id,
       dto,

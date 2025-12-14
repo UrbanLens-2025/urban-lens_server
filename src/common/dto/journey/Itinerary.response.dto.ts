@@ -173,6 +173,19 @@ export class ItineraryResponseDto {
   totalTravelMinutes: number;
 
   @ApiProperty({
+    description: 'Whether the itinerary is marked as finished',
+    example: false,
+  })
+  @Expose()
+  isFinished: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Timestamp when the itinerary was marked as finished',
+  })
+  @Expose()
+  finishedAt?: Date;
+
+  @ApiProperty({
     description: 'Created at timestamp',
   })
   @Expose()

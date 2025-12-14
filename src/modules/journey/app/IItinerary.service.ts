@@ -1,6 +1,7 @@
 import { CreateItineraryDto } from '@/common/dto/journey/CreateItinerary.dto';
 import { CreateItineraryFromAIDto } from '@/common/dto/journey/CreateItineraryFromAI.dto';
 import { UpdateItineraryDto } from '@/common/dto/journey/UpdateItinerary.dto';
+import { FinishItineraryDto } from '@/common/dto/journey/FinishItinerary.dto';
 import { ItineraryEntity } from '../domain/Itinerary.entity';
 
 export abstract class IItineraryService {
@@ -29,6 +30,12 @@ export abstract class IItineraryService {
     userId: string,
     itineraryId: string,
     dto: UpdateItineraryDto,
+  ): Promise<ItineraryEntity>;
+
+  abstract finishItinerary(
+    userId: string,
+    itineraryId: string,
+    dto: FinishItineraryDto,
   ): Promise<ItineraryEntity>;
 
   abstract deleteItinerary(userId: string, itineraryId: string): Promise<void>;
