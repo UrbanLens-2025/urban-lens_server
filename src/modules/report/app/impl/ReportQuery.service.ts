@@ -96,15 +96,26 @@ export class ReportQueryService
       page: dto.query.page,
     });
 
+    const targetIds = targets.data?.map((target) => target.target_id);
+
+    if (!targetIds || targetIds.length === 0) {
+      return {
+        data: [],
+        count: 0,
+        page: dto.query.page,
+        limit: dto.query.limit,
+      } as unknown as WithCustomPaginationDto<PostWithReportsResponseDto>;
+    }
+
     const posts = await postRepo.find({
       where: {
-        postId: In(targets.data.map((target) => target.target_id)),
+        postId: In(targetIds),
       },
     });
 
     const reports = await reportRepo.find({
       where: {
-        targetId: In(targets.data.map((target) => target.target_id)),
+        targetId: In(targetIds),
       },
     });
 

@@ -151,6 +151,7 @@ export class ReportManagementService
         break;
       }
       case ReportResolutionActions.PARTIAL_TICKET_REFUND:
+        this.validateTargetType(report, ReportEntityType.EVENT);
         this.logger.log('Partial ticket refund');
         if (!isNotBlank(resolutionPayload.refundPercentage)) {
           throw new BadRequestException(
@@ -177,6 +178,7 @@ export class ReportManagementService
         });
         break;
       case ReportResolutionActions.FULL_TICKET_REFUND:
+        this.validateTargetType(report, ReportEntityType.EVENT);
         this.logger.log('Full ticket refund');
         if (!isNotBlank(resolutionPayload.shouldCancelTickets)) {
           throw new BadRequestException(
@@ -198,6 +200,7 @@ export class ReportManagementService
         });
         break;
       case ReportResolutionActions.PARTIAL_BOOKING_REFUND:
+        this.validateTargetType(report, ReportEntityType.LOCATION);
         this.logger.log('Partial booking refund');
         if (!isNotBlank(resolutionPayload.refundPercentage)) {
           throw new BadRequestException(
@@ -218,6 +221,7 @@ export class ReportManagementService
         });
         break;
       case ReportResolutionActions.FULL_BOOKING_REFUND:
+        this.validateTargetType(report, ReportEntityType.LOCATION);
         this.logger.log('Full booking refund');
         if (!isNotBlank(resolutionPayload.shouldCancelBooking)) {
           throw new BadRequestException(
@@ -233,6 +237,7 @@ export class ReportManagementService
         });
         break;
       case ReportResolutionActions.BAN_POST: {
+        this.validateTargetType(report, ReportEntityType.POST);
         this.logger.log(`Banning post: ${report.targetId}`);
         if (!isNotBlank(resolutionPayload.reason)) {
           throw new BadRequestException('Reason is required for BAN_POST');
@@ -240,6 +245,7 @@ export class ReportManagementService
         await this.postService.banPost(
           report.targetId,
           resolutionPayload.reason,
+          em,
         );
         break;
       }
@@ -310,6 +316,7 @@ export class ReportManagementService
         break;
       }
       case ReportPenaltyActions.SUSPEND_LOCATION_BOOKING:
+        this.validateTargetType(report, ReportEntityType.LOCATION);
         this.logger.log('Suspend location booking penalty');
         if (!isNotBlank(penaltyPayload.suspendUntil)) {
           throw new BadRequestException(
@@ -329,6 +336,17 @@ export class ReportManagementService
           locationBookingId: report.targetId,
         });
         break;
+    }
+  }
+
+  private validateTargetType(
+    report: ReportEntity,
+    expectedType: ReportEntityType,
+  ): void {
+    if (report.targetType !== expectedType) {
+      throw new BadRequestException(
+        `This action can only be applied to ${expectedType} reports, but this report targets ${report.targetType}`,
+      );
     }
   }
 

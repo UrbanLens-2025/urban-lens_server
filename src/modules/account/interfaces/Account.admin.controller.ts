@@ -23,8 +23,6 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
-import { IAccountManagementService } from '@/modules/account/app/IAccountManagement.service';
-import { ToggleAccountLockDto } from '@/common/dto/account/ToggleAccountLock.dto';
 import { GetAccountByIdDto } from '@/common/dto/account/GetAccountById.dto';
 
 @ApiTags('Account')
@@ -37,8 +35,6 @@ export class AccountAdminController {
     private readonly accountQueryService: IAccountQueryService,
     @Inject(IAccountProfileManagementService)
     private readonly accountProfileManagementService: IAccountProfileManagementService,
-    @Inject(IAccountManagementService)
-    private readonly accountManagementService: IAccountManagementService,
   ) {}
 
   @ApiOperation({
@@ -89,15 +85,5 @@ export class AccountAdminController {
   getAccountById(@Param('id', ParseUUIDPipe) accountId: string) {
     const dto: GetAccountByIdDto = { accountId };
     return this.accountQueryService.getAccountById(dto);
-  }
-
-  @ApiOperation({
-    summary: 'Toggle account lock status',
-    description: 'Lock or unlock an account',
-  })
-  @Put('/:id/toggle-lock')
-  toggleAccountLock(@Param('id', ParseUUIDPipe) accountId: string) {
-    const dto: ToggleAccountLockDto = { accountId };
-    return this.accountManagementService.toggleAccountLock(dto);
   }
 }

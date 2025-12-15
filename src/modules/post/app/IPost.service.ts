@@ -13,6 +13,7 @@ import { DeletePostResponseDto } from '@/common/dto/post/DeletePost.response.dto
 import { UpdatePostVisibilityResponseDto } from '@/common/dto/post/UpdatePostVisibility.response.dto';
 import { PostAuthorResponseDto } from '@/common/dto/post/Post.response.dto';
 import { BanPostResponseDto } from '@/common/dto/post/BanPost.response.dto';
+import { EntityManager } from 'typeorm';
 
 export const IPostService = Symbol('IPostService');
 export interface IPostService {
@@ -84,5 +85,9 @@ export interface IPostService {
     postId: string,
     isHidden: boolean,
   ): Promise<UpdatePostVisibilityResponseDto>;
-  banPost(postId: string, reason?: string): Promise<BanPostResponseDto>;
+  banPost(
+    postId: string,
+    reason?: string,
+    entityManager?: EntityManager,
+  ): Promise<BanPostResponseDto>;
 }

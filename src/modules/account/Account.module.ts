@@ -26,8 +26,6 @@ import { FavoriteLocationManagementService } from '@/modules/account/app/impl/Fa
 import { IFavoriteLocationQueryService } from '@/modules/account/app/IFavoriteLocationQuery.service';
 import { FavoriteLocationQueryService } from '@/modules/account/app/impl/FavoriteLocationQuery.service';
 import { FavoriteLocationPrivateController } from '@/modules/account/interfaces/FavoriteLocation.private.controller';
-import { IAccountManagementService } from '@/modules/account/app/IAccountManagement.service';
-import { AccountManagementService } from '@/modules/account/app/impl/AccountManagement.service';
 import { IAccountWarningService } from '@/modules/account/app/IAccountWarning.service';
 import { AccountWarningService } from '@/modules/account/app/impl/AccountWarning.service';
 
@@ -74,10 +72,6 @@ import { AccountWarningService } from '@/modules/account/app/impl/AccountWarning
     {
       provide: IFavoriteLocationQueryService,
       useClass: FavoriteLocationQueryService,
-    },
-    {
-      provide: IAccountManagementService,
-      useClass: AccountManagementService,
     },
     {
       provide: IAccountWarningService,
