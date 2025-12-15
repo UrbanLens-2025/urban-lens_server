@@ -13,6 +13,7 @@ import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { AccountRepository } from '@/modules/account/infra/repository/Account.repository';
 import { FavoriteLocationEntity } from '@/modules/account/domain/FavoriteLocation.entity';
 import { AccountWarningEntity } from '@/modules/account/domain/AccountWarning.entity';
+import { AccountSuspensionEntity } from '@/modules/account/domain/AccountSuspension.entity';
 
 const repositories = [
   UserTagsRepository,
@@ -33,6 +34,7 @@ const repositories = [
       AccountEntity,
       FavoriteLocationEntity,
       AccountWarningEntity,
+      AccountSuspensionEntity,
     ]),
   ],
   providers: repositories,

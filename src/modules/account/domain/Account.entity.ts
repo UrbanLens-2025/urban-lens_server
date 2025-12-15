@@ -9,7 +9,6 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
-  ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -17,6 +16,7 @@ import {
 } from 'typeorm';
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 import { CreatorProfileEntity } from '@/modules/account/domain/CreatorProfile.entity';
+import { AccountSuspensionEntity } from '@/modules/account/domain/AccountSuspension.entity';
 
 @Entity({ name: 'accounts' })
 export class AccountEntity {
@@ -62,31 +62,6 @@ export class AccountEntity {
   @Column({ name: 'is_locked', type: 'boolean', default: false })
   isLocked: boolean;
 
-  @Column({
-    name: 'suspended_until',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  suspendedUntil: Date | null;
-
-  @Column({
-    name: 'suspension_reason',
-    type: 'varchar',
-    length: 555,
-    nullable: true,
-  })
-  suspensionReason: string | null;
-
-  @Column({ name: 'suspended_by', type: 'uuid', nullable: true })
-  suspendedById?: string | null;
-
-  @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: true,
-    nullable: true,
-  })
-  @JoinColumn({ name: 'suspended_by' })
-  suspendedBy: AccountEntity | null;
-
   @OneToMany(() => PostEntity, (post) => post.author)
   posts: PostEntity[];
 
@@ -111,28 +86,17 @@ export class AccountEntity {
   })
   creatorProfile?: CreatorProfileEntity;
 
+  @OneToMany(
+    () => AccountSuspensionEntity,
+    (suspension) => suspension.account,
+  )
+  suspensions?: AccountSuspensionEntity[];
+
   public canCreateEvent(): boolean {
     return this.role === Role.EVENT_CREATOR && this.hasOnboarded;
   }
 
   public canPerformActions(): boolean {
     return this.hasOnboarded;
-  }
-
-  public suspend(
-    suspendedUntil: Date,
-    suspensionReason: string,
-    suspendedById?: string | null,
-  ): AccountEntity {
-    this.suspendedUntil = suspendedUntil;
-    this.suspensionReason = suspensionReason;
-    this.suspendedById = suspendedById;
-
-    return this;
-  }
-
-  public isSuspended(): boolean {
-    const now = new Date();
-    return !!this.suspendedUntil && this.suspendedUntil > now;
   }
 }

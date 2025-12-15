@@ -2,7 +2,7 @@ import { Exclude, Expose, Type } from 'class-transformer';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 
 @Exclude()
-export class AccountWarningResponseDto {
+export class AccountSuspensionResponseDto {
   @Expose()
   id: string;
 
@@ -14,7 +14,20 @@ export class AccountWarningResponseDto {
   account?: AccountResponseDto | null;
 
   @Expose()
-  warningNote: string;
+  suspensionReason?: string | null;
+
+  @Expose()
+  suspendedUntil?: Date | null;
+
+  @Expose()
+  suspendedById?: string | null;
+
+  @Expose()
+  @Type(() => AccountResponseDto)
+  suspendedBy?: AccountResponseDto | null;
+
+  @Expose()
+  isActive?: boolean | null;
 
   @Expose()
   @Type(() => Date)
@@ -23,11 +36,5 @@ export class AccountWarningResponseDto {
   @Expose()
   @Type(() => Date)
   updatedAt: Date;
-
-  @Expose()
-  @Type(() => AccountResponseDto)
-  createdBy?: AccountResponseDto | null;
-
-  @Expose()
-  createdById: string;
 }
+

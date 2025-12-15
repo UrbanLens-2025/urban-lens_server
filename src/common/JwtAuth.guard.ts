@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import { CoreService } from '@/common/core/Core.service';
 import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
+import { AccountSuspensionRepository } from '@/modules/account/infra/repository/AccountSuspension.repository';
 
 @Injectable()
 export class JwtAuthGuard extends CoreService implements CanActivate {
@@ -100,6 +101,8 @@ export class JwtAuthGuard extends CoreService implements CanActivate {
   public async isAllowedToLogin(accountId: string): Promise<boolean> {
     return this.ensureTransaction(null, async (em) => {
       const accountRepo = AccountRepositoryProvider(em);
+      const accountSuspensionRepo = AccountSuspensionRepository(em);
+
       const account = await accountRepo.findOne({
         where: {
           id: accountId,
@@ -110,9 +113,13 @@ export class JwtAuthGuard extends CoreService implements CanActivate {
         throw new UnauthorizedException('Account not found');
       }
 
-      if (account.isSuspended()) {
+      const activeSuspension = await accountSuspensionRepo.getActiveSuspension({
+        accountId,
+      });
+
+      if (activeSuspension) {
         throw new UnauthorizedException(
-          `Account is suspended until ${account.suspendedUntil?.toLocaleDateString('vi-VN')} for reason: ${account.suspensionReason}`,
+          `Account is suspended until ${activeSuspension.suspendedUntil.toLocaleDateString('vi-VN')} for reason: ${activeSuspension.suspensionReason}`,
         );
       }
 

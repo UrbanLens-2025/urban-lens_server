@@ -35,6 +35,7 @@ import {
   UserRegistrationConfirmedEvent,
 } from '@/modules/auth/app/events/UserRegistrationConfirmed.event';
 import { IWalletActionService } from '@/modules/wallet/app/IWalletAction.service';
+import { AccountSuspensionRepository } from '@/modules/account/infra/repository/AccountSuspension.repository';
 
 @Injectable()
 export class AuthService extends CoreService implements IAuthService {
@@ -267,9 +268,16 @@ export class AuthService extends CoreService implements IAuthService {
       throw new BadRequestException('User not found');
     }
 
-    if (user.isSuspended()) {
+    const activeSuspension = await this.ensureTransaction(null, async (em) => {
+      const accountSuspensionRepo = AccountSuspensionRepository(em);
+      return accountSuspensionRepo.getActiveSuspension({
+        accountId: user.id,
+      });
+    });
+
+    if (activeSuspension) {
       throw new UnauthorizedException(
-        `Account is suspended until ${user.suspendedUntil?.toLocaleDateString('vi-VN')} for reason: ${user.suspensionReason}`,
+        `Account is suspended until ${activeSuspension.suspendedUntil.toLocaleDateString('vi-VN')} for reason: ${activeSuspension.suspensionReason}`,
       );
     }
 

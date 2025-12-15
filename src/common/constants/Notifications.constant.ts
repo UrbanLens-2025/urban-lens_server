@@ -14,6 +14,7 @@ export enum NotificationTypes {
   EVENT_ATTENDANCE_REFUNDED = 'EVENT_ATTENDANCE_REFUNDED',
   NEW_POST = 'NEW_POST',
   POST_BANNED = 'POST_BANNED',
+  ACCOUNT_WARNING = 'ACCOUNT_WARNING',
 }
 
 export const NotificationsConstant: {
@@ -97,6 +98,12 @@ export const NotificationsConstant: {
     payload: {
       title: 'Your post has been removed',
       body: '{reason}',
+    },
+  },
+  [NotificationTypes.ACCOUNT_WARNING]: {
+    payload: {
+      title: 'Account Warning',
+      body: '{warningNote}',
     },
   },
 };

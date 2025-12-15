@@ -13,6 +13,7 @@ export enum EmailTemplates {
   BOOKING_FORCE_CANCELLED = './booking-force-cancelled',
   EVENT_ATTENDANCE_REFUNDED = './event-attendance-refunded',
   POST_BANNED = './post-banned',
+  ACCOUNT_WARNING = './account-warning',
 }
 
 export const EmailSubjects = {
@@ -30,4 +31,5 @@ export const EmailSubjects = {
   [EmailTemplates.BOOKING_FORCE_CANCELLED]: 'Booking Force Cancelled',
   [EmailTemplates.EVENT_ATTENDANCE_REFUNDED]: 'Event Attendance Refunded',
   [EmailTemplates.POST_BANNED]: 'Your Post Has Been Removed',
+  [EmailTemplates.ACCOUNT_WARNING]: 'Account Warning',
 };

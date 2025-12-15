@@ -24,6 +24,16 @@ export class AccountWarningEntity {
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     createForeignKeyConstraints: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy?: AccountEntity | null;
+
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  createdById?: string | null;
+
+  @ManyToOne(() => AccountEntity, (account) => account.id, {
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;

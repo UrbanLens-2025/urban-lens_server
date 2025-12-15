@@ -274,7 +274,7 @@ export class ReportManagementService
         }
         const targetId = await this.getTargetAccountId(report, em);
         await this.accountWarningService.sendWarning({
-          accountId: targetId,
+          targetAccountId: targetId,
           warningNote: penaltyPayload.reason,
           entityManager: em,
         });
