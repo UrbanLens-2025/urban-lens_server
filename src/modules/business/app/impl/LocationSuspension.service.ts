@@ -39,7 +39,7 @@ export class LocationSuspensionService
 
       const location = await locationRepo.findOneOrFail({
         where: {
-          id: dto.locationBookingId,
+          id: dto.locationId,
         },
         relations: {
           bookingConfig: true,

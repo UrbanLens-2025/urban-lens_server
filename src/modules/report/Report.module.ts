@@ -19,6 +19,13 @@ import { PostModule } from '@/modules/post/Post.module';
 import { AccountModule } from '@/modules/account/Account.module';
 import { BusinessModule } from '@/modules/business/Business.module';
 import { LocationBookingModule } from '@/modules/location-booking/LocationBooking.module';
+import { IPenaltyService } from '@/modules/report/app/IPenalty.service';
+import { PenaltyService } from '@/modules/report/app/impl/Penalty.service';
+import { PenaltyAdministeredListener } from '@/modules/report/app/event-listeners/PenaltyAdministered.listener';
+import { PenaltyAdminController } from '@/modules/report/interfaces/Penalty.admin.controller';
+import { PenaltyUserController } from '@/modules/report/interfaces/Penalty.user.controller';
+import { PenaltyOwnerController } from '@/modules/report/interfaces/Penalty.owner.controller';
+import { PenaltyCreatorController } from '@/modules/report/interfaces/Penalty.creator.controller';
 @Module({
   imports: [
     ReportInfraModule,
@@ -49,12 +56,21 @@ import { LocationBookingModule } from '@/modules/location-booking/LocationBookin
       provide: IReportManagementService,
       useClass: ReportManagementService,
     },
+    {
+      provide: IPenaltyService,
+      useClass: PenaltyService,
+    },
+    PenaltyAdministeredListener,
   ],
   controllers: [
     ReportPrivateController,
     ReportAdminController,
     ReportReasonAdminController,
     ReportReasonPublicController,
+    PenaltyAdminController,
+    PenaltyUserController,
+    PenaltyOwnerController,
+    PenaltyCreatorController,
   ],
 })
 export class ReportModule {}

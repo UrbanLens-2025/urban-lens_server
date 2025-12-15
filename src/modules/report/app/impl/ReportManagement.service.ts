@@ -1,20 +1,12 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { IReportManagementService } from '@/modules/report/app/IReportManagement.service';
 import {
-  CommonPenaltyPayloadDto,
   CommonResolutionPayloadDto,
   ProcessReportDto,
-  ResolutionPayloadDto,
 } from '@/common/dto/report/ProcessReport.dto';
 import { ReportResponseDto } from '@/common/dto/report/res/Report.response.dto';
 import { CoreService } from '@/common/core/Core.service';
 import { ReportRepositoryProvider } from '@/modules/report/infra/repository/Report.repository';
-import { ReportPenaltyActions } from '@/common/constants/ReportPenaltyActions.constant';
 import { ReportResolvedByType } from '@/common/constants/ReportResolvedByType.constant';
 import { ReportResolutionActions } from '@/common/constants/ReportResolutionActions.constant';
 import {
@@ -30,12 +22,6 @@ import {
   REPORT_RESOLVED_EVENT,
   ReportResolvedEvent,
 } from '@/modules/report/domain/events/ReportResolved.event';
-import { IAccountWarningService } from '@/modules/account/app/IAccountWarning.service';
-import { PostRepositoryProvider } from '@/modules/post/infra/repository/Post.repository';
-import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
-import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
-import dayjs from 'dayjs';
-import { ILocationSuspensionService } from '@/modules/business/app/ILocationSuspension.service';
 import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { isNotBlank } from '@/common/utils/is-not-blank.util';
@@ -56,10 +42,6 @@ export class ReportManagementService
     private readonly ticketOrderManagementService: ITicketOrderManagementService,
     @Inject(IPostService)
     private readonly postService: IPostService,
-    @Inject(IAccountWarningService)
-    private readonly accountWarningService: IAccountWarningService,
-    @Inject(ILocationSuspensionService)
-    private readonly locationSuspensionService: ILocationSuspensionService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     super();
@@ -82,7 +64,6 @@ export class ReportManagementService
         });
 
       report.resolutionAction = dto.resolutionAction;
-      report.penaltyAction = dto.penaltyAction;
       report.resolvedByType = dto.initiatedByAccountId
         ? ReportResolvedByType.ADMIN
         : ReportResolvedByType.SYSTEM;
@@ -93,27 +74,16 @@ export class ReportManagementService
         report.resolvedById = dto.initiatedByAccountId;
       }
 
-      return reportRepo
-        .save(report)
-        .then(async (res) => {
-          await this.handleReportResolution(
-            em,
-            res,
-            dto.resolutionAction,
-            dto.resolutionPayload,
-          );
+      return reportRepo.save(report).then(async (res) => {
+        await this.handleReportResolution(
+          em,
+          res,
+          dto.resolutionAction,
+          dto.resolutionPayload,
+        );
 
-          return res;
-        })
-        .then(async (res) => {
-          await this.handlePenaltyAction(
-            em,
-            res,
-            dto.penaltyAction,
-            dto.penaltyPayload,
-          );
-          return res;
-        });
+        return res;
+      });
     })
       .then((res) => {
         this.eventEmitter.emit(
@@ -252,94 +222,6 @@ export class ReportManagementService
     }
   }
 
-  private async handlePenaltyAction(
-    em: EntityManager,
-    report: ReportEntity,
-    penaltyAction: ReportPenaltyActions,
-    penaltyPayload: CommonPenaltyPayloadDto,
-  ): Promise<void> {
-    this.logger.log(`Processing penalty action: ${penaltyAction}`);
-    this.logger.log(
-      `Report ID: ${report.id}, Target Type: ${report.targetType}, Target ID: ${report.targetId}`,
-    );
-
-    switch (penaltyAction) {
-      case ReportPenaltyActions.NO_PENALTY:
-        this.logger.log('No penalty applied');
-        break;
-      case ReportPenaltyActions.WARN_USER: {
-        this.logger.log('Warn user penalty');
-        if (!isNotBlank(penaltyPayload.reason)) {
-          throw new BadRequestException('Reason is required for WARN_USER');
-        }
-        const targetId = await this.getTargetAccountId(report, em);
-        await this.accountWarningService.sendWarning({
-          targetAccountId: targetId,
-          warningNote: penaltyPayload.reason,
-          entityManager: em,
-          createdById: report.resolvedById || '',
-        });
-        break;
-      }
-      case ReportPenaltyActions.SUSPEND_ACCOUNT: {
-        this.logger.log('Suspend account penalty');
-        if (!isNotBlank(penaltyPayload.suspendUntil)) {
-          throw new BadRequestException(
-            'Suspend until is required for SUSPEND_ACCOUNT',
-          );
-        }
-        if (!isNotBlank(penaltyPayload.reason)) {
-          throw new BadRequestException(
-            'Reason is required for SUSPEND_ACCOUNT',
-          );
-        }
-        const targetId = await this.getTargetAccountId(report, em);
-        await this.accountWarningService.suspendAccount({
-          targetId,
-          accountId: report.resolvedById ?? null,
-          suspendUntil: penaltyPayload.suspendUntil,
-          suspensionReason: penaltyPayload.reason,
-        });
-        break;
-      }
-      case ReportPenaltyActions.BAN_ACCOUNT: {
-        this.logger.log('Ban account penalty');
-        if (!isNotBlank(penaltyPayload.reason)) {
-          throw new BadRequestException('Reason is required for BAN_ACCOUNT');
-        }
-        const targetId = await this.getTargetAccountId(report, em);
-        await this.accountWarningService.suspendAccount({
-          targetId,
-          accountId: report.resolvedById ?? null,
-          suspendUntil: dayjs().add(999, 'years').toDate(),
-          suspensionReason: penaltyPayload.reason,
-        });
-        break;
-      }
-      case ReportPenaltyActions.SUSPEND_LOCATION_BOOKING:
-        this.validateTargetType(report, ReportEntityType.LOCATION);
-        this.logger.log('Suspend location booking penalty');
-        if (!isNotBlank(penaltyPayload.suspendUntil)) {
-          throw new BadRequestException(
-            'Suspend until is required for SUSPEND_LOCATION_BOOKING',
-          );
-        }
-        if (!isNotBlank(penaltyPayload.reason)) {
-          throw new BadRequestException(
-            'Reason is required for SUSPEND_LOCATION_BOOKING',
-          );
-        }
-        await this.locationSuspensionService.suspendLocationBooking({
-          entityManager: em,
-          accountId: report.resolvedById,
-          suspendedUntil: penaltyPayload.suspendUntil,
-          suspensionReason: penaltyPayload.reason,
-          locationBookingId: report.targetId,
-        });
-        break;
-    }
-  }
-
   private validateTargetType(
     report: ReportEntity,
     expectedType: ReportEntityType,
@@ -348,43 +230,6 @@ export class ReportManagementService
       throw new BadRequestException(
         `This action can only be applied to ${expectedType} reports, but this report targets ${report.targetType}`,
       );
-    }
-  }
-
-  private async getTargetAccountId(
-    report: ReportEntity,
-    em: EntityManager,
-  ): Promise<string> {
-    switch (report.targetType) {
-      case ReportEntityType.POST: {
-        const postRepo = PostRepositoryProvider(em);
-        const post = await postRepo.findOneOrFail({
-          where: { postId: report.targetId },
-        });
-        return post.authorId;
-      }
-      case ReportEntityType.LOCATION: {
-        const locationRepo = LocationRepositoryProvider(em);
-        const location = await locationRepo.findOneOrFail({
-          where: { id: report.targetId },
-        });
-        return location.businessId;
-      }
-      case ReportEntityType.EVENT: {
-        const eventRepo = EventRepository(em);
-        const event = await eventRepo.findOneOrFail({
-          where: { id: report.targetId },
-        });
-        return event.createdById;
-      }
-      default: {
-        this.logger.error(
-          `Unknown target type for report: ${report.targetType as unknown as string}`,
-        );
-        throw new InternalServerErrorException(
-          'Unknown target type for report',
-        );
-      }
     }
   }
 }

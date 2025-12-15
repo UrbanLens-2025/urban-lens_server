@@ -1,4 +1,3 @@
-import { ReportPenaltyActions } from '@/common/constants/ReportPenaltyActions.constant';
 import { ReportResolutionActions } from '@/common/constants/ReportResolutionActions.constant';
 import { ReportResolvedByType } from '@/common/constants/ReportResolvedByType.constant';
 import { ReportStatus } from '@/common/constants/ReportStatus.constant';
@@ -58,14 +57,6 @@ export class ReportEntity {
     nullable: true,
   })
   resolutionAction?: ReportResolutionActions | null;
-
-  @Column({
-    name: 'penalty_action',
-    type: 'varchar',
-    length: 50,
-    nullable: true,
-  })
-  penaltyAction?: ReportPenaltyActions | null;
 
   @Column({
     name: 'resolved_by_type',
