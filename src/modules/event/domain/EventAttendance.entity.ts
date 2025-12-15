@@ -29,7 +29,7 @@ export class EventAttendanceEntity {
 
   @ManyToOne(() => TicketOrderEntity, (order) => order.id, {
     nullable: false,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'order_id' })
   order: TicketOrderEntity;
@@ -39,7 +39,7 @@ export class EventAttendanceEntity {
 
   @ManyToOne(() => EventEntity, (event) => event.id, {
     nullable: false,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'event_id' })
   event: EventEntity;
@@ -52,7 +52,7 @@ export class EventAttendanceEntity {
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     nullable: true,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'owner_id' })
   owner?: AccountEntity | null;
@@ -76,7 +76,7 @@ export class EventAttendanceEntity {
 
   @ManyToOne(() => TicketOrderEntity, (order) => order.id, {
     nullable: false,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'referenced_ticket_order_id' })
   referencedTicketOrder: TicketOrderEntity;
@@ -86,7 +86,7 @@ export class EventAttendanceEntity {
 
   @ManyToOne(() => EventTicketEntity, (ticket) => ticket.id, {
     nullable: false,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'ticket_id' })
   ticket: EventTicketEntity;
@@ -116,7 +116,7 @@ export class EventAttendanceEntity {
 
   @ManyToOne(() => WalletTransactionEntity, (transaction) => transaction.id, {
     nullable: true,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'refund_transaction_id' })
   refundTransaction?: WalletTransactionEntity | null;

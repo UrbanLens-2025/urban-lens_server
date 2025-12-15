@@ -13,7 +13,7 @@ export class WardEntity {
   administrativeLevel: string;
 
   @ManyToOne(() => ProvinceEntity, (province) => province.code, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'province_code' })
   province: ProvinceEntity;

@@ -24,7 +24,7 @@ export class LocationBookingConfigEntity {
   locationId: string;
 
   @OneToOne(() => LocationEntity, (location) => location.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'location_id' })
   location: LocationEntity;
@@ -36,7 +36,7 @@ export class LocationBookingConfigEntity {
   updatedAt: Date;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: true,
   })
   @JoinColumn({ name: 'created_by' })
@@ -99,7 +99,7 @@ export class LocationBookingConfigEntity {
     () => LocationSuspensionEntity,
     (suspension) => suspension.location,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
     },
   )
   suspensions: LocationSuspensionEntity[];

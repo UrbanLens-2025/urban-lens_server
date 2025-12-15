@@ -86,19 +86,19 @@ export class OneTimeQRCodeEntity {
   updatedAt: Date;
 
   @ManyToOne(() => LocationEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'location_id' })
   location: LocationEntity;
 
   @ManyToOne(() => UserProfileEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'scanned_by' })
   scannedByUser: UserProfileEntity;
 
   @ManyToOne(() => UserProfileEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'business_owner_id' })
   businessOwner: UserProfileEntity;

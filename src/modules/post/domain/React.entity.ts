@@ -36,7 +36,7 @@ export class ReactEntity {
   @ManyToOne(() => AccountEntity, (account) => account.reacts, {
     nullable: false,
     onDelete: 'CASCADE',
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'author_id' })
   author: AccountEntity;

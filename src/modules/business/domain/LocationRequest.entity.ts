@@ -30,7 +30,7 @@ export class LocationRequestEntity {
   updatedAt: Date;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'created_by' })
   createdBy: AccountEntity;
@@ -94,7 +94,7 @@ export class LocationRequestEntity {
   status: LocationRequestStatus;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'processed_by' })
   processedBy: AccountEntity | null;
@@ -106,7 +106,7 @@ export class LocationRequestEntity {
   adminNotes: string | null;
 
   @OneToMany(() => LocationRequestTagsEntity, (tags) => tags.locationRequest, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   tags: LocationRequestTagsEntity[];
 
@@ -114,7 +114,7 @@ export class LocationRequestEntity {
     () => LocationEntity,
     (location) => location.sourceLocationRequest,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
     },
   )
   createdLocation: LocationEntity;

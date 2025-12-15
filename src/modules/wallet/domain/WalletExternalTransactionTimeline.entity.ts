@@ -26,7 +26,7 @@ export class WalletExternalTransactionTimelineEntity {
     () => WalletExternalTransactionEntity,
     (transaction) => transaction.timeline,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
     },
   )
   @JoinColumn({ name: 'transaction_id' })
@@ -57,7 +57,7 @@ export class WalletExternalTransactionTimelineEntity {
   @Column({ name: 'actor_id', type: 'uuid', nullable: true })
   actorId: string | null;
 
-  @ManyToOne(() => AccountEntity, { createForeignKeyConstraints: false })
+  @ManyToOne(() => AccountEntity, { createForeignKeyConstraints: true })
   @JoinColumn({ name: 'actor_id' })
   actor?: AccountEntity | null;
 

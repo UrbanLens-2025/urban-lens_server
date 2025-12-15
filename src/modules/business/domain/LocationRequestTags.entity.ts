@@ -27,7 +27,7 @@ export class LocationRequestTagsEntity {
     () => LocationRequestEntity,
     (locationRequest) => locationRequest.id,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
     },
   )
   @JoinColumn({ name: 'location_request_id' })
@@ -37,7 +37,7 @@ export class LocationRequestTagsEntity {
   locationRequestId: string;
 
   @ManyToOne(() => TagEntity, (tag) => tag.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'tag_id' })
   tag: TagEntity;

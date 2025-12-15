@@ -9,7 +9,7 @@ export class CreatorProfileEntity {
   accountId: string;
 
   @OneToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;

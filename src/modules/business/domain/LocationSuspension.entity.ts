@@ -25,7 +25,7 @@ export class LocationSuspensionEntity {
   updatedAt: Date;
 
   @ManyToOne(() => LocationEntity, (location) => location.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'location_id' })
   location: LocationEntity;
@@ -40,7 +40,7 @@ export class LocationSuspensionEntity {
   suspensionReason: string;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: true,
   })
   @JoinColumn({ name: 'suspended_by' })

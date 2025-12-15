@@ -25,7 +25,7 @@ export class LocationAvailabilityEntity {
   updatedAt: Date;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'created_by' })
   createdBy: AccountEntity;
@@ -34,7 +34,7 @@ export class LocationAvailabilityEntity {
   createdById: string;
 
   @ManyToOne(() => LocationEntity, (location) => location.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'location_id' })
   location: LocationEntity;

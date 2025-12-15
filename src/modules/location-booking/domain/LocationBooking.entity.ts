@@ -38,7 +38,7 @@ export class LocationBookingEntity {
   updatedAt: Date;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'account_id' })
   createdBy: AccountEntity;
@@ -62,7 +62,7 @@ export class LocationBookingEntity {
   targetId?: string | null;
 
   @ManyToOne(() => LocationEntity, (location) => location.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'location_id' })
   location: LocationEntity;
@@ -71,7 +71,7 @@ export class LocationBookingEntity {
   locationId: string;
 
   @OneToMany(() => LocationBookingDateEntity, (date) => date.booking, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     cascade: ['insert'],
     eager: true,
   })
@@ -97,7 +97,7 @@ export class LocationBookingEntity {
     () => WalletTransactionEntity,
     (walletTransaction) => walletTransaction.id,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
       nullable: true,
     },
   )
@@ -115,7 +115,7 @@ export class LocationBookingEntity {
     () => WalletTransactionEntity,
     (walletTransaction) => walletTransaction.id,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
       nullable: true,
     },
   )
@@ -123,7 +123,7 @@ export class LocationBookingEntity {
   refundTransaction?: WalletTransactionEntity | null;
 
   @ManyToOne(() => ScheduledJobEntity, (scheduledJob) => scheduledJob.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'scheduled_payout_job_id' })
   scheduledPayoutJob?: ScheduledJobEntity | null;
@@ -195,7 +195,7 @@ export class LocationBookingEntity {
     () => WalletTransactionEntity,
     (walletTransaction) => walletTransaction.id,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
       nullable: true,
     },
   )
@@ -213,7 +213,7 @@ export class LocationBookingEntity {
     () => WalletTransactionEntity,
     (walletTransaction) => walletTransaction.id,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
       nullable: true,
     },
   )

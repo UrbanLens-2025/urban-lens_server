@@ -32,7 +32,7 @@ export class LocationTagsEntity {
   deletedAt: Date | null;
 
   @ManyToOne(() => LocationEntity, (location) => location.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'location_id' })
   location: LocationEntity;
@@ -41,7 +41,7 @@ export class LocationTagsEntity {
   locationId: string;
 
   @ManyToOne(() => TagEntity, (tag) => tag.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'tag_id' })
   tag: TagEntity;

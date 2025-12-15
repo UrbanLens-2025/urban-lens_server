@@ -24,7 +24,7 @@ export class AnnouncementEntity {
   updatedAt: Date;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: true,
   })
   @JoinColumn({ name: 'created_by' })
@@ -34,7 +34,7 @@ export class AnnouncementEntity {
   createdById?: string | null;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: true,
   })
   @JoinColumn({ name: 'updated_by' })
@@ -71,7 +71,7 @@ export class AnnouncementEntity {
   type: AnnouncementType;
 
   @ManyToOne(() => LocationEntity, (location) => location.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: true,
   })
   @JoinColumn({ name: 'location_id' })
@@ -81,7 +81,7 @@ export class AnnouncementEntity {
   locationId: string | null;
 
   @ManyToOne(() => EventEntity, (event) => event.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'event_id' })
   event?: EventEntity | null;

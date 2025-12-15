@@ -23,7 +23,7 @@ export class LocationBookingDateEntity {
   updatedAt: Date;
 
   @ManyToOne(() => LocationBookingEntity, (booking) => booking.dates, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: false,
   })
   @JoinColumn({ name: 'booking_id' })

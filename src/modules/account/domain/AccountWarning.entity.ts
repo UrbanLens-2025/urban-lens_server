@@ -23,7 +23,7 @@ export class AccountWarningEntity {
   updatedAt: Date;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;

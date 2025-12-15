@@ -83,7 +83,7 @@ export class ReportEntity {
   resolvedById?: string | null;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: true,
   })
   @JoinColumn({ name: 'resolved_by_id' })
@@ -103,7 +103,7 @@ export class ReportEntity {
   createdById: string;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'created_by' })
   createdBy: AccountEntity;

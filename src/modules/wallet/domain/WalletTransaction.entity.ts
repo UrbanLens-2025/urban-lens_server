@@ -23,7 +23,7 @@ export class WalletTransactionEntity {
   createdAt: Date;
 
   @ManyToOne(() => WalletEntity, (wallet) => wallet.sourceTransactions, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'source_wallet_id' })
   sourceWallet: WalletEntity;
@@ -32,7 +32,7 @@ export class WalletTransactionEntity {
   sourceWalletId: string;
 
   @ManyToOne(() => WalletEntity, (wallet) => wallet.destinationTransactions, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'destination_wallet_id' })
   destinationWallet: WalletEntity;

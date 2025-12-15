@@ -81,7 +81,7 @@ export class AccountEntity {
   suspendedById?: string | null;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: true,
   })
   @JoinColumn({ name: 'suspended_by' })
@@ -107,7 +107,7 @@ export class AccountEntity {
   businessProfile?: BusinessEntity;
 
   @OneToOne(() => CreatorProfileEntity, (creator) => creator.account, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   creatorProfile?: CreatorProfileEntity;
 

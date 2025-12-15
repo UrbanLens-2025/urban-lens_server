@@ -16,7 +16,7 @@ export class UserMissionProgressEntity {
   id: string;
 
   @ManyToOne(() => UserProfileEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: false,
   })
   @JoinColumn({ name: 'user_profile_id' })
@@ -26,7 +26,7 @@ export class UserMissionProgressEntity {
   userProfileId: string;
 
   @ManyToOne(() => LocationMissionEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: false,
   })
   @JoinColumn({ name: 'mission_id' })

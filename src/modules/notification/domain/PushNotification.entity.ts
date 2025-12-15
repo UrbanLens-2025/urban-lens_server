@@ -27,7 +27,7 @@ export class PushNotificationEntity {
   @ManyToOne(() => AccountEntity, (user) => user.id, {
     nullable: false,
     lazy: true,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'to_user_id' })
   toUser: AccountEntity;

@@ -37,7 +37,7 @@ export class LocationEntity {
   updatedAt: Date;
 
   @ManyToOne(() => AccountEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: true,
   })
   @JoinColumn({ name: 'updated_by' })
@@ -48,7 +48,7 @@ export class LocationEntity {
 
   // consider refactoring business to something else
   @ManyToOne(() => BusinessEntity, (business) => business.locations, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: true,
   })
   @JoinColumn({ name: 'business_id' })
@@ -109,7 +109,7 @@ export class LocationEntity {
     () => LocationRequestEntity,
     (locationRequest) => locationRequest.id,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
       nullable: true,
     },
   )
@@ -131,7 +131,7 @@ export class LocationEntity {
   //#region TRANSIENT RELATIONS - These are for development purposes ONLY.
 
   @OneToMany(() => LocationAvailabilityEntity, (a) => a.location, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   availabilities: LocationAvailabilityEntity[];
 
@@ -139,7 +139,7 @@ export class LocationEntity {
     () => LocationTagsEntity,
     (locationTags) => locationTags.location,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
     },
   )
   tags: LocationTagsEntity[];
@@ -148,13 +148,13 @@ export class LocationEntity {
     () => LocationBookingConfigEntity,
     (bookingConfig) => bookingConfig.location,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
     },
   )
   bookingConfig: LocationBookingConfigEntity;
 
   @OneToMany(() => LocationBookingEntity, (booking) => booking.location, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   bookings: LocationBookingEntity[];
 

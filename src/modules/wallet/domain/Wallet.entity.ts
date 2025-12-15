@@ -25,7 +25,7 @@ export class WalletEntity {
   ownedBy: string | null;
 
   @OneToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'owned_by' })
   owner: AccountEntity;
@@ -81,7 +81,7 @@ export class WalletEntity {
     () => WalletTransactionEntity,
     (transaction) => transaction.sourceWallet,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
     },
   )
   sourceTransactions: WalletTransactionEntity[];
@@ -90,7 +90,7 @@ export class WalletEntity {
     () => WalletTransactionEntity,
     (transaction) => transaction.destinationWallet,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
     },
   )
   destinationTransactions: WalletTransactionEntity[];
@@ -99,7 +99,7 @@ export class WalletEntity {
     () => WalletExternalTransactionEntity,
     (transaction) => transaction.wallet,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
     },
   )
   externalTransactions: WalletExternalTransactionEntity[];

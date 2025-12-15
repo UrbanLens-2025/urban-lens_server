@@ -18,7 +18,7 @@ export class UserLocationProfileEntity {
   id: string;
 
   @ManyToOne(() => LocationEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: false,
   })
   @JoinColumn({ name: 'location_id' })
@@ -28,7 +28,7 @@ export class UserLocationProfileEntity {
   locationId: string;
 
   @ManyToOne(() => UserProfileEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: false,
   })
   @JoinColumn({ name: 'user_profile_id' })

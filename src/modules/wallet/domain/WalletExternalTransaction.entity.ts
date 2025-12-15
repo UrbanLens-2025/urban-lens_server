@@ -32,7 +32,7 @@ export class WalletExternalTransactionEntity {
   updatedAt: Date;
 
   @ManyToOne(() => WalletEntity, (wallet) => wallet.externalTransactions, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'wallet_id' })
   wallet: WalletEntity;
@@ -85,7 +85,7 @@ export class WalletExternalTransactionEntity {
   createdById: string;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'created_by' })
   createdBy: AccountEntity;
@@ -126,7 +126,7 @@ export class WalletExternalTransactionEntity {
     () => WalletExternalTransactionTimelineEntity,
     (timeline) => timeline.transaction,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
     },
   )
   timeline: WalletExternalTransactionTimelineEntity[];

@@ -17,7 +17,7 @@ export class LocationMissionEntity {
   id: string;
 
   @ManyToOne(() => LocationEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: false,
   })
   @JoinColumn({ name: 'location_id' })

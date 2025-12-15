@@ -24,7 +24,7 @@ export class FcmTokenEntity {
   @ManyToOne(() => AccountEntity, (user) => user.id, {
     nullable: false,
     lazy: true,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'user_id' })
   user: AccountEntity;

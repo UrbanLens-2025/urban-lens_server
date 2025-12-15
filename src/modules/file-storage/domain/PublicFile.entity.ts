@@ -37,7 +37,7 @@ export class PublicFileEntity {
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     nullable: false,
     cascade: false,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'created_by' })
   createdBy: AccountEntity;

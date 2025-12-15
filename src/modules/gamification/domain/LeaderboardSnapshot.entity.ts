@@ -46,7 +46,7 @@ export class LeaderboardSnapshotEntity {
   userId: string;
 
   @ManyToOne(() => UserProfileEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'user_id' })
   userProfile: UserProfileEntity;

@@ -41,12 +41,12 @@ export class ItineraryLocationEntity {
 
   // Relations
   @ManyToOne(() => ItineraryEntity, (itinerary) => itinerary.locations, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'itinerary_id' })
   itinerary: ItineraryEntity;
 
-  @ManyToOne(() => LocationEntity, { createForeignKeyConstraints: false })
+  @ManyToOne(() => LocationEntity, { createForeignKeyConstraints: true })
   @JoinColumn({ name: 'location_id' })
   location: LocationEntity;
 }

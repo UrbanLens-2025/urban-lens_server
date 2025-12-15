@@ -25,7 +25,7 @@ export class LocationVoucherEntity {
   locationId: string;
 
   @ManyToOne(() => LocationEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: false,
   })
   @JoinColumn({ name: 'location_id' })

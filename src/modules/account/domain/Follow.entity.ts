@@ -24,7 +24,7 @@ export class FollowEntity {
   @ManyToOne(() => AccountEntity, {
     nullable: false,
     onDelete: 'CASCADE',
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'follower_id' })
   follower: AccountEntity;

@@ -25,7 +25,7 @@ export class CheckInEntity {
   userProfileId: string;
 
   @ManyToOne(() => UserProfileEntity, (profile) => profile.checkIns, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'user_profile_id' })
   userProfile: UserProfileEntity;
@@ -34,7 +34,7 @@ export class CheckInEntity {
   locationId: string;
 
   @ManyToOne(() => LocationEntity, (location) => location.checkIns, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'location_id' })
   location: LocationEntity;

@@ -25,7 +25,7 @@ export class BusinessEntity {
 
   @OneToOne(() => AccountEntity, (account) => account.businessProfile, {
     onDelete: 'CASCADE',
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;
@@ -90,7 +90,7 @@ export class BusinessEntity {
 
   @OneToMany(() => LocationEntity, (location) => location.business, {
     cascade: true,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   locations: LocationEntity[];
 

@@ -19,7 +19,7 @@ export class FavoriteLocationEntity {
 
   @ManyToOne(() => AccountEntity, {
     nullable: false,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;
@@ -29,7 +29,7 @@ export class FavoriteLocationEntity {
 
   @ManyToOne(() => LocationEntity, {
     nullable: false,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'location_id' })
   location: LocationEntity;

@@ -18,7 +18,7 @@ export class UserLocationVoucherExchangeHistoryEntity {
   id: string;
 
   @ManyToOne(() => LocationVoucherEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: false,
   })
   @JoinColumn({ name: 'voucher_id' })
@@ -28,7 +28,7 @@ export class UserLocationVoucherExchangeHistoryEntity {
   voucherId: string;
 
   @ManyToOne(() => UserProfileEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: false,
   })
   @JoinColumn({ name: 'user_profile_id' })

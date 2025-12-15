@@ -35,13 +35,13 @@ export class EventTagsEntity {
   tagId: number;
 
   @ManyToOne(() => TagEntity, (tag) => tag.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'tag_id' })
   tag: TagEntity;
 
   @ManyToOne(() => EventEntity, (event) => event.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'event_id' })
   event: EventEntity;

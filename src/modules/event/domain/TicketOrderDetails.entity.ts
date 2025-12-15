@@ -52,7 +52,7 @@ export class TicketOrderDetailsEntity {
     () => EventTicketEntity,
     (eventTicket) => eventTicket.ticketOrderDetails,
     {
-      createForeignKeyConstraints: false,
+      createForeignKeyConstraints: true,
     },
   )
   @JoinColumn({ name: 'event_ticket_id' })
@@ -62,7 +62,7 @@ export class TicketOrderDetailsEntity {
   ticketId: string;
 
   @ManyToOne(() => TicketOrderEntity, (order) => order.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'ticket_order_id' })
   order: TicketOrderEntity;

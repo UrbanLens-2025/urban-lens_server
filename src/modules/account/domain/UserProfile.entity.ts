@@ -20,7 +20,7 @@ export class UserProfileEntity {
   accountId: string;
 
   @OneToOne(() => AccountEntity, (account) => account.userProfile, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'account_id' })
   account: AccountEntity;
@@ -33,7 +33,7 @@ export class UserProfileEntity {
 
   @ManyToOne(() => RankEntity, {
     nullable: true,
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'rank_id' })
   rankEntity: RankEntity;

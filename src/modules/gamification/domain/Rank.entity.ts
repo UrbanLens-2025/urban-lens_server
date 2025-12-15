@@ -40,7 +40,7 @@ export class RankEntity {
   updatedAt: Date;
 
   @OneToMany(() => UserProfileEntity, (userProfile) => userProfile.rankEntity, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   userProfiles: UserProfileEntity[];
 }

@@ -25,7 +25,7 @@ export class EventTicketEntity {
   updatedAt: Date;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'created_by' })
   createdBy: AccountEntity;
@@ -79,7 +79,7 @@ export class EventTicketEntity {
   maxQuantityPerOrder: number;
 
   @ManyToOne(() => EventEntity, (event) => event.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'event_id' })
   event: EventEntity;
@@ -111,7 +111,7 @@ export class EventTicketEntity {
   //#endregion
 
   @OneToMany(() => TicketOrderDetailsEntity, (detail) => detail.ticket, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   ticketOrderDetails: TicketOrderDetailsEntity[];
 

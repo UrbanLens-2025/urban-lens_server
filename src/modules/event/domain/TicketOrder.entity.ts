@@ -34,7 +34,7 @@ export class TicketOrderEntity {
   updatedAt: Date;
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'created_by_id' })
   createdBy: AccountEntity;
@@ -77,7 +77,7 @@ export class TicketOrderEntity {
   refundReason?: string | null;
 
   @ManyToOne(() => WalletTransactionEntity, (transaction) => transaction.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: true,
   })
   @JoinColumn({ name: 'referenced_transaction_id' })
@@ -94,14 +94,14 @@ export class TicketOrderEntity {
   refundTransactionId?: string | null;
 
   @ManyToOne(() => WalletTransactionEntity, (transaction) => transaction.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     nullable: true,
   })
   @JoinColumn({ name: 'refund_transaction_id' })
   refundTransaction?: WalletTransactionEntity | null;
 
   @ManyToOne(() => EventEntity, (event) => event.id, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'event_id' })
   event: EventEntity;
@@ -112,13 +112,13 @@ export class TicketOrderEntity {
   //
 
   @OneToMany(() => TicketOrderDetailsEntity, (detail) => detail.order, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
     cascade: ['insert', 'soft-remove'],
   })
   orderDetails: TicketOrderDetailsEntity[];
 
   @OneToMany(() => EventAttendanceEntity, (attendance) => attendance.order, {
-    createForeignKeyConstraints: false,
+    createForeignKeyConstraints: true,
   })
   eventAttendances: EventAttendanceEntity[];
 

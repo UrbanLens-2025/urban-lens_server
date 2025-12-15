@@ -92,14 +92,14 @@ export class ItineraryEntity {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => AccountEntity, { createForeignKeyConstraints: false })
+  @ManyToOne(() => AccountEntity, { createForeignKeyConstraints: true })
   @JoinColumn({ name: 'user_id' })
   user: AccountEntity;
 
   @OneToMany(
     () => ItineraryLocationEntity,
     (itineraryLocation) => itineraryLocation.itinerary,
-    { cascade: true, createForeignKeyConstraints: false },
+    { cascade: true, createForeignKeyConstraints: true },
   )
   locations: ItineraryLocationEntity[];
 }
