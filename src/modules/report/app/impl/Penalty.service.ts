@@ -11,7 +11,7 @@ import { PenaltyRepositoryProvider } from '@/modules/report/infra/repository/Pen
 import { PenaltyEntity } from '@/modules/report/domain/Penalty.entity';
 import { ReportPenaltyActions } from '@/common/constants/ReportPenaltyActions.constant';
 import { PenaltyResponseDto } from '@/common/dto/report/res/Penalty.response.dto';
-import { Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IAccountWarningService } from '@/modules/account/app/IAccountWarning.service';
 import { ReportEntityType } from '@/modules/report/domain/Report.entity';
 import { EntityManager } from 'typeorm';
@@ -32,6 +32,7 @@ import { IPostService } from '@/modules/post/app/IPost.service';
 /**
  * For functions in this service, create penalty then delegate.
  */
+@Injectable()
 export class PenaltyService extends CoreService implements IPenaltyService {
   constructor(
     @Inject(IAccountWarningService)

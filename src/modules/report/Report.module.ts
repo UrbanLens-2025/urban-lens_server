@@ -22,6 +22,7 @@ import { LocationBookingModule } from '@/modules/location-booking/LocationBookin
 import { IPenaltyService } from '@/modules/report/app/IPenalty.service';
 import { PenaltyService } from '@/modules/report/app/impl/Penalty.service';
 import { PenaltyAdministeredListener } from '@/modules/report/app/event-listeners/PenaltyAdministered.listener';
+import { ReportClosedListener } from '@/modules/report/app/event-listeners/ReportClosed.listener';
 import { PenaltyAdminController } from '@/modules/report/interfaces/Penalty.admin.controller';
 import { PenaltyUserController } from '@/modules/report/interfaces/Penalty.user.controller';
 import { PenaltyOwnerController } from '@/modules/report/interfaces/Penalty.owner.controller';
@@ -61,6 +62,7 @@ import { PenaltyCreatorController } from '@/modules/report/interfaces/Penalty.cr
       useClass: PenaltyService,
     },
     PenaltyAdministeredListener,
+    ReportClosedListener,
   ],
   controllers: [
     ReportPrivateController,

@@ -25,6 +25,7 @@ import {
 import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { isNotBlank } from '@/common/utils/is-not-blank.util';
+import { ProcessReportV2Dto } from '@/common/dto/report/ProcessReportV2.dto';
 
 @Injectable()
 export class ReportManagementService
@@ -45,6 +46,12 @@ export class ReportManagementService
     private readonly eventEmitter: EventEmitter2,
   ) {
     super();
+  }
+
+  processReportV2(dto: ProcessReportV2Dto): Promise<ReportResponseDto> {
+    return this.ensureTransaction(null, async (em) => {}).then((res) =>
+      this.mapTo(ReportResponseDto, res),
+    );
   }
 
   processReport(dto: ProcessReportDto): Promise<ReportResponseDto> {
