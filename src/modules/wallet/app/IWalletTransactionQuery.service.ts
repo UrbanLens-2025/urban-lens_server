@@ -3,6 +3,7 @@ import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTran
 import { SearchTransactionsDto } from '@/common/dto/wallet/SearchTransactions.dto';
 import { GetTransactionByIdDto } from '@/common/dto/wallet/GetTransactionById.dto';
 import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransaction.entity';
+import { GetAllTransactionsByWalletIdDto } from '@/common/dto/wallet/GetAllTransactionsByWalletId.dto';
 
 export const IWalletTransactionQueryService = Symbol(
   'IWalletTransactionQueryService',
@@ -14,6 +15,10 @@ export interface IWalletTransactionQueryService {
   getTransactionById(
     dto: GetTransactionByIdDto,
   ): Promise<WalletTransactionResponseDto>;
+
+  getAllTransactionsByWalletId(
+    dto: GetAllTransactionsByWalletIdDto,
+  ): Promise<Paginated<WalletTransactionResponseDto>>;
 }
 
 export namespace IWalletTransactionQueryService_QueryConfig {
@@ -28,6 +33,18 @@ export namespace IWalletTransactionQueryService_QueryConfig {
         sourceWalletId: true,
         destinationWalletId: true,
         currency: true,
+      },
+    };
+  }
+
+  export function getAllTransactionsByWalletId(): PaginateConfig<WalletTransactionEntity> {
+    return {
+      sortableColumns: ['createdAt'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      searchableColumns: ['note'],
+      filterableColumns: {
+        status: true,
+        createdAt: true,
       },
     };
   }

@@ -27,6 +27,10 @@ import { RejectWithdrawTransactionDto } from '@/common/dto/wallet/RejectWithdraw
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { CompleteProcessingWithdrawTransactionDto } from '@/common/dto/wallet/CompleteProcessingWithdrawTransaction.dto';
+import {
+  IWalletTransactionQueryService,
+  IWalletTransactionQueryService_QueryConfig,
+} from '@/modules/wallet/app/IWalletTransactionQuery.service';
 
 @ApiTags('Wallet')
 @ApiBearerAuth()
@@ -40,6 +44,8 @@ export class WalletAdminController {
     private readonly walletExternalTransactionQueryService: IWalletExternalTransactionQueryService,
     @Inject(IWalletExternalTransactionManagementService)
     private readonly walletExternalTransactionManagementService: IWalletExternalTransactionManagementService,
+    @Inject(IWalletTransactionQueryService)
+    private readonly walletTransactionQueryService: IWalletTransactionQueryService,
   ) {}
 
   @ApiOperation({
@@ -143,7 +149,22 @@ export class WalletAdminController {
         transactionId,
         accountId: user.sub,
         accountName: user.email,
-      }
+      },
     );
+  }
+
+  @ApiOperation({ summary: 'Get all internal transactions by wallet ID' })
+  @ApiPaginationQuery(
+    IWalletTransactionQueryService_QueryConfig.getAllTransactionsByWalletId(),
+  )
+  @Get('/transactions/internal/:walletId')
+  getAllInternalTransactionsByWalletId(
+    @Param('walletId', ParseUUIDPipe) walletId: string,
+    @Paginate() query: PaginateQuery,
+  ) {
+    return this.walletTransactionQueryService.getAllTransactionsByWalletId({
+      query,
+      walletId,
+    });
   }
 }

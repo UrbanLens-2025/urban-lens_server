@@ -277,6 +277,7 @@ export class ReportManagementService
           targetAccountId: targetId,
           warningNote: penaltyPayload.reason,
           entityManager: em,
+          createdById: report.resolvedById || '',
         });
         break;
       }
