@@ -39,6 +39,22 @@ export const WalletTransactionRepository = (ctx: DataSource | EntityManager) =>
 
       return qb.getOne();
     },
+
+    getAllTransactionsByWalletId(
+      this: Repository<WalletTransactionEntity>,
+      payload: {
+        walletId: string;
+      },
+    ) {
+      const qb = this.createQueryBuilder('walletTransaction').where(
+        'walletTransaction.sourceWalletId = :walletId OR walletTransaction.destinationWalletId = :walletId',
+        {
+          walletId: payload.walletId,
+        },
+      );
+
+      return qb;
+    },
   });
 
 export type WalletTransactionRepository = ReturnType<

@@ -7,15 +7,32 @@ import {
 import { SearchTransactionsDto } from '@/common/dto/wallet/SearchTransactions.dto';
 import { GetTransactionByIdDto } from '@/common/dto/wallet/GetTransactionById.dto';
 import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTransaction.response.dto';
-import { Paginated } from 'nestjs-paginate';
+import { paginate, Paginated } from 'nestjs-paginate';
 import { WalletTransactionRepository } from '@/modules/wallet/infra/repository/WalletTransaction.repository';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
+import { GetAllTransactionsByWalletIdDto } from '@/common/dto/wallet/GetAllTransactionsByWalletId.dto';
 
 @Injectable()
 export class WalletTransactionQueryService
   extends CoreService
   implements IWalletTransactionQueryService
 {
+  getAllTransactionsByWalletId(
+    dto: GetAllTransactionsByWalletIdDto,
+  ): Promise<Paginated<WalletTransactionResponseDto>> {
+    const transactionRepo = WalletTransactionRepository(this.dataSource);
+
+    return paginate(
+      dto.query,
+      transactionRepo.getAllTransactionsByWalletId({
+        walletId: dto.walletId,
+      }),
+      {
+        ...IWalletTransactionQueryService_QueryConfig.getAllTransactionsByWalletId(),
+      },
+    ).then((res) => this.mapToPaginated(WalletTransactionResponseDto, res));
+  }
+
   async searchTransactions(
     dto: SearchTransactionsDto,
   ): Promise<Paginated<WalletTransactionResponseDto>> {
