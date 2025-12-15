@@ -101,6 +101,7 @@ export class EventAttendanceManagementService
     return this.ensureTransaction(null, async (em) => {
       const eventAttendanceRepo = EventAttendanceRepository(em);
       const eventTicketRepo = EventTicketRepository(em);
+      const ticketOrderRepo = TicketOrderRepository(em);
 
       const eventAttendances = await eventAttendanceRepo.find({
         where: { id: In(dto.eventAttendanceIds) },
@@ -109,6 +110,19 @@ export class EventAttendanceManagementService
       // sanity check
       if (eventAttendances.length !== dto.eventAttendanceIds.length) {
         throw new BadRequestException('Some event attendances not found');
+      }
+
+      // same ticket order check
+      if (
+        eventAttendances.some(
+          (eventAttendance) =>
+            eventAttendance.referencedTicketOrderId !==
+            eventAttendances[0].referencedTicketOrderId,
+        )
+      ) {
+        throw new BadRequestException(
+          'Event attendances must be for the same ticket order',
+        );
       }
 
       // ownership
@@ -133,6 +147,14 @@ export class EventAttendanceManagementService
           'Event attendances must be for the same event',
         );
       }
+
+      const ticketOrder = await ticketOrderRepo.findOneOrFail({
+        where: {
+          id: eventAttendances[0].referencedTicketOrderId,
+        },
+      });
+
+      let totalRefundedAmount = 0;
 
       // todo: possible n+1 issue here
       for (const eventAttendance of eventAttendances) {
@@ -182,11 +204,24 @@ export class EventAttendanceManagementService
         eventAttendance.refundedAmount = refundAmount;
         eventAttendance.status = EventAttendanceStatus.CANCELLED;
         eventAttendance.refundedAt = new Date();
+        totalRefundedAmount += refundAmount;
       }
 
       return (
         eventAttendanceRepo
           .save(eventAttendances)
+          .then(async (res) => {
+            await ticketOrderRepo.update(
+              {
+                id: eventAttendances[0].referencedTicketOrderId,
+              },
+              {
+                refundedAmount:
+                  ticketOrder.refundedAmount + totalRefundedAmount,
+              },
+            );
+            return res;
+          })
           // update ticket available quantity and total_reserved
           .then(async (res) => {
             await eventTicketRepo.refundTickets({
@@ -209,40 +244,6 @@ export class EventAttendanceManagementService
         return res;
       })
       .then((res) => this.mapToArray(EventAttendanceResponseDto, res));
-  }
-
-  confirmTicketUsage(
-    dto: ConfirmTicketUsageDto,
-  ): Promise<EventAttendanceResponseDto> {
-    return this.ensureTransaction(null, async (em) => {
-      const eventAttendanceRepository = EventAttendanceRepository(em);
-      const eventRepository = EventRepository(em);
-
-      const event = await eventRepository.findOneOrFail({
-        where: { id: dto.eventId, createdById: dto.accountId },
-      });
-
-      const eventAttendance = await eventAttendanceRepository.findOneOrFail({
-        where: { id: dto.eventAttendanceId, ownerId: dto.checkingInAccountId },
-      });
-
-      if (!event.canCheckIn()) {
-        throw new BadRequestException('Event cannot be checked in');
-      }
-
-      if (!eventAttendance.canCheckIn()) {
-        throw new BadRequestException('Event attendance cannot be checked in');
-      }
-
-      eventAttendance.status = EventAttendanceStatus.CHECKED_IN;
-      eventAttendance.checkedInAt = new Date();
-
-      return eventAttendanceRepository
-        .save(eventAttendance)
-        .then((savedEventAttendance) =>
-          this.mapTo(EventAttendanceResponseDto, savedEventAttendance),
-        );
-    });
   }
 
   async createEventAttendanceEntitiesFromTicketOrder(

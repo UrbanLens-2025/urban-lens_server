@@ -14,6 +14,8 @@ import { ReportRepositoryProvider } from '@/modules/report/infra/repository/Repo
 import { GetHighestReportedPostsDto } from '@/common/dto/report/GetHighestReportedPosts.dto';
 import { PostWithReportsResponseDto } from '@/common/dto/report/res/PostWithReports.response.dto';
 import { GetHighestReportedEventsDto } from '@/common/dto/report/GetHighestReportedEvents.dto';
+import { GetHighestReportedLocationsDto } from '@/common/dto/report/GetHighestReportedLocations.dto';
+import { LocationWithReportsResponseDto } from '@/common/dto/report/res/LocationWithReports.response.dto';
 import { EventWithReportsResponseDto } from '@/common/dto/report/res/EventWithReports.response.dto';
 import {
   ReportEntity,
@@ -21,6 +23,7 @@ import {
 } from '@/modules/report/domain/Report.entity';
 import { PostRepositoryProvider } from '@/modules/post/infra/repository/Post.repository';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
+import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { In } from 'typeorm';
 import { WithCustomPaginationDto } from '@/common/dto/WithCustomPagination.dto';
 
@@ -192,5 +195,65 @@ export class ReportQueryService
       page: dto.query.page,
       limit: dto.query.limit,
     } as unknown as WithCustomPaginationDto<EventWithReportsResponseDto>;
+  }
+
+  async getHighestReportedLocations(
+    dto: GetHighestReportedLocationsDto,
+  ): Promise<WithCustomPaginationDto<LocationWithReportsResponseDto>> {
+    const reportRepo = ReportRepositoryProvider(this.dataSource);
+    const locationRepo = LocationRepositoryProvider(this.dataSource);
+    const targets = await reportRepo.getTargetsWithHighestUnclosedReports({
+      targetType: ReportEntityType.LOCATION,
+      limit: dto.query.limit,
+      page: dto.query.page,
+    });
+
+    const targetIds = targets.data?.map((target) => target.target_id);
+
+    if (!targetIds || targetIds.length === 0) {
+      return {
+        data: [],
+        count: 0,
+        page: dto.query.page,
+        limit: dto.query.limit,
+      } as unknown as WithCustomPaginationDto<LocationWithReportsResponseDto>;
+    }
+
+    const locations = await locationRepo.find({
+      where: {
+        id: In(targetIds),
+      },
+    });
+
+    const reports = await reportRepo.find({
+      where: {
+        targetId: In(targetIds),
+      },
+    });
+
+    // make a map of targetId to reports
+    const reportsMap = new Map<string, ReportEntity[]>();
+    reports.forEach((report) => {
+      reportsMap.set(report.targetId, [
+        ...(reportsMap.get(report.targetId) || []),
+        report,
+      ]);
+    });
+
+    // map to LocationWithReportsResponseDto
+    const result = locations.map((location) => {
+      return {
+        ...location,
+        reports: reportsMap.get(location.id) || [],
+      };
+    });
+
+    const data = this.mapToArray(LocationWithReportsResponseDto, result);
+    return {
+      data,
+      count: targets.count,
+      page: dto.query.page,
+      limit: dto.query.limit,
+    } as unknown as WithCustomPaginationDto<LocationWithReportsResponseDto>;
   }
 }

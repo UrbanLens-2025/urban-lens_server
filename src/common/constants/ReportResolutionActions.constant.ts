@@ -1,28 +1,6 @@
-export enum PostReportResolutionActions {
+export enum ReportResolutionActions {
   NO_ACTION_TAKEN = 'NO_ACTION_TAKEN',
   MALICIOUS_REPORT = 'MALICIOUS_REPORT',
-  BAN_POST = 'BAN_POST',
+  REFUND_TICKET = 'REFUND_TICKET',
+  REFUND_BOOKING = 'REFUND_BOOKING',
 }
-
-export enum LocationReportResolutionActions {
-  NO_ACTION_TAKEN = 'NO_ACTION_TAKEN',
-  MALICIOUS_REPORT = 'MALICIOUS_REPORT',
-  PARTIAL_BOOKING_REFUND = 'PARTIAL_BOOKING_REFUND',
-  FULL_BOOKING_REFUND = 'FULL_BOOKING_REFUND',
-}
-
-export enum EventReportResolutionActions {
-  NO_ACTION_TAKEN = 'NO_ACTION_TAKEN',
-  MALICIOUS_REPORT = 'MALICIOUS_REPORT',
-  PARTIAL_TICKET_REFUND = 'PARTIAL_TICKET_REFUND',
-  FULL_TICKET_REFUND = 'FULL_TICKET_REFUND',
-}
-
-export const ReportResolutionActions = {
-  ...PostReportResolutionActions,
-  ...LocationReportResolutionActions,
-  ...EventReportResolutionActions,
-};
-
-export type ReportResolutionActions =
-  (typeof ReportResolutionActions)[keyof typeof ReportResolutionActions];

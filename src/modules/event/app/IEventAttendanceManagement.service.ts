@@ -8,10 +8,6 @@ export const IEventAttendanceManagementService = Symbol(
   'IEventAttendanceManagementService',
 );
 export interface IEventAttendanceManagementService {
-  confirmTicketUsage(
-    dto: ConfirmTicketUsageDto,
-  ): Promise<EventAttendanceResponseDto>;
-
   confirmTicketUsageV2(
     dto: ConfirmTicketUsageV2Dto,
   ): Promise<EventAttendanceResponseDto[]>;

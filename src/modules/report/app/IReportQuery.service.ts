@@ -9,6 +9,8 @@ import { PostWithReportsResponseDto } from '@/common/dto/report/res/PostWithRepo
 import { GetHighestReportedPostsDto } from '@/common/dto/report/GetHighestReportedPosts.dto';
 import { EventWithReportsResponseDto } from '@/common/dto/report/res/EventWithReports.response.dto';
 import { GetHighestReportedEventsDto } from '@/common/dto/report/GetHighestReportedEvents.dto';
+import { LocationWithReportsResponseDto } from '@/common/dto/report/res/LocationWithReports.response.dto';
+import { GetHighestReportedLocationsDto } from '@/common/dto/report/GetHighestReportedLocations.dto';
 import { WithCustomPaginationDto } from '@/common/dto/WithCustomPagination.dto';
 
 export const IReportQueryService = Symbol('IReportQueryService');
@@ -41,6 +43,14 @@ export interface IReportQueryService {
   getHighestReportedEvents(
     dto: GetHighestReportedEventsDto,
   ): Promise<WithCustomPaginationDto<EventWithReportsResponseDto>>;
+
+  /**
+   * Gets the highest reported locations that are not processed yet.
+   * @param dto
+   */
+  getHighestReportedLocations(
+    dto: GetHighestReportedLocationsDto,
+  ): Promise<WithCustomPaginationDto<LocationWithReportsResponseDto>>;
 }
 
 export namespace IReportQueryService_Config {

@@ -126,9 +126,9 @@ export class EventAttendanceEntity {
     type: 'numeric',
     precision: 12,
     scale: 2,
-    nullable: true,
+    default: 0,
   })
-  refundedAmount?: number | null;
+  refundedAmount: number;
 
   public canCheckIn(): boolean {
     return this.status === EventAttendanceStatus.CREATED;

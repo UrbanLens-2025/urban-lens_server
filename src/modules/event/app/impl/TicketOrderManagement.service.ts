@@ -225,10 +225,13 @@ export class TicketOrderManagementService
       const refunds: TicketOrderEntity[] = [];
       // for every paid ticket order, refund
       for (const ticketOrder of ticketOrders) {
+        const refundAmount =
+          ticketOrder.totalPaymentAmount - ticketOrder.refundedAmount;
+
         const refundTransaction =
           await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
             {
-              amount: ticketOrder.totalPaymentAmount,
+              amount: refundAmount,
               currency: SupportedCurrency.VND,
               destinationAccountId: ticketOrder.createdById,
               entityManager: em,
@@ -246,6 +249,7 @@ export class TicketOrderManagementService
         ticketOrder.refundTransactionId = refundTransaction.id;
         ticketOrder.status = EventTicketOrderStatus.REFUNDED;
         ticketOrder.refundedAt = new Date();
+        ticketOrder.refundedAmount = ticketOrder.refundedAmount + refundAmount;
         ticketOrder.refundReason = dto.refundReason;
         refunds.push(await ticketOrderRepo.save(ticketOrder));
       }
@@ -277,18 +281,20 @@ export class TicketOrderManagementService
       }
 
       const refundAmount =
-        ticketOrder.totalPaymentAmount * dto.refundPercentage;
-      const refundTransaction =
-        await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
-          {
-            entityManager: em,
-            destinationAccountId: ticketOrder.createdById,
-            amount: refundAmount,
-            currency: SupportedCurrency.VND,
-          },
-        );
-
-      ticketOrder.refundTransactionId = refundTransaction.id;
+        ticketOrder.totalPaymentAmount * dto.refundPercentage -
+        ticketOrder.refundedAmount;
+      if (refundAmount > 0) {
+        const refundTransaction =
+          await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
+            {
+              entityManager: em,
+              destinationAccountId: ticketOrder.createdById,
+              amount: refundAmount,
+              currency: SupportedCurrency.VND,
+            },
+          );
+        ticketOrder.refundTransactionId = refundTransaction.id;
+      }
 
       return ticketOrderRepo.save(ticketOrder).then(async (res) => {
         if (dto.shouldCancelTickets) {

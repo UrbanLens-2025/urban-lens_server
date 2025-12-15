@@ -81,8 +81,8 @@ export class ReportManagementService
         report.resolvedById = dto.initiatedByAccountId;
       }
 
-      return reportRepo.save(report).then(async (res) => {
-        await this.handleReportResolution(
+      return reportRepo.save(report).then((res) => {
+        this.handleReportResolution(
           em,
           res,
           dto.resolutionAction,
@@ -102,7 +102,7 @@ export class ReportManagementService
       .then((res) => this.mapTo(ReportResponseDto, res));
   }
 
-  private async handleReportResolution(
+  private handleReportResolution(
     em: EntityManager,
     report: ReportEntity,
     resolutionAction: ReportResolutionActions,
@@ -127,105 +127,105 @@ export class ReportManagementService
         }
         break;
       }
-      case ReportResolutionActions.PARTIAL_TICKET_REFUND:
-        this.validateTargetType(report, ReportEntityType.EVENT);
-        this.logger.log('Partial ticket refund');
-        if (!isNotBlank(resolutionPayload.refundPercentage)) {
-          throw new BadRequestException(
-            'Refund percentage is required for PARTIAL_TICKET_REFUND',
-          );
-        }
-        if (!isNotBlank(resolutionPayload.shouldCancelTickets)) {
-          throw new BadRequestException(
-            'Should cancel tickets is required for PARTIAL_TICKET_REFUND',
-          );
-        }
-        if (!isNotBlank(resolutionPayload.reason)) {
-          throw new BadRequestException(
-            'Reason is required for PARTIAL_TICKET_REFUND',
-          );
-        }
-        await this.ticketOrderManagementService.forceRefundOrder({
-          entityManager: em,
-          eventId: report.targetId,
-          accountId: report.createdById,
-          refundPercentage: resolutionPayload.refundPercentage,
-          refundReason: resolutionPayload.reason,
-          shouldCancelTickets: resolutionPayload.shouldCancelTickets,
-        });
-        break;
-      case ReportResolutionActions.FULL_TICKET_REFUND:
-        this.validateTargetType(report, ReportEntityType.EVENT);
-        this.logger.log('Full ticket refund');
-        if (!isNotBlank(resolutionPayload.shouldCancelTickets)) {
-          throw new BadRequestException(
-            'Should cancel tickets is required for FULL_TICKET_REFUND',
-          );
-        }
-        if (!isNotBlank(resolutionPayload.reason)) {
-          throw new BadRequestException(
-            'Reason is required for FULL_TICKET_REFUND',
-          );
-        }
-        await this.ticketOrderManagementService.forceRefundOrder({
-          entityManager: em,
-          eventId: report.targetId,
-          accountId: report.createdById,
-          refundPercentage: 1,
-          refundReason: resolutionPayload.reason,
-          shouldCancelTickets: resolutionPayload.shouldCancelTickets,
-        });
-        break;
-      case ReportResolutionActions.PARTIAL_BOOKING_REFUND:
-        this.validateTargetType(report, ReportEntityType.LOCATION);
-        this.logger.log('Partial booking refund');
-        if (!isNotBlank(resolutionPayload.refundPercentage)) {
-          throw new BadRequestException(
-            'Refund percentage is required for PARTIAL_BOOKING_REFUND',
-          );
-        }
-        if (!isNotBlank(resolutionPayload.shouldCancelBooking)) {
-          throw new BadRequestException(
-            'Should cancel booking is required for PARTIAL_BOOKING_REFUND',
-          );
-        }
-        await this.locationBookingManagementService.forceRefundBooking({
-          accountId: report.createdById,
-          locationId: report.targetId,
-          entityManager: em,
-          refundPercentage: resolutionPayload.refundPercentage,
-          shouldCancelBooking: resolutionPayload.shouldCancelBooking,
-        });
-        break;
-      case ReportResolutionActions.FULL_BOOKING_REFUND:
-        this.validateTargetType(report, ReportEntityType.LOCATION);
-        this.logger.log('Full booking refund');
-        if (!isNotBlank(resolutionPayload.shouldCancelBooking)) {
-          throw new BadRequestException(
-            'Should cancel booking is required for FULL_BOOKING_REFUND',
-          );
-        }
-        await this.locationBookingManagementService.forceRefundBooking({
-          accountId: report.createdById,
-          locationId: report.targetId,
-          entityManager: em,
-          refundPercentage: 1,
-          shouldCancelBooking: resolutionPayload.shouldCancelBooking,
-        });
-        break;
-      case ReportResolutionActions.BAN_POST: {
-        this.validateTargetType(report, ReportEntityType.POST);
-        this.logger.log(`Banning post: ${report.targetId}`);
-        if (!isNotBlank(resolutionPayload.reason)) {
-          throw new BadRequestException('Reason is required for BAN_POST');
-        }
-        await this.postService.banPost(
-          report.targetId,
-          resolutionPayload.reason,
-          em,
-        );
-        break;
-      }
+      // case ReportResolutionActions.PARTIAL_TICKET_REFUND:
+      //   this.validateTargetType(report, ReportEntityType.EVENT);
+      //   this.logger.log('Partial ticket refund');
+      //   if (!isNotBlank(resolutionPayload.refundPercentage)) {
+      //     throw new BadRequestException(
+      //       'Refund percentage is required for PARTIAL_TICKET_REFUND',
+      //     );
+      //   }
+      //   if (!isNotBlank(resolutionPayload.shouldCancelTickets)) {
+      //     throw new BadRequestException(
+      //       'Should cancel tickets is required for PARTIAL_TICKET_REFUND',
+      //     );
+      //   }
+      //   if (!isNotBlank(resolutionPayload.reason)) {
+      //     throw new BadRequestException(
+      //       'Reason is required for PARTIAL_TICKET_REFUND',
+      //     );
+      //   }
+      //   await this.ticketOrderManagementService.forceRefundOrder({
+      //     entityManager: em,
+      //     eventId: report.targetId,
+      //     accountId: report.createdById,
+      //     refundPercentage: resolutionPayload.refundPercentage,
+      //     refundReason: resolutionPayload.reason,
+      //     shouldCancelTickets: resolutionPayload.shouldCancelTickets,
+      //   });
+      //   break;
+      // case ReportResolutionActions.FULL_TICKET_REFUND:
+      //   this.validateTargetType(report, ReportEntityType.EVENT);
+      //   this.logger.log('Full ticket refund');
+      //   if (!isNotBlank(resolutionPayload.shouldCancelTickets)) {
+      //     throw new BadRequestException(
+      //       'Should cancel tickets is required for FULL_TICKET_REFUND',
+      //     );
+      //   }
+      //   if (!isNotBlank(resolutionPayload.reason)) {
+      //     throw new BadRequestException(
+      //       'Reason is required for FULL_TICKET_REFUND',
+      //     );
+      //   }
+      //   await this.ticketOrderManagementService.forceRefundOrder({
+      //     entityManager: em,
+      //     eventId: report.targetId,
+      //     accountId: report.createdById,
+      //     refundPercentage: 1,
+      //     refundReason: resolutionPayload.reason,
+      //     shouldCancelTickets: resolutionPayload.shouldCancelTickets,
+      //   });
+      //   break;
+      // case ReportResolutionActions.PARTIAL_BOOKING_REFUND:
+      //   this.validateTargetType(report, ReportEntityType.LOCATION);
+      //   this.logger.log('Partial booking refund');
+      //   if (!isNotBlank(resolutionPayload.refundPercentage)) {
+      //     throw new BadRequestException(
+      //       'Refund percentage is required for PARTIAL_BOOKING_REFUND',
+      //     );
+      //   }
+      //   if (!isNotBlank(resolutionPayload.shouldCancelBooking)) {
+      //     throw new BadRequestException(
+      //       'Should cancel booking is required for PARTIAL_BOOKING_REFUND',
+      //     );
+      //   }
+      //   await this.locationBookingManagementService.forceRefundBooking({
+      //     accountId: report.createdById,
+      //     locationId: report.targetId,
+      //     entityManager: em,
+      //     refundPercentage: resolutionPayload.refundPercentage,
+      //     shouldCancelBooking: resolutionPayload.shouldCancelBooking,
+      //   });
+      //   break;
+      // case ReportResolutionActions.FULL_BOOKING_REFUND:
+      //   this.validateTargetType(report, ReportEntityType.LOCATION);
+      //   this.logger.log('Full booking refund');
+      //   if (!isNotBlank(resolutionPayload.shouldCancelBooking)) {
+      //     throw new BadRequestException(
+      //       'Should cancel booking is required for FULL_BOOKING_REFUND',
+      //     );
+      //   }
+      //   await this.locationBookingManagementService.forceRefundBooking({
+      //     accountId: report.createdById,
+      //     locationId: report.targetId,
+      //     entityManager: em,
+      //     refundPercentage: 1,
+      //     shouldCancelBooking: resolutionPayload.shouldCancelBooking,
+      //   });
+      //   break;
+      // case ReportResolutionActions.BAN_POST: {
+      //   this.validateTargetType(report, ReportEntityType.POST);
+      //   this.logger.log(`Banning post: ${report.targetId}`);
+      //   if (!isNotBlank(resolutionPayload.reason)) {
+      //     throw new BadRequestException('Reason is required for BAN_POST');
+      //   }
+      //   await this.postService.banPost(
+      //     report.targetId,
+      //     resolutionPayload.reason,
+      //     em,
+      //   );
+      //   break;
+      // }
     }
   }
 

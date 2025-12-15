@@ -342,20 +342,6 @@ export class EventCreatorController {
     });
   }
 
-  @ApiOperation({ summary: 'Confirm ticket usage', deprecated: true })
-  @Post('/:eventId/attendance/confirm-usage')
-  confirmTicketUsage(
-    @Param('eventId', ParseUUIDPipe) eventId: string,
-    @AuthUser() userDto: JwtTokenDto,
-    @Body() dto: ConfirmTicketUsageDto,
-  ) {
-    return this.eventAttendanceManagementService.confirmTicketUsage({
-      ...dto,
-      accountId: userDto.sub,
-      eventId: eventId,
-    });
-  }
-
   @ApiOperation({ summary: 'Confirm ticket usage V2' })
   @Post('/:eventId/attendance/confirm-usage-v2')
   confirmTicketUsageV2(

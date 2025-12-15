@@ -76,6 +76,15 @@ export class TicketOrderEntity {
   })
   refundReason?: string | null;
 
+  @Column({
+    name: 'refunded_amount',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
+  refundedAmount: number;
+
   @ManyToOne(() => WalletTransactionEntity, (transaction) => transaction.id, {
     createForeignKeyConstraints: true,
     nullable: true,
