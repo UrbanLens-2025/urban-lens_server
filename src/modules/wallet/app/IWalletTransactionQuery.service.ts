@@ -4,6 +4,7 @@ import { SearchTransactionsDto } from '@/common/dto/wallet/SearchTransactions.dt
 import { GetTransactionByIdDto } from '@/common/dto/wallet/GetTransactionById.dto';
 import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransaction.entity';
 import { GetAllTransactionsByWalletIdDto } from '@/common/dto/wallet/GetAllTransactionsByWalletId.dto';
+import { GetAnyTransactionByIdDto } from '@/common/dto/wallet/GetAnyTransactionById.dto';
 
 export const IWalletTransactionQueryService = Symbol(
   'IWalletTransactionQueryService',
@@ -19,6 +20,10 @@ export interface IWalletTransactionQueryService {
   getAllTransactionsByWalletId(
     dto: GetAllTransactionsByWalletIdDto,
   ): Promise<Paginated<WalletTransactionResponseDto>>;
+
+  getAnyTransactionById(
+    dto: GetAnyTransactionByIdDto,
+  ): Promise<WalletTransactionResponseDto>;
 }
 
 export namespace IWalletTransactionQueryService_QueryConfig {

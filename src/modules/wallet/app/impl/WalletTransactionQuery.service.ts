@@ -11,6 +11,7 @@ import { paginate, Paginated } from 'nestjs-paginate';
 import { WalletTransactionRepository } from '@/modules/wallet/infra/repository/WalletTransaction.repository';
 import { WalletRepository } from '@/modules/wallet/infra/repository/Wallet.repository';
 import { GetAllTransactionsByWalletIdDto } from '@/common/dto/wallet/GetAllTransactionsByWalletId.dto';
+import { GetAnyTransactionByIdDto } from '@/common/dto/wallet/GetAnyTransactionById.dto';
 
 @Injectable()
 export class WalletTransactionQueryService
@@ -77,6 +78,26 @@ export class WalletTransactionQueryService
       .getTransactionToAndFromWallet({
         walletId: wallet.id,
         transactionId: dto.transactionId,
+      })
+      .then((res) => this.mapTo(WalletTransactionResponseDto, res));
+  }
+
+  async getAnyTransactionById(
+    dto: GetAnyTransactionByIdDto,
+  ): Promise<WalletTransactionResponseDto> {
+    return WalletTransactionRepository(this.dataSource)
+      .findOneOrFail({
+        where: {
+          id: dto.transactionId,
+        },
+        relations: {
+          sourceWallet: {
+            owner: true,
+          },
+          destinationWallet: {
+            owner: true,
+          },
+        },
       })
       .then((res) => this.mapTo(WalletTransactionResponseDto, res));
   }

@@ -153,6 +153,16 @@ export class WalletAdminController {
     );
   }
 
+  @ApiOperation({ summary: 'Get any internal transaction by ID' })
+  @Get('/transactions/internal/get-by-id/:transactionId')
+  getAnyInternalTransactionById(
+    @Param('transactionId', ParseUUIDPipe) transactionId: string,
+  ) {
+    return this.walletTransactionQueryService.getAnyTransactionById({
+      transactionId,
+    });
+  }
+
   @ApiOperation({ summary: 'Get all internal transactions by wallet ID' })
   @ApiPaginationQuery(
     IWalletTransactionQueryService_QueryConfig.getAllTransactionsByWalletId(),
