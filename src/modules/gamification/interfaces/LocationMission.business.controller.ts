@@ -67,7 +67,7 @@ export class LocationMissionBusinessController {
   @ApiPaginationQuery(
     IGamificationQueryService_QueryConfig.getMissionParticipants(),
   )
-  @Get('/mission/:missionId/participants')
+  @Get('/mission/participants')
   getMissionParticipants(
     @Paginate() query: PaginateQuery,
     @AuthUser() user: JwtTokenDto,

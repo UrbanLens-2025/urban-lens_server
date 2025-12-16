@@ -80,6 +80,23 @@ export class LocationVoucherBusinessController {
   }
 
   @ApiOperation({
+    summary: 'Get voucher users',
+    description:
+      'Get list of users who have exchanged or used a voucher. Filter by status: exchanged, used, or all.',
+  })
+  @ApiPaginationQuery(IGamificationQueryService_QueryConfig.getVoucherUsers())
+  @Get('/voucher/users')
+  getVoucherUsers(
+    @Paginate() query: PaginateQuery,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.gamificationQueryService.getVoucherUsers({
+      businessOwnerId: user.sub,
+      query,
+    });
+  }
+
+  @ApiOperation({
     summary: 'Create location voucher',
     description: 'Create a new voucher for a specific location',
   })
@@ -203,22 +220,5 @@ export class LocationVoucherBusinessController {
     @AuthUser() user: JwtTokenDto,
   ) {
     return this.locationVoucherService.deleteVoucher(voucherId, locationId);
-  }
-
-  @ApiOperation({
-    summary: 'Get voucher users',
-    description:
-      'Get list of users who have exchanged or used a voucher. Filter by status: exchanged, used, or all.',
-  })
-  @ApiPaginationQuery(IGamificationQueryService_QueryConfig.getVoucherUsers())
-  @Get('/voucher/:voucherId/users')
-  getVoucherUsers(
-    @Paginate() query: PaginateQuery,
-    @AuthUser() user: JwtTokenDto,
-  ) {
-    return this.gamificationQueryService.getVoucherUsers({
-      businessOwnerId: user.sub,
-      query,
-    });
   }
 }
