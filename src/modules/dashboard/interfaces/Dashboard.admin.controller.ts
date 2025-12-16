@@ -18,6 +18,12 @@ import {
   UserDataByMonthDto,
   UserDataByYearDto,
 } from '@/common/dto/dashboard/Analytics.response.dto';
+import { GetEventsLocationsTotalsQueryDto } from '@/common/dto/dashboard/GetEventsLocationsTotals.query.dto';
+import {
+  EventsLocationsDataByDayDto,
+  EventsLocationsDataByMonthDto,
+  EventsLocationsDataByYearDto,
+} from '@/common/dto/dashboard/EventsLocationsTotals.response.dto';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -87,5 +93,36 @@ export class DashboardAdminController {
   @Get('/analytics/users')
   getUserAnalytics(@Query() query: GetAnalyticsQueryDto) {
     return this.dashboardService.getUserAnalytics(query);
+  }
+
+  @ApiOperation({
+    summary: 'Get events and locations statistics',
+    description:
+      'Get events and locations statistics. Returns array based on filter: day -> events and locations by day (last 7 days), month -> events and locations by month (12 months in current year), year -> events and locations by year (all years).',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Events and locations data by day (when filter=day)',
+    type: [EventsLocationsDataByDayDto],
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Events and locations data by month (when filter=month)',
+    type: [EventsLocationsDataByMonthDto],
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Events and locations data by year (when filter=year)',
+    type: [EventsLocationsDataByYearDto],
+  })
+  @Get('/totals/events-locations')
+  getEventsLocationsTotals(
+    @Query() query: GetEventsLocationsTotalsQueryDto,
+  ): Promise<
+    | EventsLocationsDataByDayDto[]
+    | EventsLocationsDataByMonthDto[]
+    | EventsLocationsDataByYearDto[]
+  > {
+    return this.dashboardService.getEventsLocationsTotals(query);
   }
 }

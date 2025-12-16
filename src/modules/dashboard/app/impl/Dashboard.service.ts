@@ -24,6 +24,12 @@ import { WalletExternalTransactionEntity } from '@/modules/wallet/domain/WalletE
 import { WalletExternalTransactionDirection } from '@/common/constants/WalletExternalTransactionDirection.constant';
 import { WalletExternalTransactionStatus } from '@/common/constants/WalletExternalTransactionStatus.constant';
 import { GetAnalyticsQueryDto } from '@/common/dto/dashboard/GetAnalytics.query.dto';
+import { GetEventsLocationsTotalsQueryDto } from '@/common/dto/dashboard/GetEventsLocationsTotals.query.dto';
+import {
+  EventsLocationsDataByDayDto,
+  EventsLocationsDataByMonthDto,
+  EventsLocationsDataByYearDto,
+} from '@/common/dto/dashboard/EventsLocationsTotals.response.dto';
 
 @Injectable()
 export class DashboardService extends CoreService implements IDashboardService {
@@ -600,6 +606,198 @@ export class DashboardService extends CoreService implements IDashboardService {
       return usersByYearRaw.map((row) => ({
         year: String(Math.floor(row.year)),
         count: parseInt(row.count, 10),
+      }));
+    }
+
+    // Default return (should not reach here, but TypeScript needs it)
+    return [];
+  }
+
+  async getEventsLocationsTotals(
+    query: GetEventsLocationsTotalsQueryDto,
+  ): Promise<
+    | EventsLocationsDataByDayDto[]
+    | EventsLocationsDataByMonthDto[]
+    | EventsLocationsDataByYearDto[]
+  > {
+    const eventRepo = this.dataSource.getRepository(EventEntity);
+    const now = new Date();
+    const filterType = query.filter || 'day'; // Default to 'day' if not specified
+
+    // Helper function to format month as Jan, Feb, ..., Dec
+    const formatMonth = (month: number): string => {
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return months[month - 1] || 'Jan';
+    };
+
+    // Helper function to format day of week as Mon, Tue, ..., Sun
+    const formatDayOfWeek = (dayOfWeek: number): string => {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      return days[dayOfWeek] || 'Sun';
+    };
+
+    // 1. Events and Locations by day (last 7 days)
+    if (filterType === 'day') {
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
+
+      const [eventsByDayRaw, locationsByDayRaw] = await Promise.all([
+        eventRepo
+          .createQueryBuilder('event')
+          .select('EXTRACT(DOW FROM event.created_at)', 'dayOfWeek')
+          .addSelect('COUNT(event.id)', 'count')
+          .where('event.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+          .andWhere('event.created_at <= :now', { now })
+          .groupBy('EXTRACT(DOW FROM event.created_at)')
+          .orderBy('EXTRACT(DOW FROM event.created_at)', 'ASC')
+          .getRawMany(),
+        this.locationRepository.repo
+          .createQueryBuilder('location')
+          .select('EXTRACT(DOW FROM location.created_at)', 'dayOfWeek')
+          .addSelect('COUNT(location.id)', 'count')
+          .where('location.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+          .andWhere('location.created_at <= :now', { now })
+          .groupBy('EXTRACT(DOW FROM location.created_at)')
+          .orderBy('EXTRACT(DOW FROM location.created_at)', 'ASC')
+          .getRawMany(),
+      ]);
+
+      // Create maps from query results
+      const eventsDayMap = new Map<number, number>();
+      eventsByDayRaw.forEach((row) => {
+        const dayOfWeek = parseInt(row.dayOfWeek, 10);
+        eventsDayMap.set(dayOfWeek, parseInt(row.count, 10));
+      });
+
+      const locationsDayMap = new Map<number, number>();
+      locationsByDayRaw.forEach((row) => {
+        const dayOfWeek = parseInt(row.dayOfWeek, 10);
+        locationsDayMap.set(dayOfWeek, parseInt(row.count, 10));
+      });
+
+      // Ensure all 7 days are present (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat)
+      const allDays: EventsLocationsDataByDayDto[] = [];
+      for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
+        allDays.push({
+          day: formatDayOfWeek(dayOfWeek),
+          events: eventsDayMap.get(dayOfWeek) || 0,
+          locations: locationsDayMap.get(dayOfWeek) || 0,
+        });
+      }
+
+      return allDays;
+    }
+
+    // 2. Events and Locations by month (12 months in current year)
+    if (filterType === 'month') {
+      const currentYear = now.getFullYear();
+      const yearStart = new Date(currentYear, 0, 1, 0, 0, 0, 0);
+      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+      const [eventsByMonthRaw, locationsByMonthRaw] = await Promise.all([
+        eventRepo
+          .createQueryBuilder('event')
+          .select('EXTRACT(MONTH FROM event.created_at)', 'month')
+          .addSelect('COUNT(event.id)', 'count')
+          .where('event.created_at >= :yearStart', { yearStart })
+          .andWhere('event.created_at <= :yearEnd', { yearEnd })
+          .groupBy('EXTRACT(MONTH FROM event.created_at)')
+          .orderBy('EXTRACT(MONTH FROM event.created_at)', 'ASC')
+          .getRawMany(),
+        this.locationRepository.repo
+          .createQueryBuilder('location')
+          .select('EXTRACT(MONTH FROM location.created_at)', 'month')
+          .addSelect('COUNT(location.id)', 'count')
+          .where('location.created_at >= :yearStart', { yearStart })
+          .andWhere('location.created_at <= :yearEnd', { yearEnd })
+          .groupBy('EXTRACT(MONTH FROM location.created_at)')
+          .orderBy('EXTRACT(MONTH FROM location.created_at)', 'ASC')
+          .getRawMany(),
+      ]);
+
+      // Create maps from query results
+      const eventsMonthMap = new Map<number, number>();
+      eventsByMonthRaw.forEach((row) => {
+        const month = parseInt(row.month, 10);
+        eventsMonthMap.set(month, parseInt(row.count, 10));
+      });
+
+      const locationsMonthMap = new Map<number, number>();
+      locationsByMonthRaw.forEach((row) => {
+        const month = parseInt(row.month, 10);
+        locationsMonthMap.set(month, parseInt(row.count, 10));
+      });
+
+      // Ensure all 12 months are present (1-12)
+      const allMonths: EventsLocationsDataByMonthDto[] = [];
+      for (let month = 1; month <= 12; month++) {
+        allMonths.push({
+          month: formatMonth(month),
+          events: eventsMonthMap.get(month) || 0,
+          locations: locationsMonthMap.get(month) || 0,
+        });
+      }
+
+      return allMonths;
+    }
+
+    // 3. Events and Locations by year (all years)
+    if (filterType === 'year') {
+      const [eventsByYearRaw, locationsByYearRaw] = await Promise.all([
+        eventRepo
+          .createQueryBuilder('event')
+          .select('EXTRACT(YEAR FROM event.created_at)', 'year')
+          .addSelect('COUNT(event.id)', 'count')
+          .groupBy('EXTRACT(YEAR FROM event.created_at)')
+          .orderBy('EXTRACT(YEAR FROM event.created_at)', 'ASC')
+          .getRawMany(),
+        this.locationRepository.repo
+          .createQueryBuilder('location')
+          .select('EXTRACT(YEAR FROM location.created_at)', 'year')
+          .addSelect('COUNT(location.id)', 'count')
+          .groupBy('EXTRACT(YEAR FROM location.created_at)')
+          .orderBy('EXTRACT(YEAR FROM location.created_at)', 'ASC')
+          .getRawMany(),
+      ]);
+
+      // Create maps from query results
+      const eventsYearMap = new Map<number, number>();
+      eventsByYearRaw.forEach((row) => {
+        const year = Math.floor(parseFloat(row.year));
+        eventsYearMap.set(year, parseInt(row.count, 10));
+      });
+
+      const locationsYearMap = new Map<number, number>();
+      locationsByYearRaw.forEach((row) => {
+        const year = Math.floor(parseFloat(row.year));
+        locationsYearMap.set(year, parseInt(row.count, 10));
+      });
+
+      // Get all unique years from both maps
+      const allYears = new Set([
+        ...eventsYearMap.keys(),
+        ...locationsYearMap.keys(),
+      ]);
+      const sortedYears = Array.from(allYears).sort((a, b) => a - b);
+
+      return sortedYears.map((year) => ({
+        year: String(year),
+        events: eventsYearMap.get(year) || 0,
+        locations: locationsYearMap.get(year) || 0,
       }));
     }
 

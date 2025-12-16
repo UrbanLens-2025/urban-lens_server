@@ -9,6 +9,12 @@ import {
   UserDataByYearDto,
 } from '@/common/dto/dashboard/Analytics.response.dto';
 import { GetAnalyticsQueryDto } from '@/common/dto/dashboard/GetAnalytics.query.dto';
+import { GetEventsLocationsTotalsQueryDto } from '@/common/dto/dashboard/GetEventsLocationsTotals.query.dto';
+import {
+  EventsLocationsDataByDayDto,
+  EventsLocationsDataByMonthDto,
+  EventsLocationsDataByYearDto,
+} from '@/common/dto/dashboard/EventsLocationsTotals.response.dto';
 
 export const IDashboardService = Symbol('IDashboardService');
 
@@ -35,4 +41,16 @@ export interface IDashboardService {
   getUserAnalytics(
     query: GetAnalyticsQueryDto,
   ): Promise<UserDataByDayDto[] | UserDataByMonthDto[] | UserDataByYearDto[]>;
+
+  /**
+   * Get events and locations statistics
+   * Returns array based on filter: day -> EventsLocationsDataByDayDto[], month -> EventsLocationsDataByMonthDto[], year -> EventsLocationsDataByYearDto[]
+   */
+  getEventsLocationsTotals(
+    query: GetEventsLocationsTotalsQueryDto,
+  ): Promise<
+    | EventsLocationsDataByDayDto[]
+    | EventsLocationsDataByMonthDto[]
+    | EventsLocationsDataByYearDto[]
+  >;
 }
