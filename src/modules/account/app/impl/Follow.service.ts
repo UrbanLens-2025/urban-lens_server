@@ -11,7 +11,6 @@ import { GetFollowersQueryDto } from '@/common/dto/account/GetFollowersQuery.dto
 import { PaginationResult } from '@/common/services/base.service';
 import { FollowEntityType } from '@/modules/account/domain/Follow.entity';
 import { DataSource, In } from 'typeorm';
-import { DataSource, In } from 'typeorm';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
@@ -160,9 +159,6 @@ export class FollowService implements IFollowService {
       .where('follow.entity_id = :entityId', { entityId })
       .andWhere('follow.entity_type = :entityType', {
         entityType: FollowEntityType.USER,
-      .where('follow.entity_id = :entityId', { entityId })
-      .andWhere('follow.entity_type = :entityType', {
-        entityType: FollowEntityType.USER,
       });
 
     queryBuilder.addOrderBy('follow.createdAt', 'DESC');
@@ -185,32 +181,7 @@ export class FollowService implements IFollowService {
 
     const usersMap = new Map(users.map((u) => [u.id, u]));
 
-    // Get follower IDs
-    const followerIds = follows.map((follow) => follow.followerId);
-
-    // Fetch users
-    const users =
-      followerIds.length > 0
-        ? await this.dataSource.getRepository(AccountEntity).findBy({
-            id: In(followerIds),
-          })
-        : [];
-
-    const usersMap = new Map(users.map((u) => [u.id, u]));
-
     return {
-      data: follows
-        .map((follow) => {
-          const user = usersMap.get(follow.followerId);
-          if (!user) return null;
-          return {
-            id: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            avatarUrl: user.avatarUrl,
-          };
-        })
-        .filter((user) => user !== null),
       data: follows
         .map((follow) => {
           const user = usersMap.get(follow.followerId);
@@ -247,9 +218,6 @@ export class FollowService implements IFollowService {
       .where('follow.follower_id = :followerId', { followerId })
       .andWhere('follow.entity_type = :entityType', {
         entityType: FollowEntityType.USER,
-      .where('follow.follower_id = :followerId', { followerId })
-      .andWhere('follow.entity_type = :entityType', {
-        entityType: FollowEntityType.USER,
       });
 
     queryBuilder.addOrderBy('follow.createdAt', 'DESC');
@@ -272,32 +240,7 @@ export class FollowService implements IFollowService {
 
     const usersMap = new Map(users.map((u) => [u.id, u]));
 
-    // Get user IDs
-    const userIds = follows.map((follow) => follow.entityId);
-
-    // Fetch users
-    const users =
-      userIds.length > 0
-        ? await this.dataSource.getRepository(AccountEntity).findBy({
-            id: In(userIds),
-          })
-        : [];
-
-    const usersMap = new Map(users.map((u) => [u.id, u]));
-
     return {
-      data: follows
-        .map((follow) => {
-          const user = usersMap.get(follow.entityId);
-          if (!user) return null;
-          return {
-            id: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            avatarUrl: user.avatarUrl,
-          };
-        })
-        .filter((user) => user !== null),
       data: follows
         .map((follow) => {
           const user = usersMap.get(follow.entityId);
