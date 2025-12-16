@@ -46,7 +46,12 @@ export namespace ITicketOrderQueryService_QueryConfig {
     return {
       sortableColumns: ['createdAt', 'updatedAt', 'orderNumber'],
       defaultSortBy: [['createdAt', 'DESC']],
-      searchableColumns: ['orderNumber'],
+      searchableColumns: [
+        'orderNumber',
+        'createdBy.firstName',
+        'createdBy.lastName',
+        'createdBy.email',
+      ],
       filterableColumns: {
         status: true,
       },

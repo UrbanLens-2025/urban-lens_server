@@ -220,13 +220,17 @@ export class TicketOrderManagementService
           eventId: dto.eventId,
           status: EventTicketOrderStatus.PAID,
         },
+        relations: {
+          event: true,
+        },
       });
 
       const refunds: TicketOrderEntity[] = [];
       // for every paid ticket order, refund
       for (const ticketOrder of ticketOrders) {
         const refundAmount =
-          ticketOrder.totalPaymentAmount - ticketOrder.refundedAmount;
+          Number(ticketOrder.totalPaymentAmount) -
+          Number(ticketOrder.refundedAmount);
 
         const refundTransaction =
           await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
@@ -249,7 +253,8 @@ export class TicketOrderManagementService
         ticketOrder.refundTransactionId = refundTransaction.id;
         ticketOrder.status = EventTicketOrderStatus.REFUNDED;
         ticketOrder.refundedAt = new Date();
-        ticketOrder.refundedAmount = ticketOrder.refundedAmount + refundAmount;
+        ticketOrder.refundedAmount =
+          Number(ticketOrder.refundedAmount) + Number(refundAmount);
         ticketOrder.refundReason = dto.refundReason;
         refunds.push(await ticketOrderRepo.save(ticketOrder));
       }

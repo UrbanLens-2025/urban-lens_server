@@ -1,9 +1,10 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { EventAttendanceStatus } from '@/common/constants/EventAttendanceStatus.constant';
 import { TicketOrderResponseDto } from '@/common/dto/event/res/TicketOrder.response.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { EventTicketResponseDto } from '@/common/dto/event/res/EventTicket.response.dto';
+import { WalletTransactionResponseDto } from '@/common/dto/wallet/res/WalletTransaction.response.dto';
 
 @Exclude()
 export class EventAttendanceResponseDto {
@@ -49,6 +50,21 @@ export class EventAttendanceResponseDto {
   @Type(() => Date)
   checkedInAt?: Date | null;
 
+  @Expose()
+  @Transform(({ value }) => Number(value))
+  refundedAmount: number;
+
+  @Expose()
+  refundTransactionId?: string | null;
+
+  @Expose()
+  @Type(() => EventTicketResponseDto)
+  ticketSnapshot?: EventTicketResponseDto | null;
+
+  @Expose()
+  @Type(() => Date)
+  refundedAt?: Date | null;
+
   // -- Relations --
 
   @Expose()
@@ -70,4 +86,8 @@ export class EventAttendanceResponseDto {
   @Expose()
   @Type(() => EventTicketResponseDto)
   ticket?: EventTicketResponseDto;
+
+  @Expose()
+  @Type(() => WalletTransactionResponseDto)
+  refundTransaction?: WalletTransactionResponseDto | null;
 }

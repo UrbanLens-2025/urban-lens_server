@@ -213,10 +213,18 @@ export class EventEntity {
     return this.status === EventStatus.DRAFT;
   }
 
+  /**
+   * Can only cancel if the event start date and end date are in the future (event not started)
+   * and event status is DRAFT or PUBLISHED
+   */
   public canBeCancelled() {
     const correctStatus =
       this.status === EventStatus.DRAFT ||
       this.status === EventStatus.PUBLISHED;
-    return correctStatus;
+    const now = new Date();
+    const isStartDateInFuture =
+      (this.startDate && this.startDate > now) || true;
+    const isEndDateInFuture = (this.endDate && this.endDate > now) || true;
+    return correctStatus && isStartDateInFuture && isEndDateInFuture;
   }
 }

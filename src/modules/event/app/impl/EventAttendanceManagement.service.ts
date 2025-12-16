@@ -153,6 +153,7 @@ export class EventAttendanceManagementService
           id: eventAttendances[0].referencedTicketOrderId,
         },
       });
+      const ticketOrderId = ticketOrder.id;
 
       let totalRefundedAmount = 0;
 
@@ -207,21 +208,14 @@ export class EventAttendanceManagementService
         totalRefundedAmount += refundAmount;
       }
 
+      await ticketOrderRepo.increaseRefundedAmount({
+        amount: totalRefundedAmount,
+        ticketOrderId,
+      });
+
       return (
         eventAttendanceRepo
           .save(eventAttendances)
-          .then(async (res) => {
-            await ticketOrderRepo.update(
-              {
-                id: eventAttendances[0].referencedTicketOrderId,
-              },
-              {
-                refundedAmount:
-                  ticketOrder.refundedAmount + totalRefundedAmount,
-              },
-            );
-            return res;
-          })
           // update ticket available quantity and total_reserved
           .then(async (res) => {
             await eventTicketRepo.refundTickets({

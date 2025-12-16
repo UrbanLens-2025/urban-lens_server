@@ -1,4 +1,4 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { EventTicketOrderStatus } from '@/common/constants/EventTicketOrderStatus.constant';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
@@ -42,6 +42,17 @@ export class TicketOrderResponseDto {
 
   @Expose()
   refundReason?: string | null;
+
+  @Expose()
+  @Transform(({ value }) => Number(value))
+  refundedAmount: number;
+
+  @Expose()
+  refundTransactionId?: string | null;
+
+  @Expose()
+  @Type(() => WalletTransactionResponseDto)
+  refundTransaction?: WalletTransactionResponseDto | null;
 
   @Expose()
   referencedTransactionId: string | null;

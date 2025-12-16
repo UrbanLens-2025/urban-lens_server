@@ -117,6 +117,22 @@ export const TicketOrderRepository = (ctx: DataSource | EntityManager) =>
 
       return qb;
     },
+
+    increaseRefundedAmount(
+      this: Repository<TicketOrderEntity>,
+      payload: { ticketOrderId: string; amount: number },
+    ) {
+      return this.createQueryBuilder()
+        .update(TicketOrderEntity)
+        .set({
+          refundedAmount: () => `"refunded_amount" + :amount`,
+        })
+        .where('id = :ticketOrderId', { ticketOrderId: payload.ticketOrderId })
+        .andWhere('refundedAmount < totalPaymentAmount', {
+          amount: payload.amount,
+        })
+        .execute();
+    },
   });
 
 export type TicketOrderRepository = ReturnType<typeof TicketOrderRepository>;

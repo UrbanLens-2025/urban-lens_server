@@ -63,13 +63,12 @@ export class TicketOrderQueryService
         createdById: dto.accountId,
       })
       .then(() => {
-        return paginate(
-          dto.query,
-          ticketOrderRepository.createQueryBuilderForOrdersInEvent(dto.eventId),
-          {
-            ...ITicketOrderQueryService_QueryConfig.getOrdersInEvent(),
+        return paginate(dto.query, ticketOrderRepository, {
+          ...ITicketOrderQueryService_QueryConfig.getOrdersInEvent(),
+          where: {
+            eventId: dto.eventId,
           },
-        ).then((res) => this.mapToPaginated(TicketOrderResponseDto, res));
+        }).then((res) => this.mapToPaginated(TicketOrderResponseDto, res));
       });
   }
 

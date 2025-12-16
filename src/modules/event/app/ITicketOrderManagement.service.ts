@@ -9,6 +9,11 @@ export const ITicketOrderManagementService = Symbol(
 export interface ITicketOrderManagementService {
   createOrder(dto: CreateTicketOrderDto): Promise<TicketOrderResponseDto>;
 
+  /**
+   * Refund all paid ticket orders for a given event.
+   * Amount to refund based on the total payment amount of the order and the total refunded amount of the order
+   * @param dto
+   */
   refundAllSuccessfulOrders(
     dto: RefundAllSuccessfulOrdersDto,
   ): Promise<TicketOrderResponseDto[]>;

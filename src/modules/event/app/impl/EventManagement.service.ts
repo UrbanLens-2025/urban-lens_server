@@ -461,7 +461,7 @@ export class EventManagementService
         .then((res) => {
           if (!res.canSafelyModifyBooking()) {
             throw new BadRequestException(
-              'You cannot cancel this event booking.',
+              'You cannot cancel this event booking. You can only cancel bookings for events that are DRAFT.',
             );
           }
           return res;
