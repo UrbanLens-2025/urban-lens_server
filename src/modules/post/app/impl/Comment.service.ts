@@ -19,7 +19,11 @@ import {
   COMMENT_CREATED_EVENT,
   CommentCreatedEvent,
 } from '@/modules/gamification/domain/events/CommentCreated.event';
-import { PostEntity } from '../../domain/Post.entity';
+import { PostEntity, PostType } from '../../domain/Post.entity';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { LocationEntity } from '@/modules/business/domain/Location.entity';
+import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 
 @Injectable()
 export class CommentService
@@ -31,6 +35,8 @@ export class CommentService
     private readonly postRepository: PostRepository,
     private readonly reactRepository: ReactRepository,
     private readonly eventEmitter: EventEmitter2,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {
     super(commentRepository.repo);
   }
@@ -74,6 +80,78 @@ export class CommentService
     return result;
   }
 
+  async createBusinessOwnerComment(
+    dto: CreateCommentRequestDto,
+    businessOwnerAccountId: string,
+  ): Promise<any> {
+    // Get post with location info
+    const post = await this.postRepository.repo.findOne({
+      where: { postId: dto.postId },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    // Validate: post must be REVIEW type
+    if (post.type !== PostType.REVIEW) {
+      throw new ForbiddenException('Can only comment on review posts');
+    }
+
+    // Validate: post must have locationId
+    if (!post.locationId) {
+      throw new ForbiddenException('Post must be a location review');
+    }
+
+    // Validate: business owner must own the location
+    const location = await this.dataSource
+      .getRepository(LocationEntity)
+      .createQueryBuilder('location')
+      .innerJoin('location.business', 'business')
+      .where('location.id = :locationId', { locationId: post.locationId })
+      .andWhere('business.account_id = :businessOwnerAccountId', {
+        businessOwnerAccountId,
+      })
+      .getOne();
+
+    if (!location) {
+      throw new ForbiddenException(
+        'You do not own the location for this review',
+      );
+    }
+
+    // Create comment with business owner as author
+    const result = await this.commentRepository.repo.manager.transaction(
+      async (transactionalEntityManager) => {
+        const comment = transactionalEntityManager.create(CommentEntity, {
+          author: { id: businessOwnerAccountId },
+          post: { postId: dto.postId },
+          content: dto.content,
+        });
+        const savedComment = await transactionalEntityManager.save(comment);
+
+        // Update totalComments of post directly
+        await transactionalEntityManager.increment(
+          PostEntity,
+          { postId: dto.postId },
+          'totalComments',
+          1,
+        );
+
+        return savedComment;
+      },
+    );
+
+    // Emit comment created event for gamification
+    const commentCreatedEvent = new CommentCreatedEvent();
+    commentCreatedEvent.commentId = result.commentId;
+    commentCreatedEvent.authorId = businessOwnerAccountId;
+    commentCreatedEvent.postId = dto.postId;
+    this.eventEmitter.emit(COMMENT_CREATED_EVENT, commentCreatedEvent);
+
+    return result;
+  }
+
   async getCommentsByPostId(
     postId: string,
     params: PaginationParams,
@@ -82,6 +160,11 @@ export class CommentService
     const page = Math.max(params.page ?? 1, 1);
     const limit = Math.min(Math.max(params.limit ?? 10, 1), 100);
     const skip = (page - 1) * limit;
+
+    // Get post to check if it's a location review
+    const post = await this.postRepository.repo.findOne({
+      where: { postId },
+    });
 
     const queryBuilder = this.repository
       .createQueryBuilder('comment')
@@ -109,11 +192,44 @@ export class CommentService
       .limit(limit)
       .getRawAndEntities();
 
+    // Get business owners for comments to check if they own the location
+    const authorIds = entities.map((e) => e.author?.id).filter(Boolean);
+    const locationNameMap = new Map<string, string>();
+
+    if (post && post.type === PostType.REVIEW && post.locationId && authorIds.length > 0) {
+      // Get location name
+      const location = await this.dataSource
+        .getRepository(LocationEntity)
+        .findOne({
+          where: { id: post.locationId },
+          select: ['id', 'name'],
+        });
+
+      if (location) {
+        // Check which authors are business owners of this location
+        const businessOwners = await this.dataSource
+          .getRepository(BusinessEntity)
+          .createQueryBuilder('business')
+          .innerJoin(LocationEntity, 'location', 'location.business_id = business.account_id')
+          .where('business.account_id IN (:...authorIds)', { authorIds })
+          .andWhere('location.id = :locationId', { locationId: post.locationId })
+          .select('business.account_id', 'accountId')
+          .getRawMany();
+
+        businessOwners.forEach((bo) => {
+          locationNameMap.set(bo.accountId, location.name);
+        });
+      }
+    }
+
     const data = entities.map((entity) => {
+      const locationName = locationNameMap.get(entity.author?.id || '') || null;
+
       return {
         ...entity,
         totalUpvotes: entity.totalUpvotes || 0,
         totalDownvotes: entity.totalDownvotes || 0,
+        ...(locationName && { locationName }),
       };
     });
 

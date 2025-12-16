@@ -14,6 +14,10 @@ export const ICommentService = Symbol('ICommentService');
 
 export interface ICommentService {
   createComment(dto: CreateCommentRequestDto): Promise<CommentResponseDto>;
+  createBusinessOwnerComment(
+    dto: CreateCommentRequestDto,
+    businessOwnerAccountId: string,
+  ): Promise<CommentResponseDto>;
   getCommentsByPostId(
     postId: string,
     params: PaginationParams,

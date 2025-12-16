@@ -163,8 +163,6 @@ export class FollowService implements IFollowService {
 
     queryBuilder.addOrderBy('follow.createdAt', 'DESC');
 
-    queryBuilder.addOrderBy('follow.createdAt', 'DESC');
-
     const [follows, total] = await queryBuilder
       .skip(skip)
       .take(limit)
@@ -221,8 +219,6 @@ export class FollowService implements IFollowService {
       .andWhere('follow.entity_type = :entityType', {
         entityType: FollowEntityType.USER,
       });
-
-    queryBuilder.addOrderBy('follow.createdAt', 'DESC');
 
     queryBuilder.addOrderBy('follow.createdAt', 'DESC');
 

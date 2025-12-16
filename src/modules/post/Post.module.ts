@@ -3,6 +3,7 @@ import { PostPublicController } from '@/modules/post/interfaces/Post.public.cont
 import { IPostService } from '@/modules/post/app/IPost.service';
 import { PostService } from '@/modules/post/app/impl/Post.service';
 import { CommentPrivateController } from '@/modules/post/interfaces/Comment.private.controller';
+import { CommentOwnerController } from '@/modules/post/interfaces/Comment.owner.controller';
 import { ICommentService } from '@/modules/post/app/IComment.service';
 import { CommentService } from '@/modules/post/app/impl/Comment.service';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
@@ -49,6 +50,7 @@ import { PostAdminController } from '@/modules/post/interfaces/Post.admin.contro
   controllers: [
     PostPublicController,
     CommentPrivateController,
+    CommentOwnerController,
     PostUserController,
     AnnouncementPublicController,
     AnnouncementOwnerController,
