@@ -216,9 +216,9 @@ export class EventQueryService
         relations: {
           location: {
             business: true,
-            tags: {
-              tag: true,
-            },
+            // tags: {
+            //   tag: true,
+            // },
           },
           createdBy: true,
           referencedTransaction: true,

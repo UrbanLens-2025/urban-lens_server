@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -24,6 +25,7 @@ import { Role } from '@/common/constants/Role.constant';
 import { LocationSuspensionEntity } from '@/modules/business/domain/LocationSuspension.entity';
 import { LocationSuspensionType } from '@/common/constants/LocationSuspensionType.constant';
 
+@Index('idx_location_booking_target', ['targetId', 'bookingObject'])
 @Entity({ name: LocationBookingEntity.TABLE_NAME })
 export class LocationBookingEntity {
   public static readonly TABLE_NAME = 'location_bookings';
