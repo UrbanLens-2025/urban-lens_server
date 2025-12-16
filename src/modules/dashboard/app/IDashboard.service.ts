@@ -15,6 +15,14 @@ import {
   EventsLocationsDataByMonthDto,
   EventsLocationsDataByYearDto,
 } from '@/common/dto/dashboard/EventsLocationsTotals.response.dto';
+import { GetBusinessDashboardStatsQueryDto } from '@/common/dto/dashboard/GetBusinessDashboardStats.query.dto';
+import {
+  BusinessDashboardStatsByDayDto,
+  BusinessDashboardStatsByMonthDto,
+  BusinessDashboardStatsByYearDto,
+} from '@/common/dto/dashboard/BusinessDashboardStats.response.dto';
+import { TopLocationByCheckInsDto } from '@/common/dto/dashboard/TopLocationsByCheckIns.response.dto';
+import { BusinessRevenueOverviewResponseDto } from '@/common/dto/dashboard/BusinessRevenueOverview.response.dto';
 
 export const IDashboardService = Symbol('IDashboardService');
 
@@ -53,4 +61,32 @@ export interface IDashboardService {
     | EventsLocationsDataByMonthDto[]
     | EventsLocationsDataByYearDto[]
   >;
+
+  /**
+   * Get business dashboard statistics (locations, bookings, check-ins, reviews)
+   * Returns array based on filter: day -> BusinessDashboardStatsByDayDto[], month -> BusinessDashboardStatsByMonthDto[], year -> BusinessDashboardStatsByYearDto[]
+   */
+  getBusinessDashboardStats(
+    businessOwnerAccountId: string,
+    query: GetBusinessDashboardStatsQueryDto,
+  ): Promise<
+    | BusinessDashboardStatsByDayDto[]
+    | BusinessDashboardStatsByMonthDto[]
+    | BusinessDashboardStatsByYearDto[]
+  >;
+
+  /**
+   * Get top locations by check-ins for business owner (current month)
+   */
+  getTopLocationsByCheckIns(
+    businessOwnerAccountId: string,
+    limit?: number,
+  ): Promise<TopLocationByCheckInsDto[]>;
+
+  /**
+   * Get revenue overview for business owner (total and this month)
+   */
+  getBusinessRevenueOverview(
+    businessOwnerAccountId: string,
+  ): Promise<BusinessRevenueOverviewResponseDto>;
 }
