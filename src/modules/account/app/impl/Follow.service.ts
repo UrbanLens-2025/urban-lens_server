@@ -165,10 +165,11 @@ export class FollowService implements IFollowService {
       });
     }
 
+    queryBuilder.addOrderBy('follow.createdAt', 'DESC');
+
     const [follows, total] = await queryBuilder
       .skip(skip)
       .take(limit)
-      .orderBy('follow.created_at', 'DESC')
       .getManyAndCount();
 
     return {
@@ -211,10 +212,11 @@ export class FollowService implements IFollowService {
       });
     }
 
+    queryBuilder.addOrderBy('follow.createdAt', 'DESC');
+
     const [follows, total] = await queryBuilder
       .skip(skip)
       .take(limit)
-      .orderBy('follow.created_at', 'DESC')
       .getManyAndCount();
 
     return {
