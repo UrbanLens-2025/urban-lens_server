@@ -49,6 +49,18 @@ export class FollowUserController {
     return this.followService.unfollow(user.sub, dto);
   }
 
+  @Get('followers')
+  @ApiOperation({ summary: 'Get followers of the current user' })
+  getMyFollowers(
+    @AuthUser() user: JwtTokenDto,
+    @Query() query: GetFollowersQueryDto,
+  ) {
+    return this.followService.getFollowers(user.sub, {
+      ...query,
+      entityType: FollowEntityType.USER,
+    });
+  }
+
   @Get('followers/:entityId')
   @ApiOperation({ summary: 'Get followers of an entity' })
   @ApiParam({
