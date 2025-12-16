@@ -37,4 +37,10 @@ export class CommentResponseDto {
 
   @Expose()
   currentUserReaction: ReactType | null;
+
+  @Expose()
+  locationId: string | null;
+
+  @Expose()
+  locationAvatar: string | null;
 }

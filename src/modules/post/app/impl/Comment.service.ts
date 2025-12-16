@@ -195,41 +195,69 @@ export class CommentService
     // Get business owners for comments to check if they own the location
     const authorIds = entities.map((e) => e.author?.id).filter(Boolean);
     const locationNameMap = new Map<string, string>();
+    const locationInfoMap = new Map<
+      string,
+      { id: string; avatar: string | null }
+    >();
 
-    if (post && post.type === PostType.REVIEW && post.locationId && authorIds.length > 0) {
-      // Get location name
+    if (
+      post &&
+      post.type === PostType.REVIEW &&
+      post.locationId &&
+      authorIds.length > 0
+    ) {
+      // Get location info (id, name, imageUrl)
       const location = await this.dataSource
         .getRepository(LocationEntity)
         .findOne({
           where: { id: post.locationId },
-          select: ['id', 'name'],
+          select: ['id', 'name', 'imageUrl'],
         });
 
       if (location) {
+        // Get first image from imageUrl array as avatar
+        const locationAvatar =
+          location.imageUrl && location.imageUrl.length > 0
+            ? location.imageUrl[0]
+            : null;
+
         // Check which authors are business owners of this location
         const businessOwners = await this.dataSource
           .getRepository(BusinessEntity)
           .createQueryBuilder('business')
-          .innerJoin(LocationEntity, 'location', 'location.business_id = business.account_id')
+          .innerJoin(
+            LocationEntity,
+            'location',
+            'location.business_id = business.account_id',
+          )
           .where('business.account_id IN (:...authorIds)', { authorIds })
-          .andWhere('location.id = :locationId', { locationId: post.locationId })
+          .andWhere('location.id = :locationId', {
+            locationId: post.locationId,
+          })
           .select('business.account_id', 'accountId')
           .getRawMany();
 
         businessOwners.forEach((bo) => {
           locationNameMap.set(bo.accountId, location.name);
+          locationInfoMap.set(bo.accountId, {
+            id: location.id,
+            avatar: locationAvatar,
+          });
         });
       }
     }
 
     const data = entities.map((entity) => {
       const locationName = locationNameMap.get(entity.author?.id || '') || null;
+      const locationInfo = locationInfoMap.get(entity.author?.id || '');
 
       return {
         ...entity,
         totalUpvotes: entity.totalUpvotes || 0,
         totalDownvotes: entity.totalDownvotes || 0,
         ...(locationName && { locationName }),
+        locationId: locationInfo?.id || null,
+        locationAvatar: locationInfo?.avatar || null,
       };
     });
 
