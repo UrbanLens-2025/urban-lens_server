@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, IsNull, Repository } from 'typeorm';
+import { DataSource, EntityManager, IsNull, Repository } from 'typeorm';
 import { UserLocationVoucherExchangeHistoryEntity } from '../../domain/UserLocationVoucherExchangeHistory.entity';
 
 @Injectable()
@@ -149,3 +149,11 @@ export class UserLocationVoucherExchangeHistoryRepository {
     };
   }
 }
+
+export const UserLocationVoucherExchangeHistoryRepositoryProvider = (
+  ctx: DataSource | EntityManager,
+) => ctx.getRepository(UserLocationVoucherExchangeHistoryEntity).extend({});
+
+export type UserLocationVoucherExchangeHistoryRepositoryProvider = ReturnType<
+  typeof UserLocationVoucherExchangeHistoryRepositoryProvider
+>;

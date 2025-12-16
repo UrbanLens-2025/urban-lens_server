@@ -7,11 +7,14 @@ import {
   Param,
   Post,
   Put,
-  Query,
   BadRequestException,
 } from '@nestjs/common';
 import { ILocationVoucherService } from '../app/ILocationVoucher.service';
 import type { IVoucherExchangeService } from '../app/IVoucherExchange.service';
+import {
+  IGamificationQueryService,
+  IGamificationQueryService_QueryConfig,
+} from '../app/IGamificationQuery.service';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -51,6 +54,8 @@ export class LocationVoucherBusinessController {
     private readonly locationVoucherService: ILocationVoucherService,
     @Inject('IVoucherExchangeService')
     private readonly voucherExchangeService: IVoucherExchangeService,
+    @Inject(IGamificationQueryService)
+    private readonly gamificationQueryService: IGamificationQueryService,
   ) {}
 
   @ApiOperation({
@@ -198,5 +203,22 @@ export class LocationVoucherBusinessController {
     @AuthUser() user: JwtTokenDto,
   ) {
     return this.locationVoucherService.deleteVoucher(voucherId, locationId);
+  }
+
+  @ApiOperation({
+    summary: 'Get voucher users',
+    description:
+      'Get list of users who have exchanged or used a voucher. Filter by status: exchanged, used, or all.',
+  })
+  @ApiPaginationQuery(IGamificationQueryService_QueryConfig.getVoucherUsers())
+  @Get('/voucher/:voucherId/users')
+  getVoucherUsers(
+    @Paginate() query: PaginateQuery,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.gamificationQueryService.getVoucherUsers({
+      businessOwnerId: user.sub,
+      query,
+    });
   }
 }

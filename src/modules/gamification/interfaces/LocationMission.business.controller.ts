@@ -6,11 +6,11 @@ import {
   Inject,
   Param,
   Post,
-  Put,
-  Query,
+  Put
 } from '@nestjs/common';
 import { ILocationMissionService } from '../app/ILocationMission.service';
 import { IQRCodeScanService } from '../app/IQRCodeScan.service';
+import { IGamificationQueryService } from '../app/IGamificationQuery.service';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -30,6 +30,7 @@ import {
   type PaginateQuery,
 } from 'nestjs-paginate';
 import { BusinessQRScanHistoryResponseDto } from '@/common/dto/gamification/QRScanHistory.response.dto';
+import { IGamificationQueryService_QueryConfig } from '../app/IGamificationQuery.service';
 
 @ApiTags('Location Mission (Business Owner)')
 @ApiBearerAuth()
@@ -41,6 +42,8 @@ export class LocationMissionBusinessController {
     private readonly locationMissionService: ILocationMissionService,
     @Inject(IQRCodeScanService)
     private readonly qrCodeScanService: IQRCodeScanService,
+    @Inject(IGamificationQueryService)
+    private readonly gamificationQueryService: IGamificationQueryService,
   ) {}
 
   @ApiOperation({
@@ -54,6 +57,25 @@ export class LocationMissionBusinessController {
     @AuthUser() user: JwtTokenDto,
   ) {
     return this.locationMissionService.createMission(locationId, dto);
+  }
+
+  @ApiOperation({
+    summary: 'Get mission participants',
+    description:
+      'Get list of users who have started or completed a mission. Filter by status: started, completed, or all.',
+  })
+  @ApiPaginationQuery(
+    IGamificationQueryService_QueryConfig.getMissionParticipants(),
+  )
+  @Get('/mission/:missionId/participants')
+  getMissionParticipants(
+    @Paginate() query: PaginateQuery,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.gamificationQueryService.getMissionParticipants({
+      businessOwnerId: user.sub,
+      query,
+    });
   }
 
   @ApiOperation({

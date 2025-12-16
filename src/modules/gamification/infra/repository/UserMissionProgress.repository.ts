@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, DataSource, Repository } from 'typeorm';
 import { UserMissionProgressEntity } from '@/modules/gamification/domain/UserMissionProgress.entity';
 
 @Injectable()
@@ -10,3 +10,11 @@ export class UserMissionProgressRepository {
     public readonly repo: Repository<UserMissionProgressEntity>,
   ) {}
 }
+
+export const UserMissionProgressRepositoryProvider = (
+  ctx: DataSource | EntityManager,
+) => ctx.getRepository(UserMissionProgressEntity).extend({});
+
+export type UserMissionProgressRepositoryProvider = ReturnType<
+  typeof UserMissionProgressRepositoryProvider
+>;
