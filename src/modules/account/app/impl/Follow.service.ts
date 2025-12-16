@@ -10,7 +10,7 @@ import { UnfollowDto } from '@/common/dto/account/Unfollow.dto';
 import { GetFollowersQueryDto } from '@/common/dto/account/GetFollowersQuery.dto';
 import { PaginationResult } from '@/common/services/base.service';
 import { FollowEntityType } from '@/modules/account/domain/Follow.entity';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
@@ -156,14 +156,10 @@ export class FollowService implements IFollowService {
 
     const queryBuilder = this.followRepository.repo
       .createQueryBuilder('follow')
-      .leftJoinAndSelect('follow.follower', 'follower')
-      .where('follow.entity_id = :entityId', { entityId });
-
-    if (query.entityType) {
-      queryBuilder.andWhere('follow.entity_type = :entityType', {
-        entityType: query.entityType,
+      .where('follow.entity_id = :entityId', { entityId })
+      .andWhere('follow.entity_type = :entityType', {
+        entityType: FollowEntityType.USER,
       });
-    }
 
     queryBuilder.addOrderBy('follow.createdAt', 'DESC');
 
@@ -172,17 +168,32 @@ export class FollowService implements IFollowService {
       .take(limit)
       .getManyAndCount();
 
+    // Get follower IDs
+    const followerIds = follows.map((follow) => follow.followerId);
+
+    // Fetch users
+    const users =
+      followerIds.length > 0
+        ? await this.dataSource.getRepository(AccountEntity).findBy({
+            id: In(followerIds),
+          })
+        : [];
+
+    const usersMap = new Map(users.map((u) => [u.id, u]));
+
     return {
-      data: follows.map((follow) => ({
-        followId: follow.followId,
-        follower: {
-          id: follow.follower.id,
-          firstName: follow.follower.firstName,
-          lastName: follow.follower.lastName,
-          avatarUrl: follow.follower.avatarUrl,
-        },
-        createdAt: follow.createdAt,
-      })),
+      data: follows
+        .map((follow) => {
+          const user = usersMap.get(follow.followerId);
+          if (!user) return null;
+          return {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            avatarUrl: user.avatarUrl,
+          };
+        })
+        .filter((user) => user !== null),
       meta: {
         page,
         limit,
@@ -204,13 +215,10 @@ export class FollowService implements IFollowService {
 
     const queryBuilder = this.followRepository.repo
       .createQueryBuilder('follow')
-      .where('follow.follower_id = :followerId', { followerId });
-
-    if (query.entityType) {
-      queryBuilder.andWhere('follow.entity_type = :entityType', {
-        entityType: query.entityType,
+      .where('follow.follower_id = :followerId', { followerId })
+      .andWhere('follow.entity_type = :entityType', {
+        entityType: FollowEntityType.USER,
       });
-    }
 
     queryBuilder.addOrderBy('follow.createdAt', 'DESC');
 
@@ -219,13 +227,32 @@ export class FollowService implements IFollowService {
       .take(limit)
       .getManyAndCount();
 
+    // Get user IDs
+    const userIds = follows.map((follow) => follow.entityId);
+
+    // Fetch users
+    const users =
+      userIds.length > 0
+        ? await this.dataSource.getRepository(AccountEntity).findBy({
+            id: In(userIds),
+          })
+        : [];
+
+    const usersMap = new Map(users.map((u) => [u.id, u]));
+
     return {
-      data: follows.map((follow) => ({
-        followId: follow.followId,
-        entityId: follow.entityId,
-        entityType: follow.entityType,
-        createdAt: follow.createdAt,
-      })),
+      data: follows
+        .map((follow) => {
+          const user = usersMap.get(follow.entityId);
+          if (!user) return null;
+          return {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            avatarUrl: user.avatarUrl,
+          };
+        })
+        .filter((user) => user !== null),
       meta: {
         page,
         limit,
