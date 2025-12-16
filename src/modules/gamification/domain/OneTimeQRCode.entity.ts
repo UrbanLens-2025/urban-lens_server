@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 
 @Entity('one_time_qr_codes')
 export class OneTimeQRCodeEntity {
@@ -93,13 +94,14 @@ export class OneTimeQRCodeEntity {
 
   @ManyToOne(() => UserProfileEntity, {
     createForeignKeyConstraints: true,
+    nullable: true,
   })
   @JoinColumn({ name: 'scanned_by' })
-  scannedByUser: UserProfileEntity;
+  scannedByUser?: UserProfileEntity | null;
 
-  @ManyToOne(() => UserProfileEntity, {
+  @ManyToOne(() => AccountEntity, {
     createForeignKeyConstraints: true,
   })
   @JoinColumn({ name: 'business_owner_id' })
-  businessOwner: UserProfileEntity;
+  businessOwner: AccountEntity;
 }
