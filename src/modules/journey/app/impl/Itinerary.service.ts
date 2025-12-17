@@ -17,6 +17,7 @@ import { IItineraryService } from '../IItinerary.service';
 import { ItinerarySource } from '@/common/constants/ItinerarySource.constant';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { CheckInRepository } from '@/modules/business/infra/repository/CheckIn.repository';
+import { ItineraryPdfService } from './ItineraryPdf.service';
 // import { GoogleMapsService } from '@/common/core/google-maps/GoogleMaps.service';
 
 @Injectable()
@@ -28,6 +29,7 @@ export class ItineraryService implements IItineraryService {
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
     private readonly checkInRepository: CheckInRepository,
+    private readonly itineraryPdfService: ItineraryPdfService,
   ) {}
 
   async createItinerary(
@@ -422,6 +424,30 @@ export class ItineraryService implements IItineraryService {
       // Delete itinerary
       await manager.delete(ItineraryEntity, itineraryId);
     });
+  }
+
+  async exportItineraryToPdf(
+    userId: string,
+    itineraryId: string,
+  ): Promise<Buffer> {
+    const itinerary = await this.getItineraryById(userId, itineraryId);
+    return await this.itineraryPdfService.generatePdf(itinerary);
+  }
+
+  async getItineraryByIdPublic(itineraryId: string): Promise<ItineraryEntity> {
+    const itinerary = await this.itineraryRepository.findById(itineraryId);
+
+    if (!itinerary) {
+      throw new NotFoundException('Itinerary not found');
+    }
+
+    // Return itinerary without user check-in status for public access
+    return itinerary;
+  }
+
+  async exportItineraryToPdfPublic(itineraryId: string): Promise<Buffer> {
+    const itinerary = await this.getItineraryByIdPublic(itineraryId);
+    return await this.itineraryPdfService.generatePdf(itinerary);
   }
 
   // Travel metrics calculation will be implemented separately using Google Maps service

@@ -6,11 +6,13 @@ import { ItineraryService } from './app/impl/Itinerary.service';
 import { JourneyInfraModule } from './infra/Journey.infra.module';
 import { JourneyPlannerController } from './interfaces/JourneyPlanner.controller';
 import { ItineraryController } from './api/Itinerary.controller';
+import { ItineraryPublicController } from './api/Itinerary.public.controller';
 import { GoogleMapsModule } from '@/common/core/google-maps/GoogleMaps.module';
 import { TokenModule } from '@/common/core/token/token.module';
 import { OllamaModule } from '@/common/core/ollama/Ollama.module';
 import { FileStorageModule } from '@/modules/file-storage/FileStorage.module';
 import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.module';
+import { ItineraryPdfService } from './app/impl/ItineraryPdf.service';
 
 @Module({
   imports: [
@@ -21,7 +23,11 @@ import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.mod
     OllamaModule,
     FileStorageModule,
   ],
-  controllers: [JourneyPlannerController, ItineraryController],
+  controllers: [
+    JourneyPlannerController,
+    ItineraryController,
+    ItineraryPublicController,
+  ],
   providers: [
     {
       provide: IJourneyPlannerService,
@@ -31,6 +37,7 @@ import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.mod
       provide: IItineraryService,
       useClass: ItineraryService,
     },
+    ItineraryPdfService,
   ],
   exports: [IJourneyPlannerService, IItineraryService],
 })
