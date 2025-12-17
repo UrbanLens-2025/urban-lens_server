@@ -39,4 +39,15 @@ export abstract class IItineraryService {
   ): Promise<ItineraryEntity>;
 
   abstract deleteItinerary(userId: string, itineraryId: string): Promise<void>;
+
+  abstract exportItineraryToPdf(
+    userId: string,
+    itineraryId: string,
+  ): Promise<Buffer>;
+
+  abstract getItineraryByIdPublic(
+    itineraryId: string,
+  ): Promise<ItineraryEntity>;
+
+  abstract exportItineraryToPdfPublic(itineraryId: string): Promise<Buffer>;
 }
