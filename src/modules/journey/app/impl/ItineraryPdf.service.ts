@@ -164,7 +164,7 @@ export class ItineraryPdfService {
               {
                 stack: [
                   {
-                    text: 'Thông tin chuyến đi',
+                    text: 'Trip Information',
                     style: 'sectionTitle',
                     margin: [0, 0, 0, 18] as [number, number, number, number],
                   },
@@ -176,7 +176,7 @@ export class ItineraryPdfService {
                           ? [
                               [
                                 {
-                                  text: 'Ngày bắt đầu:',
+                                  text: 'Start Date:',
                                   style: 'infoLabel',
                                 },
                                 {
@@ -192,7 +192,7 @@ export class ItineraryPdfService {
                           ? [
                               [
                                 {
-                                  text: 'Ngày kết thúc:',
+                                  text: 'End Date:',
                                   style: 'infoLabel',
                                 },
                                 {
@@ -206,7 +206,7 @@ export class ItineraryPdfService {
                           : []),
                         [
                           {
-                            text: 'Tổng quãng đường:',
+                            text: 'Total Distance:',
                             style: 'infoLabel',
                           },
                           {
@@ -217,7 +217,7 @@ export class ItineraryPdfService {
                         ],
                         [
                           {
-                            text: 'Tổng thời gian:',
+                            text: 'Total Time:',
                             style: 'infoLabel',
                           },
                           {
@@ -230,13 +230,13 @@ export class ItineraryPdfService {
                         ],
                         [
                           {
-                            text: 'Trạng thái:',
+                            text: 'Status:',
                             style: 'infoLabel',
                           },
                           {
                             text: itinerary.isFinished
-                              ? '✓ Đã hoàn thành'
-                              : 'Đang lên kế hoạch',
+                              ? '✓ Completed'
+                              : 'Planning',
                             style: 'infoValue',
                             color: itinerary.isFinished ? '#10b981' : '#3b82f6',
                             bold: true,
@@ -269,7 +269,7 @@ export class ItineraryPdfService {
       itinerary.aiMetadata.tips.length > 0
         ? ([
             {
-              text: 'Mẹo từ AI',
+              text: 'AI Tips',
               style: 'sectionTitle',
               margin: [0, 25, 0, 12] as [number, number, number, number],
             },
@@ -287,7 +287,7 @@ export class ItineraryPdfService {
       ...(sortedLocations.length > 0
         ? ([
             {
-              text: 'Lộ trình chi tiết',
+              text: 'Detailed Itinerary',
               style: 'sectionTitle',
               margin: [0, 25, 0, 20] as [number, number, number, number],
             },
@@ -361,7 +361,7 @@ export class ItineraryPdfService {
                                     width: '*',
                                     stack: [
                                       {
-                                        text: locationData?.name || 'Địa điểm',
+                                        text: locationData?.name || 'Location',
                                         style: 'locationName',
                                         margin: [0, 0, 0, 8] as [
                                           number,
@@ -433,7 +433,7 @@ export class ItineraryPdfService {
                                     {
                                       text: [
                                         {
-                                          text: 'Ghi chú: ',
+                                          text: 'Notes: ',
                                           bold: true,
                                         },
                                         location.notes,
@@ -504,8 +504,8 @@ export class ItineraryPdfService {
                                 ? [
                                     {
                                       text: (location as any).isCheckedIn
-                                        ? '✓ Đã check-in'
-                                        : 'Chưa check-in',
+                                        ? '✓ Checked in'
+                                        : 'Not checked in',
                                       style: 'checkInStatus',
                                       color: (location as any).isCheckedIn
                                         ? '#10b981'
@@ -573,7 +573,7 @@ export class ItineraryPdfService {
 
       // Footer
       {
-        text: `Tạo bởi Urban Lens - ${dayjs().format('DD/MM/YYYY HH:mm')}`,
+        text: `Generated by Urban Lens - ${dayjs().format('DD/MM/YYYY HH:mm')}`,
         style: 'footer',
         margin: [0, 30, 0, 0] as [number, number, number, number],
         alignment: 'center',
@@ -668,13 +668,13 @@ export class ItineraryPdfService {
 
   private formatTravelTime(minutes: number): string {
     if (minutes < 60) {
-      return `${minutes} phút`;
+      return `${minutes} min`;
     }
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
     if (remainingMinutes === 0) {
-      return `${hours} giờ`;
+      return `${hours} hr`;
     }
-    return `${hours} giờ ${remainingMinutes} phút`;
+    return `${hours} hr ${remainingMinutes} min`;
   }
 }
