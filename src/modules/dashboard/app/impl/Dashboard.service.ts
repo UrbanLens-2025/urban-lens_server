@@ -30,12 +30,7 @@ import {
   EventsLocationsDataByMonthDto,
   EventsLocationsDataByYearDto,
 } from '@/common/dto/dashboard/EventsLocationsTotals.response.dto';
-import { GetBusinessDashboardStatsQueryDto } from '@/common/dto/dashboard/GetBusinessDashboardStats.query.dto';
-import {
-  BusinessDashboardStatsByDayDto,
-  BusinessDashboardStatsByMonthDto,
-  BusinessDashboardStatsByYearDto,
-} from '@/common/dto/dashboard/BusinessDashboardStats.response.dto';
+import { BusinessDashboardStatsTotalDto } from '@/common/dto/dashboard/BusinessDashboardStats.response.dto';
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { CheckInEntity } from '@/modules/business/domain/CheckIn.entity';
@@ -43,6 +38,27 @@ import { PostEntity, PostType } from '@/modules/post/domain/Post.entity';
 import { TopLocationByCheckInsDto } from '@/common/dto/dashboard/TopLocationsByCheckIns.response.dto';
 import { BusinessRevenueOverviewResponseDto } from '@/common/dto/dashboard/BusinessRevenueOverview.response.dto';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
+import { GetBusinessRevenueQueryDto } from '@/common/dto/dashboard/GetBusinessRevenue.query.dto';
+import {
+  BusinessRevenueByDayDto,
+  BusinessRevenueByMonthDto,
+  BusinessRevenueByYearDto,
+} from '@/common/dto/dashboard/BusinessRevenue.response.dto';
+import { EventCreatorDashboardStatsResponseDto } from '@/common/dto/dashboard/EventCreatorDashboardStats.response.dto';
+import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
+import { EventTicketOrderStatus } from '@/common/constants/EventTicketOrderStatus.constant';
+import { GetEventCreatorRevenueQueryDto } from '@/common/dto/dashboard/GetEventCreatorRevenue.query.dto';
+import {
+  EventCreatorRevenueByDayDto,
+  EventCreatorRevenueByMonthDto,
+  EventCreatorRevenueByYearDto,
+} from '@/common/dto/dashboard/EventCreatorRevenue.response.dto';
+import { GetEventCreatorPerformanceQueryDto } from '@/common/dto/dashboard/GetEventCreatorPerformance.query.dto';
+import {
+  EventCreatorPerformanceByDayDto,
+  EventCreatorPerformanceByMonthDto,
+  EventCreatorPerformanceByYearDto,
+} from '@/common/dto/dashboard/EventCreatorPerformance.response.dto';
 
 @Injectable()
 export class DashboardService extends CoreService implements IDashboardService {
@@ -820,12 +836,7 @@ export class DashboardService extends CoreService implements IDashboardService {
 
   async getBusinessDashboardStats(
     businessOwnerAccountId: string,
-    query: GetBusinessDashboardStatsQueryDto,
-  ): Promise<
-    | BusinessDashboardStatsByDayDto[]
-    | BusinessDashboardStatsByMonthDto[]
-    | BusinessDashboardStatsByYearDto[]
-  > {
+  ): Promise<BusinessDashboardStatsTotalDto> {
     // Get business_id from account_id
     const businessRepo = this.dataSource.getRepository(BusinessEntity);
     const business = await businessRepo.findOne({
@@ -837,328 +848,59 @@ export class DashboardService extends CoreService implements IDashboardService {
     }
 
     const businessId = business.accountId;
-    const now = new Date();
-    const filterType = query.filter || 'day'; // Default to 'day' if not specified
 
-    // Helper function to format month as Jan, Feb, ..., Dec
-    const formatMonth = (month: number): string => {
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return months[month - 1] || 'Jan';
+    // Get location IDs for this business
+    const locationIds = await this.locationRepository.repo
+      .createQueryBuilder('location')
+      .select('location.id', 'id')
+      .where('location.business_id = :businessId', { businessId })
+      .getRawMany()
+      .then((results) => results.map((r) => r.id));
+
+    // Get total counts for all time
+    const [totalLocations, totalBookings, totalCheckIns, totalReviews] =
+      await Promise.all([
+        // Total locations
+        this.locationRepository.repo
+          .createQueryBuilder('location')
+          .where('location.business_id = :businessId', { businessId })
+          .getCount(),
+
+        // Total bookings
+        this.dataSource
+          .getRepository(LocationBookingEntity)
+          .createQueryBuilder('booking')
+          .innerJoin('booking.location', 'location')
+          .where('location.business_id = :businessId', { businessId })
+          .getCount(),
+
+        // Total check-ins
+        this.dataSource
+          .getRepository(CheckInEntity)
+          .createQueryBuilder('checkin')
+          .innerJoin('checkin.location', 'location')
+          .where('location.business_id = :businessId', { businessId })
+          .getCount(),
+
+        // Total reviews
+        locationIds.length > 0
+          ? this.dataSource
+              .getRepository(PostEntity)
+              .createQueryBuilder('post')
+              .where('post.location_id IN (:...locationIds)', { locationIds })
+              .andWhere('post.type = :reviewType', {
+                reviewType: PostType.REVIEW,
+              })
+              .getCount()
+          : Promise.resolve(0),
+      ]);
+
+    return {
+      locations: totalLocations,
+      bookings: totalBookings,
+      checkIns: totalCheckIns,
+      reviews: totalReviews,
     };
-
-    // Helper function to format day of week as Mon, Tue, ..., Sun
-    const formatDayOfWeek = (dayOfWeek: number): string => {
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      return days[dayOfWeek] || 'Sun';
-    };
-
-    // 1. Stats by day (last 7 days)
-    if (filterType === 'day') {
-      const sevenDaysAgo = new Date(now);
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      sevenDaysAgo.setHours(0, 0, 0, 0);
-
-      // Get total locations count (not grouped by day)
-      const totalLocations = await this.locationRepository.repo
-        .createQueryBuilder('location')
-        .where('location.business_id = :businessId', { businessId })
-        .getCount();
-
-      const [bookingsByDayRaw, checkInsByDayRaw, reviewsByDayRaw] =
-        await Promise.all([
-        // Bookings
-        this.dataSource
-          .getRepository(LocationBookingEntity)
-          .createQueryBuilder('booking')
-          .innerJoin('booking.location', 'location')
-          .select('EXTRACT(DOW FROM booking.created_at)', 'dayOfWeek')
-          .addSelect('COUNT(booking.id)', 'count')
-          .where('location.business_id = :businessId', { businessId })
-          .andWhere('booking.created_at >= :sevenDaysAgo', { sevenDaysAgo })
-          .andWhere('booking.created_at <= :now', { now })
-          .groupBy('EXTRACT(DOW FROM booking.created_at)')
-          .getRawMany(),
-        // Check-ins
-        this.dataSource
-          .getRepository(CheckInEntity)
-          .createQueryBuilder('checkin')
-          .innerJoin('checkin.location', 'location')
-          .select('EXTRACT(DOW FROM checkin.created_at)', 'dayOfWeek')
-          .addSelect('COUNT(checkin.id)', 'count')
-          .where('location.business_id = :businessId', { businessId })
-          .andWhere('checkin.created_at >= :sevenDaysAgo', { sevenDaysAgo })
-          .andWhere('checkin.created_at <= :now', { now })
-          .groupBy('EXTRACT(DOW FROM checkin.created_at)')
-          .getRawMany(),
-        // Reviews (posts with type = REVIEW)
-        (async () => {
-          // Get location IDs for this business first
-          const locationIds = await this.locationRepository.repo
-            .createQueryBuilder('location')
-            .select('location.id', 'id')
-            .where('location.business_id = :businessId', { businessId })
-            .getRawMany()
-            .then((results) => results.map((r) => r.id));
-
-          if (locationIds.length === 0) {
-            return [];
-          }
-
-          return this.dataSource
-            .getRepository(PostEntity)
-            .createQueryBuilder('post')
-            .select('EXTRACT(DOW FROM post.created_at)', 'dayOfWeek')
-            .addSelect('COUNT(post.post_id)', 'count')
-            .where('post.location_id IN (:...locationIds)', { locationIds })
-            .andWhere('post.type = :reviewType', { reviewType: PostType.REVIEW })
-            .andWhere('post.created_at >= :sevenDaysAgo', { sevenDaysAgo })
-            .andWhere('post.created_at <= :now', { now })
-            .groupBy('EXTRACT(DOW FROM post.created_at)')
-            .getRawMany();
-        })(),
-      ]);
-
-      // Create maps from query results
-      const bookingsDayMap = new Map<number, number>();
-      bookingsByDayRaw.forEach((row) => {
-        const dayOfWeek = parseInt(row.dayOfWeek, 10);
-        bookingsDayMap.set(dayOfWeek, parseInt(row.count, 10));
-      });
-
-      const checkInsDayMap = new Map<number, number>();
-      checkInsByDayRaw.forEach((row) => {
-        const dayOfWeek = parseInt(row.dayOfWeek, 10);
-        checkInsDayMap.set(dayOfWeek, parseInt(row.count, 10));
-      });
-
-      const reviewsDayMap = new Map<number, number>();
-      reviewsByDayRaw.forEach((row) => {
-        const dayOfWeek = parseInt(row.dayOfWeek, 10);
-        reviewsDayMap.set(dayOfWeek, parseInt(row.count, 10));
-      });
-
-      // Ensure all 7 days are present (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat)
-      const allDays: BusinessDashboardStatsByDayDto[] = [];
-      for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
-        allDays.push({
-          day: formatDayOfWeek(dayOfWeek),
-          locations: dayOfWeek === 0 ? totalLocations : 0, // Show total on first day
-          bookings: bookingsDayMap.get(dayOfWeek) || 0,
-          checkIns: checkInsDayMap.get(dayOfWeek) || 0,
-          reviews: reviewsDayMap.get(dayOfWeek) || 0,
-        });
-      }
-
-      return allDays;
-    }
-
-    // 2. Stats by month (12 months in current year)
-    if (filterType === 'month') {
-      const currentYear = now.getFullYear();
-      const yearStart = new Date(currentYear, 0, 1, 0, 0, 0, 0);
-      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
-
-      // Get total locations count (not grouped by month)
-      const totalLocations = await this.locationRepository.repo
-        .createQueryBuilder('location')
-        .where('location.business_id = :businessId', { businessId })
-        .getCount();
-
-      const [bookingsByMonthRaw, checkInsByMonthRaw, reviewsByMonthRaw] =
-        await Promise.all([
-        // Bookings
-        this.dataSource
-          .getRepository(LocationBookingEntity)
-          .createQueryBuilder('booking')
-          .innerJoin('booking.location', 'location')
-          .select('EXTRACT(MONTH FROM booking.created_at)', 'month')
-          .addSelect('COUNT(booking.id)', 'count')
-          .where('location.business_id = :businessId', { businessId })
-          .andWhere('booking.created_at >= :yearStart', { yearStart })
-          .andWhere('booking.created_at <= :yearEnd', { yearEnd })
-          .groupBy('EXTRACT(MONTH FROM booking.created_at)')
-          .getRawMany(),
-        // Check-ins
-        this.dataSource
-          .getRepository(CheckInEntity)
-          .createQueryBuilder('checkin')
-          .innerJoin('checkin.location', 'location')
-          .select('EXTRACT(MONTH FROM checkin.created_at)', 'month')
-          .addSelect('COUNT(checkin.id)', 'count')
-          .where('location.business_id = :businessId', { businessId })
-          .andWhere('checkin.created_at >= :yearStart', { yearStart })
-          .andWhere('checkin.created_at <= :yearEnd', { yearEnd })
-          .groupBy('EXTRACT(MONTH FROM checkin.created_at)')
-          .getRawMany(),
-        // Reviews
-        (async () => {
-          // Get location IDs for this business first
-          const locationIds = await this.locationRepository.repo
-            .createQueryBuilder('location')
-            .select('location.id', 'id')
-            .where('location.business_id = :businessId', { businessId })
-            .getRawMany()
-            .then((results) => results.map((r) => r.id));
-
-          if (locationIds.length === 0) {
-            return [];
-          }
-
-          return this.dataSource
-            .getRepository(PostEntity)
-            .createQueryBuilder('post')
-            .select('EXTRACT(MONTH FROM post.created_at)', 'month')
-            .addSelect('COUNT(post.post_id)', 'count')
-            .where('post.location_id IN (:...locationIds)', { locationIds })
-            .andWhere('post.type = :reviewType', { reviewType: PostType.REVIEW })
-            .andWhere('post.created_at >= :yearStart', { yearStart })
-            .andWhere('post.created_at <= :yearEnd', { yearEnd })
-            .groupBy('EXTRACT(MONTH FROM post.created_at)')
-            .getRawMany();
-        })(),
-      ]);
-
-      // Create maps from query results
-      const bookingsMonthMap = new Map<number, number>();
-      bookingsByMonthRaw.forEach((row) => {
-        const month = parseInt(row.month, 10);
-        bookingsMonthMap.set(month, parseInt(row.count, 10));
-      });
-
-      const checkInsMonthMap = new Map<number, number>();
-      checkInsByMonthRaw.forEach((row) => {
-        const month = parseInt(row.month, 10);
-        checkInsMonthMap.set(month, parseInt(row.count, 10));
-      });
-
-      const reviewsMonthMap = new Map<number, number>();
-      reviewsByMonthRaw.forEach((row) => {
-        const month = parseInt(row.month, 10);
-        reviewsMonthMap.set(month, parseInt(row.count, 10));
-      });
-
-      // Ensure all 12 months are present (1-12)
-      const allMonths: BusinessDashboardStatsByMonthDto[] = [];
-      for (let month = 1; month <= 12; month++) {
-        allMonths.push({
-          month: formatMonth(month),
-          locations: month === 1 ? totalLocations : 0, // Show total in first month
-          bookings: bookingsMonthMap.get(month) || 0,
-          checkIns: checkInsMonthMap.get(month) || 0,
-          reviews: reviewsMonthMap.get(month) || 0,
-        });
-      }
-
-      return allMonths;
-    }
-
-    // 3. Stats by year (all years)
-    if (filterType === 'year') {
-      // Get total locations count (not grouped by year)
-      const totalLocations = await this.locationRepository.repo
-        .createQueryBuilder('location')
-        .where('location.business_id = :businessId', { businessId })
-        .getCount();
-
-      const [bookingsByYearRaw, checkInsByYearRaw, reviewsByYearRaw] =
-        await Promise.all([
-        // Bookings
-        this.dataSource
-          .getRepository(LocationBookingEntity)
-          .createQueryBuilder('booking')
-          .innerJoin('booking.location', 'location')
-          .select('EXTRACT(YEAR FROM booking.created_at)', 'year')
-          .addSelect('COUNT(booking.id)', 'count')
-          .where('location.business_id = :businessId', { businessId })
-          .groupBy('EXTRACT(YEAR FROM booking.created_at)')
-          .getRawMany(),
-        // Check-ins
-        this.dataSource
-          .getRepository(CheckInEntity)
-          .createQueryBuilder('checkin')
-          .innerJoin('checkin.location', 'location')
-          .select('EXTRACT(YEAR FROM checkin.created_at)', 'year')
-          .addSelect('COUNT(checkin.id)', 'count')
-          .where('location.business_id = :businessId', { businessId })
-          .groupBy('EXTRACT(YEAR FROM checkin.created_at)')
-          .getRawMany(),
-        // Reviews
-        (async () => {
-          // Get location IDs for this business first
-          const locationIds = await this.locationRepository.repo
-            .createQueryBuilder('location')
-            .select('location.id', 'id')
-            .where('location.business_id = :businessId', { businessId })
-            .getRawMany()
-            .then((results) => results.map((r) => r.id));
-
-          if (locationIds.length === 0) {
-            return [];
-          }
-
-          return this.dataSource
-            .getRepository(PostEntity)
-            .createQueryBuilder('post')
-            .select('EXTRACT(YEAR FROM post.created_at)', 'year')
-            .addSelect('COUNT(post.post_id)', 'count')
-            .where('post.location_id IN (:...locationIds)', { locationIds })
-            .andWhere('post.type = :reviewType', { reviewType: PostType.REVIEW })
-            .groupBy('EXTRACT(YEAR FROM post.created_at)')
-            .getRawMany();
-        })(),
-      ]);
-
-      // Create maps from query results
-      const bookingsYearMap = new Map<number, number>();
-      bookingsByYearRaw.forEach((row) => {
-        const year = Math.floor(parseFloat(row.year));
-        bookingsYearMap.set(year, parseInt(row.count, 10));
-      });
-
-      const checkInsYearMap = new Map<number, number>();
-      checkInsByYearRaw.forEach((row) => {
-        const year = Math.floor(parseFloat(row.year));
-        checkInsYearMap.set(year, parseInt(row.count, 10));
-      });
-
-      const reviewsYearMap = new Map<number, number>();
-      reviewsByYearRaw.forEach((row) => {
-        const year = Math.floor(parseFloat(row.year));
-        reviewsYearMap.set(year, parseInt(row.count, 10));
-      });
-
-      // Get all unique years from all maps
-      const allYears = new Set([
-        ...bookingsYearMap.keys(),
-        ...checkInsYearMap.keys(),
-        ...reviewsYearMap.keys(),
-      ]);
-      const sortedYears = Array.from(allYears).sort((a, b) => a - b);
-
-      return sortedYears.map((year) => ({
-        year: String(year),
-        locations: totalLocations, // Total locations across all years
-        bookings: bookingsYearMap.get(year) || 0,
-        checkIns: checkInsYearMap.get(year) || 0,
-        reviews: reviewsYearMap.get(year) || 0,
-      }));
-    }
-
-    // Default return (should not reach here, but TypeScript needs it)
-    return [];
   }
 
   async getTopLocationsByCheckIns(
@@ -1177,7 +919,15 @@ export class DashboardService extends CoreService implements IDashboardService {
 
     const businessId = business.accountId;
     const now = new Date();
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const currentMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1,
+      0,
+      0,
+      0,
+      0,
+    );
     const currentMonthEnd = new Date(
       now.getFullYear(),
       now.getMonth() + 1,
@@ -1217,7 +967,12 @@ export class DashboardService extends CoreService implements IDashboardService {
 
   async getBusinessRevenueOverview(
     businessOwnerAccountId: string,
-  ): Promise<BusinessRevenueOverviewResponseDto> {
+    query: GetBusinessRevenueQueryDto,
+  ): Promise<
+    | BusinessRevenueByDayDto[]
+    | BusinessRevenueByMonthDto[]
+    | BusinessRevenueByYearDto[]
+  > {
     // Get business_id from account_id
     const businessRepo = this.dataSource.getRepository(BusinessEntity);
     const business = await businessRepo.findOne({
@@ -1230,16 +985,7 @@ export class DashboardService extends CoreService implements IDashboardService {
 
     const businessId = business.accountId;
     const now = new Date();
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    const currentMonthEnd = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-      23,
-      59,
-      59,
-      999,
-    );
+    const filterType = query.filter || 'day'; // Default to 'day' if not specified
 
     // Get location IDs for this business
     const locationIds = await this.locationRepository.repo
@@ -1250,53 +996,864 @@ export class DashboardService extends CoreService implements IDashboardService {
       .then((results) => results.map((r) => r.id));
 
     if (locationIds.length === 0) {
-      return {
-        totalRevenue: 0,
-        thisMonthRevenue: 0,
-      };
+      // Return empty arrays based on filter type
+      if (filterType === 'day') {
+        return Array.from({ length: 7 }, (_, i) => ({
+          day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i],
+          revenue: 0,
+        }));
+      } else if (filterType === 'month') {
+        return Array.from({ length: 12 }, (_, i) => ({
+          month: [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec',
+          ][i],
+          revenue: 0,
+        }));
+      } else {
+        return [];
+      }
     }
 
-    // Calculate total revenue (all time) - only APPROVED bookings
-    const totalRevenueResult = await this.dataSource
-      .getRepository(LocationBookingEntity)
-      .createQueryBuilder('booking')
-      .select(
-        'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
-        'total',
-      )
-      .where('booking.location_id IN (:...locationIds)', { locationIds })
-      .andWhere('booking.status = :status', {
-        status: LocationBookingStatus.APPROVED,
-      })
-      .getRawOne();
+    // Helper function to format month as Jan, Feb, ..., Dec
+    const formatMonth = (month: number): string => {
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return months[month - 1] || 'Jan';
+    };
 
-    // Calculate this month revenue - only APPROVED bookings
-    const thisMonthRevenueResult = await this.dataSource
-      .getRepository(LocationBookingEntity)
-      .createQueryBuilder('booking')
-      .select(
-        'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
-        'total',
-      )
-      .where('booking.location_id IN (:...locationIds)', { locationIds })
-      .andWhere('booking.status = :status', {
-        status: LocationBookingStatus.APPROVED,
+    // Helper function to format day of week as Mon, Tue, ..., Sun
+    const formatDayOfWeek = (dayOfWeek: number): string => {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      return days[dayOfWeek] || 'Sun';
+    };
+
+    // 1. Stats by day (last 7 days)
+    if (filterType === 'day') {
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
+
+      const revenueByDayRaw = await this.dataSource
+        .getRepository(LocationBookingEntity)
+        .createQueryBuilder('booking')
+        .select('EXTRACT(DOW FROM booking.created_at)', 'dayOfWeek')
+        .addSelect(
+          'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
+          'revenue',
+        )
+        .where('booking.location_id IN (:...locationIds)', { locationIds })
+        .andWhere('booking.status = :status', {
+          status: LocationBookingStatus.APPROVED,
+        })
+        .andWhere('booking.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+        .andWhere('booking.created_at <= :now', { now })
+        .groupBy('EXTRACT(DOW FROM booking.created_at)')
+        .getRawMany();
+
+      // Create map from query results
+      const revenueDayMap = new Map<number, number>();
+      revenueByDayRaw.forEach((row) => {
+        const dayOfWeek = parseInt(row.dayOfWeek, 10);
+        revenueDayMap.set(
+          dayOfWeek,
+          Math.round(parseFloat(row.revenue || '0')),
+        );
+      });
+
+      // Ensure all 7 days are present (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat)
+      const allDays: BusinessRevenueByDayDto[] = [];
+      for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
+        allDays.push({
+          day: formatDayOfWeek(dayOfWeek),
+          revenue: revenueDayMap.get(dayOfWeek) || 0,
+        });
+      }
+
+      return allDays;
+    }
+
+    // 2. Stats by month (12 months in current year)
+    if (filterType === 'month') {
+      const currentYear = now.getFullYear();
+      const yearStart = new Date(currentYear, 0, 1, 0, 0, 0, 0);
+      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+      const revenueByMonthRaw = await this.dataSource
+        .getRepository(LocationBookingEntity)
+        .createQueryBuilder('booking')
+        .select('EXTRACT(MONTH FROM booking.created_at)', 'month')
+        .addSelect(
+          'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
+          'revenue',
+        )
+        .where('booking.location_id IN (:...locationIds)', { locationIds })
+        .andWhere('booking.status = :status', {
+          status: LocationBookingStatus.APPROVED,
+        })
+        .andWhere('booking.created_at >= :yearStart', { yearStart })
+        .andWhere('booking.created_at <= :yearEnd', { yearEnd })
+        .groupBy('EXTRACT(MONTH FROM booking.created_at)')
+        .getRawMany();
+
+      // Create map from query results
+      const revenueMonthMap = new Map<number, number>();
+      revenueByMonthRaw.forEach((row) => {
+        const month = parseInt(row.month, 10);
+        revenueMonthMap.set(month, Math.round(parseFloat(row.revenue || '0')));
+      });
+
+      // Ensure all 12 months are present (1-12)
+      const allMonths: BusinessRevenueByMonthDto[] = [];
+      for (let month = 1; month <= 12; month++) {
+        allMonths.push({
+          month: formatMonth(month),
+          revenue: revenueMonthMap.get(month) || 0,
+        });
+      }
+
+      return allMonths;
+    }
+
+    // 3. Stats by year (all years)
+    if (filterType === 'year') {
+      const revenueByYearRaw = await this.dataSource
+        .getRepository(LocationBookingEntity)
+        .createQueryBuilder('booking')
+        .select('EXTRACT(YEAR FROM booking.created_at)', 'year')
+        .addSelect(
+          'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
+          'revenue',
+        )
+        .where('booking.location_id IN (:...locationIds)', { locationIds })
+        .andWhere('booking.status = :status', {
+          status: LocationBookingStatus.APPROVED,
+        })
+        .groupBy('EXTRACT(YEAR FROM booking.created_at)')
+        .getRawMany();
+
+      // Create map from query results
+      const revenueYearMap = new Map<number, number>();
+      revenueByYearRaw.forEach((row) => {
+        const year = Math.floor(parseFloat(row.year));
+        revenueYearMap.set(year, Math.round(parseFloat(row.revenue || '0')));
+      });
+
+      // Get all unique years from map
+      const allYears = Array.from(revenueYearMap.keys()).sort((a, b) => a - b);
+
+      return allYears.map((year) => ({
+        year: String(year),
+        revenue: revenueYearMap.get(year) || 0,
+      }));
+    }
+
+    // Default return (should not reach here, but TypeScript needs it)
+    return [];
+  }
+
+  async getEventCreatorDashboardStats(
+    eventCreatorAccountId: string,
+  ): Promise<EventCreatorDashboardStatsResponseDto> {
+    const now = new Date();
+    const eventRepo = this.dataSource.getRepository(EventEntity);
+    const ticketOrderRepo = this.dataSource.getRepository(TicketOrderEntity);
+
+    // Calculate date ranges for percentage change (compare current month with previous month)
+    const currentMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1,
+      0,
+      0,
+      0,
+      0,
+    );
+    const currentMonthEnd = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+    const previousMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1,
+      0,
+      0,
+      0,
+      0,
+    );
+    const previousMonthEnd = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    // Get all events for this creator
+    const [
+      totalEvents,
+      activeEvents,
+      upcomingEvents,
+      draftEvents,
+      currentMonthEvents,
+      previousMonthEvents,
+    ] = await Promise.all([
+      // Total events
+      eventRepo.count({
+        where: { createdById: eventCreatorAccountId },
+      }),
+
+      // Active events (PUBLISHED)
+      eventRepo.count({
+        where: {
+          createdById: eventCreatorAccountId,
+          status: EventStatus.PUBLISHED,
+        },
+      }),
+
+      // Upcoming events (PUBLISHED with start_date in the future)
+      eventRepo
+        .createQueryBuilder('event')
+        .where('event.account_id = :accountId', {
+          accountId: eventCreatorAccountId,
+        })
+        .andWhere('event.status = :status', { status: EventStatus.PUBLISHED })
+        .andWhere('event.start_date > :now', { now })
+        .getCount(),
+
+      // Draft events
+      eventRepo.count({
+        where: {
+          createdById: eventCreatorAccountId,
+          status: EventStatus.DRAFT,
+        },
+      }),
+
+      // Events created in current month
+      eventRepo
+        .createQueryBuilder('event')
+        .where('event.account_id = :accountId', {
+          accountId: eventCreatorAccountId,
+        })
+        .andWhere('event.created_at >= :currentMonthStart', {
+          currentMonthStart,
+        })
+        .andWhere('event.created_at <= :currentMonthEnd', {
+          currentMonthEnd,
+        })
+        .getCount(),
+
+      // Events created in previous month
+      eventRepo
+        .createQueryBuilder('event')
+        .where('event.account_id = :accountId', {
+          accountId: eventCreatorAccountId,
+        })
+        .andWhere('event.created_at >= :previousMonthStart', {
+          previousMonthStart,
+        })
+        .andWhere('event.created_at <= :previousMonthEnd', {
+          previousMonthEnd,
+        })
+        .getCount(),
+    ]);
+
+    // Calculate percentage change
+    let totalEventsPercentageChange = 0;
+    if (previousMonthEvents > 0) {
+      totalEventsPercentageChange =
+        ((currentMonthEvents - previousMonthEvents) / previousMonthEvents) *
+        100;
+    } else if (currentMonthEvents > 0) {
+      totalEventsPercentageChange = 100;
+    }
+
+    // Get event IDs for this creator
+    const eventIds = await eventRepo
+      .createQueryBuilder('event')
+      .select('event.id', 'id')
+      .where('event.account_id = :accountId', {
+        accountId: eventCreatorAccountId,
       })
-      .andWhere('booking.created_at >= :currentMonthStart', {
-        currentMonthStart,
-      })
-      .andWhere('booking.created_at <= :currentMonthEnd', {
-        currentMonthEnd,
-      })
-      .getRawOne();
+      .getRawMany()
+      .then((results) => results.map((r) => r.id));
+
+    // Calculate revenue from paid ticket orders
+    const [totalRevenueResult, thisMonthRevenueResult] = await Promise.all([
+      // Total revenue (all time) - only PAID orders
+      eventIds.length > 0
+        ? ticketOrderRepo
+            .createQueryBuilder('order')
+            .select(
+              'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
+              'total',
+            )
+            .where('order.event_id IN (:...eventIds)', { eventIds })
+            .andWhere('order.status = :status', {
+              status: EventTicketOrderStatus.PAID,
+            })
+            .getRawOne()
+        : Promise.resolve({ total: '0' }),
+
+      // This month revenue - only PAID orders
+      eventIds.length > 0
+        ? ticketOrderRepo
+            .createQueryBuilder('order')
+            .select(
+              'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
+              'total',
+            )
+            .where('order.event_id IN (:...eventIds)', { eventIds })
+            .andWhere('order.status = :status', {
+              status: EventTicketOrderStatus.PAID,
+            })
+            .andWhere('order.created_at >= :currentMonthStart', {
+              currentMonthStart,
+            })
+            .andWhere('order.created_at <= :currentMonthEnd', {
+              currentMonthEnd,
+            })
+            .getRawOne()
+        : Promise.resolve({ total: '0' }),
+    ]);
 
     return {
-      totalRevenue: Math.round(
-        parseFloat(totalRevenueResult?.total || '0'),
-      ),
+      totalEvents,
+      activeEvents,
+      upcomingEvents,
+      draftEvents,
+      totalEventsPercentageChange:
+        Math.round(totalEventsPercentageChange * 100) / 100,
+      totalRevenue: Math.round(parseFloat(totalRevenueResult?.total || '0')),
       thisMonthRevenue: Math.round(
         parseFloat(thisMonthRevenueResult?.total || '0'),
       ),
     };
+  }
+
+  async getEventCreatorRevenueOverview(
+    eventCreatorAccountId: string,
+    query: GetEventCreatorRevenueQueryDto,
+  ): Promise<
+    | EventCreatorRevenueByDayDto[]
+    | EventCreatorRevenueByMonthDto[]
+    | EventCreatorRevenueByYearDto[]
+  > {
+    const now = new Date();
+    const eventRepo = this.dataSource.getRepository(EventEntity);
+    const ticketOrderRepo = this.dataSource.getRepository(TicketOrderEntity);
+    const filterType = query.filter || 'day'; // Default to 'day' if not specified
+
+    // Get event IDs for this creator
+    const eventIds = await eventRepo
+      .createQueryBuilder('event')
+      .select('event.id', 'id')
+      .where('event.account_id = :accountId', {
+        accountId: eventCreatorAccountId,
+      })
+      .getRawMany()
+      .then((results) => results.map((r) => r.id));
+
+    if (eventIds.length === 0) {
+      // Return empty arrays based on filter type
+      if (filterType === 'day') {
+        return Array.from({ length: 7 }, (_, i) => ({
+          day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i],
+          revenue: 0,
+        }));
+      } else if (filterType === 'month') {
+        return Array.from({ length: 12 }, (_, i) => ({
+          month: [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec',
+          ][i],
+          revenue: 0,
+        }));
+      } else {
+        return [];
+      }
+    }
+
+    // Helper function to format month as Jan, Feb, ..., Dec
+    const formatMonth = (month: number): string => {
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return months[month - 1] || 'Jan';
+    };
+
+    // Helper function to format day of week as Mon, Tue, ..., Sun
+    const formatDayOfWeek = (dayOfWeek: number): string => {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      return days[dayOfWeek] || 'Sun';
+    };
+
+    // 1. Stats by day (last 7 days)
+    if (filterType === 'day') {
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
+
+      const revenueByDayRaw = await ticketOrderRepo
+        .createQueryBuilder('order')
+        .select('EXTRACT(DOW FROM order.created_at)', 'dayOfWeek')
+        .addSelect(
+          'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
+          'revenue',
+        )
+        .where('order.event_id IN (:...eventIds)', { eventIds })
+        .andWhere('order.status = :status', {
+          status: EventTicketOrderStatus.PAID,
+        })
+        .andWhere('order.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+        .andWhere('order.created_at <= :now', { now })
+        .groupBy('EXTRACT(DOW FROM order.created_at)')
+        .getRawMany();
+
+      // Create map from query results
+      const revenueDayMap = new Map<number, number>();
+      revenueByDayRaw.forEach((row) => {
+        const dayOfWeek = parseInt(row.dayOfWeek, 10);
+        revenueDayMap.set(
+          dayOfWeek,
+          Math.round(parseFloat(row.revenue || '0')),
+        );
+      });
+
+      // Ensure all 7 days are present (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat)
+      const allDays: EventCreatorRevenueByDayDto[] = [];
+      for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
+        allDays.push({
+          day: formatDayOfWeek(dayOfWeek),
+          revenue: revenueDayMap.get(dayOfWeek) || 0,
+        });
+      }
+
+      return allDays;
+    }
+
+    // 2. Stats by month (12 months in current year)
+    if (filterType === 'month') {
+      const currentYear = now.getFullYear();
+      const yearStart = new Date(currentYear, 0, 1, 0, 0, 0, 0);
+      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+      const revenueByMonthRaw = await ticketOrderRepo
+        .createQueryBuilder('order')
+        .select('EXTRACT(MONTH FROM order.created_at)', 'month')
+        .addSelect(
+          'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
+          'revenue',
+        )
+        .where('order.event_id IN (:...eventIds)', { eventIds })
+        .andWhere('order.status = :status', {
+          status: EventTicketOrderStatus.PAID,
+        })
+        .andWhere('order.created_at >= :yearStart', { yearStart })
+        .andWhere('order.created_at <= :yearEnd', { yearEnd })
+        .groupBy('EXTRACT(MONTH FROM order.created_at)')
+        .getRawMany();
+
+      // Create map from query results
+      const revenueMonthMap = new Map<number, number>();
+      revenueByMonthRaw.forEach((row) => {
+        const month = parseInt(row.month, 10);
+        revenueMonthMap.set(month, Math.round(parseFloat(row.revenue || '0')));
+      });
+
+      // Ensure all 12 months are present (1-12)
+      const allMonths: EventCreatorRevenueByMonthDto[] = [];
+      for (let month = 1; month <= 12; month++) {
+        allMonths.push({
+          month: formatMonth(month),
+          revenue: revenueMonthMap.get(month) || 0,
+        });
+      }
+
+      return allMonths;
+    }
+
+    // 3. Stats by year (all years)
+    if (filterType === 'year') {
+      const revenueByYearRaw = await ticketOrderRepo
+        .createQueryBuilder('order')
+        .select('EXTRACT(YEAR FROM order.created_at)', 'year')
+        .addSelect(
+          'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
+          'revenue',
+        )
+        .where('order.event_id IN (:...eventIds)', { eventIds })
+        .andWhere('order.status = :status', {
+          status: EventTicketOrderStatus.PAID,
+        })
+        .groupBy('EXTRACT(YEAR FROM order.created_at)')
+        .getRawMany();
+
+      // Create map from query results
+      const revenueYearMap = new Map<number, number>();
+      revenueByYearRaw.forEach((row) => {
+        const year = Math.floor(parseFloat(row.year));
+        revenueYearMap.set(year, Math.round(parseFloat(row.revenue || '0')));
+      });
+
+      // Get all unique years from map
+      const allYears = Array.from(revenueYearMap.keys()).sort((a, b) => a - b);
+
+      return allYears.map((year) => ({
+        year: String(year),
+        revenue: revenueYearMap.get(year) || 0,
+      }));
+    }
+
+    // Default return (should not reach here, but TypeScript needs it)
+    return [];
+  }
+
+  async getEventCreatorPerformance(
+    eventCreatorAccountId: string,
+    query: GetEventCreatorPerformanceQueryDto,
+  ): Promise<
+    | EventCreatorPerformanceByDayDto[]
+    | EventCreatorPerformanceByMonthDto[]
+    | EventCreatorPerformanceByYearDto[]
+  > {
+    const now = new Date();
+    const eventRepo = this.dataSource.getRepository(EventEntity);
+    const filterType = query.filter || 'day'; // Default to 'day' if not specified
+
+    // Helper function to format month as Jan, Feb, ..., Dec
+    const formatMonth = (month: number): string => {
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return months[month - 1] || 'Jan';
+    };
+
+    // Helper function to format day of week as Mon, Tue, ..., Sun
+    const formatDayOfWeek = (dayOfWeek: number): string => {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      return days[dayOfWeek] || 'Sun';
+    };
+
+    // 1. Stats by day (last 7 days)
+    if (filterType === 'day') {
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
+
+      const [draftByDayRaw, publishedByDayRaw, finishedByDayRaw] =
+        await Promise.all([
+          // Draft events
+          eventRepo
+            .createQueryBuilder('event')
+            .select('EXTRACT(DOW FROM event.created_at)', 'dayOfWeek')
+            .addSelect('COUNT(event.id)', 'count')
+            .where('event.account_id = :accountId', {
+              accountId: eventCreatorAccountId,
+            })
+            .andWhere('event.status = :status', { status: EventStatus.DRAFT })
+            .andWhere('event.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+            .andWhere('event.created_at <= :now', { now })
+            .groupBy('EXTRACT(DOW FROM event.created_at)')
+            .getRawMany(),
+
+          // Published events
+          eventRepo
+            .createQueryBuilder('event')
+            .select('EXTRACT(DOW FROM event.created_at)', 'dayOfWeek')
+            .addSelect('COUNT(event.id)', 'count')
+            .where('event.account_id = :accountId', {
+              accountId: eventCreatorAccountId,
+            })
+            .andWhere('event.status = :status', {
+              status: EventStatus.PUBLISHED,
+            })
+            .andWhere('event.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+            .andWhere('event.created_at <= :now', { now })
+            .groupBy('EXTRACT(DOW FROM event.created_at)')
+            .getRawMany(),
+
+          // Finished events
+          eventRepo
+            .createQueryBuilder('event')
+            .select('EXTRACT(DOW FROM event.created_at)', 'dayOfWeek')
+            .addSelect('COUNT(event.id)', 'count')
+            .where('event.account_id = :accountId', {
+              accountId: eventCreatorAccountId,
+            })
+            .andWhere('event.status = :status', {
+              status: EventStatus.FINISHED,
+            })
+            .andWhere('event.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+            .andWhere('event.created_at <= :now', { now })
+            .groupBy('EXTRACT(DOW FROM event.created_at)')
+            .getRawMany(),
+        ]);
+
+      // Create maps from query results
+      const draftDayMap = new Map<number, number>();
+      draftByDayRaw.forEach((row) => {
+        const dayOfWeek = parseInt(row.dayOfWeek, 10);
+        draftDayMap.set(dayOfWeek, parseInt(row.count, 10));
+      });
+
+      const publishedDayMap = new Map<number, number>();
+      publishedByDayRaw.forEach((row) => {
+        const dayOfWeek = parseInt(row.dayOfWeek, 10);
+        publishedDayMap.set(dayOfWeek, parseInt(row.count, 10));
+      });
+
+      const finishedDayMap = new Map<number, number>();
+      finishedByDayRaw.forEach((row) => {
+        const dayOfWeek = parseInt(row.dayOfWeek, 10);
+        finishedDayMap.set(dayOfWeek, parseInt(row.count, 10));
+      });
+
+      // Ensure all 7 days are present (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat)
+      const allDays: EventCreatorPerformanceByDayDto[] = [];
+      for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
+        allDays.push({
+          day: formatDayOfWeek(dayOfWeek),
+          draft: draftDayMap.get(dayOfWeek) || 0,
+          published: publishedDayMap.get(dayOfWeek) || 0,
+          finished: finishedDayMap.get(dayOfWeek) || 0,
+        });
+      }
+
+      return allDays;
+    }
+
+    // 2. Stats by month (12 months in current year)
+    if (filterType === 'month') {
+      const currentYear = now.getFullYear();
+      const yearStart = new Date(currentYear, 0, 1, 0, 0, 0, 0);
+      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+      const [draftByMonthRaw, publishedByMonthRaw, finishedByMonthRaw] =
+        await Promise.all([
+          // Draft events
+          eventRepo
+            .createQueryBuilder('event')
+            .select('EXTRACT(MONTH FROM event.created_at)', 'month')
+            .addSelect('COUNT(event.id)', 'count')
+            .where('event.account_id = :accountId', {
+              accountId: eventCreatorAccountId,
+            })
+            .andWhere('event.status = :status', { status: EventStatus.DRAFT })
+            .andWhere('event.created_at >= :yearStart', { yearStart })
+            .andWhere('event.created_at <= :yearEnd', { yearEnd })
+            .groupBy('EXTRACT(MONTH FROM event.created_at)')
+            .getRawMany(),
+
+          // Published events
+          eventRepo
+            .createQueryBuilder('event')
+            .select('EXTRACT(MONTH FROM event.created_at)', 'month')
+            .addSelect('COUNT(event.id)', 'count')
+            .where('event.account_id = :accountId', {
+              accountId: eventCreatorAccountId,
+            })
+            .andWhere('event.status = :status', {
+              status: EventStatus.PUBLISHED,
+            })
+            .andWhere('event.created_at >= :yearStart', { yearStart })
+            .andWhere('event.created_at <= :yearEnd', { yearEnd })
+            .groupBy('EXTRACT(MONTH FROM event.created_at)')
+            .getRawMany(),
+
+          // Finished events
+          eventRepo
+            .createQueryBuilder('event')
+            .select('EXTRACT(MONTH FROM event.created_at)', 'month')
+            .addSelect('COUNT(event.id)', 'count')
+            .where('event.account_id = :accountId', {
+              accountId: eventCreatorAccountId,
+            })
+            .andWhere('event.status = :status', {
+              status: EventStatus.FINISHED,
+            })
+            .andWhere('event.created_at >= :yearStart', { yearStart })
+            .andWhere('event.created_at <= :yearEnd', { yearEnd })
+            .groupBy('EXTRACT(MONTH FROM event.created_at)')
+            .getRawMany(),
+        ]);
+
+      // Create maps from query results
+      const draftMonthMap = new Map<number, number>();
+      draftByMonthRaw.forEach((row) => {
+        const month = parseInt(row.month, 10);
+        draftMonthMap.set(month, parseInt(row.count, 10));
+      });
+
+      const publishedMonthMap = new Map<number, number>();
+      publishedByMonthRaw.forEach((row) => {
+        const month = parseInt(row.month, 10);
+        publishedMonthMap.set(month, parseInt(row.count, 10));
+      });
+
+      const finishedMonthMap = new Map<number, number>();
+      finishedByMonthRaw.forEach((row) => {
+        const month = parseInt(row.month, 10);
+        finishedMonthMap.set(month, parseInt(row.count, 10));
+      });
+
+      // Ensure all 12 months are present (1-12)
+      const allMonths: EventCreatorPerformanceByMonthDto[] = [];
+      for (let month = 1; month <= 12; month++) {
+        allMonths.push({
+          month: formatMonth(month),
+          draft: draftMonthMap.get(month) || 0,
+          published: publishedMonthMap.get(month) || 0,
+          finished: finishedMonthMap.get(month) || 0,
+        });
+      }
+
+      return allMonths;
+    }
+
+    // 3. Stats by year (all years)
+    if (filterType === 'year') {
+      const [draftByYearRaw, publishedByYearRaw, finishedByYearRaw] =
+        await Promise.all([
+          // Draft events
+          eventRepo
+            .createQueryBuilder('event')
+            .select('EXTRACT(YEAR FROM event.created_at)', 'year')
+            .addSelect('COUNT(event.id)', 'count')
+            .where('event.account_id = :accountId', {
+              accountId: eventCreatorAccountId,
+            })
+            .andWhere('event.status = :status', { status: EventStatus.DRAFT })
+            .groupBy('EXTRACT(YEAR FROM event.created_at)')
+            .getRawMany(),
+
+          // Published events
+          eventRepo
+            .createQueryBuilder('event')
+            .select('EXTRACT(YEAR FROM event.created_at)', 'year')
+            .addSelect('COUNT(event.id)', 'count')
+            .where('event.account_id = :accountId', {
+              accountId: eventCreatorAccountId,
+            })
+            .andWhere('event.status = :status', {
+              status: EventStatus.PUBLISHED,
+            })
+            .groupBy('EXTRACT(YEAR FROM event.created_at)')
+            .getRawMany(),
+
+          // Finished events
+          eventRepo
+            .createQueryBuilder('event')
+            .select('EXTRACT(YEAR FROM event.created_at)', 'year')
+            .addSelect('COUNT(event.id)', 'count')
+            .where('event.account_id = :accountId', {
+              accountId: eventCreatorAccountId,
+            })
+            .andWhere('event.status = :status', {
+              status: EventStatus.FINISHED,
+            })
+            .groupBy('EXTRACT(YEAR FROM event.created_at)')
+            .getRawMany(),
+        ]);
+
+      // Create maps from query results
+      const draftYearMap = new Map<number, number>();
+      draftByYearRaw.forEach((row) => {
+        const year = Math.floor(parseFloat(row.year));
+        draftYearMap.set(year, parseInt(row.count, 10));
+      });
+
+      const publishedYearMap = new Map<number, number>();
+      publishedByYearRaw.forEach((row) => {
+        const year = Math.floor(parseFloat(row.year));
+        publishedYearMap.set(year, parseInt(row.count, 10));
+      });
+
+      const finishedYearMap = new Map<number, number>();
+      finishedByYearRaw.forEach((row) => {
+        const year = Math.floor(parseFloat(row.year));
+        finishedYearMap.set(year, parseInt(row.count, 10));
+      });
+
+      // Get all unique years from all maps
+      const allYears = new Set([
+        ...draftYearMap.keys(),
+        ...publishedYearMap.keys(),
+        ...finishedYearMap.keys(),
+      ]);
+      const sortedYears = Array.from(allYears).sort((a, b) => a - b);
+
+      return sortedYears.map((year) => ({
+        year: String(year),
+        draft: draftYearMap.get(year) || 0,
+        published: publishedYearMap.get(year) || 0,
+        finished: finishedYearMap.get(year) || 0,
+      }));
+    }
+
+    // Default return (should not reach here, but TypeScript needs it)
+    return [];
   }
 }

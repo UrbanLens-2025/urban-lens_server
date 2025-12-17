@@ -8,17 +8,17 @@ import {
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { IDashboardService } from '@/modules/dashboard/app/IDashboard.service';
-import { GetBusinessDashboardStatsQueryDto } from '@/common/dto/dashboard/GetBusinessDashboardStats.query.dto';
-import {
-  BusinessDashboardStatsByDayDto,
-  BusinessDashboardStatsByMonthDto,
-  BusinessDashboardStatsByYearDto,
-} from '@/common/dto/dashboard/BusinessDashboardStats.response.dto';
+import { BusinessDashboardStatsTotalDto } from '@/common/dto/dashboard/BusinessDashboardStats.response.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
 import { TopLocationByCheckInsDto } from '@/common/dto/dashboard/TopLocationsByCheckIns.response.dto';
-import { BusinessRevenueOverviewResponseDto } from '@/common/dto/dashboard/BusinessRevenueOverview.response.dto';
 import { GetTopLocationsByCheckInsQueryDto } from '@/common/dto/dashboard/GetTopLocationsByCheckIns.query.dto';
+import { GetBusinessRevenueQueryDto } from '@/common/dto/dashboard/GetBusinessRevenue.query.dto';
+import {
+  BusinessRevenueByDayDto,
+  BusinessRevenueByMonthDto,
+  BusinessRevenueByYearDto,
+} from '@/common/dto/dashboard/BusinessRevenue.response.dto';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -33,33 +33,18 @@ export class DashboardOwnerController {
   @ApiOperation({
     summary: 'Get business dashboard statistics',
     description:
-      'Get business dashboard statistics (locations, bookings, check-ins, reviews). Returns array based on filter: day -> stats by day (last 7 days), month -> stats by month (12 months in current year), year -> stats by year (all years).',
+      'Get total business dashboard statistics (locations, bookings, check-ins, reviews). Returns total counts for all time.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Business dashboard stats by day (when filter=day)',
-    type: [BusinessDashboardStatsByDayDto],
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Business dashboard stats by month (when filter=month)',
-    type: [BusinessDashboardStatsByMonthDto],
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Business dashboard stats by year (when filter=year)',
-    type: [BusinessDashboardStatsByYearDto],
+    description: 'Total business dashboard stats',
+    type: BusinessDashboardStatsTotalDto,
   })
   @Get('/stats')
   getBusinessDashboardStats(
     @AuthUser() user: JwtTokenDto,
-    @Query() query: GetBusinessDashboardStatsQueryDto,
-  ): Promise<
-    | BusinessDashboardStatsByDayDto[]
-    | BusinessDashboardStatsByMonthDto[]
-    | BusinessDashboardStatsByYearDto[]
-  > {
-    return this.dashboardService.getBusinessDashboardStats(user.sub, query);
+  ): Promise<BusinessDashboardStatsTotalDto> {
+    return this.dashboardService.getBusinessDashboardStats(user.sub);
   }
 
   @ApiOperation({
@@ -86,18 +71,32 @@ export class DashboardOwnerController {
   @ApiOperation({
     summary: 'Get business revenue overview',
     description:
-      'Get total revenue (all time) and revenue for current month from approved bookings.',
+      'Get business revenue from approved bookings. Returns array based on filter: day -> revenue by day (last 7 days), month -> revenue by month (12 months in current year), year -> revenue by year (all years).',
   })
   @ApiResponse({
     status: 200,
-    description: 'Business revenue overview',
-    type: BusinessRevenueOverviewResponseDto,
+    description: 'Business revenue by day (when filter=day)',
+    type: [BusinessRevenueByDayDto],
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Business revenue by month (when filter=month)',
+    type: [BusinessRevenueByMonthDto],
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Business revenue by year (when filter=year)',
+    type: [BusinessRevenueByYearDto],
   })
   @Get('/revenue/overview')
   getBusinessRevenueOverview(
     @AuthUser() user: JwtTokenDto,
-  ): Promise<BusinessRevenueOverviewResponseDto> {
-    return this.dashboardService.getBusinessRevenueOverview(user.sub);
+    @Query() query: GetBusinessRevenueQueryDto,
+  ): Promise<
+    | BusinessRevenueByDayDto[]
+    | BusinessRevenueByMonthDto[]
+    | BusinessRevenueByYearDto[]
+  > {
+    return this.dashboardService.getBusinessRevenueOverview(user.sub, query);
   }
 }
-

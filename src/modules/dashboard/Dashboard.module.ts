@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DashboardAdminController } from './interfaces/Dashboard.admin.controller';
 import { DashboardOwnerController } from './interfaces/Dashboard.owner.controller';
+import { DashboardCreatorController } from './interfaces/Dashboard.creator.controller';
 import { IDashboardService } from './app/IDashboard.service';
 import { DashboardService } from './app/impl/Dashboard.service';
 import { AccountInfraModule } from '@/modules/account/infra/Account.infra.module';
@@ -20,7 +21,11 @@ import { LocationBookingEntity } from '@/modules/location-booking/domain/Locatio
     WalletInfraModule,
     TypeOrmModule.forFeature([LocationBookingEntity]),
   ],
-  controllers: [DashboardAdminController, DashboardOwnerController],
+  controllers: [
+    DashboardAdminController,
+    DashboardOwnerController,
+    DashboardCreatorController,
+  ],
   providers: [
     {
       provide: IDashboardService,
