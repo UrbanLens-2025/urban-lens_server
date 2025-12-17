@@ -159,9 +159,6 @@ export class LocationEntity {
   bookings: LocationBookingEntity[];
 
   // Analytics columns (migrated from location_analytics table)
-  @Column({ name: 'total_posts', type: 'bigint', default: 0 })
-  totalPosts: number;
-
   @Column({ name: 'total_check_ins', type: 'bigint', default: 0 })
   totalCheckIns: number;
 

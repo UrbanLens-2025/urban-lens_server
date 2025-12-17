@@ -26,7 +26,9 @@ import { CheckInTagPublisherListener } from '@/modules/business/app/listener/Che
 import { getRabbitMQConfig } from '@/config/rabbitmq.config';
 import { LocationDevOnlyController } from '@/modules/business/interfaces/Location.dev-only.controller';
 import { LocationCheckInAnalyticsListener } from '@/modules/business/app/event-listeners/LocationCheckInAnalytics.listener';
+import { LocationReviewAnalyticsListener } from '@/modules/business/app/event-listeners/LocationReviewAnalytics.listener';
 import { LocationBookingModule } from '@/modules/location-booking/LocationBooking.module';
+import { PostInfraModule } from '@/modules/post/infra/Post.infra.module';
 import { ILocationSuspensionService } from '@/modules/business/app/ILocationSuspension.service';
 import { LocationSuspensionService } from '@/modules/business/app/impl/LocationSuspension.service';
 
@@ -38,6 +40,7 @@ import { LocationSuspensionService } from '@/modules/business/app/impl/LocationS
     FileStorageModule,
     AccountModule,
     LocationBookingModule,
+    PostInfraModule,
     ClientsModule.register(getRabbitMQConfig()),
   ],
   controllers: [
@@ -77,6 +80,7 @@ import { LocationSuspensionService } from '@/modules/business/app/impl/LocationS
     },
     CheckInTagPublisherListener,
     LocationCheckInAnalyticsListener,
+    LocationReviewAnalyticsListener,
   ],
   exports: [BusinessInfraModule, ILocationSuspensionService],
 })
