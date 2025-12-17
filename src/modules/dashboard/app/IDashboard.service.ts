@@ -15,14 +15,27 @@ import {
   EventsLocationsDataByMonthDto,
   EventsLocationsDataByYearDto,
 } from '@/common/dto/dashboard/EventsLocationsTotals.response.dto';
-import { GetBusinessDashboardStatsQueryDto } from '@/common/dto/dashboard/GetBusinessDashboardStats.query.dto';
-import {
-  BusinessDashboardStatsByDayDto,
-  BusinessDashboardStatsByMonthDto,
-  BusinessDashboardStatsByYearDto,
-} from '@/common/dto/dashboard/BusinessDashboardStats.response.dto';
+import { BusinessDashboardStatsTotalDto } from '@/common/dto/dashboard/BusinessDashboardStats.response.dto';
 import { TopLocationByCheckInsDto } from '@/common/dto/dashboard/TopLocationsByCheckIns.response.dto';
-import { BusinessRevenueOverviewResponseDto } from '@/common/dto/dashboard/BusinessRevenueOverview.response.dto';
+import { GetBusinessRevenueQueryDto } from '@/common/dto/dashboard/GetBusinessRevenue.query.dto';
+import {
+  BusinessRevenueByDayDto,
+  BusinessRevenueByMonthDto,
+  BusinessRevenueByYearDto,
+} from '@/common/dto/dashboard/BusinessRevenue.response.dto';
+import { EventCreatorDashboardStatsResponseDto } from '@/common/dto/dashboard/EventCreatorDashboardStats.response.dto';
+import { GetEventCreatorRevenueQueryDto } from '@/common/dto/dashboard/GetEventCreatorRevenue.query.dto';
+import {
+  EventCreatorRevenueByDayDto,
+  EventCreatorRevenueByMonthDto,
+  EventCreatorRevenueByYearDto,
+} from '@/common/dto/dashboard/EventCreatorRevenue.response.dto';
+import { GetEventCreatorPerformanceQueryDto } from '@/common/dto/dashboard/GetEventCreatorPerformance.query.dto';
+import {
+  EventCreatorPerformanceByDayDto,
+  EventCreatorPerformanceByMonthDto,
+  EventCreatorPerformanceByYearDto,
+} from '@/common/dto/dashboard/EventCreatorPerformance.response.dto';
 
 export const IDashboardService = Symbol('IDashboardService');
 
@@ -63,17 +76,12 @@ export interface IDashboardService {
   >;
 
   /**
-   * Get business dashboard statistics (locations, bookings, check-ins, reviews)
-   * Returns array based on filter: day -> BusinessDashboardStatsByDayDto[], month -> BusinessDashboardStatsByMonthDto[], year -> BusinessDashboardStatsByYearDto[]
+   * Get total business dashboard statistics (locations, bookings, check-ins, reviews)
+   * Returns total counts for all time
    */
   getBusinessDashboardStats(
     businessOwnerAccountId: string,
-    query: GetBusinessDashboardStatsQueryDto,
-  ): Promise<
-    | BusinessDashboardStatsByDayDto[]
-    | BusinessDashboardStatsByMonthDto[]
-    | BusinessDashboardStatsByYearDto[]
-  >;
+  ): Promise<BusinessDashboardStatsTotalDto>;
 
   /**
    * Get top locations by check-ins for business owner (current month)
@@ -84,9 +92,49 @@ export interface IDashboardService {
   ): Promise<TopLocationByCheckInsDto[]>;
 
   /**
-   * Get revenue overview for business owner (total and this month)
+   * Get revenue overview for business owner
+   * Returns array based on filter: day -> BusinessRevenueByDayDto[], month -> BusinessRevenueByMonthDto[], year -> BusinessRevenueByYearDto[]
    */
   getBusinessRevenueOverview(
     businessOwnerAccountId: string,
-  ): Promise<BusinessRevenueOverviewResponseDto>;
+    query: GetBusinessRevenueQueryDto,
+  ): Promise<
+    | BusinessRevenueByDayDto[]
+    | BusinessRevenueByMonthDto[]
+    | BusinessRevenueByYearDto[]
+  >;
+
+  /**
+   * Get dashboard statistics for event creator
+   * Returns total events, active events, upcoming events, draft events, percentage change, and revenue
+   */
+  getEventCreatorDashboardStats(
+    eventCreatorAccountId: string,
+  ): Promise<EventCreatorDashboardStatsResponseDto>;
+
+  /**
+   * Get revenue overview for event creator
+   * Returns array based on filter: day -> EventCreatorRevenueByDayDto[], month -> EventCreatorRevenueByMonthDto[], year -> EventCreatorRevenueByYearDto[]
+   */
+  getEventCreatorRevenueOverview(
+    eventCreatorAccountId: string,
+    query: GetEventCreatorRevenueQueryDto,
+  ): Promise<
+    | EventCreatorRevenueByDayDto[]
+    | EventCreatorRevenueByMonthDto[]
+    | EventCreatorRevenueByYearDto[]
+  >;
+
+  /**
+   * Get event performance timeline for event creator
+   * Returns array based on filter: day -> EventCreatorPerformanceByDayDto[], month -> EventCreatorPerformanceByMonthDto[], year -> EventCreatorPerformanceByYearDto[]
+   */
+  getEventCreatorPerformance(
+    eventCreatorAccountId: string,
+    query: GetEventCreatorPerformanceQueryDto,
+  ): Promise<
+    | EventCreatorPerformanceByDayDto[]
+    | EventCreatorPerformanceByMonthDto[]
+    | EventCreatorPerformanceByYearDto[]
+  >;
 }

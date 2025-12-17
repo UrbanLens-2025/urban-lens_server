@@ -93,3 +93,28 @@ export class BusinessDashboardStatsByYearDto {
   reviews: number;
 }
 
+export class BusinessDashboardStatsTotalDto {
+  @ApiProperty({
+    example: 5,
+    description: 'Total number of locations owned by business',
+  })
+  locations: number;
+
+  @ApiProperty({
+    example: 150,
+    description: 'Total number of bookings for business locations',
+  })
+  bookings: number;
+
+  @ApiProperty({
+    example: 450,
+    description: 'Total number of check-ins at business locations',
+  })
+  checkIns: number;
+
+  @ApiProperty({
+    example: 120,
+    description: 'Total number of reviews for business locations',
+  })
+  reviews: number;
+}
