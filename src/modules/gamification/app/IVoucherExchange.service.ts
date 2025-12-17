@@ -12,6 +12,7 @@ export interface IVoucherExchangeService {
 
   getUserVouchers(
     userProfileId: string,
+    status?: 'expired' | 'used' | 'available',
   ): Promise<UserLocationVoucherExchangeHistoryEntity[]>;
 
   getUserVoucherStats(userProfileId: string): Promise<{

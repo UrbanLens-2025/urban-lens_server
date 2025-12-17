@@ -23,6 +23,8 @@ import type { IVoucherExchangeService } from '../app/IVoucherExchange.service';
 import { IsNotEmpty, IsUUID, IsString } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { UserVoucherResponseDto } from '@/common/dto/gamification/UserVoucher.response.dto';
+import { GetMyVouchersQueryDto } from '@/common/dto/gamification/GetMyVouchers.query.dto';
+import { Query } from '@nestjs/common';
 
 export class ExchangeVoucherDto {
   @ApiProperty({
@@ -138,7 +140,8 @@ export class VoucherExchangeUserController {
 
   @ApiOperation({
     summary: 'Get user vouchers',
-    description: 'Get all vouchers owned by the current user',
+    description:
+      'Get all vouchers redeemed by the current user. Can filter by status: expired (hết hạn), used (đã sử dụng), available (có thể sử dụng)',
   })
   @ApiResponse({
     status: 200,
@@ -148,9 +151,11 @@ export class VoucherExchangeUserController {
   @Get('/vouchers')
   async getUserVouchers(
     @AuthUser() user: JwtTokenDto,
+    @Query() query: GetMyVouchersQueryDto,
   ): Promise<UserVoucherResponseDto[]> {
     const vouchers = await this.voucherExchangeService.getUserVouchers(
       user.sub,
+      query.status,
     );
 
     return plainToInstance(UserVoucherResponseDto, vouchers, {
