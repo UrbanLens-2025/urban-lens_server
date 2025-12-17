@@ -142,11 +142,40 @@ export class VoucherExchangeService implements IVoucherExchangeService {
 
   async getUserVouchers(
     userProfileId: string,
+    status?: 'expired' | 'used' | 'available',
   ): Promise<UserLocationVoucherExchangeHistoryEntity[]> {
-    // Only return vouchers that haven't been used yet
-    return this.userLocationVoucherExchangeHistoryRepository.findAvailableByUser(
-      userProfileId,
-    );
+    // Get all vouchers (not just available ones)
+    const allVouchers =
+      await this.userLocationVoucherExchangeHistoryRepository.findByUser(
+        userProfileId,
+      );
+
+    // If no filter, return all vouchers
+    if (!status) {
+      return allVouchers;
+    }
+
+    const now = new Date();
+
+    // Filter by status
+    return allVouchers.filter((voucher) => {
+      const isUsed = voucher.usedAt !== null;
+      const isExpired = voucher.voucher.endDate
+        ? new Date(voucher.voucher.endDate) < now
+        : false;
+      const isAvailable = !isUsed && !isExpired;
+
+      switch (status) {
+        case 'expired':
+          return isExpired;
+        case 'used':
+          return isUsed;
+        case 'available':
+          return isAvailable;
+        default:
+          return true;
+      }
+    });
   }
 
   async getUserVoucherStats(userProfileId: string): Promise<{
