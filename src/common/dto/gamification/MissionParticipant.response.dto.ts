@@ -20,5 +20,5 @@ export class MissionParticipantResponseDto {
 
   @Expose()
   @Type(() => AccountResponseDto)
-  user?: AccountResponseDto;
+  userProfile?: AccountResponseDto;
 }
