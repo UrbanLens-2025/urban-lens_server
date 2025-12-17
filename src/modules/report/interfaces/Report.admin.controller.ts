@@ -29,8 +29,13 @@ import { GetReportsByTargetTypeDto } from '@/common/dto/report/GetReportsByTarge
 import { GetReportsDto } from '@/common/dto/report/GetReports.dto';
 import { ProcessReportDto } from '@/common/dto/report/ProcessReport.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
-import { IReportManagementService } from '@/modules/report/app/IReportManagement.service';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { IReportProcessingService } from '@/modules/report/app/IReportProcessing.service';
+import { ProcessReport_NoActionTakenDto } from '@/common/dto/report/ProcessReport_NoActionTaken.dto';
+import { ProcessReport_MaliciousReportDto } from '@/common/dto/report/ProcessReport_MaliciousReport.dto';
+import { ProcessReport_BookingRefundDto } from '@/common/dto/report/ProcessReport_BookingRefund.dto';
+import { ProcessReport_TicketRefundDto } from '@/common/dto/report/ProcessReport_TicketRefund.dto';
+import { MarkReportsFirstSeenDto } from '@/common/dto/report/MarkReportsFirstSeen.dto';
 
 @ApiTags('Report')
 @ApiBearerAuth()
@@ -40,8 +45,8 @@ export class ReportAdminController {
   constructor(
     @Inject(IReportQueryService)
     private readonly reportQueryService: IReportQueryService,
-    @Inject(IReportManagementService)
-    private readonly reportManagementService: IReportManagementService,
+    @Inject(IReportProcessingService)
+    private readonly reportProcessingService: IReportProcessingService,
   ) {}
 
   @ApiOperation({ summary: 'Get all reports' })
@@ -118,17 +123,53 @@ export class ReportAdminController {
     return this.reportQueryService.getReportById({ reportId });
   }
 
-  @ApiOperation({ summary: 'Process report' })
-  @Post('/:reportId/process')
-  processReport(
-    @Param('reportId') reportId: string,
-    @Body() dto: ProcessReportDto,
+  @ApiOperation({ summary: 'Mark reports as first seen by admin' })
+  @Post('/first-seen')
+  markReportsFirstSeen(
+    @Body() dto: MarkReportsFirstSeenDto,
     @AuthUser() user: JwtTokenDto,
   ) {
-    return this.reportManagementService.processReport({
-      ...dto,
-      reportId,
-      initiatedByAccountId: user.sub,
-    });
+    dto.adminId = user.sub;
+    return this.reportProcessingService.markReportsFirstSeen(dto);
+  }
+
+  @ApiOperation({ summary: 'Process report - No action taken' })
+  @Post('/process/no-action-taken')
+  processReport_NoActionTaken(
+    @Body() dto: ProcessReport_NoActionTakenDto,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    dto.createdById = user.sub;
+    return this.reportProcessingService.processReport_NoActionTaken(dto);
+  }
+
+  @ApiOperation({ summary: 'Process report - Malicious report' })
+  @Post('/process/malicious-report')
+  processReport_MaliciousReport(
+    @Body() dto: ProcessReport_MaliciousReportDto,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    dto.createdById = user.sub;
+    return this.reportProcessingService.processReport_MaliciousReport(dto);
+  }
+
+  @ApiOperation({ summary: 'Process report - Booking refund' })
+  @Post('/process/booking-refund')
+  processReport_BookingRefund(
+    @Body() dto: ProcessReport_BookingRefundDto,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    dto.createdById = user.sub;
+    return this.reportProcessingService.processReport_BookingRefund(dto);
+  }
+
+  @ApiOperation({ summary: 'Process report - Ticket refund' })
+  @Post('/process/ticket-refund')
+  processReport_TicketRefund(
+    @Body() dto: ProcessReport_TicketRefundDto,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    dto.createdById = user.sub;
+    return this.reportProcessingService.processReport_TicketRefund(dto);
   }
 }

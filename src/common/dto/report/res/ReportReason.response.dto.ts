@@ -21,4 +21,17 @@ export class ReportReasonResponseDto {
   @Expose()
   @Type(() => Date)
   updatedAt: Date;
+
+  @Expose()
+  forEvent: boolean;
+
+  @Expose()
+  forLocation: boolean;
+
+  @Expose()
+  forPost: boolean;
+
+  @Expose()
+  @Type(() => Number)
+  priority: number;
 }

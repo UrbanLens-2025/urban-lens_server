@@ -11,6 +11,8 @@ import { In } from 'typeorm';
 import { ReportStatus } from '@/common/constants/ReportStatus.constant';
 import { ReportResolutionActions } from '@/common/constants/ReportResolutionActions.constant';
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
+import { MarkReportsFirstSeenDto } from '@/common/dto/report/MarkReportsFirstSeen.dto';
+import { ReportResolvedByType } from '@/common/constants/ReportResolvedByType.constant';
 
 @Injectable()
 export class ReportProcessingService
@@ -22,6 +24,44 @@ export class ReportProcessingService
     private readonly locationBookingManagementService: ILocationBookingManagementService,
   ) {
     super();
+  }
+
+  markReportsFirstSeen(
+    dto: MarkReportsFirstSeenDto,
+  ): Promise<ReportResponseDto> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const reportRepo = ReportRepositoryProvider(em);
+      const reports = await reportRepo
+        .find({
+          where: {
+            id: In(dto.reportIds),
+          },
+        })
+        .then((res) => {
+          if (res.length !== dto.reportIds.length) {
+            const foundIds = res.map((r) => r.id);
+            const missingIds = dto.reportIds.filter(
+              (id) => !foundIds.includes(id),
+            );
+            throw new BadRequestException(
+              `One or more reports not found or not accessible: ${missingIds.join(', ')}`,
+            );
+          }
+          return res;
+        });
+
+      const firstSeenAt = new Date();
+      reports.map((report) => {
+        if (!report.firstSeenAt) {
+          report.firstSeenAt = firstSeenAt;
+        }
+        if (!report.firstSeenByAdminId) {
+          report.firstSeenByAdminId = dto.adminId;
+        }
+      });
+
+      return reportRepo.save(reports).then((res) => res);
+    }).then((res) => this.mapTo(ReportResponseDto, res));
   }
 
   processReport_NoActionTaken(
@@ -54,6 +94,7 @@ export class ReportProcessingService
         report.resolutionAction = ReportResolutionActions.NO_ACTION_TAKEN;
         report.resolvedAt = new Date();
         report.resolvedById = dto.createdById;
+        report.resolvedByType = ReportResolvedByType.ADMIN;
       });
 
       return reportRepo.save(reports).then((res) => {
@@ -92,6 +133,7 @@ export class ReportProcessingService
         report.resolutionAction = ReportResolutionActions.MALICIOUS_REPORT;
         report.resolvedAt = new Date();
         report.resolvedById = dto.createdById;
+        report.resolvedByType = ReportResolvedByType.ADMIN;
       });
 
       return reportRepo.save(reports).then((res) => {
@@ -117,6 +159,7 @@ export class ReportProcessingService
       report.resolutionAction = ReportResolutionActions.REFUND_BOOKING;
       report.resolvedAt = new Date();
       report.resolvedById = dto.createdById;
+      report.resolvedByType = ReportResolvedByType.ADMIN;
 
       return reportRepo.save(report).then(async (res) => {
         await this.locationBookingManagementService.forceRefundBooking({
@@ -161,6 +204,7 @@ export class ReportProcessingService
         report.resolutionAction = ReportResolutionActions.REFUND_TICKET;
         report.resolvedAt = new Date();
         report.resolvedById = dto.createdById;
+        report.resolvedByType = ReportResolvedByType.ADMIN;
       });
 
       return reportRepo.save(reports).then(async (res) => {

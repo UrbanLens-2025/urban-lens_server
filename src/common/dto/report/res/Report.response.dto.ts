@@ -72,6 +72,17 @@ export class ReportResponseDto {
   updatedAt: Date;
 
   @Expose()
+  @Type(() => Date)
+  firstSeenAt?: Date | null;
+
+  @Expose()
+  @Type(() => AccountResponseDto)
+  firstSeenByAdmin?: AccountResponseDto | null;
+
+  @Expose()
+  firstSeenByAdminId?: string | null;
+
+  @Expose()
   @Type(() => ReportReasonResponseDto)
   reportedReasonEntity?: ReportReasonResponseDto | null;
 
