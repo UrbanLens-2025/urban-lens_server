@@ -6,7 +6,7 @@ import {
 import { Injectable } from '@nestjs/common';
 import { SearchBookingsByLocationDto } from '@/common/dto/location-booking/SearchBookingsByLocation.dto';
 import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
-import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
+import { paginate, Paginated } from 'nestjs-paginate';
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 import { GetBookingByIdDto } from '@/common/dto/location-booking/GetBookingById.dto';
 import { GetBookedDatesByDateRangeDto } from '@/common/dto/location-booking/GetBookedDatesByDateRange.dto';
@@ -15,7 +15,6 @@ import {
   BookedDatesResponseDto,
 } from '@/common/dto/location-booking/res/BookedDate.response.dto';
 import { LocationBookingDateRepository } from '@/modules/location-booking/infra/repository/LocationBookingDate.repository';
-import { GetAllBookingsAtLocationByDateRangeDto } from '@/common/dto/location-booking/GetAllBookingsAtLocationByDateRange.dto';
 import { In, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import { GetAllBookingsAtLocationPagedDto } from '@/common/dto/location-booking/GetAllBookingsAtLocationPaged.dto';
@@ -129,7 +128,35 @@ export class LocationBookingQueryService
           endDateTime: MoreThanOrEqual(dto.startDate),
         },
       },
-    }).then((res) => this.mapToPaginated(LocationBookingResponseDto, res));
+    })
+      .then(async (res) => {
+        const eventRepo = EventRepository(this.dataSource);
+
+        // grab event data
+        const eventIds = res.data
+          .filter(
+            (item) => item.bookingObject === LocationBookingObject.FOR_EVENT,
+          )
+          .map((item) => item.targetId);
+        const eventData = await eventRepo.find({
+          where: {
+            id: In(eventIds),
+          },
+        });
+
+        // map to response
+        return {
+          ...res,
+          data: res.data.map((item) => {
+            const event = eventData.find((event) => event.id === item.targetId);
+            return {
+              ...item,
+              event: event ? this.mapTo(EventResponseDto, event) : undefined,
+            } as unknown as LocationBookingResponseDto;
+          }),
+        } as unknown as Paginated<LocationBookingResponseDto>;
+      })
+      .then((res) => this.mapToPaginated(LocationBookingResponseDto, res));
   }
 
   async getConflictingBookings(
