@@ -1,5 +1,5 @@
-import { Exclude, Expose, Type, Transform } from 'class-transformer';
-import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
+import { Exclude, Expose, Type } from 'class-transformer';
+import { UserProfileResponseDto } from '@/common/dto/account/res/UserProfile.response.dto';
 
 @Exclude()
 export class MissionParticipantResponseDto {
