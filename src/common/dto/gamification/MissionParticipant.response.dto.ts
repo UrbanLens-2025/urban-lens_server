@@ -21,4 +21,16 @@ export class MissionParticipantResponseDto {
   @Expose()
   @Type(() => UserProfileResponseDto)
   userProfile?: UserProfileResponseDto;
+
+  @Expose()
+  @Type(() => Date)
+  createdAt: Date;
+
+  @Expose()
+  @Type(() => Date)
+  updatedAt: Date;
+
+  @Expose()
+  @Type(() => Date)
+  completedAt: Date | null;
 }
