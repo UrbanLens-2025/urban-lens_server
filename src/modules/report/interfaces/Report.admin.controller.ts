@@ -93,6 +93,20 @@ export class ReportAdminController {
     });
   }
 
+  @ApiOperation({ summary: 'Get highest reported locations' })
+  @Get('/highest-reported-locations')
+  getHighestReportedLocations(
+    @Query('page', ParseIntPipe) page: number,
+    @Query('limit', ParseIntPipe) limit: number,
+  ) {
+    return this.reportQueryService.getHighestReportedLocations({
+      query: {
+        page,
+        limit,
+      },
+    });
+  }
+
   @ApiOperation({ summary: 'Get report by ID' })
   @Get('/:reportId')
   @ApiParam({
