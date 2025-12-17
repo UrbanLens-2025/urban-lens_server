@@ -5,6 +5,8 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   Entity,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { LocationMissionEntity } from './LocationMission.entity';
 
@@ -15,7 +17,28 @@ export class UserMissionProgressEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => UserProfileEntity, {
+  @CreateDateColumn({
+    name: 'created_at',
+    type: 'timestamp with time zone',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: 'updated_at',
+    type: 'timestamp with time zone',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  updatedAt: Date;
+
+  @Column({
+    name: 'completed_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  completedAt?: Date | null;
+
+  @ManyToOne(() => UserProfileEntity, (userProfile) => userProfile.accountId, {
     createForeignKeyConstraints: true,
     nullable: false,
   })

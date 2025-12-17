@@ -77,6 +77,9 @@ export class MissionProgressService implements IMissionProgressService {
 
         userProgress.progress = newProgress;
         userProgress.completed = isCompleted;
+        if (isCompleted) {
+          userProgress.completedAt = new Date();
+        }
         await this.userMissionProgressRepository.repo.save(userProgress);
 
         // Nếu hoàn thành, award points

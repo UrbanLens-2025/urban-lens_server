@@ -142,6 +142,10 @@ export class QRCodeScanService implements IQRCodeScanService {
       // Update user progress
       userProgress.progress = newProgress;
       userProgress.completed = isCompleted;
+      if (isCompleted) {
+        userProgress.completedAt = new Date();
+      }
+
       await this.userMissionProgressRepository.repo.save(userProgress);
 
       // Create mission log
