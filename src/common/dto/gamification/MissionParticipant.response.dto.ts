@@ -19,6 +19,6 @@ export class MissionParticipantResponseDto {
   completed: boolean;
 
   @Expose()
-  @Type(() => AccountResponseDto)
-  userProfile?: AccountResponseDto;
+  @Type(() => UserProfileResponseDto)
+  userProfile?: UserProfileResponseDto;
 }
