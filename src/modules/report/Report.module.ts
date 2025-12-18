@@ -12,8 +12,6 @@ import { ReportReasonPublicController } from '@/modules/report/interfaces/Report
 import { IReportQueryService } from '@/modules/report/app/IReportQuery.service';
 import { ReportQueryService } from '@/modules/report/app/impl/ReportQuery.service';
 import { ReportAdminController } from '@/modules/report/interfaces/Report.admin.controller';
-import { IReportManagementService } from '@/modules/report/app/IReportManagement.service';
-import { ReportManagementService } from '@/modules/report/app/impl/ReportManagement.service';
 import { EventModule } from '@/modules/event/event.module';
 import { PostModule } from '@/modules/post/Post.module';
 import { AccountModule } from '@/modules/account/Account.module';
@@ -27,6 +25,8 @@ import { PenaltyAdminController } from '@/modules/report/interfaces/Penalty.admi
 import { PenaltyUserController } from '@/modules/report/interfaces/Penalty.user.controller';
 import { PenaltyOwnerController } from '@/modules/report/interfaces/Penalty.owner.controller';
 import { PenaltyCreatorController } from '@/modules/report/interfaces/Penalty.creator.controller';
+import { IReportProcessingService } from '@/modules/report/app/IReportProcessing.service';
+import { ReportProcessingService } from '@/modules/report/app/impl/ReportProcessing.service';
 @Module({
   imports: [
     ReportInfraModule,
@@ -54,12 +54,12 @@ import { PenaltyCreatorController } from '@/modules/report/interfaces/Penalty.cr
       useClass: ReportQueryService,
     },
     {
-      provide: IReportManagementService,
-      useClass: ReportManagementService,
-    },
-    {
       provide: IPenaltyService,
       useClass: PenaltyService,
+    },
+    {
+      provide: IReportProcessingService,
+      useClass: ReportProcessingService,
     },
     PenaltyAdministeredListener,
     ReportClosedListener,

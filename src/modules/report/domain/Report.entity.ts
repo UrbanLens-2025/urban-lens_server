@@ -105,6 +105,23 @@ export class ReportEntity {
   @Column({ name: 'reported_reason', type: 'varchar', length: 100 })
   reportedReasonKey: string;
 
+  @Column({
+    name: 'first_seen_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  firstSeenAt?: Date | null;
+
+  @Column({ name: 'first_seen_by_admin_id', type: 'uuid', nullable: true })
+  firstSeenByAdminId?: string | null;
+
+  @ManyToOne(() => AccountEntity, (account) => account.id, {
+    createForeignKeyConstraints: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'first_seen_by_admin_id' })
+  firstSeenByAdmin?: AccountEntity | null;
+
   //#region development relations for easy fetching
   @ManyToOne(() => ReportReasonEntity, (reportedReason) => reportedReason.key, {
     createForeignKeyConstraints: false,

@@ -1057,9 +1057,9 @@ export class DashboardService extends CoreService implements IDashboardService {
       sevenDaysAgo.setHours(0, 0, 0, 0);
 
       const revenueByDayRaw = await this.dataSource
-        .getRepository(LocationBookingEntity)
-        .createQueryBuilder('booking')
-        .select('EXTRACT(DOW FROM booking.created_at)', 'dayOfWeek')
+          .getRepository(LocationBookingEntity)
+          .createQueryBuilder('booking')
+          .select('EXTRACT(DOW FROM booking.created_at)', 'dayOfWeek')
         .addSelect(
           'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
           'revenue',
@@ -1068,10 +1068,10 @@ export class DashboardService extends CoreService implements IDashboardService {
         .andWhere('booking.status = :status', {
           status: LocationBookingStatus.APPROVED,
         })
-        .andWhere('booking.created_at >= :sevenDaysAgo', { sevenDaysAgo })
-        .andWhere('booking.created_at <= :now', { now })
-        .groupBy('EXTRACT(DOW FROM booking.created_at)')
-        .getRawMany();
+          .andWhere('booking.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+          .andWhere('booking.created_at <= :now', { now })
+          .groupBy('EXTRACT(DOW FROM booking.created_at)')
+            .getRawMany();
 
       // Create map from query results
       const revenueDayMap = new Map<number, number>();
@@ -1102,9 +1102,9 @@ export class DashboardService extends CoreService implements IDashboardService {
       const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
 
       const revenueByMonthRaw = await this.dataSource
-        .getRepository(LocationBookingEntity)
-        .createQueryBuilder('booking')
-        .select('EXTRACT(MONTH FROM booking.created_at)', 'month')
+          .getRepository(LocationBookingEntity)
+          .createQueryBuilder('booking')
+          .select('EXTRACT(MONTH FROM booking.created_at)', 'month')
         .addSelect(
           'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
           'revenue',
@@ -1113,10 +1113,10 @@ export class DashboardService extends CoreService implements IDashboardService {
         .andWhere('booking.status = :status', {
           status: LocationBookingStatus.APPROVED,
         })
-        .andWhere('booking.created_at >= :yearStart', { yearStart })
-        .andWhere('booking.created_at <= :yearEnd', { yearEnd })
-        .groupBy('EXTRACT(MONTH FROM booking.created_at)')
-        .getRawMany();
+          .andWhere('booking.created_at >= :yearStart', { yearStart })
+          .andWhere('booking.created_at <= :yearEnd', { yearEnd })
+          .groupBy('EXTRACT(MONTH FROM booking.created_at)')
+            .getRawMany();
 
       // Create map from query results
       const revenueMonthMap = new Map<number, number>();
@@ -1140,9 +1140,9 @@ export class DashboardService extends CoreService implements IDashboardService {
     // 3. Stats by year (all years)
     if (filterType === 'year') {
       const revenueByYearRaw = await this.dataSource
-        .getRepository(LocationBookingEntity)
-        .createQueryBuilder('booking')
-        .select('EXTRACT(YEAR FROM booking.created_at)', 'year')
+          .getRepository(LocationBookingEntity)
+          .createQueryBuilder('booking')
+          .select('EXTRACT(YEAR FROM booking.created_at)', 'year')
         .addSelect(
           'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
           'revenue',
@@ -1151,8 +1151,8 @@ export class DashboardService extends CoreService implements IDashboardService {
         .andWhere('booking.status = :status', {
           status: LocationBookingStatus.APPROVED,
         })
-        .groupBy('EXTRACT(YEAR FROM booking.created_at)')
-        .getRawMany();
+          .groupBy('EXTRACT(YEAR FROM booking.created_at)')
+            .getRawMany();
 
       // Create map from query results
       const revenueYearMap = new Map<number, number>();
@@ -1266,11 +1266,11 @@ export class DashboardService extends CoreService implements IDashboardService {
           accountId: eventCreatorAccountId,
         })
         .andWhere('event.created_at >= :currentMonthStart', {
-          currentMonthStart,
-        })
+        currentMonthStart,
+      })
         .andWhere('event.created_at <= :currentMonthEnd', {
-          currentMonthEnd,
-        })
+        currentMonthEnd,
+      })
         .getCount(),
 
       // Events created in previous month
@@ -1314,14 +1314,14 @@ export class DashboardService extends CoreService implements IDashboardService {
       eventIds.length > 0
         ? ticketOrderRepo
             .createQueryBuilder('order')
-            .select(
+      .select(
               'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
-              'total',
-            )
+        'total',
+      )
             .where('order.event_id IN (:...eventIds)', { eventIds })
             .andWhere('order.status = :status', {
               status: EventTicketOrderStatus.PAID,
-            })
+      })
             .getRawOne()
         : Promise.resolve({ total: '0' }),
 
@@ -1329,20 +1329,20 @@ export class DashboardService extends CoreService implements IDashboardService {
       eventIds.length > 0
         ? ticketOrderRepo
             .createQueryBuilder('order')
-            .select(
+      .select(
               'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
-              'total',
-            )
+        'total',
+      )
             .where('order.event_id IN (:...eventIds)', { eventIds })
             .andWhere('order.status = :status', {
               status: EventTicketOrderStatus.PAID,
-            })
+      })
             .andWhere('order.created_at >= :currentMonthStart', {
-              currentMonthStart,
-            })
+        currentMonthStart,
+      })
             .andWhere('order.created_at <= :currentMonthEnd', {
-              currentMonthEnd,
-            })
+        currentMonthEnd,
+      })
             .getRawOne()
         : Promise.resolve({ total: '0' }),
     ]);

@@ -90,4 +90,9 @@ export interface IPostService {
     reason?: string,
     entityManager?: EntityManager,
   ): Promise<BanPostResponseDto>;
+  unbanPost(
+    postId: string,
+    reason?: string,
+    entityManager?: EntityManager,
+  ): Promise<BanPostResponseDto>;
 }

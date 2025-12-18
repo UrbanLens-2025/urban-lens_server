@@ -3,10 +3,12 @@ import { ProcessReport_NoActionTakenDto } from '@/common/dto/report/ProcessRepor
 import { ProcessReport_MaliciousReportDto } from '@/common/dto/report/ProcessReport_MaliciousReport.dto';
 import { ProcessReport_BookingRefundDto } from '@/common/dto/report/ProcessReport_BookingRefund.dto';
 import { ProcessReport_TicketRefundDto } from '@/common/dto/report/ProcessReport_TicketRefund.dto';
+import { MarkReportsFirstSeenDto } from '@/common/dto/report/MarkReportsFirstSeen.dto';
 
 export const IReportProcessingService = Symbol('IReportProcessingService');
 
 export interface IReportProcessingService {
+  markReportsFirstSeen(dto: MarkReportsFirstSeenDto): Promise<ReportResponseDto>;
   processReport_NoActionTaken(
     dto: ProcessReport_NoActionTakenDto,
   ): Promise<ReportResponseDto>;

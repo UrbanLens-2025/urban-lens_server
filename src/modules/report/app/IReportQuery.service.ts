@@ -71,6 +71,7 @@ export namespace IReportQueryService_Config {
         referencedTargetPost: true,
         referencedTargetEvent: true,
         referencedTargetLocation: true,
+        resolvedBy: true,
       },
       nullSort: 'last',
     };

@@ -4,53 +4,104 @@ import { ConfigService } from '@nestjs/config';
 import { Environment } from '@/config/env.config';
 import { In } from 'typeorm';
 import { ReportReasonRepositoryProvider } from '@/modules/report/infra/repository/ReportReason.repository';
-
-interface SeedReportReason {
-  key: string;
-  displayName: string;
-  description: string;
-  isActive: boolean;
-}
+import { ReportReasonEntity } from '@/modules/report/domain/ReportReason.entity';
 
 @Injectable()
 export class ReportReasonSeeder extends CoreService implements OnModuleInit {
   private readonly logger = new Logger(ReportReasonSeeder.name);
 
-  private readonly DEFAULT_REASONS: SeedReportReason[] = [
+  private readonly DEFAULT_REASONS: Partial<ReportReasonEntity>[] = [
+    // POST REASONS
     {
-      key: 'spam_content',
+      key: 'spam',
       displayName: 'Spam or repetitive content',
       description:
-        'Use this when the report target repeatedly posts identical or promotional content across posts, comments, events, or businesses.',
+        'Contains spam or repetitive content that violates the community guidelines.',
       isActive: true,
+      forPost: true,
+      priority: 30,
     },
     {
-      key: 'misinformation',
-      displayName: 'False or misleading information',
+      key: 'inappropriate_content',
+      displayName: 'Inappropriate content',
       description:
-        'Flag locations, posts, or events that intentionally provide incorrect business details, pricing, or availability.',
+        'Contains inappropriate content that is not suitable for the community or violates the community guidelines.',
       isActive: true,
+      forPost: true,
+      forEvent: true,
+      forLocation: true,
+      priority: 80,
     },
     {
       key: 'harassment',
       displayName: 'Harassment or hate',
       description:
-        'Covers abusive language, personal attacks, discrimination, or targeted harassment inside comments or posts.',
+        'Covers abusive language, personal attacks, discrimination, or targeted harassment.',
       isActive: true,
+      forPost: true,
+      forEvent: true,
+      forLocation: true,
+      priority: 90,
     },
     {
-      key: 'inappropriate_media',
-      displayName: 'Inappropriate media',
-      description:
-        'Report images or videos that contain nudity, graphic violence, or otherwise violate community guidelines.',
+      key: 'misinformation',
+      displayName: 'Misinformation',
+      description: 'Contains misinformation that is not true or misleading.',
       isActive: true,
+      forPost: true,
+      forEvent: true,
+      forLocation: true,
+      priority: 80,
+    },
+    // EVENT REASONS
+    {
+      key: 'incorrect_info',
+      displayName: 'Incorrect information',
+      description:
+        'Event has wrong date, time, venue, or other critical details.',
+      isActive: true,
+      forEvent: true,
+      forLocation: true,
+      priority: 40,
     },
     {
-      key: 'fraudulent_business',
-      displayName: 'Fraudulent business or location',
-      description:
-        'Businesses or locations that accept payments without providing services, or that impersonate another brand.',
+      key: 'fraudulent_scam',
+      displayName: 'Fraudulent or scam event',
+      description: 'Fake content that is designed to deceive or scam users.',
       isActive: true,
+      forEvent: true,
+      forLocation: true,
+      priority: 100, // Highest - money/safety involved
+    },
+    {
+      key: 'closed_invalid',
+      displayName: "Cancelled or doesn't exist",
+      description: 'Event has been cancelled or never existed.',
+      isActive: true,
+      forEvent: true,
+      forLocation: true,
+      priority: 100,
+    },
+    // LOCATION REASONS
+    {
+      key: 'unresponsive_bookings',
+      displayName: 'Unresponsive to bookings',
+      description: "Business doesn't respond to booking requests or inquiries.",
+      isActive: true,
+      forLocation: true,
+      priority: 60,
+    },
+    // UNIVERSAL
+    {
+      key: 'other',
+      displayName: 'Other',
+      description:
+        'Other reason not covered by the above options. Please provide details.',
+      isActive: true,
+      forPost: true,
+      forEvent: true,
+      forLocation: true,
+      priority: 10, // Lowest priority
     },
   ];
 
@@ -78,7 +129,7 @@ export class ReportReasonSeeder extends CoreService implements OnModuleInit {
       const existingKeys = new Set(existing.map((reason) => reason.key));
 
       const reasonsToCreate = this.DEFAULT_REASONS.filter(
-        (reason) => !existingKeys.has(reason.key),
+        (reason) => !existingKeys.has(reason.key!),
       );
 
       if (!reasonsToCreate.length) {
@@ -94,6 +145,9 @@ export class ReportReasonSeeder extends CoreService implements OnModuleInit {
           displayName: reason.displayName,
           description: reason.description,
           isActive: reason.isActive,
+          forEvent: reason.forEvent,
+          forLocation: reason.forLocation,
+          forPost: reason.forPost,
         })),
       );
 

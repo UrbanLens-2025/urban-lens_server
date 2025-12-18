@@ -25,4 +25,16 @@ export class ReportReasonEntity {
 
   @Column({ name: 'is_active', type: 'boolean', default: false })
   isActive: boolean;
+
+  @Column({ name: 'priority', type: 'int', default: 0 })
+  priority: number;
+
+  @Column({ name: 'for_event', type: 'boolean', default: false })
+  forEvent: boolean;
+
+  @Column({ name: 'for_location', type: 'boolean', default: false })
+  forLocation: boolean;
+
+  @Column({ name: 'for_post', type: 'boolean', default: false })
+  forPost: boolean;
 }

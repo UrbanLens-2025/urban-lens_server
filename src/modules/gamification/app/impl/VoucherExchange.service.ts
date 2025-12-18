@@ -147,8 +147,8 @@ export class VoucherExchangeService implements IVoucherExchangeService {
     // Get all vouchers (not just available ones)
     const allVouchers =
       await this.userLocationVoucherExchangeHistoryRepository.findByUser(
-        userProfileId,
-      );
+      userProfileId,
+    );
 
     // If no filter, return all vouchers
     if (!status) {
