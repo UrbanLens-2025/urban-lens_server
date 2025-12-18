@@ -13,6 +13,8 @@ import { ReportResolutionActions } from '@/common/constants/ReportResolutionActi
 import { ILocationBookingManagementService } from '@/modules/location-booking/app/ILocationBookingManagement.service';
 import { MarkReportsFirstSeenDto } from '@/common/dto/report/MarkReportsFirstSeen.dto';
 import { ReportResolvedByType } from '@/common/constants/ReportResolvedByType.constant';
+import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
+import { ReportEntityType } from '@/modules/report/domain/Report.entity';
 
 @Injectable()
 export class ReportProcessingService
@@ -22,6 +24,8 @@ export class ReportProcessingService
   constructor(
     @Inject(ILocationBookingManagementService)
     private readonly locationBookingManagementService: ILocationBookingManagementService,
+    @Inject(ITicketOrderManagementService)
+    private readonly ticketOrderManagementService: ITicketOrderManagementService,
   ) {
     super();
   }
@@ -184,6 +188,7 @@ export class ReportProcessingService
           where: {
             id: In(dto.reportIds),
             status: ReportStatus.PENDING,
+            targetType: ReportEntityType.EVENT,
           },
         })
         .then((res) => {
@@ -199,6 +204,12 @@ export class ReportProcessingService
           return res;
         });
 
+      // all reports must be for the same event
+      const eventId = reports[0].targetId;
+      if (reports.some((report) => report.targetId !== eventId)) {
+        throw new BadRequestException('All reports must be for the same event');
+      }
+
       reports.map((report) => {
         report.status = ReportStatus.CLOSED;
         report.resolutionAction = ReportResolutionActions.REFUND_TICKET;
@@ -208,15 +219,15 @@ export class ReportProcessingService
       });
 
       return reportRepo.save(reports).then(async (res) => {
-        // await this.ticketOrderManagementService.forceRefundOrder({
-        //   entityManager: em,
-        //   eventId: report.targetId,
-        //   refundPercentage: dto.refundPercentage,
-        //   shouldCancelTickets: dto.shouldCancelTickets,
-        //   accountId: dto.createdById,
-        // });
+        await this.ticketOrderManagementService.forceIssueOrderRefund({
+          entityManager: em,
+          eventId: eventId,
+          accountIds: reports.map((report) => report.createdById),
+          refundPercentage: dto.refundPercentage,
+          shouldCancelTickets: dto.shouldCancelTickets,
+        });
         return res;
       });
-    }).then((res) => this.mapTo(ReportResponseDto, res));;
+    }).then((res) => this.mapTo(ReportResponseDto, res));
   }
 }

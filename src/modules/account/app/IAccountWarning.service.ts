@@ -10,6 +10,7 @@ import { AccountWarningEntity } from '@/modules/account/domain/AccountWarning.en
 import { PaginateConfig } from 'nestjs-paginate';
 import { LiftSuspensionDto } from '@/common/dto/account/LiftSuspension.dto';
 import { GetAllWarningsDto } from '@/common/dto/account/GetAllWarnings.dto';
+import { SuspendEventCreationDto } from '@/common/dto/account/SuspendEventCreation.dto';
 
 export const IAccountWarningService = Symbol('IAccountWarningService');
 
@@ -17,6 +18,10 @@ export interface IAccountWarningService {
   sendWarning(dto: SendWarningDto): Promise<AccountWarningResponseDto>;
 
   suspendAccount(dto: SuspendAccountDto): Promise<AccountResponseDto>;
+
+  suspendEventCreation(
+    dto: SuspendEventCreationDto,
+  ): Promise<AccountResponseDto>;
 
   getAccountSuspensions(
     dto: GetAccountSuspensionsDto,

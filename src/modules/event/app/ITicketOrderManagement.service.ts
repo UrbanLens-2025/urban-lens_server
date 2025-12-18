@@ -1,7 +1,7 @@
 import { CreateTicketOrderDto } from '@/common/dto/event/CreateTicketOrder.dto';
 import { TicketOrderResponseDto } from '@/common/dto/event/res/TicketOrder.response.dto';
 import { RefundAllSuccessfulOrdersDto } from '@/common/dto/event/RefundAllSuccessfulOrders.dto';
-import { RefundOrderDto } from '@/common/dto/event/RefundOrder.dto';
+import { ForceIssueOrderRefundDto } from '@/common/dto/event/ForceIssueOrderRefund.dto';
 
 export const ITicketOrderManagementService = Symbol(
   'ITicketOrderManagementService',
@@ -18,5 +18,7 @@ export interface ITicketOrderManagementService {
     dto: RefundAllSuccessfulOrdersDto,
   ): Promise<TicketOrderResponseDto[]>;
 
-  forceRefundOrder(dto: RefundOrderDto): Promise<TicketOrderResponseDto>;
+  forceIssueOrderRefund(
+    dto: ForceIssueOrderRefundDto,
+  ): Promise<TicketOrderResponseDto[]>;
 }

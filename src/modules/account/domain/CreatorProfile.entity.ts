@@ -37,4 +37,11 @@ export class CreatorProfileEntity {
 
   @Column({ name: 'social', type: 'jsonb', nullable: true })
   social: SocialLink[];
+
+  @Column({
+    name: 'event_creation_suspended_until',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  eventCreationSuspendedUntil: Date;
 }

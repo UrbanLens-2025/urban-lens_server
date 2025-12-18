@@ -32,6 +32,7 @@ import { IEventPayoutService } from '@/modules/event/app/IEventPayout.service';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import { HandleBookingRejectedDto } from '@/common/dto/location-booking/HandleBookingRejected.dto';
+import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
 
 @Injectable()
 export class EventManagementService
@@ -78,6 +79,29 @@ export class EventManagementService
     return this.ensureTransaction(null, async (em) => {
       const eventRepo = EventRepository(em);
       const eventTagRepo = EventTagsRepository(em);
+      const accountRepo = AccountRepositoryProvider(em);
+
+      const account = await accountRepo.findOneOrFail({
+        where: {
+          id: dto.accountId,
+        },
+        relations: {
+          creatorProfile: true,
+        },
+      });
+
+      if (
+        account.creatorProfile?.eventCreationSuspendedUntil &&
+        account.creatorProfile.eventCreationSuspendedUntil > new Date()
+      ) {
+        throw new BadRequestException(
+          'Event creation is suspended until ' +
+            account.creatorProfile.eventCreationSuspendedUntil.toLocaleDateString(
+              'vi-VN',
+            ) +
+            '. Please try again later.',
+        );
+      }
 
       const finalTagIds = await mergeTagsWithCategories(
         [], // No manual tags

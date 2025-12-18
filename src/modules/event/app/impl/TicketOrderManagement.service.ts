@@ -27,6 +27,7 @@ import { RefundOrderDto } from '@/common/dto/event/RefundOrder.dto';
 import { EventAttendanceRepository } from '@/modules/event/infra/repository/EventAttendance.repository';
 import { EventAttendanceStatus } from '@/common/constants/EventAttendanceStatus.constant';
 import { EventAttendanceEntity } from '@/modules/event/domain/EventAttendance.entity';
+import { ForceIssueOrderRefundDto } from '@/common/dto/event/ForceIssueOrderRefund.dto';
 
 @Injectable()
 export class TicketOrderManagementService
@@ -263,63 +264,91 @@ export class TicketOrderManagementService
     });
   }
 
-  forceRefundOrder(dto: RefundOrderDto): Promise<TicketOrderResponseDto> {
+  forceIssueOrderRefund(
+    dto: ForceIssueOrderRefundDto,
+  ): Promise<TicketOrderResponseDto[]> {
     return this.ensureTransaction(dto.entityManager, async (em) => {
       const ticketOrderRepo = TicketOrderRepository(em);
+      const eventRepo = EventRepository(em);
       const eventAttendanceRepo = EventAttendanceRepository(em);
-      const ticketOrder = await ticketOrderRepo.findOneOrFail({
+
+      const ticketOrders = await ticketOrderRepo.find({
         where: {
           eventId: dto.eventId,
-          createdById: dto.accountId,
-        },
-        relations: {
-          event: true,
-          eventAttendances: true,
+          createdById: In(dto.accountIds),
         },
       });
 
-      // can only refund if event is not paid out
-      if (ticketOrder.event.hasPaidOut) {
+      const event = await eventRepo.findOneOrFail({
+        where: {
+          id: dto.eventId,
+        },
+      });
+
+      // if event has been paid out, cannot issue refund
+      if (event.hasPaidOut) {
         throw new BadRequestException(
-          'Event has already been paid out. Cannot refund order.',
+          'Event has already been paid out. Cannot issue refund.',
         );
       }
 
-      const refundAmount =
-        ticketOrder.totalPaymentAmount * dto.refundPercentage -
-        ticketOrder.refundedAmount;
-      if (refundAmount > 0) {
-        const refundTransaction =
-          await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
-            {
-              entityManager: em,
-              destinationAccountId: ticketOrder.createdById,
-              amount: refundAmount,
-              currency: SupportedCurrency.VND,
-            },
-          );
-        ticketOrder.refundTransactionId = refundTransaction.id;
+      for (const ticketOrder of ticketOrders) {
+        const refundAmount =
+          Number(ticketOrder.totalPaymentAmount) *
+            Number(dto.refundPercentage) -
+          Number(ticketOrder.refundedAmount);
+
+        if (refundAmount > 0) {
+          const refundTransaction =
+            await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
+              {
+                entityManager: em,
+                destinationAccountId: ticketOrder.createdById,
+                amount: refundAmount,
+                currency: SupportedCurrency.VND,
+                note:
+                  'Refund for order #' +
+                  ticketOrder.id +
+                  ' for event: ' +
+                  event.displayName +
+                  ' (ID: ' +
+                  event.id +
+                  ')',
+              },
+            );
+
+          ticketOrder.refundTransactionId = refundTransaction.id;
+          ticketOrder.refundedAmount =
+            Number(ticketOrder.refundedAmount) + Number(refundAmount);
+        }
       }
 
-      return ticketOrderRepo.save(ticketOrder).then(async (res) => {
-        if (dto.shouldCancelTickets) {
-          const eventAttendances: EventAttendanceEntity[] = [];
-          for (const eventAttendance of ticketOrder.eventAttendances) {
-            eventAttendance.status = EventAttendanceStatus.CANCELLED;
-            eventAttendances.push(eventAttendance);
-          }
-          await eventAttendanceRepo.save(eventAttendances);
-        }
-        return res;
-      });
+      return (
+        ticketOrderRepo
+          .save(ticketOrders)
+          // ticket cancellation
+          .then(async (res) => {
+            if (dto.shouldCancelTickets) {
+              const eventAttendances: EventAttendanceEntity[] = [];
+              for (const eventAttendance of ticketOrders.flatMap(
+                (ticketOrder) => ticketOrder.eventAttendances,
+              )) {
+                eventAttendance.status = EventAttendanceStatus.CANCELLED;
+                eventAttendances.push(eventAttendance);
+              }
+              await eventAttendanceRepo.save(eventAttendances);
+            }
+            return res;
+          })
+      );
     })
       .then((res) => {
         this.eventEmitter.emit(
           TICKET_ORDER_REFUNDED_EVENT,
-          new TicketOrderRefundedEvent(res),
+          res.map((ticketOrder) => new TicketOrderRefundedEvent(ticketOrder)),
         );
         return res;
       })
-      .then((res) => this.mapTo(TicketOrderResponseDto, res));
+      .then((res) => this.mapToArray(TicketOrderResponseDto, res));
   }
 }

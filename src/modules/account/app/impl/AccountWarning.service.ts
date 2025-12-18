@@ -26,6 +26,8 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Role } from '@/common/constants/Role.constant';
 import { LiftSuspensionDto } from '@/common/dto/account/LiftSuspension.dto';
 import { GetAllWarningsDto } from '@/common/dto/account/GetAllWarnings.dto';
+import { SuspendEventCreationDto } from '@/common/dto/account/SuspendEventCreation.dto';
+import { CreatorProfileRepository } from '@/modules/account/infra/repository/CreatorProfile.repository';
 
 @Injectable()
 export class AccountWarningService
@@ -104,6 +106,35 @@ export class AccountWarningService
       suspension.isActive = true;
 
       await accountSuspensionRepo.save(suspension);
+
+      return account;
+    }).then((res) => this.mapTo(AccountResponseDto, res));
+  }
+
+  suspendEventCreation(
+    dto: SuspendEventCreationDto,
+  ): Promise<AccountResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const accountRepo = AccountRepositoryProvider(em);
+      const creatorProfileRepo = CreatorProfileRepository(em);
+      const account = await accountRepo.findOneOrFail({
+        where: { id: dto.accountId },
+        relations: {
+          creatorProfile: true,
+        },
+      });
+
+      if (account.role !== Role.EVENT_CREATOR) {
+        throw new BadRequestException('Account is not an EVENT_CREATOR');
+      }
+
+      if (!account.creatorProfile) {
+        throw new BadRequestException('This account has not onboarded');
+      }
+
+      account.creatorProfile.eventCreationSuspendedUntil = dto.suspendedUntil;
+
+      await creatorProfileRepo.save(account.creatorProfile);
 
       return account;
     }).then((res) => this.mapTo(AccountResponseDto, res));
