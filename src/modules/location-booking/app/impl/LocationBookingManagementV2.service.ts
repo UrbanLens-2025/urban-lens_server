@@ -308,6 +308,21 @@ export class LocationBookingManagementV2Service
             em,
           );
         const fineAmount = bookingAmount * finePercentage.value;
+        // deduct fine amount from host's escrow wallet
+        const fineTransaction =
+          await this.walletTransactionCoordinatorService.coordinateTransferToEscrow(
+            {
+              entityManager: em,
+              fromAccountId: booking.location.businessId,
+              accountName: booking.location.name,
+              ipAddress: '',
+              returnUrl: '',
+              amountToTransfer: fineAmount,
+              currency: SupportedCurrency.VND,
+              note: `Fine for booking #${booking.id} for location: ${booking.location.name} (ID: ${booking.locationId})`,
+            },
+          );
+
         const totalAmountToRefund = bookingAmount + fineAmount;
         const refundTransaction =
           await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
