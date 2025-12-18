@@ -196,6 +196,7 @@ export class ReportProcessingService
         where: {
           id: dto.reportId,
           status: ReportStatus.PENDING,
+          targetType: ReportEntityType.BOOKING,
         },
       });
 
@@ -208,10 +209,9 @@ export class ReportProcessingService
       return reportRepo.save(report).then(async (res) => {
         await this.locationBookingManagementService.forceRefundBooking({
           entityManager: em,
-          locationId: report.targetId,
           refundPercentage: dto.refundPercentage,
           shouldCancelBooking: dto.shouldCancelBooking,
-          accountId: dto.createdById,
+          bookingId: report.targetId,
         });
         return res;
       });

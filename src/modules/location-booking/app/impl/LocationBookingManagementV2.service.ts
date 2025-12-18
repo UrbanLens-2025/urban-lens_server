@@ -520,8 +520,7 @@ export class LocationBookingManagementV2Service
 
       const locationBooking = await locationBookingRepository.findOneOrFail({
         where: {
-          createdById: dto.accountId,
-          locationId: dto.locationId,
+          id: dto.bookingId,
         },
       });
 
@@ -539,7 +538,7 @@ export class LocationBookingManagementV2Service
         await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
           {
             entityManager: em,
-            destinationAccountId: dto.accountId,
+            destinationAccountId: locationBooking.createdById,
             amount: refundAmount,
             currency: SupportedCurrency.VND,
           },

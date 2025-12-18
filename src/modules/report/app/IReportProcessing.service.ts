@@ -5,7 +5,6 @@ import { ProcessReport_BookingRefundDto } from '@/common/dto/report/ProcessRepor
 import { ProcessReport_TicketRefundDto } from '@/common/dto/report/ProcessReport_TicketRefund.dto';
 import { MarkReportsFirstSeenDto } from '@/common/dto/report/MarkReportsFirstSeen.dto';
 import { ProcessReport_IssueApologyDto } from '@/common/dto/report/ProcessReport_IssueApology.dto';
-import { ProcessReport_AutoCloseByPayoutDto } from '@/common/dto/report/ProcessReport_AutoCloseByPayout.dto';
 
 export const IReportProcessingService = Symbol('IReportProcessingService');
 

@@ -16,6 +16,7 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
+import { CreateBookingReportDto } from '@/common/dto/report/CreateBookingReport.dto';
 
 @ApiTags('Report')
 @ApiBearerAuth()
@@ -56,6 +57,16 @@ export class ReportPrivateController {
   ): Promise<ReportResponseDto> {
     dto.createdById = user.sub;
     return this.reportCreationService.createLocationReport(dto);
+  }
+
+  @ApiOperation({ summary: 'Report a booking' })
+  @Post('/booking')
+  createBookingReport(
+    @Body() dto: CreateBookingReportDto,
+    @AuthUser() user: JwtTokenDto,
+  ): Promise<ReportResponseDto> {
+    dto.createdById = user.sub;
+    return this.reportCreationService.createBookingReport(dto);
   }
 
   @ApiOperation({ summary: 'Get my reports' })

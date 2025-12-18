@@ -20,6 +20,7 @@ export enum ReportEntityType {
   POST = 'post',
   LOCATION = 'location',
   EVENT = 'event',
+  BOOKING = 'booking',
 }
 
 @Entity({ name: 'reports' })
@@ -32,6 +33,10 @@ export class ReportEntity {
 
   @Column({ name: 'target_id', type: 'uuid' })
   targetId: string;
+
+  // used for searching booking reports by location id only
+  @Column({ name: 'denorm_secondary_target_id', type: 'uuid', nullable: true })
+  denormSecondaryTargetId?: string | null;
 
   @Column({ name: 'title', type: 'varchar', length: 555 })
   title: string;

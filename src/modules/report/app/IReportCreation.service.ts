@@ -1,3 +1,4 @@
+import { CreateBookingReportDto } from '@/common/dto/report/CreateBookingReport.dto';
 import { CreateEventReportDto } from '@/common/dto/report/CreateEventReport.dto';
 import { CreateLocationReportDto } from '@/common/dto/report/CreateLocationReport.dto';
 import { CreatePostReportDto } from '@/common/dto/report/CreatePostReport.dto';
@@ -13,4 +14,6 @@ export interface IReportCreationService {
   createLocationReport(
     dto: CreateLocationReportDto,
   ): Promise<ReportResponseDto>;
+
+  createBookingReport(dto: CreateBookingReportDto): Promise<ReportResponseDto>;
 }

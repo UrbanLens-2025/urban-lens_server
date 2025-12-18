@@ -10,8 +10,7 @@ import { ReportReasonRepositoryProvider } from '@/modules/report/infra/repositor
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import {
-  ReportEntity,
-  ReportEntityType,
+  ReportEntityType
 } from '@/modules/report/domain/Report.entity';
 import { ReportStatus } from '@/common/constants/ReportStatus.constant';
 import {
@@ -21,6 +20,8 @@ import {
 import { EntityManager, MoreThan } from 'typeorm';
 import { PostRepositoryProvider } from '@/modules/post/infra/repository/Post.repository';
 import { ReportRepositoryProvider } from '@/modules/report/infra/repository/Report.repository';
+import { CreateBookingReportDto } from '@/common/dto/report/CreateBookingReport.dto';
+import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 
 @Injectable()
 export class ReportCreationService
@@ -29,6 +30,35 @@ export class ReportCreationService
 {
   constructor(private readonly eventEmitter: EventEmitter2) {
     super();
+  }
+
+  createBookingReport(dto: CreateBookingReportDto): Promise<ReportResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationBookingRepo = LocationBookingRepository(em);
+
+      const booking = await locationBookingRepo.findOneOrFail({
+        where: { id: dto.bookingId },
+      });
+
+      await this.detectReportSpamming(
+        dto.createdById,
+        ReportEntityType.BOOKING,
+        booking.id,
+        em,
+      );
+
+      return this.createReport(
+        em,
+        ReportEntityType.BOOKING,
+        booking.id,
+        dto.reportedReason,
+        dto.title,
+        dto.description,
+        dto.createdById,
+        dto.attachedImageUrls,
+        booking.locationId,
+      );
+    });
   }
 
   public async createPostReport(
@@ -136,6 +166,7 @@ export class ReportCreationService
     description: string | undefined,
     createdById: string,
     attachedImageUrls?: string[],
+    denormSecondaryTargetId?: string | null,
   ): Promise<ReportResponseDto> {
     const reportReasonRepo = ReportReasonRepositoryProvider(em);
     const reportRepo = ReportRepositoryProvider(em);
@@ -155,6 +186,7 @@ export class ReportCreationService
       attachedImageUrls: attachedImageUrls || [],
       status: ReportStatus.PENDING,
       createdById,
+      denormSecondaryTargetId: denormSecondaryTargetId ?? null,
     });
 
     const savedReport = await reportRepo.save(report);

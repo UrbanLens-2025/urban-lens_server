@@ -64,6 +64,7 @@ export namespace IReportQueryService_Config {
         targetType: true,
         targetId: true,
         createdById: true,
+        denormSecondaryTargetId: true,
       },
       relations: {
         createdBy: true,
