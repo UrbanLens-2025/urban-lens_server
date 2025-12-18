@@ -121,6 +121,9 @@ export class EventAttendanceEntity {
   @JoinColumn({ name: 'refund_transaction_id' })
   refundTransaction?: WalletTransactionEntity | null;
 
+  @Column({ name: 'is_cancellable', type: 'boolean', default: true })
+  isCancellable: boolean;
+
   @Column({
     name: 'refunded_amount',
     type: 'numeric',

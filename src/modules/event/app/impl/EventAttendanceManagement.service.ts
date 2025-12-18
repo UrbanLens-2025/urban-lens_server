@@ -125,6 +125,16 @@ export class EventAttendanceManagementService
         );
       }
 
+      if (
+        eventAttendances.some(
+          (eventAttendance) => !eventAttendance.isCancellable,
+        )
+      ) {
+        throw new BadRequestException(
+          'Some of your tickets are not cancellable. Please contact support for assistance.',
+        );
+      }
+
       // ownership
       if (
         eventAttendances.some(

@@ -334,6 +334,7 @@ export class TicketOrderManagementService
                 (ticketOrder) => ticketOrder.eventAttendances,
               )) {
                 eventAttendance.status = EventAttendanceStatus.CANCELLED;
+                eventAttendance.isCancellable = false;
                 eventAttendances.push(eventAttendance);
               }
               await eventAttendanceRepo.save(eventAttendances);
