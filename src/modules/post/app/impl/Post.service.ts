@@ -55,6 +55,10 @@ import {
   PostBannedEvent,
 } from '@/modules/post/domain/events/PostBanned.event';
 import {
+  POST_UNBANNED_EVENT,
+  PostUnbannedEvent,
+} from '@/modules/post/domain/events/PostUnbanned.event';
+import {
   POST_REACTED_EVENT,
   PostReactedEvent,
 } from '@/modules/post/domain/events/PostReacted.event';
@@ -818,13 +822,22 @@ export class PostService
       );
 
       // Emit post created event for gamification
+      // Use setImmediate to ensure event is emitted after transaction is fully committed
       if (dto.authorId) {
-        const postCreatedEvent = new PostCreatedEvent();
-        postCreatedEvent.postId = result.postId;
-        postCreatedEvent.authorId = dto.authorId;
-        postCreatedEvent.postType = dto.type;
-        postCreatedEvent.isVerified = isVerified;
-        this.eventEmitter.emit(POST_CREATED_EVENT, postCreatedEvent);
+        const authorId = dto.authorId;
+        const postType = dto.type;
+        const postId = result.postId;
+        setImmediate(() => {
+          const postCreatedEvent = new PostCreatedEvent();
+          postCreatedEvent.postId = postId;
+          postCreatedEvent.authorId = authorId;
+          postCreatedEvent.postType = postType;
+          postCreatedEvent.isVerified = isVerified;
+          this.logger.log(
+            `📤 Emitting POST_CREATED_EVENT for postId: ${postId}, type: ${postType}`,
+          );
+          this.eventEmitter.emit(POST_CREATED_EVENT, postCreatedEvent);
+        });
       }
 
       // Get the created post with all relations
@@ -1914,6 +1927,71 @@ export class PostService
       }
       this.logger.error(
         `Error banning post ${postId}: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async unbanPost(
+    postId: string,
+    reason?: string,
+    entityManager?: EntityManager,
+  ): Promise<BanPostResponseDto> {
+    try {
+      this.logger.debug(
+        `Unbanning post ${postId}${reason ? ` with reason: ${reason}` : ''}`,
+      );
+
+      return await (
+        entityManager || this.postRepository.repo.manager
+      ).transaction(async (transactionalEntityManager) => {
+        const postRepo = transactionalEntityManager.getRepository(PostEntity);
+        // Find post with author relation
+        const post = await postRepo.findOne({
+          where: { postId },
+          relations: ['author'],
+          select: ['postId', 'isHidden', 'authorId', 'author'],
+        });
+
+        if (!post) {
+          throw new NotFoundException('Post not found');
+        }
+
+        if (!post.isHidden) {
+          throw new BadRequestException('Post is not banned');
+        }
+
+        await postRepo.update({ postId }, { isHidden: false });
+
+        this.logger.log(`Post ${postId} unbanned successfully`);
+
+        if (post.authorId) {
+          setImmediate(() => {
+            const postUnbannedEvent = new PostUnbannedEvent();
+            postUnbannedEvent.postId = postId;
+            postUnbannedEvent.authorId = post.authorId;
+            postUnbannedEvent.reason = reason;
+            this.eventEmitter.emit(POST_UNBANNED_EVENT, postUnbannedEvent);
+          });
+        }
+
+        return {
+          message: 'Post unbanned successfully',
+          postId,
+          isBanned: false,
+          reason,
+        };
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      this.logger.error(
+        `Error unbanning post ${postId}: ${error.message}`,
         error.stack,
       );
       throw new InternalServerErrorException(error.message);

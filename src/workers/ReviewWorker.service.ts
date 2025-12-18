@@ -26,7 +26,7 @@ export class ReviewWorkerService {
    * Rating 1-2: negative weight (-2, -1)
    * Rating 3: neutral (0)
    * Rating 4-5: positive weight (+1, +2)
-   * 
+   *
    * PostgreSQL has a limit of 100 parameters per query.
    * Each tag requires 3 parameters, so we can process max 33 tags per query.
    */
@@ -145,6 +145,7 @@ export class ReviewWorkerService {
     try {
       for (const [locationId, ratings] of locationReviews.entries()) {
         // Calculate new average rating from all reviews for this location
+        // Only count visible, non-hidden reviews
         const [result] = await this.dataSource.query(
           `
           SELECT 
@@ -154,6 +155,8 @@ export class ReviewWorkerService {
           WHERE location_id = $1 
             AND type = 'REVIEW'
             AND rating IS NOT NULL
+            AND (is_hidden = false OR is_hidden IS NULL)
+            AND (visibility = 'public' OR visibility IS NULL)
           `,
           [locationId],
         );

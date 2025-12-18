@@ -1,5 +1,15 @@
-import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
+
+class UserBasicInfoDto {
+  @Expose()
+  firstName: string;
+
+  @Expose()
+  lastName: string;
+
+  @Expose()
+  avatarUrl: string | null;
+}
 
 @Exclude()
 export class VoucherUserResponseDto {
@@ -27,7 +37,18 @@ export class VoucherUserResponseDto {
   createdAt: Date;
 
   @Expose()
-  @Type(() => AccountResponseDto)
-  user?: AccountResponseDto;
+  @Transform(({ obj }) => {
+    // Map userProfile.account to user with only basic info
+    const account = obj.userProfile?.account;
+    if (!account) {
+      return null;
+    }
+    return {
+      firstName: account.firstName,
+      lastName: account.lastName,
+      avatarUrl: account.avatarUrl,
+    };
+  })
+  @Type(() => UserBasicInfoDto)
+  user?: UserBasicInfoDto;
 }
-
