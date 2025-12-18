@@ -222,9 +222,7 @@ export class EventEntity {
       this.status === EventStatus.DRAFT ||
       this.status === EventStatus.PUBLISHED;
     const now = new Date();
-    const isStartDateInFuture =
-      (this.startDate && this.startDate > now) || true;
-    const isEndDateInFuture = (this.endDate && this.endDate > now) || true;
-    return correctStatus && isStartDateInFuture && isEndDateInFuture;
+    const isStartDateInFuture = this.startDate && this.startDate > now;
+    return correctStatus && isStartDateInFuture;
   }
 }

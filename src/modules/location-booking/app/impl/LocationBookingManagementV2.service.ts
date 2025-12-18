@@ -300,7 +300,7 @@ export class LocationBookingManagementV2Service
         }
 
         // refund 100% of the booking amount to the creator
-        const bookingAmount = booking.amountToPay;
+        const bookingAmount = Number(booking.amountToPay);
         // fine the host for violating the contract
         const finePercentage =
           await this.systemConfigService.getSystemConfigValue(
@@ -323,7 +323,7 @@ export class LocationBookingManagementV2Service
             },
           );
 
-        const totalAmountToRefund = bookingAmount + fineAmount;
+        const totalAmountToRefund = Number(bookingAmount) + Number(fineAmount);
         const refundTransaction =
           await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
             {

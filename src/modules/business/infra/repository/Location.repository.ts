@@ -149,7 +149,6 @@ export const LocationRepositoryProvider = (ctx: DataSource | EntityManager) =>
             .where('lb.locationId = l.id')
             .andWhere('lb.status IN (:...statuses)', {
               statuses: [
-                LocationBookingStatus.PAYMENT_RECEIVED,
                 LocationBookingStatus.APPROVED,
               ],
             })

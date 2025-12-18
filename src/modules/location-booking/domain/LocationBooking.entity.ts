@@ -263,7 +263,7 @@ export class LocationBookingEntity {
 
   public canBePaidOut(): boolean {
     return (
-      this.status === LocationBookingStatus.PAYMENT_RECEIVED &&
+      this.status === LocationBookingStatus.APPROVED &&
       !isNotBlank(this.paidOutAt)
     );
   }

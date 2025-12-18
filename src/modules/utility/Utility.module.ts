@@ -18,6 +18,7 @@ import { TagCategoryController } from '@/modules/utility/interfaces/TagCategory.
 import { ISystemConfigService } from '@/modules/utility/app/ISystemConfig.service';
 import { SystemConfigService } from '@/modules/utility/app/impl/SystemConfig.service';
 import { SystemConfigAdminController } from '@/modules/utility/interfaces/SystemConfig.admin.controller';
+import { SystemConfigPublicController } from '@/modules/utility/interfaces/SystemConfig.public.controller';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { SystemConfigAdminController } from '@/modules/utility/interfaces/System
     AddressPublicController,
     TagCategoryController,
     SystemConfigAdminController,
+    SystemConfigPublicController,
   ],
   exports: [ISystemConfigService],
 })

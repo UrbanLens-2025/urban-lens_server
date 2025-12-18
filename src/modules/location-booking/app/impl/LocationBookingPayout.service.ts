@@ -209,11 +209,15 @@ export class LocationBookingPayoutService
         `Payout for Location Booking ID ${dto.locationBookingId} completed successfully.`,
       );
 
-      await this.reportAutoProcessingService.processReport_AutoCloseByPayout({
-        targetId: [booking.id],
-        targetType: ReportEntityType.BOOKING,
-        entityManager: em,
-      });
+      try {
+        await this.reportAutoProcessingService.processReport_AutoCloseByPayout({
+          targetId: [booking.id],
+          targetType: ReportEntityType.BOOKING,
+          entityManager: em,
+        });
+      } catch (error) {
+        console.error(error);
+      }
 
       await scheduledJobRepository.updateToCompleted({
         jobIds: [dto.scheduledJobId],
