@@ -1,5 +1,6 @@
 import { GetAllSuspensionsDto } from '@/common/dto/business/GetAllSuspensions.dto';
 import { LocationSuspensionResponseDto } from '@/common/dto/business/res/LocationSuspension.response.dto';
+import { SuspendLocationDto } from '@/common/dto/business/SuspendLocation.dto';
 import { SuspendLocationBookingDto } from '@/common/dto/location-booking/SuspendLocationBooking.dto';
 import { UpdateLocationSuspensionDto } from '@/common/dto/location-booking/UpdateLocationSuspension.dto';
 import { LocationSuspensionEntity } from '@/modules/business/domain/LocationSuspension.entity';
@@ -14,6 +15,10 @@ export interface ILocationSuspensionService {
 
   updateLocationSuspension(
     dto: UpdateLocationSuspensionDto,
+  ): Promise<LocationSuspensionResponseDto>;
+
+  suspendLocation(
+    dto: SuspendLocationDto,
   ): Promise<LocationSuspensionResponseDto>;
 
   getAllSuspensions(

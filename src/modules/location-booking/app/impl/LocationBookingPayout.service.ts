@@ -11,6 +11,8 @@ import { Environment } from '@/config/env.config';
 import { ILocationBookingPayoutService } from '@/modules/location-booking/app/ILocationBookingPayout.service';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
+import { IReportAutoProcessingService } from '@/modules/report-automation/app/IReportAutoProcessing.service';
+import { ReportEntityType } from '@/modules/report/domain/Report.entity';
 import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob.service';
 import { ScheduledJobRepository } from '@/modules/scheduled-jobs/infra/repository/ScheduledJob.repository';
 import { ISystemConfigService } from '@/modules/utility/app/ISystemConfig.service';
@@ -34,6 +36,8 @@ export class LocationBookingPayoutService
     private readonly walletTransactionCoordinator: IWalletTransactionCoordinatorService,
     @Inject(ISystemConfigService)
     private readonly systemConfigService: ISystemConfigService,
+    @Inject(IReportAutoProcessingService)
+    private readonly reportAutoProcessingService: IReportAutoProcessingService,
     private readonly configService: ConfigService<Environment>,
   ) {
     super();
@@ -204,6 +208,12 @@ export class LocationBookingPayoutService
       this.logger.log(
         `Payout for Location Booking ID ${dto.locationBookingId} completed successfully.`,
       );
+
+      // await this.reportAutoProcessingService.processReport_AutoCloseByPayout({
+      //   targetId: [booking.id],
+      //   targetType: ReportEntityType.LOCATION,
+      //   entityManager: em,
+      // });
 
       await scheduledJobRepository.updateToCompleted({
         jobIds: [dto.scheduledJobId],

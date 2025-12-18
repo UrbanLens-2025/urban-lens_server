@@ -10,6 +10,7 @@ import { CancelEventBookingDto } from '@/common/dto/event/CancelEventBooking.dto
 import { CancelEventDto } from '@/common/dto/event/CancelEvent.dto';
 import { HandleBookingForceCancelledDto } from '@/common/dto/event/HandleBookingForceCancelled.dto';
 import { HandleBookingRejectedDto } from '@/common/dto/location-booking/HandleBookingRejected.dto';
+import { HandleForceCancelEventDto } from '@/common/dto/event/HandleForceCancelEvent.dto';
 
 export const IEventManagementService = Symbol('IEventManagementService');
 
@@ -30,6 +31,10 @@ export interface IEventManagementService {
   addLocationBooking(dto: AddLocationBookingDto): Promise<EventResponseDto>;
 
   cancelEventBooking(dto: CancelEventBookingDto): Promise<EventResponseDto>;
+
+  handleForceCancelEvent(
+    dto: HandleForceCancelEventDto,
+  ): Promise<EventResponseDto>;
 
   handleBookingForceCancelled(
     dto: HandleBookingForceCancelledDto,

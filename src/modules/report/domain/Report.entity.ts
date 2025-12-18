@@ -87,6 +87,9 @@ export class ReportEntity {
   })
   resolvedAt?: Date | null;
 
+  @Column({ name: 'auto_closed_by_payout', type: 'boolean', default: false })
+  autoClosedByPayout: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 

@@ -5,7 +5,7 @@ import { RefundAllSuccessfulOrdersDto } from '@/common/dto/event/RefundAllSucces
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { EventTicketRepository } from '@/modules/event/infra/repository/EventTicket.repository';
-import { In } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { EventTicketOrderStatus } from '@/common/constants/EventTicketOrderStatus.constant';
@@ -23,7 +23,6 @@ import {
 } from '@/modules/event/domain/events/TicketOrderRefunded.event';
 import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWalletTransactionCoordinator.service';
 import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
-import { RefundOrderDto } from '@/common/dto/event/RefundOrder.dto';
 import { EventAttendanceRepository } from '@/modules/event/infra/repository/EventAttendance.repository';
 import { EventAttendanceStatus } from '@/common/constants/EventAttendanceStatus.constant';
 import { EventAttendanceEntity } from '@/modules/event/domain/EventAttendance.entity';
@@ -221,46 +220,17 @@ export class TicketOrderManagementService
           eventId: dto.eventId,
           status: EventTicketOrderStatus.PAID,
         },
-        relations: {
-          event: true,
-        },
       });
 
-      const refunds: TicketOrderEntity[] = [];
-      // for every paid ticket order, refund
-      for (const ticketOrder of ticketOrders) {
-        const refundAmount =
-          Number(ticketOrder.totalPaymentAmount) -
-          Number(ticketOrder.refundedAmount);
-
-        const refundTransaction =
-          await this.walletTransactionCoordinatorService.transferFromEscrowToAccount(
-            {
-              amount: refundAmount,
-              currency: SupportedCurrency.VND,
-              destinationAccountId: ticketOrder.createdById,
-              entityManager: em,
-              note:
-                'Refund for order #' +
-                ticketOrder.id +
-                ' for event: ' +
-                ticketOrder.event.displayName +
-                ' (ID: ' +
-                ticketOrder.eventId +
-                ')',
-            },
-          );
-
-        ticketOrder.refundTransactionId = refundTransaction.id;
-        ticketOrder.status = EventTicketOrderStatus.REFUNDED;
-        ticketOrder.refundedAt = new Date();
-        ticketOrder.refundedAmount =
-          Number(ticketOrder.refundedAmount) + Number(refundAmount);
-        ticketOrder.refundReason = dto.refundReason;
-        refunds.push(await ticketOrderRepo.save(ticketOrder));
-      }
-
-      return this.mapToArray(TicketOrderResponseDto, refunds);
+      return this.handleForceIssueRefund(
+        {
+          ticketOrdersIds: ticketOrders.map((ticketOrder) => ticketOrder.id),
+          eventId: dto.eventId,
+          refundPercentage: dto.refundPercentage,
+          shouldCancelTickets: dto.shouldCancelTickets,
+        },
+        em,
+      );
     });
   }
 
@@ -269,13 +239,50 @@ export class TicketOrderManagementService
   ): Promise<TicketOrderResponseDto[]> {
     return this.ensureTransaction(dto.entityManager, async (em) => {
       const ticketOrderRepo = TicketOrderRepository(em);
-      const eventRepo = EventRepository(em);
-      const eventAttendanceRepo = EventAttendanceRepository(em);
 
       const ticketOrders = await ticketOrderRepo.find({
         where: {
           eventId: dto.eventId,
           createdById: In(dto.accountIds),
+          status: EventTicketOrderStatus.PAID,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      return this.handleForceIssueRefund(
+        {
+          ticketOrdersIds: ticketOrders.map((ticketOrder) => ticketOrder.id),
+          eventId: dto.eventId,
+          refundPercentage: dto.refundPercentage,
+          shouldCancelTickets: dto.shouldCancelTickets,
+        },
+        em,
+      );
+    });
+  }
+
+  private async handleForceIssueRefund(
+    dto: {
+      ticketOrdersIds: string[];
+      eventId: string;
+      refundPercentage: number;
+      shouldCancelTickets: boolean;
+    },
+    entityManager: EntityManager,
+  ): Promise<TicketOrderResponseDto[]> {
+    return await this.ensureTransaction(entityManager, async (em) => {
+      const ticketOrderRepo = TicketOrderRepository(em);
+      const eventRepo = EventRepository(em);
+      const eventAttendanceRepo = EventAttendanceRepository(em);
+
+      const ticketOrders = await ticketOrderRepo.find({
+        where: {
+          id: In(dto.ticketOrdersIds),
+        },
+        relations: {
+          eventAttendances: true,
         },
       });
 

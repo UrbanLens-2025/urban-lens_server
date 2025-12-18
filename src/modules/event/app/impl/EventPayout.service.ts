@@ -9,6 +9,7 @@ import { Environment } from '@/config/env.config';
 import { IEventPayoutService } from '@/modules/event/app/IEventPayout.service';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
+import { ReportEntityType } from '@/modules/report/domain/Report.entity';
 import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob.service';
 import { ScheduledJobRepository } from '@/modules/scheduled-jobs/infra/repository/ScheduledJob.repository';
 import { ISystemConfigService } from '@/modules/utility/app/ISystemConfig.service';
@@ -16,6 +17,7 @@ import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWall
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import dayjs from 'dayjs';
+import { IReportAutoProcessingService } from '@/modules/report-automation/app/IReportAutoProcessing.service';
 
 @Injectable()
 export class EventPayoutService
@@ -33,6 +35,8 @@ export class EventPayoutService
     private readonly systemConfigService: ISystemConfigService,
     @Inject(IWalletTransactionCoordinatorService)
     private readonly walletTransactionCoordinator: IWalletTransactionCoordinatorService,
+    @Inject(IReportAutoProcessingService)
+    private readonly reportAutoProcessingService: IReportAutoProcessingService,
   ) {
     super();
     this.MILLIS_TO_EVENT_PAYOUT = this.configService.getOrThrow<number>(
@@ -191,6 +195,13 @@ export class EventPayoutService
               ')',
           });
         }
+
+        // mark all reports as auto closed by payout
+        await this.reportAutoProcessingService.processReport_AutoCloseByPayout({
+          targetId: [event.id],
+          targetType: ReportEntityType.EVENT,
+          entityManager: em,
+        });
 
         // update the scheduled job as completed
         this.logger.log(

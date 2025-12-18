@@ -7,7 +7,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { EntityManager, In, UpdateResult } from 'typeorm';
+import { EntityManager, In, MoreThan, UpdateResult } from 'typeorm';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { LocationEntity } from '@/modules/business/domain/Location.entity';
 import { AddLocationTagDto } from '@/common/dto/business/AddLocationTag.dto';
@@ -31,6 +31,9 @@ import { LocationRequestTagsRepository } from '@/modules/business/infra/reposito
 import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
 import { ILocationBookingConfigManagementService } from '@/modules/location-booking/app/ILocationBookingConfigManagement.service';
 import { CreateBatchPublicLocationDto } from '@/common/dto/business/CreateBatchPublicLocation.dto';
+import { LocationSuspensionRepository } from '@/modules/business/infra/repository/LocationSuspension.repository';
+import { LocationSuspensionType } from '@/common/constants/LocationSuspensionType.constant';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class LocationManagementService
@@ -145,12 +148,24 @@ export class LocationManagementService
   updateOwnedLocation(dto: UpdateLocationDto): Promise<UpdateResult> {
     return this.ensureTransaction(null, async (em) => {
       const locationRepository = LocationRepositoryProvider(em);
+      const locationSuspensionRepo = LocationSuspensionRepository(em);
       await locationRepository.findOneOrFail({
         where: {
           id: dto.locationId,
           businessId: dto.accountId,
         },
       });
+
+      const suspensions =
+        await locationSuspensionRepo.getActiveLocationSuspension({
+          locationId: dto.locationId,
+        });
+
+      if (suspensions !== null) {
+        throw new BadRequestException(
+          `Location is currently suspended until ${dayjs(suspensions.suspendedUntil).format('DD/MM/YYYY HH:mm')} for reason: ${suspensions.suspensionReason}`,
+        );
+      }
 
       const updatedLocation = this.mapTo_safe(LocationEntity, dto);
       updatedLocation.updatedById = dto.accountId;

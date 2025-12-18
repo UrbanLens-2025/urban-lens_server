@@ -12,6 +12,9 @@ import { CreatePenalty_SuspendAccountDto } from '@/common/dto/report/CreatePenal
 import { CreatePenalty_BanAccountDto } from '@/common/dto/report/CreatePenalty_BanAccount.dto';
 import { CreatePenalty_SuspendLocationBookingAbilityDto } from '@/common/dto/report/CreatePenalty_SuspendLocationBookingAbility.dto';
 import { CreatePenalty_BanPostDto } from '@/common/dto/report/CreatePenalty_BanPost.dto';
+import { CreatePenalty_SuspendEventCreationAbilityDto } from '@/common/dto/report/CreatePenalty_SuspendEventCreationAbility.dto';
+import { CreatePenalty_ForceCancelEventDto } from '@/common/dto/report/CreatePenalty_ForceCancelEvent.dto';
+import { CreatePenalty_SuspendLocationDto } from '@/common/dto/report/CreatePenalty_SuspendLocation.dto';
 import { GetPenaltiesByTargetDto } from '@/common/dto/report/GetPenaltiesByTarget.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
@@ -90,6 +93,46 @@ export class PenaltyAdminController {
   ) {
     dto.createdById = admin.sub;
     return this.penaltyService.createPenalty_BanPost(dto);
+  }
+
+  @ApiOperation({
+    summary: 'Suspend event creation ability',
+    description:
+      'Create a penalty to suspend event creation ability for a specific target entity',
+  })
+  @Post('/suspend-event-creation')
+  createPenalty_SuspendEventCreationAbility(
+    @Body() dto: CreatePenalty_SuspendEventCreationAbilityDto,
+    @AuthUser() admin: JwtTokenDto,
+  ) {
+    dto.createdById = admin.sub;
+    return this.penaltyService.createPenalty_SuspendEventCreationAbility(dto);
+  }
+
+  @ApiOperation({
+    summary: 'Force cancel event',
+    description: 'Create a penalty to force cancel an event',
+  })
+  @Post('/force-cancel-event')
+  createPenalty_ForceCancelEvent(
+    @Body() dto: CreatePenalty_ForceCancelEventDto,
+    @AuthUser() admin: JwtTokenDto,
+  ) {
+    dto.createdById = admin.sub;
+    return this.penaltyService.createPenalty_ForceCancelEvent(dto);
+  }
+
+  @ApiOperation({
+    summary: 'Suspend location',
+    description: 'Create a penalty to suspend a location',
+  })
+  @Post('/suspend-location')
+  createPenalty_SuspendLocation(
+    @Body() dto: CreatePenalty_SuspendLocationDto,
+    @AuthUser() admin: JwtTokenDto,
+  ) {
+    dto.createdById = admin.sub;
+    return this.penaltyService.createPenalty_SuspendLocation(dto);
   }
 
   @ApiOperation({

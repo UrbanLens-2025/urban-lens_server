@@ -25,6 +25,7 @@ import { LocationBookingPayoutService } from '@/modules/location-booking/app/imp
 import { UtilityModule } from '@/modules/utility/Utility.module';
 import { LocationBookingManagementV2Service } from '@/modules/location-booking/app/impl/LocationBookingManagementV2.service';
 import { EventModule } from '@/modules/event/event.module';
+import { ReportAutomationModule } from '@/modules/report-automation/ReportAutomation.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { EventModule } from '@/modules/event/event.module';
     ScheduledJobsModule,
     WalletModule,
     UtilityModule,
+    ReportAutomationModule,
     forwardRef(() => EventModule),
   ],
   controllers: [

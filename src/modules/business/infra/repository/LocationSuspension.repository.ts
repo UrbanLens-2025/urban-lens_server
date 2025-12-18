@@ -15,6 +15,25 @@ export const LocationSuspensionRepository = (ctx: DataSource | EntityManager) =>
           suspendedUntil: MoreThan(new Date()),
           isActive: true,
         },
+        order: {
+          suspendedUntil: 'DESC',
+        },
+      });
+    },
+    async getActiveLocationSuspension(
+      this: Repository<LocationSuspensionEntity>,
+      payload: { locationId: string },
+    ) {
+      return this.findOne({
+        where: {
+          locationId: payload.locationId,
+          suspensionType: LocationSuspensionType.LOCATION,
+          suspendedUntil: MoreThan(new Date()),
+          isActive: true,
+        },
+        order: {
+          suspendedUntil: 'DESC',
+        },
       });
     },
   });

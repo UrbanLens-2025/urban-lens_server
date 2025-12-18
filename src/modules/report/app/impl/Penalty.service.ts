@@ -28,6 +28,10 @@ import {
   PenaltyAdministeredEvent,
 } from '@/modules/report/domain/events/PenaltyAdministered.event';
 import { IPostService } from '@/modules/post/app/IPost.service';
+import { CreatePenalty_SuspendEventCreationAbilityDto } from '@/common/dto/report/CreatePenalty_SuspendEventCreationAbility.dto';
+import { CreatePenalty_ForceCancelEventDto } from '@/common/dto/report/CreatePenalty_ForceCancelEvent.dto';
+import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
+import { CreatePenalty_SuspendLocationDto } from '@/common/dto/report/CreatePenalty_SuspendLocation.dto';
 
 /**
  * For functions in this service, create penalty then delegate.
@@ -41,6 +45,8 @@ export class PenaltyService extends CoreService implements IPenaltyService {
     private readonly locationSuspensionService: ILocationSuspensionService,
     @Inject(IPostService)
     private readonly postService: IPostService,
+    @Inject(IEventManagementService)
+    private readonly eventManagementService: IEventManagementService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     super();
@@ -104,7 +110,10 @@ export class PenaltyService extends CoreService implements IPenaltyService {
       penalty.targetType = dto.targetEntityType;
       penalty.targetOwnerId = toAdministerTo;
       penalty.penaltyAction = ReportPenaltyActions.SUSPEND_ACCOUNT;
-      penalty.reason = dto.suspensionReason;
+      penalty.reason =
+        dto.suspensionReason +
+        '. Suspended until: ' +
+        dto.suspendUntil.toLocaleDateString();
       penalty.createdById = dto.createdById;
 
       return penaltyRepository
@@ -187,7 +196,10 @@ export class PenaltyService extends CoreService implements IPenaltyService {
       penalty.targetType = dto.targetEntityType;
       penalty.targetOwnerId = toAdministerTo;
       penalty.penaltyAction = ReportPenaltyActions.SUSPEND_LOCATION_BOOKING;
-      penalty.reason = dto.suspensionReason;
+      penalty.reason =
+        dto.suspensionReason +
+        '. Suspended until: ' +
+        dto.suspendedUntil.toLocaleDateString();
       penalty.createdById = dto.createdById;
 
       return penaltyRepository
@@ -235,6 +247,129 @@ export class PenaltyService extends CoreService implements IPenaltyService {
         .save(penalty)
         .then(async (res) => {
           await this.postService.banPost(dto.targetEntityId, dto.banReason, em);
+          return res;
+        })
+        .then((res) => {
+          this.eventEmitter.emit(
+            PENALTY_ADMINISTERED_EVENT,
+            new PenaltyAdministeredEvent(res.id, toAdministerTo),
+          );
+          return res;
+        });
+    }).then((res) => this.mapTo(PenaltyResponseDto, res));
+  }
+
+  createPenalty_SuspendEventCreationAbility(
+    dto: CreatePenalty_SuspendEventCreationAbilityDto,
+  ): Promise<PenaltyResponseDto> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const penaltyRepository = PenaltyRepositoryProvider(em);
+      const toAdministerTo = await this.getEntityOwnerId({
+        em,
+        entityId: dto.targetEntityId,
+        entityType: dto.targetEntityType,
+      });
+
+      const penalty = new PenaltyEntity();
+      penalty.targetId = dto.targetEntityId;
+      penalty.targetType = dto.targetEntityType;
+      penalty.targetOwnerId = toAdministerTo;
+      penalty.penaltyAction = ReportPenaltyActions.SUSPEND_EVENT_CREATION;
+      penalty.reason =
+        dto.suspensionReason +
+        '. Suspended until: ' +
+        dto.suspendUntil.toLocaleDateString();
+      penalty.createdById = dto.createdById;
+
+      return penaltyRepository
+        .save(penalty)
+        .then(async (res) => {
+          await this.accountWarningService.suspendEventCreation({
+            accountId: toAdministerTo,
+            suspendedUntil: dto.suspendUntil,
+          });
+          return res;
+        })
+        .then((res) => {
+          this.eventEmitter.emit(
+            PENALTY_ADMINISTERED_EVENT,
+            new PenaltyAdministeredEvent(res.id, toAdministerTo),
+          );
+          return res;
+        });
+    }).then((res) => this.mapTo(PenaltyResponseDto, res));
+  }
+
+  createPenalty_ForceCancelEvent(
+    dto: CreatePenalty_ForceCancelEventDto,
+  ): Promise<PenaltyResponseDto> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const penaltyRepository = PenaltyRepositoryProvider(em);
+      const toAdministerTo = await this.getEntityOwnerId({
+        em,
+        entityId: dto.targetEntityId,
+        entityType: dto.targetEntityType,
+      });
+
+      const penalty = new PenaltyEntity();
+      penalty.targetId = dto.targetEntityId;
+      penalty.targetType = dto.targetEntityType;
+      penalty.targetOwnerId = toAdministerTo;
+      penalty.penaltyAction = ReportPenaltyActions.FORCE_CANCEL_EVENT;
+      penalty.reason = dto.reason;
+      penalty.createdById = dto.createdById;
+
+      return penaltyRepository
+        .save(penalty)
+        .then(async (res) => {
+          await this.eventManagementService.handleForceCancelEvent({
+            eventId: dto.targetEntityId,
+            entityManager: em,
+          });
+          return res;
+        })
+        .then((res) => {
+          this.eventEmitter.emit(
+            PENALTY_ADMINISTERED_EVENT,
+            new PenaltyAdministeredEvent(res.id, toAdministerTo),
+          );
+          return res;
+        });
+    }).then((res) => this.mapTo(PenaltyResponseDto, res));
+  }
+
+  createPenalty_SuspendLocation(
+    dto: CreatePenalty_SuspendLocationDto,
+  ): Promise<PenaltyResponseDto> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const penaltyRepository = PenaltyRepositoryProvider(em);
+      const toAdministerTo = await this.getEntityOwnerId({
+        em,
+        entityId: dto.targetEntityId,
+        entityType: dto.targetEntityType,
+      });
+
+      const penalty = new PenaltyEntity();
+      penalty.targetId = dto.targetEntityId;
+      penalty.targetType = dto.targetEntityType;
+      penalty.targetOwnerId = toAdministerTo;
+      penalty.penaltyAction = ReportPenaltyActions.SUSPEND_LOCATION;
+      penalty.reason =
+        dto.suspensionReason +
+        '. Suspended until: ' +
+        dto.suspendedUntil.toLocaleDateString('vi-VN');
+      penalty.createdById = dto.createdById;
+
+      return penaltyRepository
+        .save(penalty)
+        .then(async (res) => {
+          await this.locationSuspensionService.suspendLocation({
+            locationId: dto.targetEntityId,
+            executedById: dto.createdById,
+            reason: dto.suspensionReason,
+            suspendedUntil: dto.suspendedUntil,
+            entityManager: em,
+          });
           return res;
         })
         .then((res) => {

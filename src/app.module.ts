@@ -46,6 +46,7 @@ import { DelayedMessageModule } from '@/common/core/delayed-message/DelayedMessa
 import { ContentModerationModule } from '@/modules/content-moderation/ContentModeration.module';
 import { DashboardModule } from '@/modules/dashboard/Dashboard.module';
 import { AIModule } from '@/modules/ai/AI.module';
+import { ReportAutomationModule } from '@/modules/report-automation/ReportAutomation.module';
 @Module({
   imports: [
     // DevtoolsModule.register({
@@ -96,6 +97,7 @@ import { AIModule } from '@/modules/ai/AI.module';
     EventModule,
     LocationBookingModule,
     ReportModule,
+    ReportAutomationModule,
     GamificationModule,
     UtilityModule,
     WalletModule,

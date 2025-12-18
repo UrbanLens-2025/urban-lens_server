@@ -4,16 +4,23 @@ import { ProcessReport_MaliciousReportDto } from '@/common/dto/report/ProcessRep
 import { ProcessReport_BookingRefundDto } from '@/common/dto/report/ProcessReport_BookingRefund.dto';
 import { ProcessReport_TicketRefundDto } from '@/common/dto/report/ProcessReport_TicketRefund.dto';
 import { MarkReportsFirstSeenDto } from '@/common/dto/report/MarkReportsFirstSeen.dto';
+import { ProcessReport_IssueApologyDto } from '@/common/dto/report/ProcessReport_IssueApology.dto';
+import { ProcessReport_AutoCloseByPayoutDto } from '@/common/dto/report/ProcessReport_AutoCloseByPayout.dto';
 
 export const IReportProcessingService = Symbol('IReportProcessingService');
 
 export interface IReportProcessingService {
-  markReportsFirstSeen(dto: MarkReportsFirstSeenDto): Promise<ReportResponseDto>;
+  markReportsFirstSeen(
+    dto: MarkReportsFirstSeenDto,
+  ): Promise<ReportResponseDto>;
   processReport_NoActionTaken(
     dto: ProcessReport_NoActionTakenDto,
   ): Promise<ReportResponseDto>;
   processReport_MaliciousReport(
     dto: ProcessReport_MaliciousReportDto,
+  ): Promise<ReportResponseDto>;
+  processReport_IssueApology(
+    dto: ProcessReport_IssueApologyDto,
   ): Promise<ReportResponseDto>;
   processReport_BookingRefund(
     dto: ProcessReport_BookingRefundDto,

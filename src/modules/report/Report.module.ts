@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ReportInfraModule } from '@/modules/report/infra/Report.infra.module';
 import { ReportPrivateController } from '@/modules/report/interfaces/Report.private.controller';
 import { IReportCreationService } from '@/modules/report/app/IReportCreation.service';
@@ -27,10 +27,12 @@ import { PenaltyOwnerController } from '@/modules/report/interfaces/Penalty.owne
 import { PenaltyCreatorController } from '@/modules/report/interfaces/Penalty.creator.controller';
 import { IReportProcessingService } from '@/modules/report/app/IReportProcessing.service';
 import { ReportProcessingService } from '@/modules/report/app/impl/ReportProcessing.service';
+import { IReportAutoProcessingService } from '@/modules/report-automation/app/IReportAutoProcessing.service';
+import { ReportAutoProcessingService } from '@/modules/report-automation/app/ReportAutoProcessing.service';
 @Module({
   imports: [
     ReportInfraModule,
-    EventModule,
+    forwardRef(() => EventModule),
     PostModule,
     AccountModule,
     BusinessModule,
@@ -61,6 +63,10 @@ import { ReportProcessingService } from '@/modules/report/app/impl/ReportProcess
       provide: IReportProcessingService,
       useClass: ReportProcessingService,
     },
+    {
+      provide: IReportAutoProcessingService,
+      useClass: ReportAutoProcessingService,
+    },
     PenaltyAdministeredListener,
     ReportClosedListener,
   ],
@@ -74,5 +80,6 @@ import { ReportProcessingService } from '@/modules/report/app/impl/ReportProcess
     PenaltyOwnerController,
     PenaltyCreatorController,
   ],
+  exports: [IReportAutoProcessingService],
 })
 export class ReportModule {}

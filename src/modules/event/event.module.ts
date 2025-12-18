@@ -24,14 +24,16 @@ import { WalletModule } from '@/modules/wallet/Wallet.module';
 import { EventAttendanceManagementService } from '@/modules/event/app/impl/EventAttendanceManagement.service';
 import { IEventAttendanceManagementService } from '@/modules/event/app/IEventAttendanceManagement.service';
 import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
-import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPayout.listener';
 import { IEventAnalyticsService } from '@/modules/event/app/IEventAnalytics.service';
 import { EventAnalyticsService } from '@/modules/event/app/impl/EventAnalytics.service';
 import { EventAnalyticsDevOnlyController } from '@/modules/event/interfaces/EventAnalytics.dev-only.controller';
-import { IEventPayoutService } from '@/modules/event/app/IEventPayout.service';
-import { EventPayoutService } from '@/modules/event/app/impl/EventPayout.service';
 import { UtilityModule } from '@/modules/utility/Utility.module';
 import { EventOwnerController } from '@/modules/event/interfaces/Event.owner.controller';
+import { IEventPayoutService } from '@/modules/event/app/IEventPayout.service';
+import { EventPayoutService } from '@/modules/event/app/impl/EventPayout.service';
+import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPayout.listener';
+import { ReportModule } from '@/modules/report/Report.module';
+import { ReportAutomationModule } from '@/modules/report-automation/ReportAutomation.module';
 
 @Module({
   imports: [
@@ -41,6 +43,7 @@ import { EventOwnerController } from '@/modules/event/interfaces/Event.owner.con
     FileStorageModule,
     ScheduledJobsModule,
     UtilityModule,
+    ReportAutomationModule,
     forwardRef(() => LocationBookingModule),
   ],
   controllers: [

@@ -33,6 +33,7 @@ import { LocationBookingEntity } from '@/modules/location-booking/domain/Locatio
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import { HandleBookingRejectedDto } from '@/common/dto/location-booking/HandleBookingRejected.dto';
 import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
+import { HandleForceCancelEventDto } from '@/common/dto/event/HandleForceCancelEvent.dto';
 
 @Injectable()
 export class EventManagementService
@@ -307,10 +308,11 @@ export class EventManagementService
 
       // refund tickets
       await this.ticketOrderManagementService.refundAllSuccessfulOrders({
-        accountId: dto.accountId,
         eventId: dto.eventId,
         refundReason: 'Event was cancelled by the organizer.',
         entityManager: em,
+        refundPercentage: 1,
+        shouldCancelTickets: true,
       });
 
       // cancel booking
@@ -519,6 +521,50 @@ export class EventManagementService
       event.locationId = null;
 
       return eventRepository.save(event);
+    }).then((res) => this.mapTo(EventResponseDto, res));
+  }
+
+  handleForceCancelEvent(
+    dto: HandleForceCancelEventDto,
+  ): Promise<EventResponseDto> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const eventRepo = EventRepository(em);
+
+      const event = await eventRepo.findOneOrFail({
+        where: {
+          id: dto.eventId,
+        },
+      });
+
+      // can only cancel events that haven't been paid out yet
+      if (event.hasPaidOut) {
+        throw new BadRequestException(
+          'Event has already been paid out. Cannot be cancelled.',
+        );
+      }
+
+      /* 
+      1. Refund all successful ticket orders 100%
+      2. Mark the event as cancelled
+      3. DO NOTHING with the location booking
+      4. Notify all
+      */
+
+      // 1
+      await this.ticketOrderManagementService.refundAllSuccessfulOrders({
+        eventId: dto.eventId,
+        refundPercentage: 1,
+        shouldCancelTickets: true,
+        entityManager: em,
+      });
+
+      // 2
+      event.status = EventStatus.CANCELLED;
+
+      // 3
+      // I'm doing nothing here...
+
+      return eventRepo.save(event);
     }).then((res) => this.mapTo(EventResponseDto, res));
   }
 }

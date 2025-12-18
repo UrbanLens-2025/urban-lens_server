@@ -19,6 +19,7 @@ import { LocationBookingConfigRepository } from '@/modules/location-booking/infr
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { paginate, Paginated } from 'nestjs-paginate';
+import { SuspendLocationDto } from '@/common/dto/business/SuspendLocation.dto';
 
 @Injectable()
 export class LocationSuspensionService
@@ -27,6 +28,38 @@ export class LocationSuspensionService
 {
   constructor(private readonly eventEmitter: EventEmitter2) {
     super();
+  }
+
+  suspendLocation(
+    dto: SuspendLocationDto,
+  ): Promise<LocationSuspensionResponseDto> {
+    return this.ensureTransaction(null, async (em) => {
+      const locationRepo = LocationRepositoryProvider(em);
+      const locationSuspensionRepo = LocationSuspensionRepository(em);
+
+      const location = await locationRepo.findOneOrFail({
+        where: {
+          id: dto.locationId,
+        },
+      });
+
+      await locationRepo.update(
+        {
+          id: location.id,
+        },
+        {
+          isVisibleOnMap: false,
+        },
+      );
+
+      const suspension = new LocationSuspensionEntity();
+      suspension.locationId = location.id;
+      suspension.suspensionType = LocationSuspensionType.LOCATION;
+      suspension.suspensionReason = dto.reason;
+      suspension.suspendedById = dto.executedById;
+      suspension.suspendedUntil = dto.suspendedUntil;
+      return await locationSuspensionRepo.save(suspension);
+    }).then((res) => this.mapTo(LocationSuspensionResponseDto, res));
   }
 
   suspendLocationBooking(

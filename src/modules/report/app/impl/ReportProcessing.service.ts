@@ -15,6 +15,7 @@ import { MarkReportsFirstSeenDto } from '@/common/dto/report/MarkReportsFirstSee
 import { ReportResolvedByType } from '@/common/constants/ReportResolvedByType.constant';
 import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
 import { ReportEntityType } from '@/modules/report/domain/Report.entity';
+import { ProcessReport_IssueApologyDto } from '@/common/dto/report/ProcessReport_IssueApology.dto';
 
 @Injectable()
 export class ReportProcessingService
@@ -135,6 +136,45 @@ export class ReportProcessingService
       reports.map((report) => {
         report.status = ReportStatus.CLOSED;
         report.resolutionAction = ReportResolutionActions.MALICIOUS_REPORT;
+        report.resolvedAt = new Date();
+        report.resolvedById = dto.createdById;
+        report.resolvedByType = ReportResolvedByType.ADMIN;
+      });
+
+      return reportRepo.save(reports).then((res) => {
+        return res;
+      });
+    }).then((res) => this.mapTo(ReportResponseDto, res));
+  }
+
+  processReport_IssueApology(
+    dto: ProcessReport_IssueApologyDto,
+  ): Promise<ReportResponseDto> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const reportRepo = ReportRepositoryProvider(em);
+      const reports = await reportRepo
+        .find({
+          where: {
+            id: In(dto.reportIds),
+            status: ReportStatus.PENDING,
+          },
+        })
+        .then((res) => {
+          if (res.length !== dto.reportIds.length) {
+            const foundIds = res.map((r) => r.id);
+            const missingIds = dto.reportIds.filter(
+              (id) => !foundIds.includes(id),
+            );
+            throw new BadRequestException(
+              `One or more reports not found or not accessible: ${missingIds.join(', ')}`,
+            );
+          }
+          return res;
+        });
+
+      reports.map((report) => {
+        report.status = ReportStatus.CLOSED;
+        report.resolutionAction = ReportResolutionActions.ISSUE_APOLOGY;
         report.resolvedAt = new Date();
         report.resolvedById = dto.createdById;
         report.resolvedByType = ReportResolvedByType.ADMIN;

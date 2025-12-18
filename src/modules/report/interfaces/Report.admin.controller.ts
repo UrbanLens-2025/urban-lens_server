@@ -36,6 +36,7 @@ import { ProcessReport_MaliciousReportDto } from '@/common/dto/report/ProcessRep
 import { ProcessReport_BookingRefundDto } from '@/common/dto/report/ProcessReport_BookingRefund.dto';
 import { ProcessReport_TicketRefundDto } from '@/common/dto/report/ProcessReport_TicketRefund.dto';
 import { MarkReportsFirstSeenDto } from '@/common/dto/report/MarkReportsFirstSeen.dto';
+import { ProcessReport_IssueApologyDto } from '@/common/dto/report/ProcessReport_IssueApology.dto';
 
 @ApiTags('Report')
 @ApiBearerAuth()
@@ -151,6 +152,18 @@ export class ReportAdminController {
   ) {
     dto.createdById = user.sub;
     return this.reportProcessingService.processReport_MaliciousReport(dto);
+  }
+
+  @ApiOperation({ summary: 'Process report - Issue apology' })
+  @Post('/process/issue-apology')
+  processReport_IssueApology(
+    @Body() dto: ProcessReport_IssueApologyDto,
+    @AuthUser() user: JwtTokenDto,
+  ) {
+    return this.reportProcessingService.processReport_IssueApology({
+      ...dto,
+      createdById: user.sub,
+    });
   }
 
   @ApiOperation({ summary: 'Process report - Booking refund' })
