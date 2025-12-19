@@ -1904,11 +1904,23 @@ export class DashboardService extends CoreService implements IDashboardService {
     let totalRevenue = 0;
     let pendingPayout = 0;
 
-    // Calculate total revenue and pending payout based on role
+    // Get system payout percentage (same for both roles, but different config keys)
+    const systemPayoutPercentageConfig =
+      account.role === Role.BUSINESS_OWNER
+        ? await this.systemConfigService.getSystemConfigValue(
+            SystemConfigKey.LOCATION_BOOKING_SYSTEM_PAYOUT_PERCENTAGE,
+          )
+        : await this.systemConfigService.getSystemConfigValue(
+            SystemConfigKey.EVENT_SYSTEM_PAYOUT_PERCENTAGE,
+          );
+    const systemPayoutPercentage = systemPayoutPercentageConfig.value || 0.1;
+
+    // Calculate total revenue (already paid out) and pending revenue (not yet paid out) based on role
     if (account.role === Role.BUSINESS_OWNER) {
-      // Get total revenue from approved location bookings
       const bookingRepo = this.dataSource.getRepository(LocationBookingEntity);
-      const revenueResult = await bookingRepo
+
+      // Get total revenue: bookings that have been paid out (have businessPayoutTransactionId)
+      const paidOutRevenueResult = await bookingRepo
         .createQueryBuilder('booking')
         .innerJoin('booking.location', 'location')
         .select(
@@ -1921,18 +1933,13 @@ export class DashboardService extends CoreService implements IDashboardService {
         .andWhere('location.businessId = :businessId', {
           businessId: accountId,
         })
+        .andWhere('booking.businessPayoutTransactionId IS NOT NULL')
         .getRawOne();
 
-      totalRevenue = parseFloat(revenueResult?.total || '0');
+      totalRevenue = parseFloat(paidOutRevenueResult?.total || '0');
 
-      // Get pending payout: bookings with scheduledPayoutJobId but no businessPayoutTransactionId
-      const systemPayoutPercentageConfig =
-        await this.systemConfigService.getSystemConfigValue(
-          SystemConfigKey.LOCATION_BOOKING_SYSTEM_PAYOUT_PERCENTAGE,
-        );
-      const systemPayoutPercentage = systemPayoutPercentageConfig.value || 0.1;
-
-      const pendingPayoutResult = await bookingRepo
+      // Get pending revenue: bookings that are approved but not yet paid out
+      const pendingRevenueResult = await bookingRepo
         .createQueryBuilder('booking')
         .innerJoin('booking.location', 'location')
         .select(
@@ -1945,16 +1952,17 @@ export class DashboardService extends CoreService implements IDashboardService {
         .andWhere('location.businessId = :businessId', {
           businessId: accountId,
         })
-        .andWhere('booking.scheduledPayoutJobId IS NOT NULL')
         .andWhere('booking.businessPayoutTransactionId IS NULL')
         .getRawOne();
 
-      const pendingRevenue = parseFloat(pendingPayoutResult?.total || '0');
+      const pendingRevenue = parseFloat(pendingRevenueResult?.total || '0');
+      // Pending payout = pending revenue * (1 - system_payout_percentage)
       pendingPayout = pendingRevenue * (1 - systemPayoutPercentage);
     } else if (account.role === Role.EVENT_CREATOR) {
-      // Get total revenue from paid ticket orders
       const ticketOrderRepo = this.dataSource.getRepository(TicketOrderEntity);
-      const revenueResult = await ticketOrderRepo
+
+      // Get total revenue: events that have been paid out (have paidOutAt)
+      const paidOutRevenueResult = await ticketOrderRepo
         .createQueryBuilder('order')
         .innerJoin('order.event', 'event')
         .select(
@@ -1965,19 +1973,13 @@ export class DashboardService extends CoreService implements IDashboardService {
           status: EventTicketOrderStatus.PAID,
         })
         .andWhere('event.createdById = :accountId', { accountId })
+        .andWhere('event.paidOutAt IS NOT NULL')
         .getRawOne();
 
-      totalRevenue = parseFloat(revenueResult?.total || '0');
+      totalRevenue = parseFloat(paidOutRevenueResult?.total || '0');
 
-      // Get pending payout: events that are finished but not paid out yet
-      const systemPayoutPercentageConfig =
-        await this.systemConfigService.getSystemConfigValue(
-          SystemConfigKey.EVENT_SYSTEM_PAYOUT_PERCENTAGE,
-        );
-      const systemPayoutPercentage = systemPayoutPercentageConfig.value || 0.1;
-
-      // Get revenue from ticket orders for events that are finished but not paid out
-      const pendingPayoutResult = await ticketOrderRepo
+      // Get pending revenue: events that are finished but not yet paid out
+      const pendingRevenueResult = await ticketOrderRepo
         .createQueryBuilder('order')
         .innerJoin('order.event', 'event')
         .select(
@@ -1994,7 +1996,8 @@ export class DashboardService extends CoreService implements IDashboardService {
         .andWhere('event.paidOutAt IS NULL')
         .getRawOne();
 
-      const pendingRevenue = parseFloat(pendingPayoutResult?.total || '0');
+      const pendingRevenue = parseFloat(pendingRevenueResult?.total || '0');
+      // Pending payout = pending revenue * (1 - system_payout_percentage)
       pendingPayout = pendingRevenue * (1 - systemPayoutPercentage);
     }
 

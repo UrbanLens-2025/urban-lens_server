@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class RevenueSummaryResponseDto {
   @ApiProperty({
-    description: 'Total revenue from all time',
+    description: 'Total revenue that has been paid out (achieved revenue)',
     example: 1000000,
   })
   totalRevenue: number;
@@ -14,7 +14,8 @@ export class RevenueSummaryResponseDto {
   available: number;
 
   @ApiProperty({
-    description: 'Profit pending for system payout',
+    description:
+      'Revenue pending for system payout (revenue that will be received)',
     example: 200000,
   })
   pending: number;
