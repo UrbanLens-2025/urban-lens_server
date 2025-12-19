@@ -5,12 +5,17 @@ import { ScheduledJobService } from '@/modules/scheduled-jobs/app/impl/Scheduled
 import { FetchScheduledJobsCronService } from '@/modules/scheduled-jobs/app/cron/FetchScheduledJobs.cron.service';
 import { ScheduledJobsDevOnlyController } from '@/modules/scheduled-jobs/interfaces/ScheduledJobs.dev-only.interface';
 import { ScheduledJobsAdminController } from '@/modules/scheduled-jobs/interfaces/ScheduledJobs.admin.controller';
+import { ScheduledJobsPublicController } from '@/modules/scheduled-jobs/interfaces/ScheduledJobs.public.controller';
 import { IScheduledJobManagementService } from '@/modules/scheduled-jobs/app/IScheduledJob.management.service';
 import { ScheduledJobManagementService } from '@/modules/scheduled-jobs/app/impl/ScheduledJob.management.service';
 
 @Module({
   imports: [ScheduledJobsInfraModule],
-  controllers: [ScheduledJobsDevOnlyController, ScheduledJobsAdminController],
+  controllers: [
+    ScheduledJobsDevOnlyController,
+    ScheduledJobsAdminController,
+    ScheduledJobsPublicController,
+  ],
   providers: [
     {
       provide: IScheduledJobService,

@@ -9,6 +9,7 @@ import { GetPenaltiesByTargetOwnerDto } from '@/common/dto/report/GetPenaltiesBy
 import { CreatePenalty_SuspendEventCreationAbilityDto } from '@/common/dto/report/CreatePenalty_SuspendEventCreationAbility.dto';
 import { CreatePenalty_ForceCancelEventDto } from '@/common/dto/report/CreatePenalty_ForceCancelEvent.dto';
 import { CreatePenalty_SuspendLocationDto } from '@/common/dto/report/CreatePenalty_SuspendLocation.dto';
+import { CreatePenalty_FineLocationBookingDto } from '@/common/dto/report/CreatePenalty_FineLocationBooking.dto';
 
 export const IPenaltyService = Symbol('IPenaltyService');
 
@@ -36,6 +37,9 @@ export interface IPenaltyService {
   ): Promise<PenaltyResponseDto>;
   createPenalty_SuspendLocation(
     dto: CreatePenalty_SuspendLocationDto,
+  ): Promise<PenaltyResponseDto>;
+  createPenalty_FineLocationBooking(
+    dto: CreatePenalty_FineLocationBookingDto,
   ): Promise<PenaltyResponseDto>;
   getPenaltiesByTarget(
     dto: GetPenaltiesByTargetDto,

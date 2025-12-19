@@ -4,7 +4,10 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { ILocationVoucherService } from '../ILocationVoucher.service';
+import {
+  ILocationVoucherService,
+  ILocationVoucherService_QueryConfig,
+} from '../ILocationVoucher.service';
 import { LocationVoucherRepository } from '@/modules/gamification/infra/repository/LocationVoucher.repository';
 import { CreateLocationVoucherDto } from '@/common/dto/gamification/CreateLocationVoucher.dto';
 import { UpdateLocationVoucherDto } from '@/common/dto/gamification/UpdateLocationVoucher.dto';
@@ -1187,5 +1190,15 @@ export class LocationVoucherService implements ILocationVoucherService {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
+  }
+
+  async getAllVouchersUnfiltered(
+    query: PaginateQuery,
+  ): Promise<Paginated<any>> {
+    return paginate(
+      query,
+      this.locationVoucherRepository.repo,
+      ILocationVoucherService_QueryConfig.getAllVouchersUnfiltered(),
+    );
   }
 }

@@ -3,7 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IAnnouncementQueryService } from '@/modules/post/app/IAnnouncementQuery.service';
 import { Paginate, type PaginateQuery } from 'nestjs-paginate';
 
-@ApiTags('Location Announcements')
+@ApiTags('Announcements')
 @Controller('/public/announcements')
 export class AnnouncementPublicController {
   constructor(

@@ -1,7 +1,8 @@
 import { CreateLocationMissionDto } from '@/common/dto/gamification/CreateLocationMission.dto';
 import { UpdateLocationMissionDto } from '@/common/dto/gamification/UpdateLocationMission.dto';
-import { Paginated, PaginateQuery } from 'nestjs-paginate';
+import { Paginated, PaginateQuery, PaginateConfig } from 'nestjs-paginate';
 import { LocationMissionResponseDto } from '@/common/dto/gamification/LocationMission.response.dto';
+import { LocationMissionEntity } from '@/modules/gamification/domain/LocationMission.entity';
 
 export const ILocationMissionService = Symbol('ILocationMissionService');
 
@@ -41,4 +42,25 @@ export interface ILocationMissionService {
     userProfileId: string,
     query: PaginateQuery,
   ): Promise<Paginated<LocationMissionResponseDto>>;
+
+  getAllMissionsUnfiltered(
+    query: PaginateQuery,
+  ): Promise<Paginated<LocationMissionResponseDto>>;
+}
+
+export namespace ILocationMissionService_QueryConfig {
+  export function getAllMissionsUnfiltered(): PaginateConfig<LocationMissionEntity> {
+    return {
+      sortableColumns: ['createdAt', 'startDate', 'endDate'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      searchableColumns: ['title'],
+      filterableColumns: {
+        locationId: true,
+        title: true,
+      },
+      relations: {
+        location: true,
+      },
+    };
+  }
 }

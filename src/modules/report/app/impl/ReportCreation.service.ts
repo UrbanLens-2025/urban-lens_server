@@ -9,19 +9,20 @@ import { ReportResponseDto } from '@/common/dto/report/res/Report.response.dto';
 import { ReportReasonRepositoryProvider } from '@/modules/report/infra/repository/ReportReason.repository';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
-import {
-  ReportEntityType
-} from '@/modules/report/domain/Report.entity';
+import { ReportEntityType } from '@/modules/report/domain/Report.entity';
 import { ReportStatus } from '@/common/constants/ReportStatus.constant';
 import {
   REPORT_CREATED_EVENT,
   ReportCreatedEvent,
 } from '@/modules/report/domain/events/ReportCreated.event';
-import { EntityManager, MoreThan } from 'typeorm';
+import { EntityManager, In, MoreThan } from 'typeorm';
 import { PostRepositoryProvider } from '@/modules/post/infra/repository/Post.repository';
 import { ReportRepositoryProvider } from '@/modules/report/infra/repository/Report.repository';
 import { CreateBookingReportDto } from '@/common/dto/report/CreateBookingReport.dto';
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
+import { EventAttendanceRepository } from '@/modules/event/infra/repository/EventAttendance.repository';
+import { EventAttendanceStatus } from '@/common/constants/EventAttendanceStatus.constant';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class ReportCreationService
@@ -102,6 +103,39 @@ export class ReportCreationService
       const event = await eventRepo.findOneOrFail({
         where: { id: dto.eventId },
       });
+      const eventAttendanceRepo = EventAttendanceRepository(em);
+
+      // Step 1.1: Validate user can report events if they have an active ticket AND the event has started
+      if (event.startDate && event.startDate >= new Date()) {
+        throw new BadRequestException(
+          'You can only report events that have started.',
+        );
+      }
+
+      const existsTickets = await eventAttendanceRepo.existsBy({
+        eventId: dto.eventId,
+        ownerId: dto.createdById,
+        status: In([
+          EventAttendanceStatus.CREATED,
+          EventAttendanceStatus.CHECKED_IN,
+        ]),
+      });
+      if (!existsTickets) {
+        throw new BadRequestException(
+          'You can only report events if you have an active ticket.',
+        );
+      }
+
+      // Step 1.2: User can only report within 5 days after the event has finished
+      // TODO: Make dynamic
+      if (
+        event.endDate &&
+        dayjs(event.endDate).add(5, 'day').isBefore(dayjs())
+      ) {
+        throw new BadRequestException(
+          'You can only report events within 5 days after the event has finished.',
+        );
+      }
 
       // Step 2: Detect duplicate reports
       await this.detectReportSpamming(

@@ -44,7 +44,7 @@ export class VerifyVoucherCodeDto {
   userVoucherCode: string;
 }
 
-@ApiTags('Location Voucher (Business Owner)')
+@ApiTags('Location Voucher')
 @ApiBearerAuth()
 @Roles(Role.BUSINESS_OWNER)
 @Controller('/business/location-voucher')

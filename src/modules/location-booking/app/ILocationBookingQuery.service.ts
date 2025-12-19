@@ -8,6 +8,8 @@ import { BookedDatesResponseDto } from '@/common/dto/location-booking/res/Booked
 import { GetAllBookingsAtLocationByDateRangeDto } from '@/common/dto/location-booking/GetAllBookingsAtLocationByDateRange.dto';
 import { GetAllBookingsAtLocationPagedDto } from '@/common/dto/location-booking/GetAllBookingsAtLocationPaged.dto';
 import { GetConflictingBookingsDto } from '@/common/dto/location-booking/GetConflictingBookings.dto';
+import { SearchAllBookingsUnfilteredDto } from '@/common/dto/location-booking/SearchAllBookingsUnfiltered.dto';
+import { GetAnyBookingByIdDto } from '@/common/dto/location-booking/GetAnyBookingById.dto';
 
 export const ILocationBookingQueryService = Symbol(
   'ILocationBookingQueryService',
@@ -32,6 +34,14 @@ export interface ILocationBookingQueryService {
   getConflictingBookings(
     dto: GetConflictingBookingsDto,
   ): Promise<LocationBookingResponseDto[]>;
+
+  getAllBookingsUnfiltered(
+    dto: SearchAllBookingsUnfilteredDto,
+  ): Promise<Paginated<LocationBookingResponseDto>>;
+
+  getAnyBookingById(
+    dto: GetAnyBookingByIdDto,
+  ): Promise<LocationBookingResponseDto>;
 }
 
 export namespace ILocationBookingQueryService_QueryConfig {
@@ -47,6 +57,29 @@ export namespace ILocationBookingQueryService_QueryConfig {
         location: true,
         dates: true,
         scheduledPayoutJob: true,
+      },
+    };
+  }
+
+  export function getAllBookingsUnfiltered(): PaginateConfig<LocationBookingEntity> {
+    return {
+      sortableColumns: ['createdAt', 'updatedAt', 'status'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      filterableColumns: {
+        status: true,
+        locationId: true,
+        bookingObject: true,
+      },
+      relations: {
+        createdBy: {
+          creatorProfile: true,
+        },
+        location: {
+          business: true,
+        },
+        dates: true,
+        scheduledPayoutJob: true,
+        referencedTransaction: true,
       },
     };
   }

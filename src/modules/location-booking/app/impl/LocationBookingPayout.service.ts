@@ -11,6 +11,7 @@ import { Environment } from '@/config/env.config';
 import { ILocationBookingPayoutService } from '@/modules/location-booking/app/ILocationBookingPayout.service';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
+import { LocationBookingFineRepository } from '@/modules/location-booking/infra/repository/LocationBookingFine.repository';
 import { IReportAutoProcessingService } from '@/modules/report-automation/app/IReportAutoProcessing.service';
 import { ReportEntityType } from '@/modules/report/domain/Report.entity';
 import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob.service';
@@ -20,6 +21,7 @@ import { IWalletTransactionCoordinatorService } from '@/modules/wallet/app/IWall
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import dayjs from 'dayjs';
+import { IsNull } from 'typeorm';
 
 @Injectable()
 export class LocationBookingPayoutService
@@ -100,6 +102,7 @@ export class LocationBookingPayoutService
     return this.ensureTransaction(dto.entityManager, async (em) => {
       const locationBookingRepository = LocationBookingRepository(em);
       const scheduledJobRepository = ScheduledJobRepository(em);
+      const locationBookingFineRepository = LocationBookingFineRepository(em);
 
       // get the booking in question
       const booking = await locationBookingRepository.findOneOrFail({
@@ -122,7 +125,8 @@ export class LocationBookingPayoutService
         return;
       }
 
-      const totalRevenueFromBooking = booking.amountToPay;
+      const totalRevenueFromBooking =
+        Number(booking.amountToPay) - Number(booking.refundedAmount ?? 0);
 
       // backup check: If location bookking doesn't have revenue, skip payout
       if (totalRevenueFromBooking === 0) {
@@ -140,9 +144,47 @@ export class LocationBookingPayoutService
           SystemConfigKey.LOCATION_BOOKING_SYSTEM_PAYOUT_PERCENTAGE,
           em,
         );
-      const payoutAmountToSystem =
-        totalRevenueFromBooking * systemCutPercentage.value;
-      const payoutAmountToHost = totalRevenueFromBooking - payoutAmountToSystem;
+      const systemCutAmount =
+        Number(totalRevenueFromBooking) * systemCutPercentage.value;
+
+      // fine processing
+      const fines =
+        await locationBookingFineRepository.getAllActiveFinesForBooking({
+          bookingId: booking.id,
+        });
+      const totalFinedAmount = fines.reduce(
+        (sum, fine) => sum + Number(fine.fineAmount),
+        0,
+      );
+      const availableForFines =
+        Number(totalRevenueFromBooking) - Number(systemCutAmount);
+      const finesDeducted = Math.min(availableForFines, totalFinedAmount);
+      if (finesDeducted < totalFinedAmount) {
+        this.logger.warn(
+          `Fines partially paid for booking ${booking.id}: ` +
+            `Owed=${totalFinedAmount}, Paid=${finesDeducted}, ` +
+            `Shortfall=${totalFinedAmount - finesDeducted}`,
+        );
+
+        const paymentRatio = finesDeducted / totalFinedAmount;
+
+        for (const fine of fines) {
+          const paidAmount = Number(fine.fineAmount) * paymentRatio;
+          fine.paidAmount = paidAmount;
+          fine.paidAt = new Date();
+        }
+      } else {
+        for (const fine of fines) {
+          fine.paidAmount = fine.fineAmount;
+          fine.paidAt = new Date();
+        }
+      }
+
+      await locationBookingFineRepository.save(fines);
+
+      //
+      const payoutAmountToSystem = Number(systemCutAmount) + finesDeducted;
+      const payoutAmountToHost = Number(availableForFines) - finesDeducted;
 
       this.logger.log(
         `Processing payout for Location Booking ID ${dto.locationBookingId}: Total Revenue = ${totalRevenueFromBooking}, System Cut = ${payoutAmountToSystem}, Host Payout = ${payoutAmountToHost}`,
@@ -173,7 +215,6 @@ export class LocationBookingPayoutService
 
       // transfer payout to host
       if (payoutAmountToHost > 0) {
-        // TODO consider case location is owned publicly or is not in the system
         // ! for now, ignoring public locations and locations not in the system
         if (
           booking.location.ownershipType ===

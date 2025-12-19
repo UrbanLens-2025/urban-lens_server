@@ -338,4 +338,15 @@ export class LocationBookingEntity {
 
     return earliestStartDate <= eventStartDate && latestEndDate >= eventEndDate;
   }
+
+  /**
+   * can add fine if booking has been approved and has not been paid out yet
+   * @returns
+   */
+  canAddFine() {
+    return (
+      this.status === LocationBookingStatus.APPROVED &&
+      (!isNotBlank(this.paidOutAt) || dayjs(this.paidOutAt).isAfter(dayjs()))
+    );
+  }
 }

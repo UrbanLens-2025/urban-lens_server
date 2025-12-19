@@ -4,7 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ILocationMissionService } from '../ILocationMission.service';
+import {
+  ILocationMissionService,
+  ILocationMissionService_QueryConfig,
+} from '../ILocationMission.service';
 import { LocationMissionRepository } from '@/modules/gamification/infra/repository/LocationMission.repository';
 import { CreateLocationMissionDto } from '@/common/dto/gamification/CreateLocationMission.dto';
 import { UpdateLocationMissionDto } from '@/common/dto/gamification/UpdateLocationMission.dto';
@@ -443,5 +446,15 @@ export class LocationMissionService implements ILocationMissionService {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
+  }
+
+  async getAllMissionsUnfiltered(
+    query: PaginateQuery,
+  ): Promise<Paginated<any>> {
+    return paginate(
+      query,
+      this.locationMissionRepository.repo,
+      ILocationMissionService_QueryConfig.getAllMissionsUnfiltered(),
+    );
   }
 }
