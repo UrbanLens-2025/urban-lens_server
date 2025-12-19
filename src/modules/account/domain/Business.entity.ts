@@ -39,14 +39,29 @@ export class BusinessEntity {
   @Column({ name: 'name', type: 'varchar', length: 255 })
   name: string;
 
-  @Column({ name: 'address_line', type: 'varchar', length: 255 })
-  addressLine: string;
+  @Column({
+    name: 'address_line',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  addressLine?: string | null;
 
-  @Column({ name: 'address_level_1', type: 'varchar', length: 255 })
-  addressLevel1: string;
+  @Column({
+    name: 'address_level_1',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  addressLevel1?: string | null;
 
-  @Column({ name: 'address_level_2', type: 'varchar', length: 255 })
-  addressLevel2: string;
+  @Column({
+    name: 'address_level_2',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  addressLevel2?: string | null;
 
   @Column({ name: 'description', type: 'text' })
   description: string;
