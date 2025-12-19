@@ -30,22 +30,16 @@ export class CreateBusinessDto {
   @IsNotEmpty()
   description: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  @ApiProperty({ description: 'Địa chỉ văn phòng công ty' })
   addressLine: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  @ApiProperty({ description: 'Địa chỉ văn phòng công ty' })
   addressLevel1: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  @ApiProperty({ description: 'Địa chỉ văn phòng công ty' })
   addressLevel2: string;
 
   @IsString()
