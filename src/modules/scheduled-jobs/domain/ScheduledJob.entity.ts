@@ -13,7 +13,7 @@ import {
 export class ScheduledJobEntity {
   public static readonly TABLE_NAME = 'scheduled_jobs';
 
-  @PrimaryGeneratedColumn('identity')
+  @PrimaryGeneratedColumn('identity', { type: 'bigint' })
   id: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })

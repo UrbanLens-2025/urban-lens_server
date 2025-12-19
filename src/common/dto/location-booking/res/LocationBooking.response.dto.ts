@@ -21,6 +21,9 @@ export class LocationBookingResponseDto {
 
   @Expose()
   amountToPay: number;
+  
+  @Expose()
+  refundedAmount?: number | null;
 
   @Expose()
   @Type(() => LocationBookingDateResponseDto)
