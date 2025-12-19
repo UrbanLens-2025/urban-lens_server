@@ -828,15 +828,15 @@ export class PostService
         const postType = dto.type;
         const postId = result.postId;
         setImmediate(() => {
-          const postCreatedEvent = new PostCreatedEvent();
+        const postCreatedEvent = new PostCreatedEvent();
           postCreatedEvent.postId = postId;
           postCreatedEvent.authorId = authorId;
           postCreatedEvent.postType = postType;
-          postCreatedEvent.isVerified = isVerified;
+        postCreatedEvent.isVerified = isVerified;
           this.logger.log(
             `📤 Emitting POST_CREATED_EVENT for postId: ${postId}, type: ${postType}`,
           );
-          this.eventEmitter.emit(POST_CREATED_EVENT, postCreatedEvent);
+        this.eventEmitter.emit(POST_CREATED_EVENT, postCreatedEvent);
         });
       }
 
