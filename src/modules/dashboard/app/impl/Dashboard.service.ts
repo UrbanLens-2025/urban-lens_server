@@ -32,6 +32,7 @@ import {
 } from '@/common/dto/dashboard/EventsLocationsTotals.response.dto';
 import { BusinessDashboardStatsTotalDto } from '@/common/dto/dashboard/BusinessDashboardStats.response.dto';
 import { BusinessEntity } from '@/modules/account/domain/Business.entity';
+import { AccountEntity } from '@/modules/account/domain/Account.entity';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { CheckInEntity } from '@/modules/business/domain/CheckIn.entity';
 import { PostEntity, PostType } from '@/modules/post/domain/Post.entity';
@@ -59,12 +60,19 @@ import {
   EventCreatorPerformanceByMonthDto,
   EventCreatorPerformanceByYearDto,
 } from '@/common/dto/dashboard/EventCreatorPerformance.response.dto';
+import { RevenueSummaryResponseDto } from '@/common/dto/dashboard/RevenueSummary.response.dto';
+import { Role } from '@/common/constants/Role.constant';
+import { ISystemConfigService } from '@/modules/utility/app/ISystemConfig.service';
+import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
+import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class DashboardService extends CoreService implements IDashboardService {
   constructor(
     private readonly accountRepository: AccountRepository,
     private readonly locationRepository: LocationRepository,
+    @Inject(ISystemConfigService)
+    private readonly systemConfigService: ISystemConfigService,
   ) {
     super();
   }
@@ -1057,9 +1065,9 @@ export class DashboardService extends CoreService implements IDashboardService {
       sevenDaysAgo.setHours(0, 0, 0, 0);
 
       const revenueByDayRaw = await this.dataSource
-          .getRepository(LocationBookingEntity)
-          .createQueryBuilder('booking')
-          .select('EXTRACT(DOW FROM booking.created_at)', 'dayOfWeek')
+        .getRepository(LocationBookingEntity)
+        .createQueryBuilder('booking')
+        .select('EXTRACT(DOW FROM booking.created_at)', 'dayOfWeek')
         .addSelect(
           'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
           'revenue',
@@ -1068,10 +1076,10 @@ export class DashboardService extends CoreService implements IDashboardService {
         .andWhere('booking.status = :status', {
           status: LocationBookingStatus.APPROVED,
         })
-          .andWhere('booking.created_at >= :sevenDaysAgo', { sevenDaysAgo })
-          .andWhere('booking.created_at <= :now', { now })
-          .groupBy('EXTRACT(DOW FROM booking.created_at)')
-            .getRawMany();
+        .andWhere('booking.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+        .andWhere('booking.created_at <= :now', { now })
+        .groupBy('EXTRACT(DOW FROM booking.created_at)')
+        .getRawMany();
 
       // Create map from query results
       const revenueDayMap = new Map<number, number>();
@@ -1102,9 +1110,9 @@ export class DashboardService extends CoreService implements IDashboardService {
       const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
 
       const revenueByMonthRaw = await this.dataSource
-          .getRepository(LocationBookingEntity)
-          .createQueryBuilder('booking')
-          .select('EXTRACT(MONTH FROM booking.created_at)', 'month')
+        .getRepository(LocationBookingEntity)
+        .createQueryBuilder('booking')
+        .select('EXTRACT(MONTH FROM booking.created_at)', 'month')
         .addSelect(
           'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
           'revenue',
@@ -1113,10 +1121,10 @@ export class DashboardService extends CoreService implements IDashboardService {
         .andWhere('booking.status = :status', {
           status: LocationBookingStatus.APPROVED,
         })
-          .andWhere('booking.created_at >= :yearStart', { yearStart })
-          .andWhere('booking.created_at <= :yearEnd', { yearEnd })
-          .groupBy('EXTRACT(MONTH FROM booking.created_at)')
-            .getRawMany();
+        .andWhere('booking.created_at >= :yearStart', { yearStart })
+        .andWhere('booking.created_at <= :yearEnd', { yearEnd })
+        .groupBy('EXTRACT(MONTH FROM booking.created_at)')
+        .getRawMany();
 
       // Create map from query results
       const revenueMonthMap = new Map<number, number>();
@@ -1140,9 +1148,9 @@ export class DashboardService extends CoreService implements IDashboardService {
     // 3. Stats by year (all years)
     if (filterType === 'year') {
       const revenueByYearRaw = await this.dataSource
-          .getRepository(LocationBookingEntity)
-          .createQueryBuilder('booking')
-          .select('EXTRACT(YEAR FROM booking.created_at)', 'year')
+        .getRepository(LocationBookingEntity)
+        .createQueryBuilder('booking')
+        .select('EXTRACT(YEAR FROM booking.created_at)', 'year')
         .addSelect(
           'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
           'revenue',
@@ -1151,8 +1159,8 @@ export class DashboardService extends CoreService implements IDashboardService {
         .andWhere('booking.status = :status', {
           status: LocationBookingStatus.APPROVED,
         })
-          .groupBy('EXTRACT(YEAR FROM booking.created_at)')
-            .getRawMany();
+        .groupBy('EXTRACT(YEAR FROM booking.created_at)')
+        .getRawMany();
 
       // Create map from query results
       const revenueYearMap = new Map<number, number>();
@@ -1266,11 +1274,11 @@ export class DashboardService extends CoreService implements IDashboardService {
           accountId: eventCreatorAccountId,
         })
         .andWhere('event.created_at >= :currentMonthStart', {
-        currentMonthStart,
-      })
+          currentMonthStart,
+        })
         .andWhere('event.created_at <= :currentMonthEnd', {
-        currentMonthEnd,
-      })
+          currentMonthEnd,
+        })
         .getCount(),
 
       // Events created in previous month
@@ -1314,14 +1322,14 @@ export class DashboardService extends CoreService implements IDashboardService {
       eventIds.length > 0
         ? ticketOrderRepo
             .createQueryBuilder('order')
-      .select(
+            .select(
               'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
-        'total',
-      )
+              'total',
+            )
             .where('order.event_id IN (:...eventIds)', { eventIds })
             .andWhere('order.status = :status', {
               status: EventTicketOrderStatus.PAID,
-      })
+            })
             .getRawOne()
         : Promise.resolve({ total: '0' }),
 
@@ -1329,20 +1337,20 @@ export class DashboardService extends CoreService implements IDashboardService {
       eventIds.length > 0
         ? ticketOrderRepo
             .createQueryBuilder('order')
-      .select(
+            .select(
               'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
-        'total',
-      )
+              'total',
+            )
             .where('order.event_id IN (:...eventIds)', { eventIds })
             .andWhere('order.status = :status', {
               status: EventTicketOrderStatus.PAID,
-      })
+            })
             .andWhere('order.created_at >= :currentMonthStart', {
-        currentMonthStart,
-      })
+              currentMonthStart,
+            })
             .andWhere('order.created_at <= :currentMonthEnd', {
-        currentMonthEnd,
-      })
+              currentMonthEnd,
+            })
             .getRawOne()
         : Promise.resolve({ total: '0' }),
     ]);
@@ -1855,5 +1863,192 @@ export class DashboardService extends CoreService implements IDashboardService {
 
     // Default return (should not reach here, but TypeScript needs it)
     return [];
+  }
+
+  async getRevenueSummary(
+    accountId: string,
+  ): Promise<RevenueSummaryResponseDto> {
+    // Get account to detect role
+    const accountRepo = this.dataSource.getRepository(AccountEntity);
+    const account = await accountRepo.findOne({
+      where: { id: accountId },
+      select: ['id', 'role'],
+    });
+
+    if (!account) {
+      return {
+        totalRevenue: 0,
+        available: 0,
+        pending: 0,
+        pendingWithdraw: 0,
+        totalBalance: 0,
+      };
+    }
+
+    // Get wallet for the account
+    const walletRepo = this.dataSource.getRepository(WalletEntity);
+    const wallet = await walletRepo.findOne({
+      where: { ownedBy: accountId },
+    });
+
+    if (!wallet) {
+      return {
+        totalRevenue: 0,
+        available: 0,
+        pending: 0,
+        pendingWithdraw: 0,
+        totalBalance: 0,
+      };
+    }
+
+    let totalRevenue = 0;
+    let pendingPayout = 0;
+
+    // Calculate total revenue and pending payout based on role
+    if (account.role === Role.BUSINESS_OWNER) {
+      // Get total revenue from approved location bookings
+      const bookingRepo = this.dataSource.getRepository(LocationBookingEntity);
+      const revenueResult = await bookingRepo
+        .createQueryBuilder('booking')
+        .innerJoin('booking.location', 'location')
+        .select(
+          'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
+          'total',
+        )
+        .where('booking.status = :status', {
+          status: LocationBookingStatus.APPROVED,
+        })
+        .andWhere('location.businessId = :businessId', {
+          businessId: accountId,
+        })
+        .getRawOne();
+
+      totalRevenue = parseFloat(revenueResult?.total || '0');
+
+      // Get pending payout: bookings with scheduledPayoutJobId but no businessPayoutTransactionId
+      const systemPayoutPercentageConfig =
+        await this.systemConfigService.getSystemConfigValue(
+          SystemConfigKey.LOCATION_BOOKING_SYSTEM_PAYOUT_PERCENTAGE,
+        );
+      const systemPayoutPercentage = systemPayoutPercentageConfig.value || 0.1;
+
+      const pendingPayoutResult = await bookingRepo
+        .createQueryBuilder('booking')
+        .innerJoin('booking.location', 'location')
+        .select(
+          'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
+          'total',
+        )
+        .where('booking.status = :status', {
+          status: LocationBookingStatus.APPROVED,
+        })
+        .andWhere('location.businessId = :businessId', {
+          businessId: accountId,
+        })
+        .andWhere('booking.scheduledPayoutJobId IS NOT NULL')
+        .andWhere('booking.businessPayoutTransactionId IS NULL')
+        .getRawOne();
+
+      const pendingRevenue = parseFloat(pendingPayoutResult?.total || '0');
+      pendingPayout = pendingRevenue * (1 - systemPayoutPercentage);
+    } else if (account.role === Role.EVENT_CREATOR) {
+      // Get total revenue from paid ticket orders
+      const ticketOrderRepo = this.dataSource.getRepository(TicketOrderEntity);
+      const revenueResult = await ticketOrderRepo
+        .createQueryBuilder('order')
+        .innerJoin('order.event', 'event')
+        .select(
+          'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
+          'total',
+        )
+        .where('order.status = :status', {
+          status: EventTicketOrderStatus.PAID,
+        })
+        .andWhere('event.createdById = :accountId', { accountId })
+        .getRawOne();
+
+      totalRevenue = parseFloat(revenueResult?.total || '0');
+
+      // Get pending payout: events that are finished but not paid out yet
+      const systemPayoutPercentageConfig =
+        await this.systemConfigService.getSystemConfigValue(
+          SystemConfigKey.EVENT_SYSTEM_PAYOUT_PERCENTAGE,
+        );
+      const systemPayoutPercentage = systemPayoutPercentageConfig.value || 0.1;
+
+      // Get revenue from ticket orders for events that are finished but not paid out
+      const pendingPayoutResult = await ticketOrderRepo
+        .createQueryBuilder('order')
+        .innerJoin('order.event', 'event')
+        .select(
+          'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
+          'total',
+        )
+        .where('order.status = :status', {
+          status: EventTicketOrderStatus.PAID,
+        })
+        .andWhere('event.createdById = :accountId', { accountId })
+        .andWhere('event.status = :eventStatus', {
+          eventStatus: EventStatus.FINISHED,
+        })
+        .andWhere('event.paidOutAt IS NULL')
+        .getRawOne();
+
+      const pendingRevenue = parseFloat(pendingPayoutResult?.total || '0');
+      pendingPayout = pendingRevenue * (1 - systemPayoutPercentage);
+    }
+
+    // Get available balance (balance - lockedBalance)
+    const available = Math.max(
+      0,
+      (wallet.balance || 0) - (wallet.lockedBalance || 0),
+    );
+
+    // Get pending withdraw: withdraw transactions with status PENDING or PROCESSING
+    const externalTransactionRepo = this.dataSource.getRepository(
+      WalletExternalTransactionEntity,
+    );
+    const pendingWithdrawResult = await externalTransactionRepo
+      .createQueryBuilder('transaction')
+      .select('COALESCE(SUM(transaction.amount), 0)', 'total')
+      .where('transaction.wallet_id = :walletId', { walletId: wallet.id })
+      .andWhere('transaction.direction = :direction', {
+        direction: WalletExternalTransactionDirection.WITHDRAW,
+      })
+      .andWhere('transaction.status IN (:...statuses)', {
+        statuses: [
+          WalletExternalTransactionStatus.PENDING,
+          WalletExternalTransactionStatus.PROCESSING,
+        ],
+      })
+      .getRawOne();
+
+    const pendingWithdraw = parseFloat(pendingWithdrawResult?.total || '0');
+
+    // Get total deposit amount
+    const depositResult = await externalTransactionRepo
+      .createQueryBuilder('transaction')
+      .select('COALESCE(SUM(transaction.amount), 0)', 'total')
+      .where('transaction.wallet_id = :walletId', { walletId: wallet.id })
+      .andWhere('transaction.direction = :direction', {
+        direction: WalletExternalTransactionDirection.DEPOSIT,
+      })
+      .andWhere('transaction.status = :status', {
+        status: WalletExternalTransactionStatus.COMPLETED,
+      })
+      .getRawOne();
+
+    const totalDeposit = parseFloat(depositResult?.total || '0');
+
+    // Total balance = total deposit + total revenue
+    const totalBalance = totalDeposit + totalRevenue;
+
+    return {
+      totalRevenue: Math.round(totalRevenue),
+      available: Math.round(available),
+      pending: Math.round(pendingPayout),
+      pendingWithdraw: Math.round(pendingWithdraw),
+      totalBalance: Math.round(totalBalance),
+    };
   }
 }

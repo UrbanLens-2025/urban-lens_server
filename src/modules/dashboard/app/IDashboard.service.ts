@@ -36,6 +36,7 @@ import {
   EventCreatorPerformanceByMonthDto,
   EventCreatorPerformanceByYearDto,
 } from '@/common/dto/dashboard/EventCreatorPerformance.response.dto';
+import { RevenueSummaryResponseDto } from '@/common/dto/dashboard/RevenueSummary.response.dto';
 
 export const IDashboardService = Symbol('IDashboardService');
 
@@ -137,4 +138,11 @@ export interface IDashboardService {
     | EventCreatorPerformanceByMonthDto[]
     | EventCreatorPerformanceByYearDto[]
   >;
+
+  /**
+   * Get revenue summary for business owner or event creator
+   * Returns total revenue, available balance, total withdrawn, and pending amount
+   * Role is automatically detected from account
+   */
+  getRevenueSummary(accountId: string): Promise<RevenueSummaryResponseDto>;
 }

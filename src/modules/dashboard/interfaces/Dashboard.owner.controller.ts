@@ -19,6 +19,7 @@ import {
   BusinessRevenueByMonthDto,
   BusinessRevenueByYearDto,
 } from '@/common/dto/dashboard/BusinessRevenue.response.dto';
+import { RevenueSummaryResponseDto } from '@/common/dto/dashboard/RevenueSummary.response.dto';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -98,5 +99,22 @@ export class DashboardOwnerController {
     | BusinessRevenueByYearDto[]
   > {
     return this.dashboardService.getBusinessRevenueOverview(user.sub, query);
+  }
+
+  @ApiOperation({
+    summary: 'Get revenue summary',
+    description:
+      'Get revenue summary including total revenue, available balance, total withdrawn, and pending amount',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Revenue summary',
+    type: RevenueSummaryResponseDto,
+  })
+  @Get('/revenue/summary')
+  getRevenueSummary(
+    @AuthUser() user: JwtTokenDto,
+  ): Promise<RevenueSummaryResponseDto> {
+    return this.dashboardService.getRevenueSummary(user.sub);
   }
 }

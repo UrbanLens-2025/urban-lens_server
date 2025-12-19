@@ -24,6 +24,7 @@ import {
   EventCreatorPerformanceByYearDto,
 } from '@/common/dto/dashboard/EventCreatorPerformance.response.dto';
 import { Query } from '@nestjs/common';
+import { RevenueSummaryResponseDto } from '@/common/dto/dashboard/RevenueSummary.response.dto';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -117,5 +118,22 @@ export class DashboardCreatorController {
     | EventCreatorPerformanceByYearDto[]
   > {
     return this.dashboardService.getEventCreatorPerformance(user.sub, query);
+  }
+
+  @ApiOperation({
+    summary: 'Get revenue summary',
+    description:
+      'Get revenue summary including total revenue, available balance, total withdrawn, and pending amount',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Revenue summary',
+    type: RevenueSummaryResponseDto,
+  })
+  @Get('/revenue/summary')
+  getRevenueSummary(
+    @AuthUser() user: JwtTokenDto,
+  ): Promise<RevenueSummaryResponseDto> {
+    return this.dashboardService.getRevenueSummary(user.sub);
   }
 }

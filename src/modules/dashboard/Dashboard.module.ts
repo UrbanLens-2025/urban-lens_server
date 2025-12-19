@@ -11,6 +11,7 @@ import { EventInfraModule } from '@/modules/event/infra/event.infra.module';
 import { WalletInfraModule } from '@/modules/wallet/infra/Wallet.infra.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
+import { UtilityModule } from '@/modules/utility/Utility.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { LocationBookingEntity } from '@/modules/location-booking/domain/Locatio
     PostInfraModule,
     EventInfraModule,
     WalletInfraModule,
+    UtilityModule,
     TypeOrmModule.forFeature([LocationBookingEntity]),
   ],
   controllers: [
