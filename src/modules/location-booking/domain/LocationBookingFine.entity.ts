@@ -37,6 +37,7 @@ export class LocationBookingFineEntity {
 
   @ManyToOne(() => AccountEntity, (account) => account.id, {
     createForeignKeyConstraints: true,
+    nullable: true,
   })
   @JoinColumn({ name: 'updated_by' })
   updatedBy?: AccountEntity | null;
@@ -59,8 +60,8 @@ export class LocationBookingFineEntity {
   @Column({ name: 'paid_at', type: 'timestamp with time zone', nullable: true })
   paidAt?: Date | null;
 
-  @Column({ name: 'paid_amount', type: 'numeric', nullable: true })
-  paidAmount?: number | null;
+  @Column({ name: 'paid_amount', type: 'numeric', default: 0 })
+  paidAmount: number;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;

@@ -3,6 +3,7 @@ import {
   Get,
   Inject,
   Param,
+  ParseDatePipe,
   ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
@@ -59,5 +60,24 @@ export class LocationBookingAdminController {
   @Get('/booked-dates')
   getBookedDatesByDateRange(@Query() dto: GetBookedDatesByDateRangeDto) {
     return this.locationBookingQueryService.getBookedDatesByDateRange(dto);
+  }
+
+  @ApiOperation({ summary: 'Get all bookings at location paged' })
+  @ApiPaginationQuery(
+    ILocationBookingQueryService_QueryConfig.searchBookingsByLocation(),
+  )
+  @Get('/all-bookings-at-location-paged/:locationId')
+  getAllBookingsAtLocationPaged(
+    @Paginate() query: PaginateQuery,
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Query('startDate', new ParseDatePipe()) startDate: Date,
+    @Query('endDate', new ParseDatePipe()) endDate: Date,
+  ) {
+    return this.locationBookingQueryService.getAllBookingsAtLocationPaged({
+      query,
+      locationId,
+      startDate,
+      endDate,
+    });
   }
 }

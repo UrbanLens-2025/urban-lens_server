@@ -29,6 +29,7 @@ export class LocationBookingFineResponseDto {
   bookingId: string;
 
   @Expose()
+  @Type(() => Number)
   fineAmount: number;
 
   @Expose()
@@ -36,7 +37,7 @@ export class LocationBookingFineResponseDto {
 
   @Expose()
   @Type(() => Date)
-  paidAt: Date;
+  paidAt?: Date | null;
 
   @Expose()
   isActive: boolean;

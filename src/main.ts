@@ -31,7 +31,10 @@ async function bootstrap() {
     next();
   });
 
-  app.enableCors();
+  app.enableCors({
+    origin: '*',
+    credentials: true,
+  });
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe(globalValidationConfig));
   app.enableVersioning({

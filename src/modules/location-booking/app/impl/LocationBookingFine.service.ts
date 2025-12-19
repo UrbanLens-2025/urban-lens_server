@@ -43,6 +43,7 @@ export class LocationBookingFineService
       fine.fineAmount = dto.fineAmount;
       fine.fineReason = dto.fineReason;
       fine.createdById = dto.createdById;
+      fine.updatedById = dto.createdById;
 
       return locationBookingFineRepo.save(fine);
     }).then((res) => this.mapTo(LocationBookingFineResponseDto, res));
