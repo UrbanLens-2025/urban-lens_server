@@ -24,6 +24,7 @@ import { paginate, Paginated } from 'nestjs-paginate';
 import { GetMyCheckInByLocationIdDto } from '@/common/dto/business/GetMyCheckInByLocationId.dto';
 import { UserProfileEntity } from '@/modules/account/domain/UserProfile.entity';
 import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
+import { GetAllCheckInsDto } from '@/common/dto/business/GetAllCheckIns.dto';
 
 @Injectable()
 export class CheckInV2Service extends CoreService implements ICheckInV2Service {
@@ -31,6 +32,15 @@ export class CheckInV2Service extends CoreService implements ICheckInV2Service {
 
   constructor(private readonly eventEmitter: EventEmitter2) {
     super();
+  }
+
+  getAllCheckIns(
+    dto: GetAllCheckInsDto,
+  ): Promise<Paginated<CheckInResponseDto>> {
+    const checkInRepository = CheckInRepositoryProvider(this.dataSource);
+    return paginate(dto.query, checkInRepository, {
+      ...ICheckInV2Service_QueryConfig.getAllCheckIns(),
+    }).then((res) => this.mapToPaginated(CheckInResponseDto, res));
   }
 
   registerCheckIn(dto: RegisterCheckInDto): Promise<CheckInResponseDto> {

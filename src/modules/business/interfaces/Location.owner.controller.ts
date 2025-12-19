@@ -31,6 +31,10 @@ import {
   ILocationSuspensionService,
   ILocationSuspensionService_QueryConfig,
 } from '@/modules/business/app/ILocationSuspension.service';
+import {
+  ICheckInV2Service,
+  ICheckInV2Service_QueryConfig,
+} from '@/modules/business/app/ICheckInV2.service';
 
 @ApiBearerAuth()
 @ApiTags('Location')
@@ -44,7 +48,18 @@ export class LocationOwnerController {
     private readonly locationManagementService: ILocationManagementService,
     @Inject(ILocationSuspensionService)
     private readonly locationSuspensionService: ILocationSuspensionService,
+    @Inject(ICheckInV2Service)
+    private readonly checkInV2Service: ICheckInV2Service,
   ) {}
+
+  @ApiOperation({ summary: 'Get all check ins for my location' })
+  @ApiPaginationQuery(ICheckInV2Service_QueryConfig.getAllCheckIns())
+  @Get('/all-check-ins')
+  getAllCheckIns(@Paginate() query: PaginateQuery) {
+    return this.checkInV2Service.getAllCheckIns({
+      query,
+    });
+  }
 
   @ApiOperation({ summary: 'Get my created locations' })
   @ApiPaginationQuery(ILocationQueryService_QueryConfig.getMyCreatedLocations())
