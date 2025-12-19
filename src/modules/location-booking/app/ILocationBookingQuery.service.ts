@@ -57,6 +57,7 @@ export namespace ILocationBookingQueryService_QueryConfig {
         location: true,
         dates: true,
         scheduledPayoutJob: true,
+        fines: true,
       },
     };
   }

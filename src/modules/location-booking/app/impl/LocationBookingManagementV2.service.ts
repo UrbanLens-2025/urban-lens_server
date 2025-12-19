@@ -104,6 +104,13 @@ export class LocationBookingManagementV2Service
       const bookingPrice =
         location.bookingConfig.baseBookingPrice * totalNumberOfHoursBooked;
 
+      // get system cut percentage
+      const systemCutPercentage =
+        await this.systemConfigService.getSystemConfigValue(
+          SystemConfigKey.LOCATION_BOOKING_SYSTEM_PAYOUT_PERCENTAGE,
+          em,
+        );
+
       // save booking
       const booking = new LocationBookingEntity();
       booking.locationId = dto.locationId;
@@ -111,6 +118,7 @@ export class LocationBookingManagementV2Service
       booking.createdById = dto.accountId;
       booking.targetId = dto.targetId;
       booking.status = LocationBookingStatus.AWAITING_BUSINESS_PROCESSING;
+      booking.systemCutPercentage = systemCutPercentage.value;
       booking.bookingConfigSnapshot = location.bookingConfig;
       booking.dates = dto.dates.map((d) =>
         this.mapTo_safe(LocationBookingDateEntity, {

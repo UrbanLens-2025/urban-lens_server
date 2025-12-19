@@ -36,8 +36,6 @@ export class LocationBookingPayoutService
     private readonly scheduledJobService: IScheduledJobService,
     @Inject(IWalletTransactionCoordinatorService)
     private readonly walletTransactionCoordinator: IWalletTransactionCoordinatorService,
-    @Inject(ISystemConfigService)
-    private readonly systemConfigService: ISystemConfigService,
     @Inject(IReportAutoProcessingService)
     private readonly reportAutoProcessingService: IReportAutoProcessingService,
     private readonly configService: ConfigService<Environment>,
@@ -139,13 +137,9 @@ export class LocationBookingPayoutService
         return;
       }
 
-      const systemCutPercentage =
-        await this.systemConfigService.getSystemConfigValue(
-          SystemConfigKey.LOCATION_BOOKING_SYSTEM_PAYOUT_PERCENTAGE,
-          em,
-        );
+      const systemCutPercentage = booking.systemCutPercentage;
       const systemCutAmount =
-        Number(totalRevenueFromBooking) * systemCutPercentage.value;
+        Number(totalRevenueFromBooking) * systemCutPercentage;
 
       // fine processing
       const fines =

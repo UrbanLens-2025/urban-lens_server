@@ -88,6 +88,7 @@ export class LocationBookingQueryService
           },
           location: true,
           scheduledPayoutJob: true,
+          fines: true,
         },
       })
       .then((res) => this.mapTo(LocationBookingResponseDto, res));
