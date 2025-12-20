@@ -4,6 +4,7 @@ import { LocationAvailabilityEntity } from '@/modules/location-booking/domain/Lo
 import { LocationBookingConfigEntity } from '@/modules/location-booking/domain/LocationBookingConfig.entity';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { LocationBookingDateEntity } from '@/modules/location-booking/domain/LocationBookingDate.entity';
+import { LocationBookingFineEntity } from '@/modules/location-booking/domain/LocationBookingFine.entity';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { LocationBookingDateEntity } from '@/modules/location-booking/domain/Loc
       LocationBookingConfigEntity,
       LocationBookingEntity,
       LocationBookingDateEntity,
+      LocationBookingFineEntity,
     ]),
   ],
 })

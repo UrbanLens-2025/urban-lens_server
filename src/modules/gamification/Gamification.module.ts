@@ -3,8 +3,10 @@ import { RewardPointController } from './interfaces/RewardPoint.controller';
 import { RankController } from './interfaces/Rank.controller';
 import { LocationMissionBusinessController } from './interfaces/LocationMission.business.controller';
 import { LocationMissionUserController } from './interfaces/LocationMission.user.controller';
+import { LocationMissionAdminController } from './interfaces/LocationMission.admin.controller';
 import { LocationVoucherBusinessController } from './interfaces/LocationVoucher.business.controller';
 import { LocationVoucherUserController } from './interfaces/LocationVoucher.user.controller';
+import { LocationVoucherAdminController } from './interfaces/LocationVoucher.admin.controller';
 import { QRCodeScanUserController } from './interfaces/QRCodeScan.user.controller';
 import { UserLocationProfileController } from './interfaces/UserLocationProfile.user.controller';
 import { VoucherExchangeUserController } from './interfaces/VoucherExchange.user.controller';
@@ -54,8 +56,10 @@ import { BusinessInfraModule } from '@/modules/business/infra/Business.infra.mod
     RankController,
     LocationMissionBusinessController,
     LocationMissionUserController,
+    LocationMissionAdminController,
     LocationVoucherBusinessController,
     LocationVoucherUserController,
+    LocationVoucherAdminController,
     QRCodeScanUserController,
     UserLocationProfileController,
     VoucherExchangeUserController,

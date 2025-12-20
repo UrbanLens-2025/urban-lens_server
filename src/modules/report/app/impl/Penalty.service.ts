@@ -32,6 +32,8 @@ import { CreatePenalty_SuspendEventCreationAbilityDto } from '@/common/dto/repor
 import { CreatePenalty_ForceCancelEventDto } from '@/common/dto/report/CreatePenalty_ForceCancelEvent.dto';
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
 import { CreatePenalty_SuspendLocationDto } from '@/common/dto/report/CreatePenalty_SuspendLocation.dto';
+import { CreatePenalty_FineLocationBookingDto } from '@/common/dto/report/CreatePenalty_FineLocationBooking.dto';
+import { ILocationBookingFineService } from '@/modules/location-booking/app/ILocationBookingFine.service';
 
 /**
  * For functions in this service, create penalty then delegate.
@@ -47,6 +49,9 @@ export class PenaltyService extends CoreService implements IPenaltyService {
     private readonly postService: IPostService,
     @Inject(IEventManagementService)
     private readonly eventManagementService: IEventManagementService,
+    @Inject(ILocationBookingFineService)
+    private readonly locationBookingFineService: ILocationBookingFineService,
+
     private readonly eventEmitter: EventEmitter2,
   ) {
     super();
@@ -369,6 +374,48 @@ export class PenaltyService extends CoreService implements IPenaltyService {
             reason: dto.suspensionReason,
             suspendedUntil: dto.suspendedUntil,
             entityManager: em,
+          });
+          return res;
+        })
+        .then((res) => {
+          this.eventEmitter.emit(
+            PENALTY_ADMINISTERED_EVENT,
+            new PenaltyAdministeredEvent(res.id, toAdministerTo),
+          );
+          return res;
+        });
+    }).then((res) => this.mapTo(PenaltyResponseDto, res));
+  }
+
+  createPenalty_FineLocationBooking(
+    dto: CreatePenalty_FineLocationBookingDto,
+  ): Promise<PenaltyResponseDto> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const penaltyRepository = PenaltyRepositoryProvider(em);
+      const toAdministerTo = await this.getEntityOwnerId({
+        em,
+        entityId: dto.targetEntityId,
+        entityType: dto.targetEntityType,
+      });
+
+      const penalty = new PenaltyEntity();
+      penalty.targetId = dto.targetEntityId;
+      penalty.targetType = dto.targetEntityType;
+      penalty.targetOwnerId = toAdministerTo;
+      penalty.penaltyAction = ReportPenaltyActions.FINE_LOCATION_BOOKING;
+      penalty.reason =
+        dto.fineReason + '. Fine amount: ' + dto.fineAmount + 'VND';
+      penalty.createdById = dto.createdById;
+
+      return penaltyRepository
+        .save(penalty)
+        .then(async (res) => {
+          await this.locationBookingFineService.createFineForBooking({
+            entityManager: em,
+            bookingId: dto.targetEntityId,
+            createdById: dto.createdById,
+            fineAmount: dto.fineAmount,
+            fineReason: dto.fineReason,
           });
           return res;
         })

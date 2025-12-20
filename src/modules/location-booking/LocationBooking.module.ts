@@ -26,6 +26,13 @@ import { UtilityModule } from '@/modules/utility/Utility.module';
 import { LocationBookingManagementV2Service } from '@/modules/location-booking/app/impl/LocationBookingManagementV2.service';
 import { EventModule } from '@/modules/event/event.module';
 import { ReportAutomationModule } from '@/modules/report-automation/ReportAutomation.module';
+import { LocationBookingFineAdminController } from '@/modules/location-booking/interfaces/LocationBookingFine.admin.controller';
+import { LocationBookingFineService } from '@/modules/location-booking/app/impl/LocationBookingFine.service';
+import { ILocationBookingFineService } from '@/modules/location-booking/app/ILocationBookingFine.service';
+import { LocationBookingFineOwnerController } from '@/modules/location-booking/interfaces/LocationBookingFine.owner.controller';
+import { LocationBookingAdminController } from '@/modules/location-booking/interfaces/LocationBooking.admin.controller';
+import { LocationBookingConfigAdminController } from '@/modules/location-booking/interfaces/LocationBookingConfig.admin.controller';
+import { LocationAvailabilityAdminController } from '@/modules/location-booking/interfaces/LocationAvailability.admin.controller';
 
 @Module({
   imports: [
@@ -39,12 +46,17 @@ import { ReportAutomationModule } from '@/modules/report-automation/ReportAutoma
   controllers: [
     LocationAvailabilityOwnerController,
     LocationAvailabilityCreatorController,
+    LocationAvailabilityAdminController,
     LocationBookingConfigOwnerController,
     LocationCreatorController,
     LocationBookingOwnerController,
     LocationBookingCreatorController,
     LocationBookingConfigCreatorController,
     LocationBookingConfigDevOnlyController,
+    LocationBookingFineAdminController,
+    LocationBookingFineOwnerController,
+    LocationBookingAdminController,
+    LocationBookingConfigAdminController,
   ],
   providers: [
     {
@@ -71,11 +83,16 @@ import { ReportAutomationModule } from '@/modules/report-automation/ReportAutoma
       provide: ILocationBookingPayoutService,
       useClass: LocationBookingPayoutService,
     },
+    {
+      provide: ILocationBookingFineService,
+      useClass: LocationBookingFineService,
+    },
     BookingPayoutListener,
   ],
   exports: [
     ILocationBookingManagementService,
     ILocationBookingConfigManagementService,
+    ILocationBookingFineService,
   ],
 })
 export class LocationBookingModule {}

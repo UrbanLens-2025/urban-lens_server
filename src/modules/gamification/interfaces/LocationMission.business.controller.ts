@@ -32,7 +32,7 @@ import {
 import { BusinessQRScanHistoryResponseDto } from '@/common/dto/gamification/QRScanHistory.response.dto';
 import { IGamificationQueryService_QueryConfig } from '../app/IGamificationQuery.service';
 
-@ApiTags('Location Mission (Business Owner)')
+@ApiTags('Location Mission')
 @ApiBearerAuth()
 @Roles(Role.BUSINESS_OWNER)
 @Controller('/business/location-mission')

@@ -22,6 +22,9 @@ import { GetConflictingBookingsDto } from '@/common/dto/location-booking/GetConf
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { LocationBookingObject } from '@/common/constants/LocationBookingObject.constant';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
+import { SearchAllBookingsUnfilteredDto } from '@/common/dto/location-booking/SearchAllBookingsUnfiltered.dto';
+import { GetAnyBookingByIdDto } from '@/common/dto/location-booking/GetAnyBookingById.dto';
+import { EventEntity } from '@/modules/event/domain/Event.entity';
 
 @Injectable()
 export class LocationBookingQueryService
@@ -84,6 +87,8 @@ export class LocationBookingQueryService
             creatorProfile: true,
           },
           location: true,
+          scheduledPayoutJob: true,
+          fines: true,
         },
       })
       .then((res) => this.mapTo(LocationBookingResponseDto, res));
@@ -184,5 +189,81 @@ export class LocationBookingQueryService
         endDate,
       })
       .then((res) => this.mapToArray(LocationBookingResponseDto, res));
+  }
+
+  async getAllBookingsUnfiltered(
+    dto: SearchAllBookingsUnfilteredDto,
+  ): Promise<Paginated<LocationBookingResponseDto>> {
+    const eventRepo = EventRepository(this.dataSource);
+    const locationBookingRepo = LocationBookingRepository(this.dataSource);
+    const bookingData = await paginate(
+      dto.query,
+      locationBookingRepo,
+      ILocationBookingQueryService_QueryConfig.getAllBookingsUnfiltered(),
+    );
+
+    const eventIds = bookingData.data
+      .filter((item) => item.bookingObject === LocationBookingObject.FOR_EVENT)
+      .map((item) => item.targetId)
+      .filter((item) => item !== undefined && item !== null);
+    const eventData = await eventRepo.find({
+      where: {
+        id: In(eventIds),
+      },
+    });
+
+    return this.mapToPaginated(LocationBookingResponseDto, {
+      ...bookingData,
+      data: bookingData.data.map((item) => {
+        const event = eventData.find((event) => event.id === item.targetId);
+        return {
+          ...item,
+          event: event ? this.mapTo(EventResponseDto, event) : undefined,
+        };
+      }),
+    } as unknown as Paginated<LocationBookingResponseDto>);
+  }
+
+  async getAnyBookingById(
+    dto: GetAnyBookingByIdDto,
+  ): Promise<LocationBookingResponseDto> {
+    const locationBookingRepository = LocationBookingRepository(
+      this.dataSource,
+    );
+    const booking = await locationBookingRepository.findOneOrFail({
+      where: {
+        id: dto.bookingId,
+      },
+      relations: {
+        referencedTransaction: true,
+        createdBy: {
+          creatorProfile: true,
+        },
+        location: {
+          business: true,
+        },
+        dates: true,
+        scheduledPayoutJob: true,
+      },
+    });
+
+    let event: EventEntity | undefined = undefined;
+    if (
+      booking.bookingObject === LocationBookingObject.FOR_EVENT &&
+      booking.targetId
+    ) {
+      const eventRepo = EventRepository(this.dataSource);
+      event = await eventRepo.findOne({
+        where: {
+          id: booking.targetId,
+        },
+      }) ?? undefined;
+    }
+
+    const mappedBooking = this.mapTo(LocationBookingResponseDto, booking);
+    return {
+      ...mappedBooking,
+      event: event ? this.mapTo(EventResponseDto, event) : undefined,
+    };
   }
 }

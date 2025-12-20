@@ -11,7 +11,7 @@ import {
   type PaginateQuery,
 } from 'nestjs-paginate';
 
-@ApiTags('Location Voucher (User)')
+@ApiTags('Location Voucher')
 @ApiBearerAuth()
 @Roles(Role.USER)
 @Controller('/user/location-voucher')

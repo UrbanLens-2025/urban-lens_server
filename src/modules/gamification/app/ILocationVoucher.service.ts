@@ -1,8 +1,9 @@
 import { CreateLocationVoucherDto } from '@/common/dto/gamification/CreateLocationVoucher.dto';
 import { UpdateLocationVoucherDto } from '@/common/dto/gamification/UpdateLocationVoucher.dto';
-import { Paginated, PaginateQuery } from 'nestjs-paginate';
+import { Paginated, PaginateQuery, PaginateConfig } from 'nestjs-paginate';
 import { LocationVoucherResponseDto } from '@/common/dto/gamification/LocationVoucher.response.dto';
 import { AvailableVoucherResponseDto } from '@/common/dto/gamification/AvailableVoucher.response.dto';
+import { LocationVoucherEntity } from '@/modules/gamification/domain/LocationVoucher.entity';
 
 export const ILocationVoucherService = Symbol('ILocationVoucherService');
 
@@ -47,4 +48,25 @@ export interface ILocationVoucherService {
     query: PaginateQuery,
     userId?: string,
   ): Promise<Paginated<AvailableVoucherResponseDto>>;
+
+  getAllVouchersUnfiltered(
+    query: PaginateQuery,
+  ): Promise<Paginated<LocationVoucherResponseDto>>;
+}
+
+export namespace ILocationVoucherService_QueryConfig {
+  export function getAllVouchersUnfiltered(): PaginateConfig<LocationVoucherEntity> {
+    return {
+      sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      searchableColumns: ['title', 'voucherCode'],
+      filterableColumns: {
+        voucherType: true,
+        locationId: true,
+      },
+      relations: {
+        location: true,
+      },
+    };
+  }
 }

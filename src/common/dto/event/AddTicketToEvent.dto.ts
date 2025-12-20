@@ -30,7 +30,7 @@ export class AddTicketToEventDto {
   displayName: string;
 
   @IsString()
-  @MaxLength(1000)
+  @MaxLength(2000)
   @IsOptional()
   @ApiPropertyOptional()
   description?: string;

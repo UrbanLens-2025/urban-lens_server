@@ -1,4 +1,4 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 import { LocationResponseDto } from '@/common/dto/business/res/Location.response.dto';
@@ -7,6 +7,7 @@ import { LocationBookingObject } from '@/common/constants/LocationBookingObject.
 import { LocationBookingDateResponseDto } from '@/common/dto/location-booking/res/LocationBookingDate.response.dto';
 import { ScheduledJobResponseDto } from '@/common/dto/scheduled-job/res/ScheduledJob.response.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
+import { LocationBookingFineResponseDto } from '@/common/dto/location-booking/res/LocationBookingFine.response.dto';
 
 @Exclude()
 export class LocationBookingResponseDto {
@@ -20,7 +21,11 @@ export class LocationBookingResponseDto {
   status: LocationBookingStatus;
 
   @Expose()
+  @Type(() => Number)
   amountToPay: number;
+
+  @Expose()
+  refundedAmount?: number | null;
 
   @Expose()
   @Type(() => LocationBookingDateResponseDto)
@@ -54,6 +59,28 @@ export class LocationBookingResponseDto {
   @Type(() => Date)
   paidOutAt?: Date | null;
 
+  @Expose()
+  systemCutPercentage: number;
+
+  @Expose()
+  @Transform(({ obj }) => {
+    // ! DUPLICATE CODE
+    const typedObj = obj as LocationBookingResponseDto;
+    const totalAmount = typedObj.amountToPay;
+    const refundedAmount = typedObj.refundedAmount ?? 0;
+    const totalFines = typedObj.fines
+      ?.filter((fine) => fine.isActive === true && fine.paidAt === null)
+      .reduce((sum, fine) => sum + Number(fine.fineAmount), 0);
+    const systemCutPercentage = typedObj.systemCutPercentage;
+
+    return (
+      Number(totalAmount ?? 0) * (1 - Number(systemCutPercentage ?? 0)) -
+      Number(refundedAmount ?? 0) -
+      Number(totalFines ?? 0)
+    );
+  })
+  amountToReceive: number;
+
   // -- Relations --
 
   @Expose()
@@ -75,4 +102,8 @@ export class LocationBookingResponseDto {
   @Expose()
   @Type(() => EventResponseDto)
   event?: EventResponseDto | null;
+
+  @Expose()
+  @Type(() => LocationBookingFineResponseDto)
+  fines?: LocationBookingFineResponseDto[];
 }

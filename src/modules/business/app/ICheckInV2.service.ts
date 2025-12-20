@@ -4,6 +4,7 @@ import { PaginateConfig, Paginated } from 'nestjs-paginate';
 import { GetMyCheckInsDto } from '@/common/dto/business/GetMyCheckIns.dto';
 import { GetMyCheckInByLocationIdDto } from '@/common/dto/business/GetMyCheckInByLocationId.dto';
 import { CheckInEntity } from '@/modules/business/domain/CheckIn.entity';
+import { GetAllCheckInsDto } from '@/common/dto/business/GetAllCheckIns.dto';
 
 export const ICheckInV2Service = Symbol('ICheckInV2Service');
 export interface ICheckInV2Service {
@@ -12,6 +13,10 @@ export interface ICheckInV2Service {
   getMyCheckInByLocationId(
     dto: GetMyCheckInByLocationIdDto,
   ): Promise<CheckInResponseDto>;
+
+  getAllCheckIns(
+    dto: GetAllCheckInsDto,
+  ): Promise<Paginated<CheckInResponseDto>>;
 }
 
 export namespace ICheckInV2Service_QueryConfig {
@@ -21,6 +26,21 @@ export namespace ICheckInV2Service_QueryConfig {
       defaultSortBy: [['createdAt', 'DESC']],
       relations: {
         location: true,
+      },
+    };
+  }
+
+  export function getAllCheckIns(): PaginateConfig<CheckInEntity> {
+    return {
+      sortableColumns: ['createdAt'],
+      defaultSortBy: [['createdAt', 'DESC']],
+      filterableColumns: {
+        locationId: true,
+      },
+      relations: {
+        userProfile: {
+          account: true,
+        },
       },
     };
   }

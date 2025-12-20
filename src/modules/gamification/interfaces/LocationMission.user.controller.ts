@@ -17,7 +17,7 @@ import {
   type PaginateQuery,
 } from 'nestjs-paginate';
 
-@ApiTags('Location Mission (User)')
+@ApiTags('Location Mission')
 @ApiBearerAuth()
 @Roles(Role.USER)
 @Controller('/user/location-mission')

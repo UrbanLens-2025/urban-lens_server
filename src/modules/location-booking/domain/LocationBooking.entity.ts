@@ -24,6 +24,7 @@ import dayjs from 'dayjs';
 import { Role } from '@/common/constants/Role.constant';
 import { LocationSuspensionEntity } from '@/modules/business/domain/LocationSuspension.entity';
 import { LocationSuspensionType } from '@/common/constants/LocationSuspensionType.constant';
+import { LocationBookingFineEntity } from '@/modules/location-booking/domain/LocationBookingFine.entity';
 
 @Index('idx_location_booking_target', ['targetId', 'bookingObject'])
 @Entity({ name: LocationBookingEntity.TABLE_NAME })
@@ -85,6 +86,9 @@ export class LocationBookingEntity {
   @Column({ name: 'amount_to_pay', type: 'numeric' })
   amountToPay: number;
 
+  /**
+   * @deprecated
+   */
   @Column({
     name: 'soft_locked_until',
     type: 'timestamp with time zone',
@@ -164,6 +168,15 @@ export class LocationBookingEntity {
   cancelledAt?: Date | null;
 
   @Column({
+    name: 'system_cut_percentage',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0.1,
+  })
+  systemCutPercentage: number;
+
+  @Column({
     name: 'refunded_amount',
     type: 'numeric',
     precision: 12,
@@ -221,6 +234,11 @@ export class LocationBookingEntity {
   )
   @JoinColumn({ name: 'system_payout_transaction_id' })
   systemPayoutTransaction?: WalletTransactionEntity | null;
+
+  @OneToMany(() => LocationBookingFineEntity, (fine) => fine.booking, {
+    createForeignKeyConstraints: true,
+  })
+  fines: LocationBookingFineEntity[];
   // domain functions
 
   getStartDate(): Date | null {
@@ -337,5 +355,16 @@ export class LocationBookingEntity {
     )[0].endDateTime;
 
     return earliestStartDate <= eventStartDate && latestEndDate >= eventEndDate;
+  }
+
+  /**
+   * can add fine if booking has been approved and has not been paid out yet
+   * @returns
+   */
+  canAddFine() {
+    return (
+      this.status === LocationBookingStatus.APPROVED &&
+      (!isNotBlank(this.paidOutAt) || dayjs(this.paidOutAt).isAfter(dayjs()))
+    );
   }
 }

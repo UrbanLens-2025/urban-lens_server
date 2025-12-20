@@ -131,7 +131,10 @@ export class EventPayoutService
         const totalRevenueFromTickets = event.ticketOrders.reduce(
           (sum, order) => {
             if (order.status === EventTicketOrderStatus.PAID) {
-              return sum + Number(order.totalPaymentAmount);
+              return (
+                sum +
+                Number(order.totalPaymentAmount - (order.refundedAmount ?? 0))
+              );
             }
             return sum;
           },
