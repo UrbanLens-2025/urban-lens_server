@@ -80,6 +80,12 @@ export class FirebaseNotificationService
       userId: dto.toUserId,
     });
 
+    if (!!dto.sendAfterSeconds && dto.sendAfterSeconds > 0) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, dto.sendAfterSeconds! * 1000),
+      );
+    }
+
     const pushNotificationEntity = new PushNotificationEntity();
     pushNotificationEntity.toUserId = dto.toUserId;
     pushNotificationEntity.type = NotificationTypes.CUSTOM;
