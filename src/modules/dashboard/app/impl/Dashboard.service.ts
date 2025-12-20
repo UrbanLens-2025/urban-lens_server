@@ -2083,7 +2083,10 @@ export class DashboardService extends CoreService implements IDashboardService {
       })
       .groupBy('event.id')
       .addGroupBy('event.display_name')
-      .orderBy('totalRevenue', 'DESC')
+      .orderBy(
+        'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
+        'DESC',
+      )
       .limit(limit)
       .getRawMany();
 
@@ -2128,7 +2131,10 @@ export class DashboardService extends CoreService implements IDashboardService {
       })
       .groupBy('location.id')
       .addGroupBy('location.name')
-      .orderBy('revenue', 'DESC')
+      .orderBy(
+        'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
+        'DESC',
+      )
       .limit(limit)
       .getRawMany();
 

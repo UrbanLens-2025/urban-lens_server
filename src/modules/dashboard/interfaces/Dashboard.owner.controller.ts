@@ -21,6 +21,7 @@ import {
 } from '@/common/dto/dashboard/BusinessRevenue.response.dto';
 import { RevenueSummaryResponseDto } from '@/common/dto/dashboard/RevenueSummary.response.dto';
 import { TopLocationByRevenueDto } from '@/common/dto/dashboard/TopLocationsByRevenue.response.dto';
+import { ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -112,16 +113,6 @@ export class DashboardOwnerController {
     description: 'Revenue summary',
     type: RevenueSummaryResponseDto,
   })
-  @ApiOperation({
-    summary: 'Get revenue summary',
-    description:
-      'Get revenue summary including total revenue, available balance, total withdrawn, and pending amount',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Revenue summary',
-    type: RevenueSummaryResponseDto,
-  })
   @Get('/revenue/summary')
   getRevenueSummary(
     @AuthUser() user: JwtTokenDto,
@@ -132,7 +123,14 @@ export class DashboardOwnerController {
   @ApiOperation({
     summary: 'Get top locations by revenue',
     description:
-      'Get top 5 locations with highest revenue from bookings for the business owner',
+      'Get top locations with highest revenue from bookings for the business owner. Default limit is 5.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of top locations to return (default: 5)',
+    example: 5,
   })
   @ApiResponse({
     status: 200,
@@ -142,11 +140,9 @@ export class DashboardOwnerController {
   @Get('/locations/top-revenue')
   getTopLocationsByRevenue(
     @AuthUser() user: JwtTokenDto,
-    @Query('limit') limit?: number,
+    @Query('limit') limit?: string,
   ): Promise<TopLocationByRevenueDto[]> {
-    return this.dashboardService.getTopLocationsByRevenue(
-      user.sub,
-      limit ? parseInt(limit.toString(), 10) : 5,
-    );
+    const limitNum = limit ? parseInt(limit, 10) : 5;
+    return this.dashboardService.getTopLocationsByRevenue(user.sub, limitNum);
   }
 }
