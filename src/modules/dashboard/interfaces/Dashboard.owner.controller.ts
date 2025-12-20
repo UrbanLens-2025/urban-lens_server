@@ -20,6 +20,7 @@ import {
   BusinessRevenueByYearDto,
 } from '@/common/dto/dashboard/BusinessRevenue.response.dto';
 import { RevenueSummaryResponseDto } from '@/common/dto/dashboard/RevenueSummary.response.dto';
+import { TopLocationByRevenueDto } from '@/common/dto/dashboard/TopLocationsByRevenue.response.dto';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -111,10 +112,41 @@ export class DashboardOwnerController {
     description: 'Revenue summary',
     type: RevenueSummaryResponseDto,
   })
+  @ApiOperation({
+    summary: 'Get revenue summary',
+    description:
+      'Get revenue summary including total revenue, available balance, total withdrawn, and pending amount',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Revenue summary',
+    type: RevenueSummaryResponseDto,
+  })
   @Get('/revenue/summary')
   getRevenueSummary(
     @AuthUser() user: JwtTokenDto,
   ): Promise<RevenueSummaryResponseDto> {
     return this.dashboardService.getRevenueSummary(user.sub);
+  }
+
+  @ApiOperation({
+    summary: 'Get top locations by revenue',
+    description:
+      'Get top 5 locations with highest revenue from bookings for the business owner',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Top locations by revenue',
+    type: [TopLocationByRevenueDto],
+  })
+  @Get('/locations/top-revenue')
+  getTopLocationsByRevenue(
+    @AuthUser() user: JwtTokenDto,
+    @Query('limit') limit?: number,
+  ): Promise<TopLocationByRevenueDto[]> {
+    return this.dashboardService.getTopLocationsByRevenue(
+      user.sub,
+      limit ? parseInt(limit.toString(), 10) : 5,
+    );
   }
 }

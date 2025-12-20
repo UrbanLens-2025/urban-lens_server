@@ -65,6 +65,8 @@ import { Role } from '@/common/constants/Role.constant';
 import { ISystemConfigService } from '@/modules/utility/app/ISystemConfig.service';
 import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
 import { Inject } from '@nestjs/common';
+import { TopEventByRevenueDto } from '@/common/dto/dashboard/TopEventsByRevenue.response.dto';
+import { TopLocationByRevenueDto } from '@/common/dto/dashboard/TopLocationsByRevenue.response.dto';
 
 @Injectable()
 export class DashboardService extends CoreService implements IDashboardService {
@@ -2053,5 +2055,87 @@ export class DashboardService extends CoreService implements IDashboardService {
       pendingWithdraw: Math.round(pendingWithdraw),
       totalBalance: Math.round(totalBalance),
     };
+  }
+
+  async getTopEventsByRevenue(
+    eventCreatorAccountId: string,
+    limit: number = 5,
+  ): Promise<TopEventByRevenueDto[]> {
+    const ticketOrderRepo = this.dataSource.getRepository(TicketOrderEntity);
+    const eventRepo = this.dataSource.getRepository(EventEntity);
+
+    // Get top events by revenue from ticket sales
+    const topEventsRaw = await ticketOrderRepo
+      .createQueryBuilder('order')
+      .innerJoin('order.event', 'event')
+      .select('event.id', 'eventId')
+      .addSelect('event.display_name', 'eventName')
+      .addSelect(
+        'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
+        'totalRevenue',
+      )
+      .addSelect('COUNT(order.id)', 'totalTicketsSold')
+      .where('event.account_id = :accountId', {
+        accountId: eventCreatorAccountId,
+      })
+      .andWhere('order.status = :status', {
+        status: EventTicketOrderStatus.PAID,
+      })
+      .groupBy('event.id')
+      .addGroupBy('event.display_name')
+      .orderBy('totalRevenue', 'DESC')
+      .limit(limit)
+      .getRawMany();
+
+    return topEventsRaw.map((row) => ({
+      eventId: row.eventId,
+      eventName: row.eventName,
+      totalRevenue: Math.round(parseFloat(row.totalRevenue || '0')),
+      totalTicketsSold: parseInt(row.totalTicketsSold || '0', 10),
+    }));
+  }
+
+  async getTopLocationsByRevenue(
+    businessOwnerAccountId: string,
+    limit: number = 5,
+  ): Promise<TopLocationByRevenueDto[]> {
+    // Get business_id from account_id
+    const businessRepo = this.dataSource.getRepository(BusinessEntity);
+    const business = await businessRepo.findOne({
+      where: { accountId: businessOwnerAccountId },
+    });
+
+    if (!business) {
+      throw new Error('Business not found for this account');
+    }
+
+    const businessId = business.accountId;
+    const bookingRepo = this.dataSource.getRepository(LocationBookingEntity);
+
+    // Get top locations by revenue from bookings
+    const topLocationsRaw = await bookingRepo
+      .createQueryBuilder('booking')
+      .innerJoin('booking.location', 'location')
+      .select('location.id', 'locationId')
+      .addSelect('location.name', 'locationName')
+      .addSelect(
+        'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
+        'revenue',
+      )
+      .where('location.business_id = :businessId', { businessId })
+      .andWhere('booking.status = :status', {
+        status: LocationBookingStatus.APPROVED,
+      })
+      .groupBy('location.id')
+      .addGroupBy('location.name')
+      .orderBy('revenue', 'DESC')
+      .limit(limit)
+      .getRawMany();
+
+    return topLocationsRaw.map((row) => ({
+      locationId: row.locationId,
+      locationName: row.locationName,
+      revenue: Math.round(parseFloat(row.revenue || '0')),
+    }));
   }
 }
