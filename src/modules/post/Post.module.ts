@@ -32,6 +32,7 @@ import { PostOwnerController } from '@/modules/post/interfaces/Post.owner.contro
 import { IPostQueryService } from '@/modules/post/app/PostQuery.service';
 import { PostQueryService } from '@/modules/post/app/impl/PostQuery.service';
 import { PostAdminController } from '@/modules/post/interfaces/Post.admin.controller';
+import { AnnouncementAdminController } from '@/modules/post/interfaces/Announcement.admin.controller';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { PostAdminController } from '@/modules/post/interfaces/Post.admin.contro
     AnnouncementPublicController,
     AnnouncementOwnerController,
     AnnouncementCreatorController,
+    AnnouncementAdminController,
     PostCreatorController,
     PostOwnerController,
     PostAdminController,

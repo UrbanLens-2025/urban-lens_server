@@ -243,8 +243,7 @@ export class TicketOrderManagementService
       const ticketOrders = await ticketOrderRepo.find({
         where: {
           eventId: dto.eventId,
-          createdById: In(dto.accountIds),
-          status: EventTicketOrderStatus.PAID,
+          id: In(dto.ticketOrderIds),
         },
         select: {
           id: true,

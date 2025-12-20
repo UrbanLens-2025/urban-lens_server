@@ -38,6 +38,7 @@ export namespace IAccountQueryService_QueryConfig {
       },
       relations: {
         account: true,
+        processedBy: true,
       },
     };
   }

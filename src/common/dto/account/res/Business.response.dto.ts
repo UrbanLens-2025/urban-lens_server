@@ -4,11 +4,16 @@ import {
   BusinessRequestStatus,
 } from '@/common/constants/Business.constant';
 import { BusinessLicenseJson } from '@/common/json/BusinessLicense.json';
+import { AccountResponseDto } from '@/common/dto/account/res/AccountResponse.dto';
 
 @Exclude()
 export class BusinessResponseDto {
   @Expose()
   accountId: string;
+
+  @Expose()
+  @Type(() => AccountResponseDto)
+  account?: AccountResponseDto;
 
   @Expose()
   avatar?: string;
@@ -58,4 +63,14 @@ export class BusinessResponseDto {
 
   @Expose()
   category: BusinessCategory;
+
+  @Expose()
+  processedById?: string | null;
+
+  @Expose()
+  @Type(() => AccountResponseDto)
+  processedBy?: AccountResponseDto | null;
+
+  @Expose()
+  processedAt?: Date | null;
 }

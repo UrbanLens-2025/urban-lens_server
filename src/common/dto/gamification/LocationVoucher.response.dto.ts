@@ -47,10 +47,6 @@ export class LocationVoucherResponseDto {
   updatedAt: Date;
 
   @Expose()
-  @ApiPropertyOptional({
-    description: 'Voucher statistics (total, used, remaining)',
-    type: 'object',
-  })
   @Type(() => Object)
   statistics?: {
     total: number;

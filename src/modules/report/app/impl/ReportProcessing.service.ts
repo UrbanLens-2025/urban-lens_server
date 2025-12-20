@@ -1,6 +1,11 @@
 import { CoreService } from '@/common/core/Core.service';
 import { IReportProcessingService } from '@/modules/report/app/IReportProcessing.service';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { ProcessReport_NoActionTakenDto } from '@/common/dto/report/ProcessReport_NoActionTaken.dto';
 import { ProcessReport_MaliciousReportDto } from '@/common/dto/report/ProcessReport_MaliciousReport.dto';
 import { ProcessReport_BookingRefundDto } from '@/common/dto/report/ProcessReport_BookingRefund.dto';
@@ -16,12 +21,15 @@ import { ReportResolvedByType } from '@/common/constants/ReportResolvedByType.co
 import { ITicketOrderManagementService } from '@/modules/event/app/ITicketOrderManagement.service';
 import { ReportEntityType } from '@/modules/report/domain/Report.entity';
 import { ProcessReport_IssueApologyDto } from '@/common/dto/report/ProcessReport_IssueApology.dto';
+import { isNotBlank } from '@/common/utils/is-not-blank.util';
 
 @Injectable()
 export class ReportProcessingService
   extends CoreService
   implements IReportProcessingService
 {
+  private readonly logger = new Logger(ReportProcessingService.name);
+
   constructor(
     @Inject(ILocationBookingManagementService)
     private readonly locationBookingManagementService: ILocationBookingManagementService,
@@ -262,7 +270,18 @@ export class ReportProcessingService
         await this.ticketOrderManagementService.forceIssueOrderRefund({
           entityManager: em,
           eventId: eventId,
-          accountIds: reports.map((report) => report.createdById),
+          ticketOrderIds: reports
+            .filter((report) => {
+              if (isNotBlank(report.denormSecondaryTargetId)) {
+                return true;
+              } else {
+                this.logger.warn(
+                  `Report ${report.id} has no denormSecondaryTargetId`,
+                );
+                return false;
+              }
+            })
+            .map((report) => report.denormSecondaryTargetId!),
           refundPercentage: dto.refundPercentage,
           shouldCancelTickets: dto.shouldCancelTickets,
         });

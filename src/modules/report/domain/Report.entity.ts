@@ -35,6 +35,7 @@ export class ReportEntity {
   targetId: string;
 
   // used for searching booking reports by location id only
+  // also used for storing the ticket order ID when reporting events
   @Column({ name: 'denorm_secondary_target_id', type: 'uuid', nullable: true })
   denormSecondaryTargetId?: string | null;
 

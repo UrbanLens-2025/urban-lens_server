@@ -16,6 +16,9 @@ export class ReportResponseDto {
   id: string;
 
   @Expose()
+  denormSecondaryTargetId?: string | null;
+
+  @Expose()
   targetType: ReportEntityType;
 
   @Expose()
