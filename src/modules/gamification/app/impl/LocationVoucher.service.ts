@@ -181,7 +181,23 @@ export class LocationVoucherService implements ILocationVoucherService {
         throw new NotFoundException('Voucher not found');
       }
 
-      return voucher;
+      // Calculate statistics
+      const total = voucher.maxQuantity || 0;
+      const used = await this.userLocationVoucherExchangeHistoryRepository.repo
+        .createQueryBuilder('history')
+        .where('history.voucherId = :voucherId', { voucherId })
+        .andWhere('history.usedAt IS NOT NULL')
+        .getCount();
+      const remaining = Math.max(0, total - used);
+
+      return {
+        ...voucher,
+        statistics: {
+          total,
+          used,
+          remaining,
+        },
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;

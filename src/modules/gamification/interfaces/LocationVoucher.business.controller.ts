@@ -181,7 +181,8 @@ export class LocationVoucherBusinessController {
 
   @ApiOperation({
     summary: 'Get voucher by ID',
-    description: 'Get a specific voucher by its ID',
+    description:
+      'Get a specific voucher by its ID with statistics (total, used, remaining)',
   })
   @Get('/voucher/:voucherId')
   getVoucherById(
