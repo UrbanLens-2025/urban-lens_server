@@ -2,6 +2,7 @@ import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsPositive, IsUUID } from 'class-validator';
 import { CoreActionDto } from '@/common/dto/CoreAction.dto';
+import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
 
 export class TransferFundsFromUserWalletDto extends CoreActionDto {
   // transient fields
@@ -24,4 +25,7 @@ export class TransferFundsFromUserWalletDto extends CoreActionDto {
   @IsNotEmpty()
   @IsEnum(SupportedCurrency)
   currency: SupportedCurrency;
+
+  referencedInitType?: WalletTransactionInitType;
+  referencedInitId?: string;
 }

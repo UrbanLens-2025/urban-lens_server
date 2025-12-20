@@ -63,6 +63,8 @@ export class WalletTransactionCoordinatorService
           amountToTransfer: Number(dto.amountToTransfer),
           currency: dto.currency,
           note: dto.note,
+          referencedInitType: dto.referencedInitType,
+          referencedInitId: dto.referencedInitId,
         },
       );
     });
@@ -96,6 +98,8 @@ export class WalletTransactionCoordinatorService
           currency: dto.currency,
           sourceWalletId: DefaultSystemWallet.ESCROW,
           note: dto.note,
+          referencedInitType: dto.referencedInitType,
+          referencedInitId: dto.referencedInitId,
         },
       );
     });
@@ -133,6 +137,8 @@ export class WalletTransactionCoordinatorService
           currency: dto.currency,
           sourceWalletId: DefaultSystemWallet.ESCROW,
           note: dto.note,
+          referencedInitType: dto.referencedInitType,
+          referencedInitId: dto.referencedInitId,
         },
       );
     });

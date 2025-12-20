@@ -156,15 +156,59 @@ export class LocationVoucherService implements ILocationVoucherService {
     query: PaginateQuery,
   ): Promise<Paginated<any>> {
     try {
-      return paginate(query, this.locationVoucherRepository.repo, {
-        where: { locationId },
-        sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
-        defaultSortBy: [['createdAt', 'DESC']],
-        searchableColumns: ['title', 'voucherCode'],
-        filterableColumns: {
-          voucherType: true,
+      const result = await paginate(
+        query,
+        this.locationVoucherRepository.repo,
+        {
+          where: { locationId },
+          sortableColumns: ['createdAt', 'pricePoint', 'startDate', 'endDate'],
+          defaultSortBy: [['createdAt', 'DESC']],
+          searchableColumns: ['title', 'voucherCode'],
+          filterableColumns: {
+            voucherType: true,
+          },
         },
+      );
+
+      // Calculate statistics for all vouchers
+      const voucherIds = result.data.map((voucher: any) => voucher.id);
+      const usedCounts =
+        voucherIds.length > 0
+          ? await this.userLocationVoucherExchangeHistoryRepository.repo
+              .createQueryBuilder('history')
+              .select('history.voucherId', 'voucherId')
+              .addSelect('COUNT(history.id)', 'count')
+              .where('history.voucherId IN (:...voucherIds)', { voucherIds })
+              .andWhere('history.usedAt IS NOT NULL')
+              .groupBy('history.voucherId')
+              .getRawMany()
+          : [];
+
+      const usedCountMap = new Map<string, number>();
+      usedCounts.forEach((item: any) => {
+        usedCountMap.set(item.voucherId, parseInt(item.count, 10));
       });
+
+      // Add statistics to each voucher
+      const vouchersWithStats = result.data.map((voucher: any) => {
+        const total = voucher.maxQuantity || 0;
+        const used = usedCountMap.get(voucher.id) || 0;
+        const remaining = Math.max(0, total - used);
+
+        return {
+          ...voucher,
+          statistics: {
+            total,
+            used,
+            remaining,
+          },
+        };
+      });
+
+      return {
+        ...result,
+        data: vouchersWithStats,
+      };
     } catch (error) {
       throw new BadRequestException(error.message);
     }

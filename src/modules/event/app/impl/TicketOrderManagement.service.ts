@@ -27,6 +27,7 @@ import { EventAttendanceRepository } from '@/modules/event/infra/repository/Even
 import { EventAttendanceStatus } from '@/common/constants/EventAttendanceStatus.constant';
 import { EventAttendanceEntity } from '@/modules/event/domain/EventAttendance.entity';
 import { ForceIssueOrderRefundDto } from '@/common/dto/event/ForceIssueOrderRefund.dto';
+import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
 
 @Injectable()
 export class TicketOrderManagementService
@@ -161,6 +162,8 @@ export class TicketOrderManagementService
             accountName: dto.accountName,
             returnUrl: dto.returnUrl,
             ipAddress: dto.ipAddress,
+            referencedInitType: WalletTransactionInitType.TICKET_ORDER,
+            referencedInitId: order.id,
             note:
               'Payment for order #' +
               order.id +
@@ -312,6 +315,8 @@ export class TicketOrderManagementService
                 destinationAccountId: ticketOrder.createdById,
                 amount: refundAmount,
                 currency: SupportedCurrency.VND,
+                referencedInitType: WalletTransactionInitType.TICKET_ORDER,
+                referencedInitId: ticketOrder.id,
                 note:
                   'Refund for order #' +
                   ticketOrder.id +
