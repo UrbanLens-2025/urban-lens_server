@@ -37,6 +37,8 @@ import {
   EventCreatorPerformanceByYearDto,
 } from '@/common/dto/dashboard/EventCreatorPerformance.response.dto';
 import { RevenueSummaryResponseDto } from '@/common/dto/dashboard/RevenueSummary.response.dto';
+import { TopEventByRevenueDto } from '@/common/dto/dashboard/TopEventsByRevenue.response.dto';
+import { TopLocationByRevenueDto } from '@/common/dto/dashboard/TopLocationsByRevenue.response.dto';
 
 export const IDashboardService = Symbol('IDashboardService');
 
@@ -145,4 +147,22 @@ export interface IDashboardService {
    * Role is automatically detected from account
    */
   getRevenueSummary(accountId: string): Promise<RevenueSummaryResponseDto>;
+
+  /**
+   * Get top events by revenue for event creator
+   * Returns top N events sorted by total revenue from ticket sales
+   */
+  getTopEventsByRevenue(
+    eventCreatorAccountId: string,
+    limit?: number,
+  ): Promise<TopEventByRevenueDto[]>;
+
+  /**
+   * Get top locations by revenue for business owner
+   * Returns top N locations sorted by total revenue from bookings
+   */
+  getTopLocationsByRevenue(
+    businessOwnerAccountId: string,
+    limit?: number,
+  ): Promise<TopLocationByRevenueDto[]>;
 }

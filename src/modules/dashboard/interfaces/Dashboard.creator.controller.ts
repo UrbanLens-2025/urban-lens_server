@@ -25,6 +25,8 @@ import {
 } from '@/common/dto/dashboard/EventCreatorPerformance.response.dto';
 import { Query } from '@nestjs/common';
 import { RevenueSummaryResponseDto } from '@/common/dto/dashboard/RevenueSummary.response.dto';
+import { TopEventByRevenueDto } from '@/common/dto/dashboard/TopEventsByRevenue.response.dto';
+import { ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -135,5 +137,31 @@ export class DashboardCreatorController {
     @AuthUser() user: JwtTokenDto,
   ): Promise<RevenueSummaryResponseDto> {
     return this.dashboardService.getRevenueSummary(user.sub);
+  }
+
+  @ApiOperation({
+    summary: 'Get top events by revenue',
+    description:
+      'Get top events with highest revenue from ticket sales for the event creator. Default limit is 5.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of top events to return (default: 5)',
+    example: 5,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Top events by revenue',
+    type: [TopEventByRevenueDto],
+  })
+  @Get('/events/top-revenue')
+  getTopEventsByRevenue(
+    @AuthUser() user: JwtTokenDto,
+    @Query('limit') limit?: string,
+  ): Promise<TopEventByRevenueDto[]> {
+    const limitNum = limit ? parseInt(limit, 10) : 5;
+    return this.dashboardService.getTopEventsByRevenue(user.sub, limitNum);
   }
 }

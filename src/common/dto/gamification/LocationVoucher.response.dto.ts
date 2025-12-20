@@ -1,5 +1,6 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import { LocationVoucherType } from '@/modules/gamification/domain/LocationVoucher.entity';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Exclude()
 export class LocationVoucherResponseDto {
@@ -44,4 +45,16 @@ export class LocationVoucherResponseDto {
 
   @Expose()
   updatedAt: Date;
+
+  @Expose()
+  @ApiPropertyOptional({
+    description: 'Voucher statistics (total, used, remaining)',
+    type: 'object',
+  })
+  @Type(() => Object)
+  statistics?: {
+    total: number;
+    used: number;
+    remaining: number;
+  };
 }
