@@ -2162,26 +2162,35 @@ export class DashboardService extends CoreService implements IDashboardService {
     });
 
     const result: {
-      locationId: string;
-      locationName: string;
-      revenue: number;
-    }[] = [];
+      [locationId: string]: {
+        locationName: string;
+        revenue: number;
+        locationId: string;
+      };
+    } = {};
 
     for (const locationBooking of locationBookings) {
       const revenue = LocationBookingEntity.calculateAmountToReceive(
         locationBooking.amountToPay,
         locationBooking.refundedAmount,
         locationBooking.systemCutPercentage,
+        locationBooking.fines,
       );
 
-      result.push({
-        locationId: locationBooking.locationId,
-        locationName: locationBooking.location.name,
-        revenue,
-      });
+      if (!result[locationBooking.locationId]) {
+        result[locationBooking.locationId] = {
+          locationName: locationBooking.location.name,
+          revenue: 0,
+          locationId: locationBooking.locationId,
+        };
+      }
+
+      result[locationBooking.locationId].revenue += revenue;
     }
 
-    return result.sort((a, b) => b.revenue - a.revenue).slice(0, limit);
+    const returnValues = Object.values(result);
+
+    return returnValues.sort((a, b) => b.revenue - a.revenue).slice(0, limit);
 
     // Get business_id from account_id
     // const businessRepo = this.dataSource.getRepository(BusinessEntity);
