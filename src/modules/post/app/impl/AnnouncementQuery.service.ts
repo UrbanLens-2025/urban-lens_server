@@ -14,6 +14,7 @@ import { GetViewableAnnouncementsForLocationDto } from '@/common/dto/posts/GetVi
 import { paginate, Paginated } from 'nestjs-paginate';
 import { AnnouncementRepository } from '@/modules/post/infra/repository/Announcement.repository';
 import { AnnouncementType } from '@/common/constants/AnnouncementType.constant';
+import { GetAnnouncementsDto } from '@/common/dto/post/GetAnnouncements.dto';
 
 @Injectable()
 export class AnnouncementQueryService
@@ -102,5 +103,14 @@ export class AnnouncementQueryService
         createdById: dto.accountId, // TODO: Check this part if errors
       })
       .then((res) => this.mapTo(AnnouncementResponseDto, res));
+  }
+
+  getAnnounements(
+    dto: GetAnnouncementsDto,
+  ): Promise<Paginated<AnnouncementResponseDto>> {
+    const announcementRepository = AnnouncementRepository(this.dataSource);
+    return paginate(dto.query, announcementRepository, {
+      ...IAnnouncementQueryService_QueryConfig.getAnnouncements(),
+    }).then((res) => this.mapToPaginated(AnnouncementResponseDto, res));
   }
 }

@@ -119,6 +119,7 @@ export class ReportCreationService
           EventAttendanceStatus.CREATED,
           EventAttendanceStatus.CHECKED_IN,
         ]),
+        referencedTicketOrderId: dto.denormSecondaryTargetId,
       });
       if (!existsTickets) {
         throw new BadRequestException(
@@ -155,6 +156,7 @@ export class ReportCreationService
         dto.description,
         dto.createdById,
         dto.attachedImageUrls,
+        dto.denormSecondaryTargetId,
       );
     });
   }

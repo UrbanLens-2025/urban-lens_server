@@ -33,6 +33,7 @@ import {
   EVENT_ATTENDANCE_REFUNDED,
   EventAttendanceRefundedEvent,
 } from '@/modules/event/domain/events/EventAttendanceRefunded.event';
+import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
 
 @Injectable()
 export class EventAttendanceManagementService
@@ -208,6 +209,9 @@ export class EventAttendanceManagementService
               destinationAccountId: eventAttendance.ownerId!,
               amount: refundAmount,
               currency: SupportedCurrency.VND,
+              referencedInitType: WalletTransactionInitType.TICKET_ORDER,
+              referencedInitId: ticketOrderId,
+              note: `Refund for event attendance #${eventAttendance.id}`,
             },
           );
 

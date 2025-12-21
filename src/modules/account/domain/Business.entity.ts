@@ -9,6 +9,7 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryColumn,
@@ -108,6 +109,23 @@ export class BusinessEntity {
     createForeignKeyConstraints: true,
   })
   locations: LocationEntity[];
+
+  @Column({ name: 'processed_by', type: 'uuid', nullable: true })
+  processedById: string | null;
+
+  @ManyToOne(() => AccountEntity, (account) => account.id, {
+    createForeignKeyConstraints: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'processed_by' })
+  processedBy?: AccountEntity | null;
+
+  @Column({
+    name: 'processed_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  processedAt?: Date | null;
 
   canBeUpdated(): boolean {
     return this.status === BusinessRequestStatus.PENDING;

@@ -11,6 +11,7 @@ import { WalletTransactionStatus } from '@/common/constants/WalletTransactionSta
 import { WalletTransactionType } from '@/common/constants/WalletTransactionType.constant';
 import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
+import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
 
 @Entity({ name: WalletTransactionEntity.TABLE_NAME })
 export class WalletTransactionEntity {
@@ -64,6 +65,21 @@ export class WalletTransactionEntity {
     nullable: true,
   })
   note?: string | null;
+
+  @Column({
+    name: 'referenced_init_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  referencedInitId?: string | null;
+
+  @Column({
+    name: 'referenced_init_type',
+    type: 'varchar',
+    length: 55,
+    nullable: true,
+  })
+  referencedInitType?: WalletTransactionInitType | null;
 
   public startTransfer(destinationWalletId?: string): WalletTransactionEntity {
     this.destinationWalletId = destinationWalletId ?? this.destinationWalletId;

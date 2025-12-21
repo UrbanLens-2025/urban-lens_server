@@ -77,6 +77,8 @@ export class WalletTransactionManagementService
       transaction.amount = dto.amountToTransfer;
       transaction.currency = dto.currency;
       transaction.note = dto.note;
+      transaction.referencedInitType = dto.referencedInitType;
+      transaction.referencedInitId = dto.referencedInitId;
 
       transaction.startTransfer(destinationWallet.id);
 
@@ -185,6 +187,8 @@ export class WalletTransactionManagementService
       transaction.amount = dto.amountToTransfer;
       transaction.currency = dto.currency;
       transaction.note = dto.note;
+      transaction.referencedInitType = dto.referencedInitType;
+      transaction.referencedInitId = dto.referencedInitId;
 
       transaction.startTransfer(destinationWallet.id);
 

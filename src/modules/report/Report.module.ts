@@ -29,6 +29,8 @@ import { IReportProcessingService } from '@/modules/report/app/IReportProcessing
 import { ReportProcessingService } from '@/modules/report/app/impl/ReportProcessing.service';
 import { IReportAutoProcessingService } from '@/modules/report-automation/app/IReportAutoProcessing.service';
 import { ReportAutoProcessingService } from '@/modules/report-automation/app/ReportAutoProcessing.service';
+import { ReportAnalyticsService } from '@/modules/report/app/impl/ReportAnalytics.service';
+import { IReportAnalyticsService } from '@/modules/report/app/IReportAnalytics.service';
 @Module({
   imports: [
     ReportInfraModule,
@@ -66,6 +68,10 @@ import { ReportAutoProcessingService } from '@/modules/report-automation/app/Rep
     {
       provide: IReportAutoProcessingService,
       useClass: ReportAutoProcessingService,
+    },
+    {
+      provide: IReportAnalyticsService,
+      useClass: ReportAnalyticsService,
     },
     PenaltyAdministeredListener,
     ReportClosedListener,

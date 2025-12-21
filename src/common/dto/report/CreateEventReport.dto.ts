@@ -1,14 +1,23 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateEventReportDto {
   @IsString()
   @IsNotEmpty()
+  @IsUUID()
   @ApiProperty({
     description: 'The id of the event being reported',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   eventId: string;
+
+  @IsString()
+  @IsUUID()
+  @ApiProperty({
+    description: 'The id of the ticket order being reported',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  denormSecondaryTargetId: string;
 
   @IsString()
   @IsNotEmpty()

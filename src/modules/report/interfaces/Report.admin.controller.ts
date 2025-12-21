@@ -37,6 +37,7 @@ import { ProcessReport_BookingRefundDto } from '@/common/dto/report/ProcessRepor
 import { ProcessReport_TicketRefundDto } from '@/common/dto/report/ProcessReport_TicketRefund.dto';
 import { MarkReportsFirstSeenDto } from '@/common/dto/report/MarkReportsFirstSeen.dto';
 import { ProcessReport_IssueApologyDto } from '@/common/dto/report/ProcessReport_IssueApology.dto';
+import { IReportAnalyticsService } from '@/modules/report/app/IReportAnalytics.service';
 
 @ApiTags('Report')
 @ApiBearerAuth()
@@ -48,7 +49,15 @@ export class ReportAdminController {
     private readonly reportQueryService: IReportQueryService,
     @Inject(IReportProcessingService)
     private readonly reportProcessingService: IReportProcessingService,
+    @Inject(IReportAnalyticsService)
+    private readonly reportAnalyticsService: IReportAnalyticsService,
   ) {}
+
+  @ApiOperation({ summary: 'Get general analytics'})
+  @Get('/analytics/general')
+  getGeneralAnalytics() {
+    return this.reportAnalyticsService.getGeneralAnalytics();
+  }
 
   @ApiOperation({ summary: 'Get all reports' })
   @ApiPaginationQuery(IReportQueryService_Config.search())

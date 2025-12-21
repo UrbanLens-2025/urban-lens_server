@@ -7,20 +7,49 @@ import { GetViewableAnnouncementsForEventDto } from '@/common/dto/posts/GetViewa
 import { GetViewableAnnouncementByIdDto } from '@/common/dto/posts/GetViewableAnnouncementById.dto';
 import { GetMyLocationsAnnouncementsDto } from '@/common/dto/posts/GetMyLocationsAnnouncements.dto';
 import { GetMyEventsAnnouncementsDto } from '@/common/dto/posts/GetMyEventsAnnouncements.dto';
+import { GetAnnouncementsDto } from '@/common/dto/post/GetAnnouncements.dto';
 
 export const IAnnouncementQueryService = Symbol('IAnnouncementQueryService');
 
 export interface IAnnouncementQueryService {
-  getViewableAnnouncementsForLocation(dto: GetViewableAnnouncementsForLocationDto): Promise<Paginated<AnnouncementResponseDto>>;
-  getViewableAnnouncementsForEvent(dto: GetViewableAnnouncementsForEventDto): Promise<Paginated<AnnouncementResponseDto>>;
-  getViewableAnnouncementById(dto: GetViewableAnnouncementByIdDto): Promise<AnnouncementResponseDto>;
+  getViewableAnnouncementsForLocation(
+    dto: GetViewableAnnouncementsForLocationDto,
+  ): Promise<Paginated<AnnouncementResponseDto>>;
+  getViewableAnnouncementsForEvent(
+    dto: GetViewableAnnouncementsForEventDto,
+  ): Promise<Paginated<AnnouncementResponseDto>>;
+  getViewableAnnouncementById(
+    dto: GetViewableAnnouncementByIdDto,
+  ): Promise<AnnouncementResponseDto>;
 
-  getMyLocationsAnnouncements(dto: GetMyLocationsAnnouncementsDto): Promise<Paginated<AnnouncementResponseDto>>;
-  getMyEventsAnnouncements(dto: GetMyEventsAnnouncementsDto): Promise<Paginated<AnnouncementResponseDto>>;
-  getMyAnnouncementById(dto: GetMyAnnouncementByIdDto): Promise<AnnouncementResponseDto>;
+  getMyLocationsAnnouncements(
+    dto: GetMyLocationsAnnouncementsDto,
+  ): Promise<Paginated<AnnouncementResponseDto>>;
+  getMyEventsAnnouncements(
+    dto: GetMyEventsAnnouncementsDto,
+  ): Promise<Paginated<AnnouncementResponseDto>>;
+  getMyAnnouncementById(
+    dto: GetMyAnnouncementByIdDto,
+  ): Promise<AnnouncementResponseDto>;
+
+  getAnnounements(
+    dto: GetAnnouncementsDto,
+  ): Promise<Paginated<AnnouncementResponseDto>>;
 }
 
 export namespace IAnnouncementQueryService_QueryConfig {
+  export function getAnnouncements(): PaginateConfig<AnnouncementEntity> {
+    return {
+      sortableColumns: ['createdAt', 'startDate'],
+      defaultSortBy: [['startDate', 'DESC']],
+      searchableColumns: ['title', 'description'],
+      filterableColumns: {
+        locationId: true,
+        eventId: true,
+      },
+    };
+  }
+
   export function getViewableAnnouncementsForLocation(): PaginateConfig<AnnouncementEntity> {
     return {
       sortableColumns: ['createdAt', 'startDate'],

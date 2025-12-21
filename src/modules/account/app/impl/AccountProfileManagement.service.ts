@@ -92,7 +92,8 @@ export class AccountProfileManagementService
 
       businessProfile.status = updateStatusDto.status;
       businessProfile.adminNotes = updateStatusDto.adminNotes ?? null;
-      // TODO assign processedBy admin
+      businessProfile.processedById = accountId;
+      businessProfile.processedAt = new Date();
 
       return await businessProfileRepository
         .update(

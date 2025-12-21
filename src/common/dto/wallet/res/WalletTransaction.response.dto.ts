@@ -3,6 +3,7 @@ import { WalletTransactionDirection } from '@/common/constants/WalletTransaction
 import { WalletTransactionType } from '@/common/constants/WalletTransactionType.constant';
 import { WalletTransactionStatus } from '@/common/constants/WalletTransactionStatus.constant';
 import { WalletResponseDto } from '@/common/dto/wallet/res/Wallet.response.dto';
+import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
 
 export class WalletTransactionResponseDto {
   @Expose()
@@ -38,4 +39,10 @@ export class WalletTransactionResponseDto {
   @Expose()
   @Type(() => WalletResponseDto)
   wallet?: WalletResponseDto;
+
+  @Expose()
+  referencedInitType?: WalletTransactionInitType | null;
+
+  @Expose()
+  referencedInitId?: string | null;
 }

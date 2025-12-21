@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Inject,
   Param,
   ParseUUIDPipe,
@@ -17,6 +18,8 @@ import { Role } from '@/common/constants/Role.constant';
 import { IPostService } from '../app/IPost.service';
 import { BanPostBodyDto } from '@/common/dto/post/BanPostBody.dto';
 import { BanPostResponseDto } from '@/common/dto/post/BanPost.response.dto';
+import { IPostQueryService, IPostQueryService_QueryConfig } from '@/modules/post/app/PostQuery.service';
+import { ApiPaginationQuery, Paginate, type PaginateQuery } from 'nestjs-paginate';
 
 @ApiTags('Post')
 @Controller('/admin/posts')
@@ -25,7 +28,19 @@ import { BanPostResponseDto } from '@/common/dto/post/BanPost.response.dto';
 export class PostAdminController {
   constructor(
     @Inject(IPostService) private readonly postService: IPostService,
+    @Inject(IPostQueryService)
+    private readonly postQueryService: IPostQueryService,
   ) {}
+
+  @ApiOperation({ summary: 'Get all posts for location' })
+  @ApiPaginationQuery(IPostQueryService_QueryConfig.getPostsByLocationId())
+  @Get('/location/:locationId')
+  getPostsByLocationId(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Paginate() query: PaginateQuery,
+  ) {
+    return this.postQueryService.getPostsByLocationId({ locationId, query });
+  }
 
   @ApiOperation({ summary: 'Ban a post (hide it from public view)' })
   @ApiResponse({

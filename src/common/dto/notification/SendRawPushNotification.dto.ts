@@ -1,5 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNotEmptyObject } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsNotEmpty,
+  IsNotEmptyObject,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+} from 'class-validator';
 
 class Notification {
   @ApiProperty()
@@ -18,4 +24,10 @@ export class SendRawPushNotificationDto {
   @ApiProperty()
   @IsNotEmptyObject()
   payload: Notification;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  sendAfterSeconds?: number = 0;
 }

@@ -18,6 +18,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import dayjs from 'dayjs';
 import { IReportAutoProcessingService } from '@/modules/report-automation/app/IReportAutoProcessing.service';
+import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
 
 @Injectable()
 export class EventPayoutService
@@ -174,6 +175,8 @@ export class EventPayoutService
             entityManager: em,
             amount: payoutAmountToSystem,
             currency: SupportedCurrency.VND,
+            referencedInitType: WalletTransactionInitType.EVENT,
+            referencedInitId: event.id,
             note:
               'Payout for event: ' +
               event.displayName +
@@ -190,6 +193,8 @@ export class EventPayoutService
             amount: payoutAmountToEventCreator,
             currency: SupportedCurrency.VND,
             destinationAccountId: event.createdById,
+            referencedInitType: WalletTransactionInitType.EVENT,
+            referencedInitId: event.id,
             note:
               'Payout for event: ' +
               event.displayName +

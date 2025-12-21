@@ -50,6 +50,7 @@ import { LocationBookingObject } from '@/common/constants/LocationBookingObject.
 import { IEventManagementService } from '@/modules/event/app/IEventManagement.service';
 import { Role } from '@/common/constants/Role.constant';
 import { ForceRefundBookingDto } from '@/common/dto/location-booking/ForceRefundBooking.dto';
+import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
 
 @Injectable()
 export class LocationBookingManagementV2Service
@@ -137,6 +138,8 @@ export class LocationBookingManagementV2Service
               fromAccountId: dto.accountId,
               amountToTransfer: bookingPrice,
               currency: SupportedCurrency.VND,
+              referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
+              referencedInitId: res.id,
               ipAddress: '',
               returnUrl: '',
               note:
@@ -197,6 +200,8 @@ export class LocationBookingManagementV2Service
               destinationAccountId: dto.accountId,
               amount: refundAmount,
               currency: SupportedCurrency.VND,
+              referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
+              referencedInitId: booking.id,
               note:
                 'Refund for booking #' +
                 booking.id +
@@ -236,6 +241,8 @@ export class LocationBookingManagementV2Service
               destinationAccountId: dto.accountId,
               amount: refundAmount,
               currency: SupportedCurrency.VND,
+              referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
+              referencedInitId: booking.id,
               note:
                 'Refund for booking #' +
                 booking.id +
@@ -259,6 +266,9 @@ export class LocationBookingManagementV2Service
               destinationAccountId: booking.location.businessId,
               amount: payoutAmount,
               currency: SupportedCurrency.VND,
+              referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
+              referencedInitId: booking.id,
+              note: `Payout for booking #${booking.id} for location: ${booking.location.name} (ID: ${booking.locationId})`,
             },
           );
 
@@ -327,6 +337,8 @@ export class LocationBookingManagementV2Service
               returnUrl: '',
               amountToTransfer: fineAmount,
               currency: SupportedCurrency.VND,
+              referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
+              referencedInitId: booking.id,
               note: `Fine for booking #${booking.id} for location: ${booking.location.name} (ID: ${booking.locationId})`,
             },
           );
@@ -339,6 +351,8 @@ export class LocationBookingManagementV2Service
               destinationAccountId: booking.createdById,
               amount: totalAmountToRefund,
               currency: SupportedCurrency.VND,
+              referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
+              referencedInitId: booking.id,
               note:
                 'Refund for booking #' +
                 booking.id +
@@ -481,6 +495,8 @@ export class LocationBookingManagementV2Service
                 destinationAccountId: booking.createdById,
                 amount: booking.amountToPay,
                 currency: SupportedCurrency.VND,
+                referencedInitId: booking.id,
+                referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
                 note:
                   'Refund for booking #' +
                   booking.id +
@@ -564,6 +580,8 @@ export class LocationBookingManagementV2Service
             destinationAccountId: locationBooking.createdById,
             amount: refundAmount,
             currency: SupportedCurrency.VND,
+            referencedInitId: locationBooking.id,
+            referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
           },
         );
       locationBooking.refundTransactionId = refundTransaction.id;
