@@ -12,4 +12,16 @@ export class GetEventRevenueAnalyticsResponseDto {
 
   @Expose()
   totalPendingRevenue: number;
+
+  @Expose()
+  totalRevenue: number;
+
+  @Expose()
+  availableBalance: number;
+
+  @Expose()
+  pendingRevenue: number;
+
+  @Expose()
+  pendingWithdraw: number;
 }

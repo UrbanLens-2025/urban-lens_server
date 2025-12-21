@@ -1,3 +1,4 @@
+import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 import { CoreService } from '@/common/core/Core.service';
 import { GetGeneralBusinessAnalyticsResponseDto } from '@/common/dto/business/analytics/GetGeneralBusinessAnalytics.response.dto';
 import { CheckInRepositoryProvider } from '@/modules/business/infra/repository/CheckIn.repository';
@@ -44,17 +45,19 @@ export class BusinessAnalyticsService
       },
     });
 
-    const revenue = location.bookings.reduce(
-      (acc, booking) =>
-        acc +
-        LocationBookingEntity.calculateAmountToReceive(
-          booking.amountToPay,
-          booking.refundedAmount,
-          booking.systemCutPercentage,
-          booking.fines,
-        ),
-      0,
-    );
+    const revenue = location.bookings
+      .filter((booking) => booking.status === LocationBookingStatus.APPROVED)
+      .reduce(
+        (acc, booking) =>
+          acc +
+          LocationBookingEntity.calculateAmountToReceive(
+            booking.amountToPay,
+            booking.refundedAmount,
+            booking.systemCutPercentage,
+            booking.fines,
+          ),
+        0,
+      );
 
     const announcements = await announcementRepository.count({
       where: {

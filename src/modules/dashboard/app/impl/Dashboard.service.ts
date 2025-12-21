@@ -77,6 +77,7 @@ import { LocationMissionEntity } from '@/modules/gamification/domain/LocationMis
 import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
 import { EventAttendanceEntity } from '@/modules/event/domain/EventAttendance.entity';
 import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
+import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 
 @Injectable()
 export class DashboardService extends CoreService implements IDashboardService {
@@ -2131,47 +2132,98 @@ export class DashboardService extends CoreService implements IDashboardService {
     businessOwnerAccountId: string,
     limit: number = 5,
   ): Promise<TopLocationByRevenueDto[]> {
-    // Get business_id from account_id
-    const businessRepo = this.dataSource.getRepository(BusinessEntity);
-    const business = await businessRepo.findOne({
-      where: { accountId: businessOwnerAccountId },
+    const locationBookingRepo = LocationBookingRepository(this.dataSource);
+
+    const locationBookings = await locationBookingRepo.find({
+      where: {
+        location: {
+          businessId: businessOwnerAccountId,
+        },
+        status: LocationBookingStatus.APPROVED,
+      },
+      relations: {
+        location: true,
+        fines: true,
+      },
+      select: {
+        locationId: true,
+        location: {
+          name: true,
+        },
+        amountToPay: true,
+        refundedAmount: true,
+        systemCutPercentage: true,
+        fines: {
+          fineAmount: true,
+          isActive: true,
+          paidAt: true,
+        },
+      },
     });
 
-    if (!business) {
-      throw new Error('Business not found for this account');
+    const result: {
+      locationId: string;
+      locationName: string;
+      revenue: number;
+    }[] = [];
+
+    for (const locationBooking of locationBookings) {
+      const revenue = LocationBookingEntity.calculateAmountToReceive(
+        locationBooking.amountToPay,
+        locationBooking.refundedAmount,
+        locationBooking.systemCutPercentage,
+      );
+
+      result.push({
+        locationId: locationBooking.locationId,
+        locationName: locationBooking.location.name,
+        revenue,
+      });
     }
 
-    const businessId = business.accountId;
-    const bookingRepo = this.dataSource.getRepository(LocationBookingEntity);
+    return result.sort((a, b) => b.revenue - a.revenue).slice(0, limit);
 
-    // Get top locations by revenue from bookings
-    const topLocationsRaw = await bookingRepo
-      .createQueryBuilder('booking')
-      .innerJoin('booking.location', 'location')
-      .select('location.id', 'locationId')
-      .addSelect('location.name', 'locationName')
-      .addSelect(
-        'COALESCE(SUM(booking.amount_to_pay * (1 - booking.system_cut_percentage)), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
-        'revenue',
-      )
-      .where('location.business_id = :businessId', { businessId })
-      .andWhere('booking.status = :status', {
-        status: LocationBookingStatus.APPROVED,
-      })
-      .groupBy('location.id')
-      .addGroupBy('location.name')
-      .limit(limit)
-      .getRawMany<{
-        locationId: string;
-        locationName: string;
-        revenue: string;
-      }>();
+    // Get business_id from account_id
+    // const businessRepo = this.dataSource.getRepository(BusinessEntity);
+    // const business = await businessRepo.findOne({
+    //   where: { accountId: businessOwnerAccountId },
+    // });
 
-    return topLocationsRaw.map((row) => ({
-      locationId: row.locationId,
-      locationName: row.locationName,
-      revenue: Math.round(parseFloat(row.revenue || '0')),
-    }));
+    // if (!business) {
+    //   throw new Error('Business not found for this account');
+    // }
+
+    // const businessId = business.accountId;
+    // const bookingRepo = this.dataSource.getRepository(LocationBookingEntity);
+
+    // // Get top locations by revenue from bookings
+    // const topLocationsRaw = await bookingRepo
+    //   .createQueryBuilder('booking')
+    //   .innerJoin('booking.location', 'location')
+    //   .select('location.id', 'locationId')
+    //   .addSelect('location.name', 'locationName')
+    //   .addSelect(
+    //     'COALESCE(SUM(booking.amount_to_pay * (1 - booking.system_cut_percentage)), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
+    //     'revenue',
+    //   )
+    //   .where('location.business_id = :businessId', { businessId })
+    //   .andWhere('booking.status = :status', {
+    //     status: LocationBookingStatus.APPROVED,
+    //   })
+    //   .groupBy('location.id')
+    //   .addGroupBy('location.name')
+    //   .limit(limit)
+    //   .getRawMany<{
+    //     locationId: string;
+    //     locationName: string;
+    //     revenue: string;
+    //   }>();
+
+    // return topLocationsRaw.map((row) => ({
+    //   locationId: row.locationId,
+    //   locationName: row.locationName,
+    //   revenue: Math.round(parseFloat(row.revenue || '0')),
+    // }));
   }
 
   async getLocationStatistics(
