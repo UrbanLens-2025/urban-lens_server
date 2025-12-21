@@ -24,6 +24,7 @@ import { TopLocationByRevenueDto } from '@/common/dto/dashboard/TopLocationsByRe
 import { ApiQuery } from '@nestjs/swagger';
 import { IRevenueAnalyticsService } from '@/modules/dashboard/app/IRevenueAnalytics.service';
 import { IBusinessAnalyticsService } from '@/modules/dashboard/app/IBusinessAnalytics.service';
+import { LocationBookingsStatsResponseDto } from '@/common/dto/dashboard/LocationBookingsStats.response.dto';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -155,5 +156,22 @@ export class DashboardOwnerController {
     return this.businessAnalyticsService.getGeneralBusinessAnalytics(
       locationId,
     );
+  }
+
+  @ApiOperation({
+    summary: 'Get location bookings statistics',
+    description:
+      'Get statistics for location bookings: total bookings, approved, pending, and total revenue',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Location bookings statistics',
+    type: LocationBookingsStatsResponseDto,
+  })
+  @Get('/location-bookings/stats')
+  getLocationBookingsStats(
+    @AuthUser() user: JwtTokenDto,
+  ): Promise<LocationBookingsStatsResponseDto> {
+    return this.dashboardService.getLocationBookingsStats(user.sub);
   }
 }

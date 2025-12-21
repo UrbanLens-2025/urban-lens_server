@@ -78,6 +78,8 @@ import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
 import { EventAttendanceEntity } from '@/modules/event/domain/EventAttendance.entity';
 import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
 import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
+import { LocationBookingsStatsResponseDto } from '@/common/dto/dashboard/LocationBookingsStats.response.dto';
+import { LocationBookingFineEntity } from '@/modules/location-booking/domain/LocationBookingFine.entity';
 
 @Injectable()
 export class DashboardService extends CoreService implements IDashboardService {
@@ -2387,6 +2389,68 @@ export class DashboardService extends CoreService implements IDashboardService {
       ticketsSoldPercentage: Math.round(ticketsSoldPercentage * 10) / 10, // Round to 1 decimal place
       attendees,
       ticketTypes,
+    };
+  }
+
+  async getLocationBookingsStats(
+    businessOwnerAccountId: string,
+  ): Promise<LocationBookingsStatsResponseDto> {
+    const locationBookingRepo = LocationBookingRepository(this.dataSource);
+
+    // Get all bookings for this business owner's locations
+    const allBookings = await locationBookingRepo.find({
+      where: {
+        location: {
+          businessId: businessOwnerAccountId,
+        },
+      },
+      relations: {
+        location: true,
+        fines: true,
+      },
+      select: {
+        id: true,
+        status: true,
+        amountToPay: true,
+        refundedAmount: true,
+        systemCutPercentage: true,
+        fines: {
+          fineAmount: true,
+          isActive: true,
+          paidAt: true,
+        },
+      },
+    });
+
+    // Calculate statistics
+    const totalBookings = allBookings.length;
+    const approved = allBookings.filter(
+      (booking) => booking.status === LocationBookingStatus.APPROVED,
+    ).length;
+    const pending = allBookings.filter(
+      (booking) =>
+        booking.status === LocationBookingStatus.AWAITING_BUSINESS_PROCESSING,
+    ).length;
+
+    // Calculate total revenue from approved bookings using calculateAmountToReceive
+    let totalRevenue = 0;
+    for (const booking of allBookings) {
+      if (booking.status === LocationBookingStatus.APPROVED) {
+        const revenue = LocationBookingEntity.calculateAmountToReceive(
+          booking.amountToPay,
+          booking.refundedAmount,
+          booking.systemCutPercentage,
+          booking.fines,
+        );
+        totalRevenue += revenue;
+      }
+    }
+
+    return {
+      totalBookings,
+      approved,
+      pending,
+      totalRevenue: Math.round(totalRevenue),
     };
   }
 }

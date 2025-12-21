@@ -41,6 +41,7 @@ import { TopEventByRevenueDto } from '@/common/dto/dashboard/TopEventsByRevenue.
 import { TopLocationByRevenueDto } from '@/common/dto/dashboard/TopLocationsByRevenue.response.dto';
 import { LocationStatisticsResponseDto } from '@/common/dto/dashboard/LocationStatistics.response.dto';
 import { EventStatisticsResponseDto } from '@/common/dto/dashboard/EventStatistics.response.dto';
+import { LocationBookingsStatsResponseDto } from '@/common/dto/dashboard/LocationBookingsStats.response.dto';
 
 export const IDashboardService = Symbol('IDashboardService');
 
@@ -185,4 +186,12 @@ export interface IDashboardService {
     eventId: string,
     eventCreatorAccountId: string,
   ): Promise<EventStatisticsResponseDto>;
+
+  /**
+   * Get location bookings statistics for business owner
+   * Returns total bookings, approved, pending, and total revenue
+   */
+  getLocationBookingsStats(
+    businessOwnerAccountId: string,
+  ): Promise<LocationBookingsStatsResponseDto>;
 }
