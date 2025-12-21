@@ -30,6 +30,7 @@ export class EventAnalyticsService
 
     const totalRevenue = EventEntity.calculateAmountToReceive(
       event.ticketOrders,
+      event.systemCutPercentage,
       event.id,
     );
 

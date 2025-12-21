@@ -34,6 +34,8 @@ import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.
 import { HandleBookingRejectedDto } from '@/common/dto/location-booking/HandleBookingRejected.dto';
 import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Account.repository';
 import { HandleForceCancelEventDto } from '@/common/dto/event/HandleForceCancelEvent.dto';
+import { ISystemConfigService } from '@/modules/utility/app/ISystemConfig.service';
+import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
 
 @Injectable()
 export class EventManagementService
@@ -49,6 +51,8 @@ export class EventManagementService
     private readonly ticketOrderManagementService: ITicketOrderManagementService,
     @Inject(IEventPayoutService)
     private readonly eventPayoutService: IEventPayoutService,
+    @Inject(ISystemConfigService)
+    private readonly systemConfigService: ISystemConfigService,
   ) {
     super();
   }
@@ -121,6 +125,12 @@ export class EventManagementService
       const event = this.mapTo_safe(EventEntity, dto);
       event.createdById = dto.accountId;
       event.status = EventStatus.DRAFT;
+      const systemCutPercentage =
+        await this.systemConfigService.getSystemConfigValue(
+          SystemConfigKey.EVENT_SYSTEM_PAYOUT_PERCENTAGE,
+          em,
+        );
+      event.systemCutPercentage = systemCutPercentage.value;
 
       return (
         eventRepo

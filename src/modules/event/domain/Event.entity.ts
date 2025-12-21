@@ -162,6 +162,15 @@ export class EventEntity {
   })
   avgRating: number;
 
+  @Column({
+    name: 'system_cut_percentage',
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: 0.1,
+  })
+  systemCutPercentage: number;
+
   //#region TRANSIENT FIELDS - Do NOT add @Column to these. These are NOT PERSISTED to the db.
 
   distanceMeters?: number;
@@ -242,6 +251,7 @@ export class EventEntity {
 
   public static calculateAmountToReceive(
     ticketOrders: TicketOrderEntity[],
+    systemCutPercentage: number,
     eventId?: string,
   ): number {
     // check if ticket orders has been loaded
@@ -260,6 +270,6 @@ export class EventEntity {
         );
       }, 0);
 
-    return Number(totalRevenue);
+    return Number(totalRevenue) * (1 - systemCutPercentage);
   }
 }

@@ -70,6 +70,9 @@ export class EventResponseDto {
   locationId?: string | null;
 
   @Expose()
+  systemCutPercentage: number;
+
+  @Expose()
   @Type(() => LocationResponseDto)
   location?: LocationResponseDto;
 

@@ -196,6 +196,7 @@ export class RevenueAnalyticsService
     for (const event of allRelevantEvents) {
       totalPendingRevenue += EventEntity.calculateAmountToReceive(
         event.ticketOrders,
+        event.systemCutPercentage,
         event.id,
       );
     }
@@ -217,6 +218,7 @@ export class RevenueAnalyticsService
       totalWithdrawals,
       totalEarnings,
       totalPendingRevenue,
+      pendingRevenue,
       totalRevenue,
       availableBalance,
       pendingWithdraw,

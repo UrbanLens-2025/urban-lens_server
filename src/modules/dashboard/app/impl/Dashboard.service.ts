@@ -2151,7 +2151,7 @@ export class DashboardService extends CoreService implements IDashboardService {
       .select('location.id', 'locationId')
       .addSelect('location.name', 'locationName')
       .addSelect(
-        '(COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)) * (1 - booking.system_cut_percentage)',
+        'COALESCE(SUM(booking.amount_to_pay * (1 - booking.system_cut_percentage)), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
         'revenue',
       )
       .where('location.business_id = :businessId', { businessId })
