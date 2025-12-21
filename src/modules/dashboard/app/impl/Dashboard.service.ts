@@ -2,7 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { IDashboardService } from '../IDashboard.service';
 import { CoreService } from '@/common/core/Core.service';
 import { AccountRepository } from '@/modules/account/infra/repository/Account.repository';
-import { LocationRepository } from '@/modules/business/infra/repository/Location.repository';
+import {
+  LocationRepository,
+  LocationRepositoryProvider,
+} from '@/modules/business/infra/repository/Location.repository';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import {
   SummaryResponseDto,
@@ -2148,7 +2151,7 @@ export class DashboardService extends CoreService implements IDashboardService {
       .select('location.id', 'locationId')
       .addSelect('location.name', 'locationName')
       .addSelect(
-        'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
+        '(COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)) * (1 - booking.system_cut_percentage)',
         'revenue',
       )
       .where('location.business_id = :businessId', { businessId })
@@ -2157,12 +2160,12 @@ export class DashboardService extends CoreService implements IDashboardService {
       })
       .groupBy('location.id')
       .addGroupBy('location.name')
-      .orderBy(
-        'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
-        'DESC',
-      )
       .limit(limit)
-      .getRawMany();
+      .getRawMany<{
+        locationId: string;
+        locationName: string;
+        revenue: string;
+      }>();
 
     return topLocationsRaw.map((row) => ({
       locationId: row.locationId,
