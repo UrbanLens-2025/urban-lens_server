@@ -197,8 +197,19 @@ export class EventEntity {
     const hasDisplayName = this.displayName !== null;
     const hasDates = this.startDate !== null && this.endDate !== null;
     const hasTickets = tickets.length > 0;
+    const datesInFuture =
+      this.startDate &&
+      this.startDate > new Date() &&
+      this.endDate &&
+      this.endDate > new Date() &&
+      this.startDate < this.endDate;
     return (
-      correctStatus && hasLocation && hasDisplayName && hasDates && hasTickets
+      correctStatus &&
+      hasLocation &&
+      hasDisplayName &&
+      hasDates &&
+      hasTickets &&
+      datesInFuture
     );
   }
 
