@@ -1,9 +1,5 @@
 import { Body, Controller, Get, Inject, Post, Query } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/common/Roles.decorator';
 import { Role } from '@/common/constants/Role.constant';
 import { IPenaltyService } from '@/modules/report/app/IPenalty.service';
@@ -18,6 +14,7 @@ import { CreatePenalty_SuspendLocationDto } from '@/common/dto/report/CreatePena
 import { GetPenaltiesByTargetDto } from '@/common/dto/report/GetPenaltiesByTarget.dto';
 import { AuthUser } from '@/common/AuthUser.decorator';
 import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { CreatePenalty_FineLocationBookingDto } from '@/common/dto/report/CreatePenalty_FineLocationBooking.dto';
 
 @ApiTags('Penalty')
 @ApiBearerAuth()
@@ -137,11 +134,24 @@ export class PenaltyAdminController {
 
   @ApiOperation({
     summary: 'Get penalties by target',
-    description: 'Get all penalties for a specific target entity (post, location, or event)',
+    description:
+      'Get all penalties for a specific target entity (post, location, or event)',
   })
   @Get('/by-target')
   getPenaltiesByTarget(@Query() dto: GetPenaltiesByTargetDto) {
     return this.penaltyService.getPenaltiesByTarget(dto);
   }
-}
 
+  @ApiOperation({
+    summary: 'Fine location booking',
+    description: 'Create a penalty to fine a location booking',
+  })
+  @Post('/fine-location-booking')
+  createPenalty_FineLocationBooking(
+    @Body() dto: CreatePenalty_FineLocationBookingDto,
+    @AuthUser() admin: JwtTokenDto,
+  ) {
+    dto.createdById = admin.sub;
+    return this.penaltyService.createPenalty_FineLocationBooking(dto);
+  }
+}

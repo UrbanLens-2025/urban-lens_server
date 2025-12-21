@@ -17,6 +17,8 @@ import { GetHighestReportedEventsDto } from '@/common/dto/report/GetHighestRepor
 import { GetHighestReportedLocationsDto } from '@/common/dto/report/GetHighestReportedLocations.dto';
 import { LocationWithReportsResponseDto } from '@/common/dto/report/res/LocationWithReports.response.dto';
 import { EventWithReportsResponseDto } from '@/common/dto/report/res/EventWithReports.response.dto';
+import { GetHighestReportedBookingsDto } from '@/common/dto/report/GetHighestReportedBookings.dto';
+import { LocationBookingWithReportsResponseDto } from '@/common/dto/report/res/LocationBookingWithReports.response.dto';
 import {
   ReportEntity,
   ReportEntityType,
@@ -24,6 +26,7 @@ import {
 import { PostRepositoryProvider } from '@/modules/post/infra/repository/Post.repository';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
+import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 import { In } from 'typeorm';
 import { WithCustomPaginationDto } from '@/common/dto/WithCustomPagination.dto';
 
@@ -255,5 +258,70 @@ export class ReportQueryService
       page: dto.query.page,
       limit: dto.query.limit,
     } as unknown as WithCustomPaginationDto<LocationWithReportsResponseDto>;
+  }
+
+  async getHighestReportedBookings(
+    dto: GetHighestReportedBookingsDto,
+  ): Promise<WithCustomPaginationDto<LocationBookingWithReportsResponseDto>> {
+    const reportRepo = ReportRepositoryProvider(this.dataSource);
+    const locationBookingRepo = LocationBookingRepository(this.dataSource);
+    const targets = await reportRepo.getTargetsWithHighestUnclosedReports({
+      targetType: ReportEntityType.BOOKING,
+      limit: dto.query.limit,
+      page: dto.query.page,
+    });
+
+    const targetIds = targets.data?.map((target) => target.target_id);
+
+    if (!targetIds || targetIds.length === 0) {
+      return {
+        data: [],
+        count: 0,
+        page: dto.query.page,
+        limit: dto.query.limit,
+      } as unknown as WithCustomPaginationDto<LocationBookingWithReportsResponseDto>;
+    }
+
+    const bookings = await locationBookingRepo.find({
+      where: {
+        id: In(targetIds),
+      },
+      relations: {
+        location: true,
+        dates: false,
+      },
+      loadEagerRelations: false,
+    });
+
+    const reports = await reportRepo.find({
+      where: {
+        targetId: In(targetIds),
+      },
+    });
+
+    // make a map of targetId to reports
+    const reportsMap = new Map<string, ReportEntity[]>();
+    reports.forEach((report) => {
+      reportsMap.set(report.targetId, [
+        ...(reportsMap.get(report.targetId) || []),
+        report,
+      ]);
+    });
+
+    // map to LocationBookingWithReportsResponseDto
+    const result = bookings.map((booking) => {
+      return {
+        ...booking,
+        reports: reportsMap.get(booking.id) || [],
+      };
+    });
+
+    const data = this.mapToArray(LocationBookingWithReportsResponseDto, result);
+    return {
+      data,
+      count: targets.count,
+      page: dto.query.page,
+      limit: dto.query.limit,
+    } as unknown as WithCustomPaginationDto<LocationBookingWithReportsResponseDto>;
   }
 }

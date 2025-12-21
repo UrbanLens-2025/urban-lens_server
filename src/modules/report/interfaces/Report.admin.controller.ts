@@ -122,6 +122,20 @@ export class ReportAdminController {
     });
   }
 
+  @ApiOperation({ summary: 'Get highest reported bookings' })
+  @Get('/highest-reported-bookings')
+  getHighestReportedBookings(
+    @Query('page', ParseIntPipe) page: number,
+    @Query('limit', ParseIntPipe) limit: number,
+  ) {
+    return this.reportQueryService.getHighestReportedBookings({
+      query: {
+        page,
+        limit,
+      },
+    });
+  }
+
   @ApiOperation({ summary: 'Get report by ID' })
   @Get('/:reportId')
   @ApiParam({

@@ -22,9 +22,10 @@ import { IWalletTransactionQueryService } from '@/modules/wallet/app/IWalletTran
 import { WalletTransactionQueryService } from '@/modules/wallet/app/impl/WalletTransactionQuery.service';
 import { SEPayPaymentGatewayAdapter } from '@/modules/wallet/infra/adapter/SEPayPaymentGateway.adapter';
 import { ExternalTransactionExpiredListener } from '@/modules/wallet/app/event-listener/ExternalTransactionExpired.listener';
+import { UtilityModule } from '@/modules/utility/Utility.module';
 
 @Module({
-  imports: [WalletInfraModule],
+  imports: [WalletInfraModule, UtilityModule],
   controllers: [
     WalletPrivateController,
     WalletDevOnlyController,

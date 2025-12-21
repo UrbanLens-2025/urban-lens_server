@@ -16,14 +16,20 @@ export const ReportRepositoryProvider = (ctx: DataSource | EntityManager) =>
   ctx.getRepository(ReportEntity).extend({
     async getTargetsWithHighestUnclosedReports(
       this: Repository<ReportEntity>,
-      payload: { targetType: ReportEntityType; limit?: number; page?: number },
+      payload: {
+        targetType: ReportEntityType[] | ReportEntityType;
+        limit?: number;
+        page?: number;
+      },
     ) {
       const qb = this.createQueryBuilder('report')
         .select('report.target_id', 'target_id')
         .addSelect('report.target_type', 'target_type')
         .addSelect('COUNT(report.id)', 'report_count')
-        .where('report.target_type = :targetType', {
-          targetType: payload.targetType,
+        .where('report.target_type IN (:...targetTypes)', {
+          targetTypes: Array.isArray(payload.targetType)
+            ? payload.targetType
+            : [payload.targetType],
         })
         .andWhere('report.status = :status', {
           status: ReportStatus.PENDING,

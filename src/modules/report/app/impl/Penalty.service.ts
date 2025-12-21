@@ -34,6 +34,7 @@ import { IEventManagementService } from '@/modules/event/app/IEventManagement.se
 import { CreatePenalty_SuspendLocationDto } from '@/common/dto/report/CreatePenalty_SuspendLocation.dto';
 import { CreatePenalty_FineLocationBookingDto } from '@/common/dto/report/CreatePenalty_FineLocationBooking.dto';
 import { ILocationBookingFineService } from '@/modules/location-booking/app/ILocationBookingFine.service';
+import { LocationBookingRepository } from '@/modules/location-booking/infra/repository/LocationBooking.repository';
 
 /**
  * For functions in this service, create penalty then delegate.
@@ -455,6 +456,16 @@ export class PenaltyService extends CoreService implements IPenaltyService {
           where: { id: payload.entityId },
         });
         return event.createdById;
+      }
+      case ReportEntityType.BOOKING: {
+        const locationBookingRepo = LocationBookingRepository(payload.em);
+        const booking = await locationBookingRepo.findOneOrFail({
+          where: { id: payload.entityId },
+          relations: {
+            location: true,
+          },
+        });
+        return booking.location.businessId;
       }
       default: {
         throw new Error(

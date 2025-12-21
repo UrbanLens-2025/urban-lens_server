@@ -46,6 +46,16 @@ export class WalletPrivateController {
   ) {}
 
   @ApiOperation({
+    summary: 'Get daily withdraw amount',
+  })
+  @Get('/daily-withdraw-amount/:walletId')
+  getDailyWithdrawAmount(@Param('walletId', ParseUUIDPipe) walletId: string) {
+    return this.walletManagementService.getDailyWithdrawAmount({
+      walletId,
+    });
+  }
+
+  @ApiOperation({
     summary: 'Get my wallet',
     description:
       'Fetch the wallet belonging to the authenticated account (any role)',

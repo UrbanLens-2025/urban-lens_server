@@ -11,6 +11,8 @@ import { EventWithReportsResponseDto } from '@/common/dto/report/res/EventWithRe
 import { GetHighestReportedEventsDto } from '@/common/dto/report/GetHighestReportedEvents.dto';
 import { LocationWithReportsResponseDto } from '@/common/dto/report/res/LocationWithReports.response.dto';
 import { GetHighestReportedLocationsDto } from '@/common/dto/report/GetHighestReportedLocations.dto';
+import { LocationBookingWithReportsResponseDto } from '@/common/dto/report/res/LocationBookingWithReports.response.dto';
+import { GetHighestReportedBookingsDto } from '@/common/dto/report/GetHighestReportedBookings.dto';
 import { WithCustomPaginationDto } from '@/common/dto/WithCustomPagination.dto';
 
 export const IReportQueryService = Symbol('IReportQueryService');
@@ -51,6 +53,14 @@ export interface IReportQueryService {
   getHighestReportedLocations(
     dto: GetHighestReportedLocationsDto,
   ): Promise<WithCustomPaginationDto<LocationWithReportsResponseDto>>;
+
+  /**
+   * Gets the highest reported bookings that are not processed yet.
+   * @param dto
+   */
+  getHighestReportedBookings(
+    dto: GetHighestReportedBookingsDto,
+  ): Promise<WithCustomPaginationDto<LocationBookingWithReportsResponseDto>>;
 }
 
 export namespace IReportQueryService_Config {
