@@ -60,7 +60,6 @@ export class TicketOrderQueryService
     return eventRepository
       .findOneByOrFail({
         id: dto.eventId,
-        createdById: dto.accountId,
       })
       .then(() => {
         return paginate(dto.query, ticketOrderRepository, {
@@ -75,13 +74,11 @@ export class TicketOrderQueryService
   async getOrderInEventById(
     dto: GetOrderInEventByIdDto,
   ): Promise<TicketOrderResponseDto> {
-    // First validate event ownership
     const eventRepository = EventRepository(this.dataSource);
     const ticketOrderRepository = TicketOrderRepository(this.dataSource);
 
     const event = await eventRepository.findOneByOrFail({
       id: dto.eventId,
-      createdById: dto.accountId,
     });
 
     return ticketOrderRepository

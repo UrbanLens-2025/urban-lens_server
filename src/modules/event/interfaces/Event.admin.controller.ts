@@ -11,6 +11,12 @@ import {
   Paginate,
   type PaginateQuery,
 } from 'nestjs-paginate';
+import {
+  ITicketOrderQueryService,
+  ITicketOrderQueryService_QueryConfig,
+} from '@/modules/event/app/ITicketOrderQuery.service';
+import { JwtTokenDto } from '@/common/dto/JwtToken.dto';
+import { AuthUser } from '@/common/AuthUser.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Event')
@@ -20,6 +26,8 @@ export class EventAdminController {
   constructor(
     @Inject(IEventQueryService)
     private readonly eventQueryService: IEventQueryService,
+    @Inject(ITicketOrderQueryService)
+    private readonly ticketOrderQueryService: ITicketOrderQueryService,
   ) {}
 
   @ApiOperation({ summary: 'Get every event in the system (admin)' })
@@ -33,5 +41,35 @@ export class EventAdminController {
   @Get('/:eventId')
   getEventById(@Param('eventId', ParseUUIDPipe) eventId: string) {
     return this.eventQueryService.getAnyEventById({ eventId });
+  }
+
+  @ApiOperation({ summary: 'Get ticket orders in an event' })
+  @ApiPaginationQuery(ITicketOrderQueryService_QueryConfig.getOrdersInEvent())
+  @Get('/:eventId/ticket-orders')
+  getTicketOrdersInEvent(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @Paginate() query: PaginateQuery,
+    @AuthUser() userDto: JwtTokenDto,
+  ) {
+    return this.ticketOrderQueryService.getOrdersInEvent({
+      eventId,
+      query,
+      accountId: userDto.sub,
+    });
+  }
+
+  @ApiOperation({ summary: 'Get ticket order details in an event' })
+  @ApiPaginationQuery(ITicketOrderQueryService_QueryConfig.getOrdersInEvent())
+  @Get('/:eventId/ticket-orders/:orderId')
+  getTicketOrderInEventById(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @AuthUser() userDto: JwtTokenDto,
+  ) {
+    return this.ticketOrderQueryService.getOrderInEventById({
+      eventId,
+      orderId,
+      accountId: userDto.sub,
+    });
   }
 }

@@ -16,6 +16,8 @@ import { IRevenueAnalyticsService } from '@/modules/dashboard/app/IRevenueAnalyt
 import { RevenueAnalyticsService } from '@/modules/dashboard/app/impl/RevenueAnalytics.service';
 import { IBusinessAnalyticsService } from '@/modules/dashboard/app/IBusinessAnalytics.service';
 import { BusinessAnalyticsService } from '@/modules/dashboard/app/impl/BusinessAnalytics.service';
+import { IEventAnalyticsService } from '@/modules/dashboard/app/IEventAnalytics.service';
+import { EventAnalyticsService } from '@/modules/dashboard/app/impl/EventAnalytics.service';
 
 @Module({
   imports: [
@@ -44,6 +46,10 @@ import { BusinessAnalyticsService } from '@/modules/dashboard/app/impl/BusinessA
     {
       provide: IBusinessAnalyticsService,
       useClass: BusinessAnalyticsService,
+    },
+    {
+      provide: IEventAnalyticsService,
+      useClass: EventAnalyticsService,
     },
   ],
   exports: [IDashboardService],

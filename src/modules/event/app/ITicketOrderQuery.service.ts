@@ -15,11 +15,9 @@ export interface ITicketOrderQueryService {
   // get order details created by a user by id
   getMyOrderById(dto: GetMyOrderByIdDto): Promise<TicketOrderResponseDto>;
 
-  // get orders in an event (only fetchable for event owner)
   getOrdersInEvent(
     dto: SearchOrdersInEventDto,
   ): Promise<Paginated<TicketOrderResponseDto>>;
-  // get order details in an event by id (only fetchable for event owner)
   getOrderInEventById(
     dto: GetOrderInEventByIdDto,
   ): Promise<TicketOrderResponseDto>;

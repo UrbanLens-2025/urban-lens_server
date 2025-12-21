@@ -29,6 +29,7 @@ import { TopEventByRevenueDto } from '@/common/dto/dashboard/TopEventsByRevenue.
 import { ApiQuery } from '@nestjs/swagger';
 import { IRevenueAnalyticsService } from '@/modules/dashboard/app/IRevenueAnalytics.service';
 import { IBusinessAnalyticsService } from '@/modules/dashboard/app/IBusinessAnalytics.service';
+import { IEventAnalyticsService } from '@/modules/dashboard/app/IEventAnalytics.service';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -40,8 +41,8 @@ export class DashboardCreatorController {
     private readonly dashboardService: IDashboardService,
     @Inject(IRevenueAnalyticsService)
     private readonly revenueAnalyticsService: IRevenueAnalyticsService,
-    @Inject(IBusinessAnalyticsService)
-    private readonly businessAnalyticsService: IBusinessAnalyticsService,
+    @Inject(IEventAnalyticsService)
+    private readonly eventAnalyticsService: IEventAnalyticsService,
   ) {}
 
   @ApiOperation({
@@ -137,5 +138,14 @@ export class DashboardCreatorController {
   ): Promise<TopEventByRevenueDto[]> {
     const limitNum = limit ? parseInt(limit, 10) : 5;
     return this.dashboardService.getTopEventsByRevenue(user.sub, limitNum);
+  }
+
+  @ApiOperation({
+    summary: 'Get general event analytics',
+    description: 'Get general event analytics for a specific event',
+  })
+  @Get('/events/general-analytics/:eventId')
+  getGeneralEventAnalytics(@Param('eventId') eventId: string) {
+    return this.eventAnalyticsService.getGeneralEventAnalytics(eventId);
   }
 }
