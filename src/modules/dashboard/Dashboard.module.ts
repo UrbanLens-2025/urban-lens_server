@@ -12,6 +12,10 @@ import { WalletInfraModule } from '@/modules/wallet/infra/Wallet.infra.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { UtilityModule } from '@/modules/utility/Utility.module';
+import { IRevenueAnalyticsService } from '@/modules/dashboard/app/IRevenueAnalytics.service';
+import { RevenueAnalyticsService } from '@/modules/dashboard/app/impl/RevenueAnalytics.service';
+import { IBusinessAnalyticsService } from '@/modules/dashboard/app/IBusinessAnalytics.service';
+import { BusinessAnalyticsService } from '@/modules/dashboard/app/impl/BusinessAnalytics.service';
 
 @Module({
   imports: [
@@ -32,6 +36,14 @@ import { UtilityModule } from '@/modules/utility/Utility.module';
     {
       provide: IDashboardService,
       useClass: DashboardService,
+    },
+    {
+      provide: IRevenueAnalyticsService,
+      useClass: RevenueAnalyticsService,
+    },
+    {
+      provide: IBusinessAnalyticsService,
+      useClass: BusinessAnalyticsService,
     },
   ],
   exports: [IDashboardService],

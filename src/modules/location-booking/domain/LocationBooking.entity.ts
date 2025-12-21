@@ -367,4 +367,43 @@ export class LocationBookingEntity {
       (!isNotBlank(this.paidOutAt) || dayjs(this.paidOutAt).isAfter(dayjs()))
     );
   }
+
+  /**
+   * Calculates the amount to receive after system cut, refunds, and unpaid active fines
+   * Formula: (amountToPay * (1 - systemCutPercentage)) - refundedAmount - totalUnpaidActiveFines
+   * @returns The calculated amount to receive
+   */
+  public static calculateAmountToReceive(
+    amountToPay: number,
+    refundedAmount?: number | null,
+    systemCutPercentage?: number,
+    fines?: LocationBookingFineEntity[] | null,
+  ): number {
+    const totalAmount = amountToPay ?? 0;
+    const refunded = refundedAmount ?? 0;
+    const systemCut = systemCutPercentage ?? 0;
+
+    // Calculate total unpaid active fines
+    let totalFines = 0;
+    if (fines && Array.isArray(fines)) {
+      totalFines = fines
+        .filter(
+          (fine) =>
+            fine !== null &&
+            fine !== undefined &&
+            fine.isActive === true &&
+            fine.paidAt === null,
+        )
+        .reduce((sum, fine) => {
+          const fineAmount = fine?.fineAmount ?? 0;
+          return sum + Number(fineAmount);
+        }, 0);
+    }
+
+    return (
+      Number(totalAmount) * (1 - Number(systemCut)) -
+      Number(refunded) -
+      Number(totalFines)
+    );
+  }
 }

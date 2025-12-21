@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { LocationMissionEntity } from '@/modules/gamification/domain/LocationMission.entity';
 
 @Injectable()
@@ -10,3 +10,11 @@ export class LocationMissionRepository {
     public readonly repo: Repository<LocationMissionEntity>,
   ) {}
 }
+
+export const LocationMissionRepositoryProvider = (
+  dataSource: DataSource | EntityManager,
+) => dataSource.getRepository(LocationMissionEntity).extend({});
+
+export type LocationMissionRepositoryProvider = ReturnType<
+  typeof LocationMissionRepositoryProvider
+>;

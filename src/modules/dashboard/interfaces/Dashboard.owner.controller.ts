@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Query } from '@nestjs/common';
+import { Controller, Get, Inject, Param, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -22,6 +22,8 @@ import {
 import { RevenueSummaryResponseDto } from '@/common/dto/dashboard/RevenueSummary.response.dto';
 import { TopLocationByRevenueDto } from '@/common/dto/dashboard/TopLocationsByRevenue.response.dto';
 import { ApiQuery } from '@nestjs/swagger';
+import { IRevenueAnalyticsService } from '@/modules/dashboard/app/IRevenueAnalytics.service';
+import { IBusinessAnalyticsService } from '@/modules/dashboard/app/IBusinessAnalytics.service';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -31,6 +33,12 @@ export class DashboardOwnerController {
   constructor(
     @Inject(IDashboardService)
     private readonly dashboardService: IDashboardService,
+
+    @Inject(IRevenueAnalyticsService)
+    private readonly revenueAnalyticsService: IRevenueAnalyticsService,
+
+    @Inject(IBusinessAnalyticsService)
+    private readonly businessAnalyticsService: IBusinessAnalyticsService,
   ) {}
 
   @ApiOperation({
@@ -108,16 +116,9 @@ export class DashboardOwnerController {
     description:
       'Get revenue summary including total revenue, available balance, total withdrawn, and pending amount',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Revenue summary',
-    type: RevenueSummaryResponseDto,
-  })
   @Get('/revenue/summary')
-  getRevenueSummary(
-    @AuthUser() user: JwtTokenDto,
-  ): Promise<RevenueSummaryResponseDto> {
-    return this.dashboardService.getRevenueSummary(user.sub);
+  getRevenueSummary(@AuthUser() user: JwtTokenDto) {
+    return this.revenueAnalyticsService.getBusinessRevenueAnalytics(user.sub);
   }
 
   @ApiOperation({
@@ -144,5 +145,15 @@ export class DashboardOwnerController {
   ): Promise<TopLocationByRevenueDto[]> {
     const limitNum = limit ? parseInt(limit, 10) : 5;
     return this.dashboardService.getTopLocationsByRevenue(user.sub, limitNum);
+  }
+
+  @ApiOperation({ summary: 'Get general business analytics' })
+  @Get('/general-analytics-for-location/:locationId')
+  getGeneralBusinessAnalyticsForLocation(
+    @Param('locationId') locationId: string,
+  ) {
+    return this.businessAnalyticsService.getGeneralBusinessAnalytics(
+      locationId,
+    );
   }
 }

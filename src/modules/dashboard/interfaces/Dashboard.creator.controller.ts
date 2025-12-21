@@ -1,4 +1,4 @@
-import { Controller, Get, Inject } from '@nestjs/common';
+import { Controller, Get, Inject, Param } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -27,6 +27,8 @@ import { Query } from '@nestjs/common';
 import { RevenueSummaryResponseDto } from '@/common/dto/dashboard/RevenueSummary.response.dto';
 import { TopEventByRevenueDto } from '@/common/dto/dashboard/TopEventsByRevenue.response.dto';
 import { ApiQuery } from '@nestjs/swagger';
+import { IRevenueAnalyticsService } from '@/modules/dashboard/app/IRevenueAnalytics.service';
+import { IBusinessAnalyticsService } from '@/modules/dashboard/app/IBusinessAnalytics.service';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -36,17 +38,16 @@ export class DashboardCreatorController {
   constructor(
     @Inject(IDashboardService)
     private readonly dashboardService: IDashboardService,
+    @Inject(IRevenueAnalyticsService)
+    private readonly revenueAnalyticsService: IRevenueAnalyticsService,
+    @Inject(IBusinessAnalyticsService)
+    private readonly businessAnalyticsService: IBusinessAnalyticsService,
   ) {}
 
   @ApiOperation({
     summary: 'Get event creator dashboard statistics',
     description:
       'Get dashboard statistics for event creator including total events, active events, upcoming events, draft events, percentage change, and revenue.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Event creator dashboard stats',
-    type: EventCreatorDashboardStatsResponseDto,
   })
   @Get('/stats')
   getEventCreatorDashboardStats(
@@ -59,21 +60,6 @@ export class DashboardCreatorController {
     summary: 'Get event creator revenue overview',
     description:
       'Get event creator revenue from paid ticket orders. Returns array based on filter: day -> revenue by day (last 7 days), month -> revenue by month (12 months in current year), year -> revenue by year (all years).',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Event creator revenue by day (when filter=day)',
-    type: [EventCreatorRevenueByDayDto],
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Event creator revenue by month (when filter=month)',
-    type: [EventCreatorRevenueByMonthDto],
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Event creator revenue by year (when filter=year)',
-    type: [EventCreatorRevenueByYearDto],
   })
   @Get('/revenue/overview')
   getEventCreatorRevenueOverview(
@@ -127,16 +113,9 @@ export class DashboardCreatorController {
     description:
       'Get revenue summary including total revenue, available balance, total withdrawn, and pending amount',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Revenue summary',
-    type: RevenueSummaryResponseDto,
-  })
   @Get('/revenue/summary')
-  getRevenueSummary(
-    @AuthUser() user: JwtTokenDto,
-  ): Promise<RevenueSummaryResponseDto> {
-    return this.dashboardService.getRevenueSummary(user.sub);
+  getRevenueSummary(@AuthUser() user: JwtTokenDto) {
+    return this.revenueAnalyticsService.getEventRevenueAnalytics(user.sub);
   }
 
   @ApiOperation({
@@ -150,11 +129,6 @@ export class DashboardCreatorController {
     type: Number,
     description: 'Number of top events to return (default: 5)',
     example: 5,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Top events by revenue',
-    type: [TopEventByRevenueDto],
   })
   @Get('/events/top-revenue')
   getTopEventsByRevenue(

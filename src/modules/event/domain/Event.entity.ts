@@ -18,11 +18,14 @@ import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob
 import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
-import { InternalServerErrorException } from '@nestjs/common';
+import { InternalServerErrorException, Logger } from '@nestjs/common';
+import { isNotBlank } from '@/common/utils/is-not-blank.util';
+import { EventTicketOrderStatus } from '@/common/constants/EventTicketOrderStatus.constant';
 
 @Entity({ name: EventEntity.TABLE_NAME })
 export class EventEntity {
   public static readonly TABLE_NAME = 'events';
+  private readonly logger = new Logger(EventEntity.name);
 
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -235,5 +238,28 @@ export class EventEntity {
     const now = new Date();
     const isStartDateInFuture = this.startDate && this.startDate > now;
     return correctStatus && isStartDateInFuture;
+  }
+
+  public static calculateAmountToReceive(
+    ticketOrders: TicketOrderEntity[],
+    eventId?: string,
+  ): number {
+    // check if ticket orders has been loaded
+    if (!isNotBlank(ticketOrders)) {
+      const logger = new Logger(EventEntity.name);
+      logger.warn('Ticket orders are not loaded for event: ', eventId);
+      return 0;
+    }
+
+    const totalRevenue = ticketOrders
+      .filter((order) => order.status === EventTicketOrderStatus.PAID)
+      .reduce((sum, order) => {
+        return (
+          sum +
+          Number(order.totalPaymentAmount - Number(order.refundedAmount ?? 0))
+        );
+      }, 0);
+
+    return Number(totalRevenue);
   }
 }

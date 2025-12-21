@@ -8,6 +8,7 @@ import { LocationBookingDateResponseDto } from '@/common/dto/location-booking/re
 import { ScheduledJobResponseDto } from '@/common/dto/scheduled-job/res/ScheduledJob.response.dto';
 import { EventResponseDto } from '@/common/dto/event/res/Event.response.dto';
 import { LocationBookingFineResponseDto } from '@/common/dto/location-booking/res/LocationBookingFine.response.dto';
+import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 
 @Exclude()
 export class LocationBookingResponseDto {
@@ -64,19 +65,12 @@ export class LocationBookingResponseDto {
 
   @Expose()
   @Transform(({ obj }) => {
-    // ! DUPLICATE CODE
-    const typedObj = obj as LocationBookingResponseDto;
-    const totalAmount = typedObj.amountToPay;
-    const refundedAmount = typedObj.refundedAmount ?? 0;
-    const totalFines = typedObj.fines
-      ?.filter((fine) => fine.isActive === true && fine.paidAt === null)
-      .reduce((sum, fine) => sum + Number(fine.fineAmount), 0);
-    const systemCutPercentage = typedObj.systemCutPercentage;
-
-    return (
-      Number(totalAmount ?? 0) * (1 - Number(systemCutPercentage ?? 0)) -
-      Number(refundedAmount ?? 0) -
-      Number(totalFines ?? 0)
+    const entity = obj as LocationBookingEntity;
+    return LocationBookingEntity.calculateAmountToReceive(
+      entity.amountToPay,
+      entity.refundedAmount,
+      entity.systemCutPercentage,
+      entity.fines,
     );
   })
   amountToReceive: number;

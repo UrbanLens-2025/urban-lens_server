@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
-  InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { mergeTagsWithCategories } from '@/common/utils/category-to-tags.util';
 import { CategoryType } from '@/common/constants/CategoryType.constant';
@@ -14,7 +14,7 @@ import { LocationRequestRepository } from '@/modules/business/infra/repository/L
 import { BusinessRepositoryProvider } from '@/modules/account/infra/repository/Business.repository';
 import { LocationRequestEntity } from '@/modules/business/domain/LocationRequest.entity';
 import { LocationRequestStatus } from '@/common/constants/Location.constant';
-import { DeleteResult, EntityManager, In, UpdateResult } from 'typeorm';
+import { DeleteResult, In, UpdateResult } from 'typeorm';
 import { UpdateLocationRequestDto } from '@/common/dto/business/UpdateLocationRequest.dto';
 import { CancelLocationRequestDto } from '@/common/dto/business/CancelLocationRequest.dto';
 import { ProcessLocationRequestDto } from '@/common/dto/business/ProcessLocationRequest.dto';
@@ -24,20 +24,15 @@ import {
   LocationRequestApprovedEvent,
 } from '@/modules/business/domain/events/LocationRequestApproved.event';
 import { LOCATION_REQUEST_REJECTED_EVENT } from '@/modules/business/domain/events/LocationRequestRejected.event';
-import { LOCATION_REQUEST_NEEDS_MORE_INFO_EVENT } from '@/modules/business/domain/events/LocationRequestNeedsMoreInfo.event';
 import { TagRepositoryProvider } from '@/modules/utility/infra/repository/Tag.repository';
 import { LocationRequestTagsRepository } from '@/modules/business/infra/repository/LocationRequestTags.repository';
 import { AddLocationRequestTagsDto } from '@/common/dto/business/AddLocationRequestTags.dto';
 import { DeleteLocationRequestTagDto } from '@/common/dto/business/DeleteLocationRequestTag.dto';
 import { LocationRequestTagsResponseDto } from '@/common/dto/business/res/LocationRequestTags.response.dto';
-import { LocationEntity } from '@/modules/business/domain/Location.entity';
-import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
-import { LocationTagsRepository } from '@/modules/business/infra/repository/LocationTags.repository';
 import { IFileStorageService } from '@/modules/file-storage/app/IFileStorage.service';
 import { LocationRequestType } from '@/common/constants/LocationRequestType.constant';
 import { CreateLocationRequestFromUserDto } from '@/common/dto/business/CreateLocationRequestFromUser.dto';
 import { UserProfileRepositoryProvider } from '@/modules/account/infra/repository/UserProfile.repository';
-import { LocationOwnershipType } from '@/common/constants/LocationType.constant';
 import { ILocationManagementService } from '@/modules/business/app/ILocationManagement.service';
 
 @Injectable()
@@ -45,6 +40,8 @@ export class LocationRequestManagementService
   extends CoreService
   implements ILocationRequestManagementService
 {
+  private readonly logger = new Logger(LocationRequestManagementService.name);
+
   constructor(
     private readonly eventEmitter: EventEmitter2,
     @Inject(IFileStorageService)
@@ -93,8 +90,8 @@ export class LocationRequestManagementService
         await tagRepository.countSelectableTagsById(finalTagIds);
 
       if (tagCountInDb !== finalTagIds.length) {
-        throw new BadRequestException(
-          'One or more tags from categories are invalid/not selectable',
+        this.logger.warn(
+          `One or more tags from categories are invalid/not selectable: ${finalTagIds.join(', ')}`,
         );
       }
 
@@ -160,8 +157,8 @@ export class LocationRequestManagementService
         await tagRepository.countSelectableTagsById(finalTagIds);
 
       if (tagCountInDb !== finalTagIds.length) {
-        throw new BadRequestException(
-          'One or more tags from categories are invalid/not selectable',
+        this.logger.warn(
+          `One or more tags from categories are invalid/not selectable: ${finalTagIds.join(', ')}`,
         );
       }
 
