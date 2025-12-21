@@ -75,7 +75,21 @@ export class LocationBookingResponseDto {
   })
   amountToReceive: number;
 
+  @Expose()
+  businessPayoutTransactionId?: string | null;
+
+  @Expose()
+  systemPayoutTransactionId?: string | null;
+
   // -- Relations --
+
+  @Expose()
+  @Type(() => WalletTransactionResponseDto)
+  businessPayoutTransaction?: WalletTransactionResponseDto | null;
+
+  @Expose()
+  @Type(() => WalletTransactionResponseDto)
+  systemPayoutTransaction?: WalletTransactionResponseDto | null;
 
   @Expose()
   @Type(() => AccountResponseDto)

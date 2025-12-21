@@ -35,7 +35,7 @@ export namespace IEventAttendanceQueryService_QueryConfig {
 
   export function searchAllEventAttendance(): PaginateConfig<EventAttendanceEntity> {
     return {
-      sortableColumns: ['createdAt', 'updatedAt'],
+      sortableColumns: ['createdAt', 'updatedAt', 'checkedInAt'],
       defaultSortBy: [['createdAt', 'DESC']],
       searchableColumns: [],
       filterableColumns: {
