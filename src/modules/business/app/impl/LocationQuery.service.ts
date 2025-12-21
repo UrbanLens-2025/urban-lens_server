@@ -8,7 +8,8 @@ import {
   ILocationQueryService,
   ILocationQueryService_QueryConfig,
 } from '@/modules/business/app/ILocationQuery.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { IDashboardService } from '@/modules/dashboard/app/IDashboard.service';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { LocationRepositoryProvider } from '@/modules/business/infra/repository/Location.repository';
 import { GetVisibleLocationsByBusinessIdDto } from '@/common/dto/business/GetVisibleLocationsByBusinessId.dto';
@@ -24,6 +25,12 @@ export class LocationQueryService
   extends CoreService
   implements ILocationQueryService
 {
+  constructor(
+    @Inject(IDashboardService)
+    private readonly dashboardService: IDashboardService,
+  ) {
+    super();
+  }
   async searchVisibleLocationsByTagCategory(
     dto: SearchVisibleLocationsByTagCategoryDto,
   ): Promise<Paginated<LocationResponseDto>> {
@@ -145,11 +152,11 @@ export class LocationQueryService
     }).then((e) => this.mapToPaginated(LocationResponseDto, e));
   }
 
-  getMyCreatedLocationById(
+  async getMyCreatedLocationById(
     dto: GetMyCreatedLocationByIdDto,
   ): Promise<LocationResponseDto> {
     const locationRepository = LocationRepositoryProvider(this.dataSource);
-    return locationRepository
+    const location = await locationRepository
       .findOneOrFail({
         where: {
           id: dto.locationId,
@@ -165,6 +172,21 @@ export class LocationQueryService
       .then((e) => {
         return this.mapTo(LocationResponseDto, e);
       });
+
+    // Get statistics and add to response
+    try {
+      const statistics = await this.dashboardService.getLocationStatistics(
+        dto.locationId,
+        dto.businessId,
+      );
+      return {
+        ...location,
+        statistics,
+      };
+    } catch (error) {
+      // If statistics fail, return location without statistics
+      return location;
+    }
   }
 
   searchAnyLocation(

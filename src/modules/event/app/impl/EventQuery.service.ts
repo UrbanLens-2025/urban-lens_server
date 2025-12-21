@@ -7,7 +7,8 @@ import {
   IEventQueryService,
   IEventQueryService_QueryConfig,
 } from '@/modules/event/app/IEventQuery.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { IDashboardService } from '@/modules/dashboard/app/IDashboard.service';
 import { paginate, Paginated } from 'nestjs-paginate';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { EventTicketRepository } from '@/modules/event/infra/repository/EventTicket.repository';
@@ -33,6 +34,12 @@ export class EventQueryService
   extends CoreService
   implements IEventQueryService
 {
+  constructor(
+    @Inject(IDashboardService)
+    private readonly dashboardService: IDashboardService,
+  ) {
+    super();
+  }
   async searchPublishedEventsByTagCategory(
     dto: SearchPublishedEventsByTagCategoryDto,
   ): Promise<Paginated<EventResponseDto>> {
@@ -112,9 +119,9 @@ export class EventQueryService
     }).then((res) => this.mapToPaginated(EventResponseDto, res));
   }
 
-  getMyEventById(dto: GetMyEventByIdDto): Promise<EventResponseDto> {
+  async getMyEventById(dto: GetMyEventByIdDto): Promise<EventResponseDto> {
     const eventRepository = EventRepository(this.dataSource);
-    return eventRepository
+    const event = await eventRepository
       .findOneOrFail({
         where: {
           id: dto.eventId,
@@ -130,6 +137,21 @@ export class EventQueryService
         },
       })
       .then((entity) => this.mapTo(EventResponseDto, entity));
+
+    // Get statistics and add to response
+    try {
+      const statistics = await this.dashboardService.getEventStatistics(
+        dto.eventId,
+        dto.accountId,
+      );
+      return {
+        ...event,
+        statistics,
+      };
+    } catch (error) {
+      // If statistics fail, return event without statistics
+      return event;
+    }
   }
 
   getAllEventTickets(
