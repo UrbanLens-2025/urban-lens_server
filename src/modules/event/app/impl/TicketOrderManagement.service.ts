@@ -151,22 +151,24 @@ export class TicketOrderManagementService
       order.currency = SupportedCurrency.VND;
       order.orderDetails = orderDetails;
 
+      const createdOrder = await ticketOrderRepository.save(order);
+
       // deduct money from account
       const walletTransaction =
         await this.walletTransactionCoordinatorService.coordinateTransferToEscrow(
           {
             entityManager: em,
             currency: SupportedCurrency.VND,
-            amountToTransfer: order.totalPaymentAmount,
+            amountToTransfer: createdOrder.totalPaymentAmount,
             fromAccountId: dto.accountId,
             accountName: dto.accountName,
             returnUrl: dto.returnUrl,
             ipAddress: dto.ipAddress,
             referencedInitType: WalletTransactionInitType.TICKET_ORDER,
-            referencedInitId: order.id,
+            referencedInitId: createdOrder.id,
             note:
               'Payment for order #' +
-              order.id +
+              createdOrder.id +
               ' for event: ' +
               event.displayName +
               ' (ID: ' +
@@ -175,12 +177,12 @@ export class TicketOrderManagementService
           },
         );
 
-      order.referencedTransactionId = walletTransaction.id;
-      order.status = EventTicketOrderStatus.PAID;
+      createdOrder.referencedTransactionId = walletTransaction.id;
+      createdOrder.status = EventTicketOrderStatus.PAID;
 
       return (
         ticketOrderRepository
-          .save(order)
+          .save(createdOrder)
           // reserve ticket quantity
           .then(async (res) => {
             await eventTicketRepository.reserveTickets({

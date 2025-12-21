@@ -200,6 +200,11 @@ export class RevenueAnalyticsService
       );
     }
 
+    const totalRevenue = totalEarnings;
+    const pendingRevenue = totalPendingRevenue;
+    const availableBalance = wallet.balance;
+    const pendingWithdraw = wallet.lockedBalance;
+
     this.logger.log('Analytics results: ', {
       totalDeposits,
       totalWithdrawals,
@@ -212,6 +217,9 @@ export class RevenueAnalyticsService
       totalWithdrawals,
       totalEarnings,
       totalPendingRevenue,
+      totalRevenue,
+      availableBalance,
+      pendingWithdraw,
     });
   }
 }
