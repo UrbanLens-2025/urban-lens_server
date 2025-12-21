@@ -34,6 +34,7 @@ import { EventPayoutService } from '@/modules/event/app/impl/EventPayout.service
 import { EventPayoutListener } from '@/modules/event/app/event-listeners/EventPayout.listener';
 import { ReportModule } from '@/modules/report/Report.module';
 import { ReportAutomationModule } from '@/modules/report-automation/ReportAutomation.module';
+import { DashboardModule } from '@/modules/dashboard/Dashboard.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ReportAutomationModule } from '@/modules/report-automation/ReportAutoma
     ScheduledJobsModule,
     UtilityModule,
     ReportAutomationModule,
+    DashboardModule,
     forwardRef(() => LocationBookingModule),
   ],
   controllers: [

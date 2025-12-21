@@ -6,6 +6,7 @@ import { LocationOwnershipType } from '@/common/constants/LocationType.constant'
 import { LocationBookingConfigResponseDto } from '@/common/dto/location-booking/res/LocationBookingConfig.response.dto';
 import { TagResponseDto } from '@/common/dto/account/res/TagResponse.dto';
 import { LocationAvailabilityResponseDto } from '@/common/dto/location-booking/res/LocationAvailability.response.dto';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 @Exclude()
 export class LocationResponseDto {
@@ -106,4 +107,15 @@ export class LocationResponseDto {
     return typeof value === 'string' ? parseInt(value, 10) : Number(value);
   })
   totalCheckIns: number;
+
+  @Expose()
+  @ApiPropertyOptional({})
+  @Type(() => Object)
+  statistics?: {
+    checkIns: number;
+    revenue: number;
+    announcements: number;
+    vouchers: number;
+    missions: number;
+  };
 }

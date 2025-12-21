@@ -31,6 +31,7 @@ import { LocationBookingModule } from '@/modules/location-booking/LocationBookin
 import { PostInfraModule } from '@/modules/post/infra/Post.infra.module';
 import { ILocationSuspensionService } from '@/modules/business/app/ILocationSuspension.service';
 import { LocationSuspensionService } from '@/modules/business/app/impl/LocationSuspension.service';
+import { DashboardModule } from '@/modules/dashboard/Dashboard.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { LocationSuspensionService } from '@/modules/business/app/impl/LocationS
     AccountModule,
     LocationBookingModule,
     PostInfraModule,
+    DashboardModule,
     ClientsModule.register(getRabbitMQConfig()),
   ],
   controllers: [

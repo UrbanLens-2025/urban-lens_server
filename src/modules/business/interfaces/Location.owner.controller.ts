@@ -74,7 +74,11 @@ export class LocationOwnerController {
     });
   }
 
-  @ApiOperation({ summary: 'Get my created location by ID' })
+  @ApiOperation({
+    summary: 'Get my created location by ID',
+    description:
+      'Get location details with statistics (check-ins, revenue, announcements, vouchers, and missions)',
+  })
   @Get('/:locationId')
   getMyLocationById(
     @Param('locationId', ParseUUIDPipe) locationId: string,

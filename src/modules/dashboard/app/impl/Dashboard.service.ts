@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IDashboardService } from '../IDashboard.service';
 import { CoreService } from '@/common/core/Core.service';
 import { AccountRepository } from '@/modules/account/infra/repository/Account.repository';
@@ -67,6 +67,12 @@ import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
 import { Inject } from '@nestjs/common';
 import { TopEventByRevenueDto } from '@/common/dto/dashboard/TopEventsByRevenue.response.dto';
 import { TopLocationByRevenueDto } from '@/common/dto/dashboard/TopLocationsByRevenue.response.dto';
+import { LocationStatisticsResponseDto } from '@/common/dto/dashboard/LocationStatistics.response.dto';
+import { EventStatisticsResponseDto } from '@/common/dto/dashboard/EventStatistics.response.dto';
+import { LocationVoucherEntity } from '@/modules/gamification/domain/LocationVoucher.entity';
+import { LocationMissionEntity } from '@/modules/gamification/domain/LocationMission.entity';
+import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
+import { EventAttendanceEntity } from '@/modules/event/domain/EventAttendance.entity';
 
 @Injectable()
 export class DashboardService extends CoreService implements IDashboardService {
@@ -2143,5 +2149,160 @@ export class DashboardService extends CoreService implements IDashboardService {
       locationName: row.locationName,
       revenue: Math.round(parseFloat(row.revenue || '0')),
     }));
+  }
+
+  async getLocationStatistics(
+    locationId: string,
+    businessOwnerAccountId: string,
+  ): Promise<LocationStatisticsResponseDto> {
+    // Verify location belongs to business owner
+    const location = await this.locationRepository.repo.findOne({
+      where: { id: locationId, businessId: businessOwnerAccountId },
+    });
+
+    if (!location) {
+      throw new NotFoundException(
+        'Location not found or does not belong to you',
+      );
+    }
+
+    // Get check-ins count
+    const checkIns = await this.dataSource
+      .getRepository(CheckInEntity)
+      .createQueryBuilder('checkin')
+      .where('checkin.locationId = :locationId', { locationId })
+      .getCount();
+
+    // Get revenue from bookings
+    const revenueResult = await this.dataSource
+      .getRepository(LocationBookingEntity)
+      .createQueryBuilder('booking')
+      .select(
+        'COALESCE(SUM(booking.amount_to_pay), 0) - COALESCE(SUM(COALESCE(booking.refunded_amount, 0)), 0)',
+        'total',
+      )
+      .where('booking.locationId = :locationId', { locationId })
+      .andWhere('booking.status = :status', {
+        status: LocationBookingStatus.APPROVED,
+      })
+      .getRawOne();
+
+    const revenue = Math.round(parseFloat(revenueResult?.total || '0'));
+
+    // Get announcements (posts) count - both REVIEW and BLOG types
+    const announcements = await this.dataSource
+      .getRepository(PostEntity)
+      .createQueryBuilder('post')
+      .where('post.locationId = :locationId', { locationId })
+      .andWhere('post.isHidden = :isHidden', { isHidden: false })
+      .getCount();
+
+    // Get vouchers count
+    const vouchers = await this.dataSource
+      .getRepository(LocationVoucherEntity)
+      .createQueryBuilder('voucher')
+      .where('voucher.locationId = :locationId', { locationId })
+      .getCount();
+
+    // Get missions count
+    const missions = await this.dataSource
+      .getRepository(LocationMissionEntity)
+      .createQueryBuilder('mission')
+      .where('mission.locationId = :locationId', { locationId })
+      .getCount();
+
+    return {
+      checkIns,
+      revenue,
+      announcements,
+      vouchers,
+      missions,
+    };
+  }
+
+  async getEventStatistics(
+    eventId: string,
+    eventCreatorAccountId: string,
+  ): Promise<EventStatisticsResponseDto> {
+    // Verify event belongs to event creator
+    const event = await this.dataSource.getRepository(EventEntity).findOne({
+      where: { id: eventId, createdById: eventCreatorAccountId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found or does not belong to you');
+    }
+
+    // Get total revenue from paid ticket orders
+    const revenueResult = await this.dataSource
+      .getRepository(TicketOrderEntity)
+      .createQueryBuilder('order')
+      .select(
+        'COALESCE(SUM(order.total_payment_amount), 0) - COALESCE(SUM(COALESCE(order.refunded_amount, 0)), 0)',
+        'total',
+      )
+      .addSelect('COUNT(DISTINCT order.id)', 'paidOrders')
+      .where('order.eventId = :eventId', { eventId })
+      .andWhere('order.status = :status', {
+        status: EventTicketOrderStatus.PAID,
+      })
+      .getRawOne();
+
+    const totalRevenue = Math.round(parseFloat(revenueResult?.total || '0'));
+    const paidOrders = parseInt(revenueResult?.paidOrders || '0', 10);
+
+    // Get tickets sold count (total quantity from all paid orders)
+    const ticketsSoldResult = await this.dataSource
+      .getRepository(TicketOrderEntity)
+      .createQueryBuilder('order')
+      .innerJoin('order.orderDetails', 'details')
+      .select('COALESCE(SUM(details.quantity), 0)', 'total')
+      .where('order.eventId = :eventId', { eventId })
+      .andWhere('order.status = :status', {
+        status: EventTicketOrderStatus.PAID,
+      })
+      .getRawOne();
+
+    const ticketsSold = parseInt(ticketsSoldResult?.total || '0', 10);
+
+    // Get total tickets available (sum of totalQuantityAvailable from all active tickets)
+    const totalTicketsResult = await this.dataSource
+      .getRepository(EventTicketEntity)
+      .createQueryBuilder('ticket')
+      .select('COALESCE(SUM(ticket.total_quantity_available), 0)', 'total')
+      .where('ticket.eventId = :eventId', { eventId })
+      .andWhere('ticket.isActive = :isActive', { isActive: true })
+      .getRawOne();
+
+    const totalTickets = parseInt(totalTicketsResult?.total || '0', 10);
+
+    // Calculate tickets sold percentage
+    const ticketsSoldPercentage =
+      totalTickets > 0 ? (ticketsSold / totalTickets) * 100 : 0;
+
+    // Get attendees count (from event attendance)
+    const attendees = await this.dataSource
+      .getRepository(EventAttendanceEntity)
+      .createQueryBuilder('attendance')
+      .where('attendance.eventId = :eventId', { eventId })
+      .getCount();
+
+    // Get active ticket types count
+    const ticketTypes = await this.dataSource
+      .getRepository(EventTicketEntity)
+      .createQueryBuilder('ticket')
+      .where('ticket.eventId = :eventId', { eventId })
+      .andWhere('ticket.isActive = :isActive', { isActive: true })
+      .getCount();
+
+    return {
+      totalRevenue,
+      paidOrders,
+      ticketsSold,
+      totalTickets,
+      ticketsSoldPercentage: Math.round(ticketsSoldPercentage * 10) / 10, // Round to 1 decimal place
+      attendees,
+      ticketTypes,
+    };
   }
 }

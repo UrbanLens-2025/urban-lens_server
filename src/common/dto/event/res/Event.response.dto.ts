@@ -10,6 +10,7 @@ import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocum
 import { LocationBookingResponseDto } from '@/common/dto/location-booking/res/LocationBooking.response.dto';
 import { TicketOrderResponseDto } from '@/common/dto/event/res/TicketOrder.response.dto';
 import { ScheduledJobResponseDto } from '@/common/dto/scheduled-job/res/ScheduledJob.response.dto';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 @Exclude()
 export class EventResponseDto {
@@ -137,4 +138,17 @@ export class EventResponseDto {
     return typeof value === 'string' ? parseFloat(value) : Number(value);
   })
   avgRating: number;
+
+  @Expose()
+  @ApiPropertyOptional({})
+  @Type(() => Object)
+  statistics?: {
+    totalRevenue: number;
+    paidOrders: number;
+    ticketsSold: number;
+    totalTickets: number;
+    ticketsSoldPercentage: number;
+    attendees: number;
+    ticketTypes: number;
+  };
 }

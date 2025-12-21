@@ -176,7 +176,11 @@ export class EventCreatorController {
     });
   }
 
-  @ApiOperation({ summary: 'Get my event by ID' })
+  @ApiOperation({
+    summary: 'Get my event by ID',
+    description:
+      'Get event details with statistics (total revenue, tickets sold, attendees, ticket types)',
+  })
   @Get('/:eventId')
   getMyEventById(
     @Param('eventId', ParseUUIDPipe) eventId: string,

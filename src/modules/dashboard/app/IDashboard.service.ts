@@ -39,6 +39,8 @@ import {
 import { RevenueSummaryResponseDto } from '@/common/dto/dashboard/RevenueSummary.response.dto';
 import { TopEventByRevenueDto } from '@/common/dto/dashboard/TopEventsByRevenue.response.dto';
 import { TopLocationByRevenueDto } from '@/common/dto/dashboard/TopLocationsByRevenue.response.dto';
+import { LocationStatisticsResponseDto } from '@/common/dto/dashboard/LocationStatistics.response.dto';
+import { EventStatisticsResponseDto } from '@/common/dto/dashboard/EventStatistics.response.dto';
 
 export const IDashboardService = Symbol('IDashboardService');
 
@@ -165,4 +167,22 @@ export interface IDashboardService {
     businessOwnerAccountId: string,
     limit?: number,
   ): Promise<TopLocationByRevenueDto[]>;
+
+  /**
+   * Get location statistics for business owner
+   * Returns check-ins, revenue, announcements, vouchers, and missions count
+   */
+  getLocationStatistics(
+    locationId: string,
+    businessOwnerAccountId: string,
+  ): Promise<LocationStatisticsResponseDto>;
+
+  /**
+   * Get event statistics for event creator
+   * Returns total revenue, paid orders, tickets sold, total tickets, tickets sold percentage, attendees, and ticket types count
+   */
+  getEventStatistics(
+    eventId: string,
+    eventCreatorAccountId: string,
+  ): Promise<EventStatisticsResponseDto>;
 }
