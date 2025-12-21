@@ -44,4 +44,11 @@ export class EventCreatorDashboardStatsResponseDto {
     description: 'Revenue from paid ticket orders in current month (in VND)',
   })
   thisMonthRevenue: number;
+
+  @ApiProperty({
+    example: 202,
+    description:
+      'Total number of tags across all events created by the event creator',
+  })
+  totalTags: number;
 }
