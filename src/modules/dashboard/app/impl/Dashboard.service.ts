@@ -73,6 +73,7 @@ import { LocationVoucherEntity } from '@/modules/gamification/domain/LocationVou
 import { LocationMissionEntity } from '@/modules/gamification/domain/LocationMission.entity';
 import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
 import { EventAttendanceEntity } from '@/modules/event/domain/EventAttendance.entity';
+import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
 
 @Injectable()
 export class DashboardService extends CoreService implements IDashboardService {
@@ -1249,13 +1250,19 @@ export class DashboardService extends CoreService implements IDashboardService {
         where: { createdById: eventCreatorAccountId },
       }),
 
-      // Active events (PUBLISHED)
-      eventRepo.count({
-        where: {
-          createdById: eventCreatorAccountId,
-          status: EventStatus.PUBLISHED,
-        },
-      }),
+      // Active events (PUBLISHED and currently happening: start_date <= now <= end_date)
+      // Only count events that have both start_date and end_date
+      eventRepo
+        .createQueryBuilder('event')
+        .where('event.account_id = :accountId', {
+          accountId: eventCreatorAccountId,
+        })
+        .andWhere('event.status = :status', { status: EventStatus.PUBLISHED })
+        .andWhere('event.start_date IS NOT NULL')
+        .andWhere('event.end_date IS NOT NULL')
+        .andWhere('event.start_date <= :now', { now })
+        .andWhere('event.end_date >= :now', { now })
+        .getCount(),
 
       // Upcoming events (PUBLISHED with start_date in the future)
       eventRepo
@@ -1324,6 +1331,18 @@ export class DashboardService extends CoreService implements IDashboardService {
       .getRawMany()
       .then((results) => results.map((r) => r.id));
 
+    // Get total tags count (distinct tags across all events)
+    const totalTags =
+      eventIds.length > 0
+        ? await this.dataSource
+            .getRepository(EventTagsEntity)
+            .createQueryBuilder('eventTag')
+            .select('COUNT(DISTINCT eventTag.tagId)', 'count')
+            .where('eventTag.eventId IN (:...eventIds)', { eventIds })
+            .getRawOne()
+            .then((result) => parseInt(result?.count || '0', 10))
+        : 0;
+
     // Calculate revenue from paid ticket orders
     const [totalRevenueResult, thisMonthRevenueResult] = await Promise.all([
       // Total revenue (all time) - only PAID orders
@@ -1374,6 +1393,7 @@ export class DashboardService extends CoreService implements IDashboardService {
       thisMonthRevenue: Math.round(
         parseFloat(thisMonthRevenueResult?.total || '0'),
       ),
+      totalTags,
     };
   }
 
