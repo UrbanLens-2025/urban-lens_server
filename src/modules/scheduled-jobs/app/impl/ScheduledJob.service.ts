@@ -29,6 +29,7 @@ export class ScheduledJobService
         },
       });
       scheduledJob.status = ScheduledJobStatus.CANCELLED;
+      scheduledJob.closedAt = new Date();
       return scheduledJobRepository
         .save(scheduledJob)
         .then((res) => this.mapTo(ScheduledJobResponseDto, res));

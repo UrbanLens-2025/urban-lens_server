@@ -1,10 +1,8 @@
 import { EventAttendanceStatus } from '@/common/constants/EventAttendanceStatus.constant';
-import { EventTicketOrderStatus } from '@/common/constants/EventTicketOrderStatus.constant';
 import { NotificationTypes } from '@/common/constants/Notifications.constant';
 import { CoreService } from '@/common/core/Core.service';
 import { HandleEventAnnouncementDto } from '@/common/dto/posts/HandleEventAnnouncement.dto';
 import { EventAttendanceRepository } from '@/modules/event/infra/repository/EventAttendance.repository';
-import { TicketOrderRepository } from '@/modules/event/infra/repository/TicketOrder.repository';
 import { IFirebaseNotificationService } from '@/modules/notification/app/IFirebaseNotification.service';
 import { IEventAnnouncementNotifierService } from '@/modules/post/app/IEventAnnouncementNotifier.service';
 import { AnnouncementRepository } from '@/modules/post/infra/repository/Announcement.repository';

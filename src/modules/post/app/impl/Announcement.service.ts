@@ -54,12 +54,12 @@ export class AnnouncementService
           // schedule a job to notify users of the announcement
           const job =
             await this.scheduledJobService.createLongRunningScheduledJob({
-              associatedId: announcementEntity.id,
+              associatedId: res.id,
               jobType: ScheduledJobType.EVENT_ANNOUNCEMENT,
               payload: {
-                announcementId: announcementEntity.id,
+                announcementId: res.id,
               },
-              executeAt: announcementEntity.startDate,
+              executeAt: res.startDate,
               entityManager: em,
             });
 
