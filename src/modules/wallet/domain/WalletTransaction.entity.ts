@@ -12,6 +12,7 @@ import { WalletTransactionType } from '@/common/constants/WalletTransactionType.
 import { DefaultSystemWallet } from '@/common/constants/DefaultSystemWallet.constant';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
+import { TransactionCategory } from '@/common/constants/TransactionCategory.constant';
 
 @Entity({ name: WalletTransactionEntity.TABLE_NAME })
 export class WalletTransactionEntity {
@@ -49,6 +50,14 @@ export class WalletTransactionEntity {
 
   @Column({ name: 'type', type: 'varchar', length: 55 })
   type: WalletTransactionType;
+
+  @Column({
+    name: 'transaction_category',
+    type: 'varchar',
+    length: 55,
+    nullable: true,
+  })
+  transactionCategory?: TransactionCategory | null;
 
   @Column({
     name: 'status',

@@ -3,6 +3,7 @@ import { ScheduledJobStatus } from '@/common/constants/ScheduledJobStatus.consta
 import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
 import { SupportedCurrency } from '@/common/constants/SupportedCurrency.constant';
 import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
+import { TransactionCategory } from '@/common/constants/TransactionCategory.constant';
 import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
 import { CoreService } from '@/common/core/Core.service';
 import { HandleLocationBookingPayoutDto } from '@/common/dto/location-booking/HandleLocationBookingPayout.dto';
@@ -194,6 +195,7 @@ export class LocationBookingPayoutService
               amount: payoutAmountToSystem,
               currency: SupportedCurrency.VND,
               referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
+              transactionCategory: TransactionCategory.LOCATION_BOOKING_PAYOUT_SYSTEM,
               referencedInitId: booking.id,
               note:
                 'Payout for location booking: ' +
@@ -232,6 +234,7 @@ export class LocationBookingPayoutService
                   referencedInitType:
                     WalletTransactionInitType.LOCATION_BOOKING,
                   referencedInitId: booking.id,
+                  transactionCategory: TransactionCategory.LOCATION_BOOKING_PAYOUT_BUSINESS,
                   note:
                     'Payout for location booking: ' +
                     booking.location.name +

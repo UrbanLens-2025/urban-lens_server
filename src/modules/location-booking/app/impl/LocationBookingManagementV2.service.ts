@@ -51,6 +51,7 @@ import { IEventManagementService } from '@/modules/event/app/IEventManagement.se
 import { Role } from '@/common/constants/Role.constant';
 import { ForceRefundBookingDto } from '@/common/dto/location-booking/ForceRefundBooking.dto';
 import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
+import { TransactionCategory } from '@/common/constants/TransactionCategory.constant';
 
 @Injectable()
 export class LocationBookingManagementV2Service
@@ -142,6 +143,7 @@ export class LocationBookingManagementV2Service
               referencedInitId: res.id,
               ipAddress: '',
               returnUrl: '',
+              transactionCategory: TransactionCategory.LOCATION_BOOKING_PAYMENT,
               note:
                 'Payment for booking #' +
                 res.id +
@@ -202,6 +204,7 @@ export class LocationBookingManagementV2Service
               currency: SupportedCurrency.VND,
               referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
               referencedInitId: booking.id,
+              transactionCategory: TransactionCategory.LOCATION_BOOKING_REFUND,
               note:
                 'Refund for booking #' +
                 booking.id +
@@ -243,6 +246,7 @@ export class LocationBookingManagementV2Service
               currency: SupportedCurrency.VND,
               referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
               referencedInitId: booking.id,
+              transactionCategory: TransactionCategory.LOCATION_BOOKING_REFUND,
               note:
                 'Refund for booking #' +
                 booking.id +
@@ -268,6 +272,8 @@ export class LocationBookingManagementV2Service
               currency: SupportedCurrency.VND,
               referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
               referencedInitId: booking.id,
+              transactionCategory:
+                TransactionCategory.LOCATION_BOOKING_PAYOUT_BUSINESS,
               note: `Payout for booking #${booking.id} for location: ${booking.location.name} (ID: ${booking.locationId})`,
             },
           );
@@ -339,6 +345,8 @@ export class LocationBookingManagementV2Service
               currency: SupportedCurrency.VND,
               referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
               referencedInitId: booking.id,
+              transactionCategory:
+                TransactionCategory.LOCATION_BOOKING_FORCE_CANCELLATION_FINE,
               note: `Fine for booking #${booking.id} for location: ${booking.location.name} (ID: ${booking.locationId})`,
             },
           );
@@ -353,6 +361,7 @@ export class LocationBookingManagementV2Service
               currency: SupportedCurrency.VND,
               referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
               referencedInitId: booking.id,
+              transactionCategory: TransactionCategory.LOCATION_BOOKING_REFUND,
               note:
                 'Refund for booking #' +
                 booking.id +
@@ -497,6 +506,8 @@ export class LocationBookingManagementV2Service
                 currency: SupportedCurrency.VND,
                 referencedInitId: booking.id,
                 referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
+                transactionCategory:
+                  TransactionCategory.LOCATION_BOOKING_REJECTED,
                 note:
                   'Refund for booking #' +
                   booking.id +
@@ -582,6 +593,7 @@ export class LocationBookingManagementV2Service
             currency: SupportedCurrency.VND,
             referencedInitId: locationBooking.id,
             referencedInitType: WalletTransactionInitType.LOCATION_BOOKING,
+            transactionCategory: TransactionCategory.LOCATION_BOOKING_REFUND,
           },
         );
       locationBooking.refundTransactionId = refundTransaction.id;

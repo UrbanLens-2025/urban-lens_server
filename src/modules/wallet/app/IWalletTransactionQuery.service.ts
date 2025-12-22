@@ -46,10 +46,29 @@ export namespace IWalletTransactionQueryService_QueryConfig {
     return {
       sortableColumns: ['createdAt'],
       defaultSortBy: [['createdAt', 'DESC']],
-      searchableColumns: ['note'],
+      searchableColumns: [
+        'note',
+        'id',
+        'sourceWallet.owner.email',
+        'destinationWallet.owner.email',
+        'sourceWallet.owner.firstName',
+        'sourceWallet.owner.lastName',
+        'destinationWallet.owner.firstName',
+        'destinationWallet.owner.lastName',
+        'sourceWalletId',
+        'destinationWalletId',
+      ],
       filterableColumns: {
-        status: true,
+        type: true,
         createdAt: true,
+      },
+      relations: {
+        sourceWallet: {
+          owner: true,
+        },
+        destinationWallet: {
+          owner: true,
+        },
       },
     };
   }

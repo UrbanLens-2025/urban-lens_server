@@ -19,6 +19,7 @@ import { ConfigService } from '@nestjs/config';
 import dayjs from 'dayjs';
 import { IReportAutoProcessingService } from '@/modules/report-automation/app/IReportAutoProcessing.service';
 import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
+import { TransactionCategory } from '@/common/constants/TransactionCategory.constant';
 
 @Injectable()
 export class EventPayoutService
@@ -177,6 +178,7 @@ export class EventPayoutService
             currency: SupportedCurrency.VND,
             referencedInitType: WalletTransactionInitType.EVENT,
             referencedInitId: event.id,
+            transactionCategory: TransactionCategory.EVENT_PAYOUT_SYSTEM,
             note:
               'Payout for event: ' +
               event.displayName +
@@ -195,6 +197,7 @@ export class EventPayoutService
             destinationAccountId: event.createdById,
             referencedInitType: WalletTransactionInitType.EVENT,
             referencedInitId: event.id,
+            transactionCategory: TransactionCategory.EVENT_PAYOUT_CREATOR,
             note:
               'Payout for event: ' +
               event.displayName +

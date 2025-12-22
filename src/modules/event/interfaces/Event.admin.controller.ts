@@ -59,7 +59,6 @@ export class EventAdminController {
   }
 
   @ApiOperation({ summary: 'Get ticket order details in an event' })
-  @ApiPaginationQuery(ITicketOrderQueryService_QueryConfig.getOrdersInEvent())
   @Get('/ticket-orders/:orderId')
   getTicketOrderInEventById(@Param('orderId', ParseUUIDPipe) orderId: string) {
     return this.ticketOrderQueryService.getAnyOrderById({

@@ -17,7 +17,7 @@ import {
 import { CreateEventAttendanceEntitiesFromTicketOrderDto } from '@/common/dto/event/CreateEventAttendanceEntitiesFromTicketOrder.dto';
 import { TicketOrderRepository } from '@/modules/event/infra/repository/TicketOrder.repository';
 import { ConfirmTicketUsageV2Dto } from '@/common/dto/event/ConfirmTicketUsageV2.dto';
-import { In } from 'typeorm';
+import { In, Transaction } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   TICKETS_CHECKED_IN_EVENT,
@@ -34,6 +34,7 @@ import {
   EventAttendanceRefundedEvent,
 } from '@/modules/event/domain/events/EventAttendanceRefunded.event';
 import { WalletTransactionInitType } from '@/common/constants/WalletTransactionInitType.constant';
+import { TransactionCategory } from '@/common/constants/TransactionCategory.constant';
 
 @Injectable()
 export class EventAttendanceManagementService
@@ -209,6 +210,7 @@ export class EventAttendanceManagementService
               destinationAccountId: eventAttendance.ownerId!,
               amount: refundAmount,
               currency: SupportedCurrency.VND,
+              transactionCategory: TransactionCategory.TICKET_REFUND,
               referencedInitType: WalletTransactionInitType.TICKET_ORDER,
               referencedInitId: ticketOrderId,
               note: `Refund for event attendance #${eventAttendance.id}`,

@@ -28,6 +28,7 @@ export class TicketOrderQueryService
         },
         relations: {
           event: true,
+          orderDetails: true,
         },
       })
       .then((res) => this.mapTo(TicketOrderResponseDto, res));
