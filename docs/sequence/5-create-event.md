@@ -36,18 +36,18 @@ sequenceDiagram
     deactivate Database
     EventRepository-->>EventManagementService: 11. Return event
     deactivate EventRepository
-    EventManagementService->>EventTagsRepository: 22. persistEntities()
+    EventManagementService->>EventTagsRepository: 12. persistEntities()
     activate EventTagsRepository
-    EventTagsRepository->>Database: 23. Insert event tags
+    EventTagsRepository->>Database: 13. Insert event tags
     activate Database
-    Database-->>EventTagsRepository: 24. Return event tags
+    Database-->>EventTagsRepository: 14. Return event tags
     deactivate Database
-    EventTagsRepository-->>EventManagementService: 25. Return event tags
+    EventTagsRepository-->>EventManagementService: 15. Return event tags
     deactivate EventTagsRepository
-    EventManagementService-->>EventCreatorController: 26. Return success response
+    EventManagementService-->>EventCreatorController: 16. Return success response
     deactivate EventManagementService
-    EventCreatorController-->>Frontend: 27. Return success response
+    EventCreatorController-->>Frontend: 17. Return success response
     deactivate EventCreatorController
-    Frontend-->>User: 28. Show success message
+    Frontend-->>User: 18. Show success message
     deactivate Frontend
 ```

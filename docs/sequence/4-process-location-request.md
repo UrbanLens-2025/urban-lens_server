@@ -9,13 +9,12 @@ sequenceDiagram
     participant Frontend as : Location Request Detail Screen
     participant LocationRequestAdminController as : LocationRequestAdminController
     participant LocationRequestManagementService as : LocationRequestManagementService
-    participant LocationRequestRepository as : LocationRequestRepository
     participant LocationManagementService as : LocationManagementService
-    participant LocationRepository as : LocationRepository
-    participant LocationRequestTagsRepository as : LocationRequestTagsRepository
-    participant LocationTagsRepository as : LocationTagsRepository
     participant LocationBookingConfigManagementService as : LocationBookingConfigManagementService
-    participant EventEmitter as : EventEmitter
+    participant LocationRequestRepository as : LocationRequestRepository
+    participant LocationRepository as : LocationRepository
+    participant LocationTagsRepository as : LocationTagsRepository
+    participant LocationBookingConfigRepository as : LocationBookingConfigRepository
     participant Database
 
     User->>Frontend: 1. Submit process location request form
@@ -46,7 +45,7 @@ sequenceDiagram
         deactivate Database
         LocationRequestRepository-->>LocationRequestManagementService: 15. Return update result
         deactivate LocationRequestRepository
-        alt Status is APPROVED
+        alt Location Request Status is APPROVED
             LocationRequestManagementService->>LocationManagementService: 16. convertLocationRequestToLocationEntity()
             activate LocationManagementService
             LocationManagementService->>LocationRepository: 17. save()
@@ -57,42 +56,34 @@ sequenceDiagram
             deactivate Database
             LocationRepository-->>LocationManagementService: 20. Return location
             deactivate LocationRepository
-            LocationManagementService->>LocationRequestTagsRepository: 21. find()
-            activate LocationRequestTagsRepository
-            LocationRequestTagsRepository->>Database: 22. Query location request tags
-            activate Database
-            Database-->>LocationRequestTagsRepository: 23. Return location request tags
-            deactivate Database
-            LocationRequestTagsRepository-->>LocationManagementService: 24. Return location request tags
-            deactivate LocationRequestTagsRepository
-            LocationManagementService->>LocationTagsRepository: 25. persistEntities()
+            LocationManagementService->>LocationTagsRepository: 21. persistEntities()
             activate LocationTagsRepository
-            LocationTagsRepository->>Database: 26. Insert location tags
+            LocationTagsRepository->>Database: 22. Insert location tags
             activate Database
-            Database-->>LocationTagsRepository: 27. Return location tags
+            Database-->>LocationTagsRepository: 23. Return location tags
             deactivate Database
-            LocationTagsRepository-->>LocationManagementService: 28. Return location tags
+            LocationTagsRepository-->>LocationManagementService: 24. Return location tags
             deactivate LocationTagsRepository
-            LocationManagementService->>LocationBookingConfigManagementService: 29. createDefaultLocationBookingConfig()
+            LocationManagementService->>LocationBookingConfigManagementService: 25. createDefaultLocationBookingConfig()
             activate LocationBookingConfigManagementService
-            LocationBookingConfigManagementService->>Database: 30. Insert location booking config
+            LocationBookingConfigManagementService->>LocationBookingConfigRepository: 26. save()
+            activate LocationBookingConfigRepository
+            LocationBookingConfigRepository->>Database: 27. Insert location booking config
             activate Database
-            Database-->>LocationBookingConfigManagementService: 31. Return location booking config
+            Database-->>LocationBookingConfigRepository: 28. Return location booking config
             deactivate Database
-            LocationBookingConfigManagementService-->>LocationManagementService: 32. Return location booking config
+            LocationBookingConfigRepository-->>LocationBookingConfigManagementService: 29. Return location booking config
+            deactivate LocationBookingConfigRepository
+            LocationBookingConfigManagementService-->>LocationManagementService: 30. Return location booking config
             deactivate LocationBookingConfigManagementService
-            LocationManagementService-->>LocationRequestManagementService: 33. Return location
+            LocationManagementService-->>LocationRequestManagementService: 31. Return location
             deactivate LocationManagementService
         end
-        LocationRequestManagementService->>EventEmitter: 34. emit event
-        activate EventEmitter
-        EventEmitter-->>LocationRequestManagementService: 35. Event emitted
-        deactivate EventEmitter
-        LocationRequestManagementService-->>LocationRequestAdminController: 36. Return success response
+        LocationRequestManagementService-->>LocationRequestAdminController: 32. Return success response
         deactivate LocationRequestManagementService
-        LocationRequestAdminController-->>Frontend: 37. Return success response
+        LocationRequestAdminController-->>Frontend: 31. Return success response
         deactivate LocationRequestAdminController
-        Frontend-->>User: 38. Show success message
+        Frontend-->>User: 32. Show success message
         deactivate Frontend
     end
 ```

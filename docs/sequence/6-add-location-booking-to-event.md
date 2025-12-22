@@ -9,11 +9,10 @@ sequenceDiagram
     participant Frontend as Add Location Booking screen
     participant EventCreatorController as :EventCreatorController
     participant EventManagementService as :EventManagementService
+    participant LocationBookingManagementService as :LocationBookingManagementService
     participant EventRepository as :EventRepository
     participant LocationBookingRepository as :LocationBookingRepository
-    participant LocationBookingManagementService as :LocationBookingManagementService
     participant LocationRepository as :LocationRepository
-    participant LocationBookingConfigRepository as :LocationBookingConfigRepository
     participant Database
 
     User->>Frontend: 1. Submit add location booking form
@@ -38,14 +37,14 @@ sequenceDiagram
     else Event can be modified
         EventManagementService->>LocationBookingManagementService: 12. createBooking_ForBusinessLocation()
         activate LocationBookingManagementService
-        LocationBookingManagementService->>LocationBookingConfigRepository: 13. findOne()
-        activate LocationBookingConfigRepository
-        LocationBookingConfigRepository->>Database: 14. Query location booking config
+        LocationBookingManagementService->>LocationRepository: 13. findOneOrFail()
+        activate LocationRepository
+        LocationRepository->>Database: 14. Query location by ID
         activate Database
-        Database-->>LocationBookingConfigRepository: 15. Return location booking config
+        Database-->>LocationRepository: 15. Return location
         deactivate Database
-        LocationBookingConfigRepository-->>LocationBookingManagementService: 16. Return location booking config
-        deactivate LocationBookingConfigRepository
+        LocationRepository-->>LocationBookingManagementService: 16. Return location
+        deactivate LocationRepository
         LocationBookingManagementService->>LocationBookingManagementService: 17. Validate location can be booked
         alt Location cannot be booked
             LocationBookingManagementService-->>EventManagementService: 18. Return error message

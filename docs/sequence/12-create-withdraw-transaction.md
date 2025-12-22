@@ -10,14 +10,14 @@ sequenceDiagram
     participant WalletPrivateController as : WalletPrivateController
     participant WalletExternalTransactionManagementService as : WalletExternalTransactionManagementService
     participant WalletActionService as : WalletActionService
-    participant WalletExternalTransactionRepository as : WalletExternalTransactionRepository
     participant WalletRepository as : WalletRepository
+    participant WalletExternalTransactionRepository as : WalletExternalTransactionRepository
     participant WalletExternalTransactionTimelineRepository as : WalletExternalTransactionTimelineRepository
     participant Database
 
-    User->>WithdrawScreen: 1. Submit withdraw transaction form
-    activate WithdrawScreen
-    WithdrawScreen->>WalletPrivateController: 2. POST /private/wallet/external/withdraw
+    User->>Frontend: 1. Submit withdraw transaction form
+    activate Frontend
+    Frontend->>WalletPrivateController: 2. POST /private/wallet/external/withdraw
     activate WalletPrivateController
     WalletPrivateController->>WalletExternalTransactionManagementService: 3. createWithdrawTransaction()
     activate WalletExternalTransactionManagementService
@@ -32,51 +32,43 @@ sequenceDiagram
     WalletExternalTransactionManagementService->>WalletExternalTransactionManagementService: 8. Validate wallet balance sufficient
     alt Insufficient balance
         WalletExternalTransactionManagementService-->>WalletPrivateController: 9. Return error message
-        WalletPrivateController-->>WithdrawScreen: 10. Return error response
-        WithdrawScreen-->>User: 11. Show error message
+        WalletPrivateController-->>Frontend: 10. Return error response
+        Frontend-->>User: 11. Show error message
     else Balance sufficient
-        WalletExternalTransactionManagementService->>WalletExternalTransactionRepository: 16. save()
+        WalletExternalTransactionManagementService->>WalletExternalTransactionRepository: 12. save()
         activate WalletExternalTransactionRepository
-        WalletExternalTransactionRepository->>Database: 17. Insert external transaction
+        WalletExternalTransactionRepository->>Database: 13. Insert external transaction
         activate Database
-        Database-->>WalletExternalTransactionRepository: 18. Return external transaction
+        Database-->>WalletExternalTransactionRepository: 14. Return external transaction
         deactivate Database
-        WalletExternalTransactionRepository-->>WalletExternalTransactionManagementService: 19. Return external transaction
+        WalletExternalTransactionRepository-->>WalletExternalTransactionManagementService: 15. Return external transaction
         deactivate WalletExternalTransactionRepository
-        WalletExternalTransactionManagementService->>WalletActionService: 20. lockFunds()
+        WalletExternalTransactionManagementService->>WalletActionService: 16. lockFunds()
         activate WalletActionService
-        WalletActionService->>WalletRepository: 21. findOneOrFail()
+        WalletActionService->>WalletActionService: 17. Validate wallet can update balance
+        WalletActionService->>WalletRepository: 18. incrementLockedBalance()
         activate WalletRepository
-        WalletRepository->>Database: 22. Query wallet by ID
+        WalletRepository->>Database: 19. Update wallet balance and locked balance
         activate Database
-        Database-->>WalletRepository: 23. Return wallet
+        Database-->>WalletRepository: 20. Return updated wallet
         deactivate Database
-        WalletRepository-->>WalletActionService: 24. Return wallet
+        WalletRepository-->>WalletActionService: 21. Return updated wallet
         deactivate WalletRepository
-        WalletActionService->>WalletActionService: 25. Validate wallet can update balance
-        WalletActionService->>WalletRepository: 28. incrementLockedBalance()
-        activate WalletRepository
-        WalletRepository->>Database: 29. Update wallet balance and locked balance
-        activate Database
-        Database-->>WalletRepository: 30. Return updated wallet
-        deactivate Database
-        WalletRepository-->>WalletActionService: 31. Return updated wallet
-        deactivate WalletRepository
-        WalletActionService-->>WalletExternalTransactionManagementService: 32. Return success
+        WalletActionService-->>WalletExternalTransactionManagementService: 22. Return success
         deactivate WalletActionService
-        WalletExternalTransactionManagementService->>WalletExternalTransactionTimelineRepository: 33. save()
+        WalletExternalTransactionManagementService->>WalletExternalTransactionTimelineRepository: 23. save()
         activate WalletExternalTransactionTimelineRepository
-        WalletExternalTransactionTimelineRepository->>Database: 34. Insert timeline entry
+        WalletExternalTransactionTimelineRepository->>Database: 24. Insert timeline entry
         activate Database
-        Database-->>WalletExternalTransactionTimelineRepository: 35. Return timeline entry
+        Database-->>WalletExternalTransactionTimelineRepository: 25. Return timeline entry
         deactivate Database
-        WalletExternalTransactionTimelineRepository-->>WalletExternalTransactionManagementService: 36. Return timeline entry
+        WalletExternalTransactionTimelineRepository-->>WalletExternalTransactionManagementService: 26. Return timeline entry
         deactivate WalletExternalTransactionTimelineRepository
-        WalletExternalTransactionManagementService-->>WalletPrivateController: 37. Return success response
+        WalletExternalTransactionManagementService-->>WalletPrivateController: 27. Return success response
         deactivate WalletExternalTransactionManagementService
-        WalletPrivateController-->>WithdrawScreen: 38. Return success response
+        WalletPrivateController-->>Frontend: 28. Return success response
         deactivate WalletPrivateController
-        WithdrawScreen-->>User: 39. Show success message
-        deactivate WithdrawScreen
+        Frontend-->>User: 29. Show success message
+        deactivate Frontend
     end
 ```

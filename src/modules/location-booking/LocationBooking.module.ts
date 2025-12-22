@@ -23,7 +23,7 @@ import { BookingPayoutListener } from '@/modules/location-booking/app/event-list
 import { ILocationBookingPayoutService } from '@/modules/location-booking/app/ILocationBookingPayout.service';
 import { LocationBookingPayoutService } from '@/modules/location-booking/app/impl/LocationBookingPayout.service';
 import { UtilityModule } from '@/modules/utility/Utility.module';
-import { LocationBookingManagementV2Service } from '@/modules/location-booking/app/impl/LocationBookingManagementV2.service';
+import { LocationBookingManagementService } from '@/modules/location-booking/app/impl/LocationBookingManagementV2.service';
 import { EventModule } from '@/modules/event/event.module';
 import { ReportAutomationModule } from '@/modules/report-automation/ReportAutomation.module';
 import { LocationBookingFineAdminController } from '@/modules/location-booking/interfaces/LocationBookingFine.admin.controller';
@@ -73,7 +73,7 @@ import { LocationAvailabilityAdminController } from '@/modules/location-booking/
     },
     {
       provide: ILocationBookingManagementService,
-      useClass: LocationBookingManagementV2Service,
+      useClass: LocationBookingManagementService,
     },
     {
       provide: ILocationBookingQueryService,

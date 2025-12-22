@@ -15,6 +15,6 @@ export interface IAccountProfileManagementService {
   processBusinessRequest(
     businessId: string,
     updateStatusDto: UpdateBusinessStatusDto,
-    adminId: string,
+    accountId: string,
   ): Promise<UpdateResult>;
 }

@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { EventEntity } from '@/modules/event/domain/Event.entity';
 import { AnnouncementType } from '@/common/constants/AnnouncementType.constant';
+import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
 
 @Entity({ name: 'announcements' })
 export class AnnouncementEntity {
@@ -91,4 +92,14 @@ export class AnnouncementEntity {
 
   @Column({ name: 'is_hidden', type: 'boolean', default: false })
   isHidden: boolean;
+
+  @Column({ name: 'scheduled_job_id', type: 'bigint', nullable: true })
+  scheduledJobId?: number | null;
+
+  @ManyToOne(() => ScheduledJobEntity, (scheduledJob) => scheduledJob.id, {
+    createForeignKeyConstraints: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'scheduled_job_id' })
+  scheduledJob?: ScheduledJobEntity | null;
 }

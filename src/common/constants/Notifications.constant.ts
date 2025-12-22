@@ -15,6 +15,7 @@ export enum NotificationTypes {
   NEW_POST = 'NEW_POST',
   POST_BANNED = 'POST_BANNED',
   ACCOUNT_WARNING = 'ACCOUNT_WARNING',
+  EVENT_ANNOUNCEMENT = 'EVENT_ANNOUNCEMENT',
 }
 
 export const NotificationsConstant: {
@@ -104,6 +105,12 @@ export const NotificationsConstant: {
     payload: {
       title: 'Account Warning',
       body: '{warningNote}',
+    },
+  },
+  [NotificationTypes.EVENT_ANNOUNCEMENT]: {
+    payload: {
+      title: 'New announcement for {eventName}',
+      body: '{announcementContent}',
     },
   },
 };

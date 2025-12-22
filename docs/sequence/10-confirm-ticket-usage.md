@@ -6,11 +6,10 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant EventAttendanceScreen as :EventAttendanceScreen
-    participant EventCreatorController as :EventCreatorController
-    participant EventAttendanceManagementService as :EventAttendanceManagementService
-    participant EventRepository as :EventRepository
-    participant EventAttendanceRepository as :EventAttendanceRepository
+    participant EventAttendanceScreen as : Event Attendance Screen
+    participant EventCreatorController as : EventCreatorController
+    participant EventAttendanceManagementService as : EventAttendanceManagementService
+    participant EventAttendanceRepository as : EventAttendanceRepository
     participant Database
 
     User->>EventAttendanceScreen: 1. Submit confirm ticket usage form
@@ -19,14 +18,6 @@ sequenceDiagram
     activate EventCreatorController
     EventCreatorController->>EventAttendanceManagementService: 3. confirmTicketUsage()
     activate EventAttendanceManagementService
-    EventAttendanceManagementService->>EventRepository: 4. findOneOrFail()
-    activate EventRepository
-    EventRepository->>Database: 5. Query event by ID and createdById
-    activate Database
-    Database-->>EventRepository: 6. Return event
-    deactivate Database
-    EventRepository-->>EventAttendanceManagementService: 7. Return event
-    deactivate EventRepository
     EventAttendanceManagementService->>EventAttendanceRepository: 8. findOneOrFail()
     activate EventAttendanceRepository
     EventAttendanceRepository->>Database: 9. Query event attendance by ID and ownerId

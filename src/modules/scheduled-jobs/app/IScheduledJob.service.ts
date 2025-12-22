@@ -1,4 +1,5 @@
 import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
+import { UpdateScheduledJobToCancelledDto } from '@/common/dto/posts/UpdateScheduledJobToCancelled.dto';
 import { CreateScheduledJobDto } from '@/common/dto/scheduled-job/CreateScheduledJob.dto';
 import { ScheduledJobResponseDto } from '@/common/dto/scheduled-job/res/ScheduledJob.response.dto';
 
@@ -12,5 +13,9 @@ export interface IScheduledJobService {
    */
   createLongRunningScheduledJob<T extends ScheduledJobType>(
     dto: CreateScheduledJobDto<T>,
+  ): Promise<ScheduledJobResponseDto>;
+
+  updateScheduledJobToCancelled(
+    dto: UpdateScheduledJobToCancelledDto,
   ): Promise<ScheduledJobResponseDto>;
 }
