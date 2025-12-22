@@ -47,6 +47,7 @@ export namespace IWalletExternalTransactionQueryService_QueryConfig {
       defaultSortBy: [['createdAt', 'DESC']],
       filterableColumns: {
         status: true,
+        direction: true,
       },
       relations: {
         createdBy: true,
