@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Query } from '@nestjs/common';
+import { Controller, Get, Inject, Param, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -24,6 +24,7 @@ import {
   EventsLocationsDataByMonthDto,
   EventsLocationsDataByYearDto,
 } from '@/common/dto/dashboard/EventsLocationsTotals.response.dto';
+import { IEventAnalyticsService } from '@/modules/dashboard/app/IEventAnalytics.service';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -33,6 +34,8 @@ export class DashboardAdminController {
   constructor(
     @Inject(IDashboardService)
     private readonly dashboardService: IDashboardService,
+    @Inject(IEventAnalyticsService)
+    private readonly eventAnalyticsService: IEventAnalyticsService,
   ) {}
 
   @ApiOperation({
@@ -124,5 +127,14 @@ export class DashboardAdminController {
     | EventsLocationsDataByYearDto[]
   > {
     return this.dashboardService.getEventsLocationsTotals(query);
+  }
+
+  @ApiOperation({
+    summary: 'Get general event analytics',
+    description: 'Get general event analytics for a specific event',
+  })
+  @Get('/events/general-analytics/:eventId')
+  getGeneralEventAnalytics(@Param('eventId') eventId: string) {
+    return this.eventAnalyticsService.getGeneralEventAnalytics(eventId);
   }
 }
