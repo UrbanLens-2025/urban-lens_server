@@ -12,12 +12,27 @@ import { GetOrderInEventByIdDto } from '@/common/dto/event/GetOrderInEventById.d
 import { paginate, Paginated } from 'nestjs-paginate';
 import { TicketOrderRepository } from '@/modules/event/infra/repository/TicketOrder.repository';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
+import { GetAnyOrderByIdDto } from '@/common/dto/event/GetAnyOrderById.dto';
 
 @Injectable()
 export class TicketOrderQueryService
   extends CoreService
   implements ITicketOrderQueryService
 {
+  getAnyOrderById(dto: GetAnyOrderByIdDto): Promise<TicketOrderResponseDto> {
+    const ticketOrderRepository = TicketOrderRepository(this.dataSource);
+    return ticketOrderRepository
+      .findOneOrFail({
+        where: {
+          id: dto.orderId,
+        },
+        relations: {
+          event: true,
+        },
+      })
+      .then((res) => this.mapTo(TicketOrderResponseDto, res));
+  }
+
   getMyOrders(
     dto: SearchMyOrdersDto,
   ): Promise<Paginated<TicketOrderResponseDto>> {
