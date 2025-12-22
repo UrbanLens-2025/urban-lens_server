@@ -7,6 +7,8 @@ import { ScheduledJobRepository } from '@/modules/scheduled-jobs/infra/repositor
 import { Injectable } from '@nestjs/common';
 import { ScheduledJobResponseDto } from '@/common/dto/scheduled-job/res/ScheduledJob.response.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UpdateScheduledJobToCancelledDto } from '@/common/dto/posts/UpdateScheduledJobToCancelled.dto';
+import { ScheduledJobStatus } from '@/common/constants/ScheduledJobStatus.constant';
 
 @Injectable()
 export class ScheduledJobService
@@ -15,6 +17,23 @@ export class ScheduledJobService
 {
   constructor() {
     super();
+  }
+  updateScheduledJobToCancelled(
+    dto: UpdateScheduledJobToCancelledDto,
+  ): Promise<ScheduledJobResponseDto> {
+    return this.ensureTransaction(dto.entityManager, async (em) => {
+      const scheduledJobRepository = ScheduledJobRepository(em);
+      const scheduledJob = await scheduledJobRepository.findOneOrFail({
+        where: {
+          id: dto.scheduledJobId,
+        },
+      });
+      scheduledJob.status = ScheduledJobStatus.CANCELLED;
+      scheduledJob.closedAt = new Date();
+      return scheduledJobRepository
+        .save(scheduledJob)
+        .then((res) => this.mapTo(ScheduledJobResponseDto, res));
+    });
   }
 
   createLongRunningScheduledJob<T extends ScheduledJobType>(

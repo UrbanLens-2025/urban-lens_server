@@ -33,6 +33,11 @@ import { IPostQueryService } from '@/modules/post/app/PostQuery.service';
 import { PostQueryService } from '@/modules/post/app/impl/PostQuery.service';
 import { PostAdminController } from '@/modules/post/interfaces/Post.admin.controller';
 import { AnnouncementAdminController } from '@/modules/post/interfaces/Announcement.admin.controller';
+import { ScheduledJobsModule } from '@/modules/scheduled-jobs/ScheduledJobs.module';
+import { IEventAnnouncementNotifierService } from '@/modules/post/app/IEventAnnouncementNotifier.service';
+import { EventAnnouncementNotifierService } from '@/modules/post/app/impl/EventAnnouncementNotifier.service';
+import { NotificationModule } from '@/modules/notification/Notification.module';
+import { EventAnnouncementListener } from '@/modules/post/app/event-listeners/EventAnnouncement.listener';
 
 @Module({
   imports: [
@@ -47,6 +52,8 @@ import { AnnouncementAdminController } from '@/modules/post/interfaces/Announcem
       EventTagsEntity,
     ]),
     ClientsModule.register(getRabbitMQConfig()),
+    ScheduledJobsModule,
+    NotificationModule,
   ],
   controllers: [
     PostPublicController,
@@ -82,8 +89,13 @@ import { AnnouncementAdminController } from '@/modules/post/interfaces/Announcem
       provide: IPostQueryService,
       useClass: PostQueryService,
     },
+    {
+      provide: IEventAnnouncementNotifierService,
+      useClass: EventAnnouncementNotifierService,
+    },
     PostReactionPublisherListener,
     ReviewPostPublisherListener,
+    EventAnnouncementListener,
   ],
   exports: [IPostService],
 })

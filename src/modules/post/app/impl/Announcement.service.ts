@@ -11,6 +11,8 @@ import { LocationRepositoryProvider } from '@/modules/business/infra/repository/
 import { CreateAnnouncementForEventDto } from '@/common/dto/posts/CreateAnnouncementForEvent.dto';
 import { AnnouncementType } from '@/common/constants/AnnouncementType.constant';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
+import { IScheduledJobService } from '@/modules/scheduled-jobs/app/IScheduledJob.service';
+import { ScheduledJobType } from '@/common/constants/ScheduledJobType.constant';
 
 @Injectable()
 export class AnnouncementService
@@ -20,6 +22,8 @@ export class AnnouncementService
   constructor(
     @Inject(IFileStorageService)
     private readonly fileStorageService: IFileStorageService,
+    @Inject(IScheduledJobService)
+    private readonly scheduledJobService: IScheduledJobService,
   ) {
     super();
   }
@@ -46,6 +50,23 @@ export class AnnouncementService
 
       return announcementRepository
         .save(announcementEntity)
+        .then(async (res) => {
+          // schedule a job to notify users of the announcement
+          const job =
+            await this.scheduledJobService.createLongRunningScheduledJob({
+              associatedId: res.id,
+              jobType: ScheduledJobType.EVENT_ANNOUNCEMENT,
+              payload: {
+                announcementId: res.id,
+              },
+              executeAt: res.startDate,
+              entityManager: em,
+            });
+
+          res.scheduledJobId = job.id;
+          await announcementRepository.save(res);
+          return res;
+        })
         .then((e) => this.mapTo(AnnouncementResponseDto, e));
     });
   }
@@ -89,11 +110,43 @@ export class AnnouncementService
       if (dto.imageUrl)
         await this.fileStorageService.confirmUpload([dto.imageUrl], em);
 
+      const originalStartDate = existing.startDate;
+
       this.assignTo_safeIgnoreEmpty(existing, dto);
       existing.updatedById = dto.accountId ?? existing.updatedById;
 
-      const saved = await repo.save(existing);
-      return this.mapTo(AnnouncementResponseDto, saved);
+      return repo
+        .save(existing)
+        .then(async (res) => {
+          // if start date was changed, cancel the scheduled job and create a new one
+          if (
+            res.type === AnnouncementType.EVENT &&
+            originalStartDate &&
+            originalStartDate !== res.startDate
+          ) {
+            if (res.scheduledJobId) {
+              await this.scheduledJobService.updateScheduledJobToCancelled({
+                scheduledJobId: res.scheduledJobId,
+                entityManager: em,
+              });
+            }
+
+            const job =
+              await this.scheduledJobService.createLongRunningScheduledJob({
+                associatedId: res.id,
+                jobType: ScheduledJobType.EVENT_ANNOUNCEMENT,
+                payload: {
+                  announcementId: res.id,
+                },
+                executeAt: res.startDate,
+                entityManager: em,
+              });
+            res.scheduledJobId = job.id;
+            await repo.save(res);
+          }
+          return res;
+        })
+        .then((e) => this.mapTo(AnnouncementResponseDto, e));
     });
   }
 }

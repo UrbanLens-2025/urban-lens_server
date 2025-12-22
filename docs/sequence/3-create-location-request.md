@@ -34,27 +34,27 @@ sequenceDiagram
         LocationRequestBusinessController-->>Frontend: 10. Return error response
         Frontend-->>User: 11. Show error message
     else Business can create location
-        LocationRequestManagementService->>LocationRequestRepository: 22. save()
+        LocationRequestManagementService->>LocationRequestRepository: 12. save()
         activate LocationRequestRepository
-        LocationRequestRepository->>Database: 23. Insert location request
+        LocationRequestRepository->>Database: 13. Insert location request
         activate Database
-        Database-->>LocationRequestRepository: 24. Return location request
+        Database-->>LocationRequestRepository: 14. Return location request
         deactivate Database
-        LocationRequestRepository-->>LocationRequestManagementService: 25. Return location request
+        LocationRequestRepository-->>LocationRequestManagementService: 15. Return location request
         deactivate LocationRequestRepository
-        LocationRequestManagementService->>LocationRequestTagsRepository: 26. persistEntities()
+        LocationRequestManagementService->>LocationRequestTagsRepository: 16. persistEntities()
         activate LocationRequestTagsRepository
-        LocationRequestTagsRepository->>Database: 27. Insert location request tags
+        LocationRequestTagsRepository->>Database: 17. Insert location request tags
         activate Database
-        Database-->>LocationRequestTagsRepository: 28. Return location request tags
+        Database-->>LocationRequestTagsRepository: 18. Return location request tags
         deactivate Database
-        LocationRequestTagsRepository-->>LocationRequestManagementService: 29. Return location request tags
+        LocationRequestTagsRepository-->>LocationRequestManagementService: 19. Return location request tags
         deactivate LocationRequestTagsRepository
-        LocationRequestManagementService-->>LocationRequestBusinessController: 30. Return success response
+        LocationRequestManagementService-->>LocationRequestBusinessController: 20. Return success response
         deactivate LocationRequestManagementService
-        LocationRequestBusinessController-->>Frontend: 31. Return success response
+        LocationRequestBusinessController-->>Frontend: 21. Return success response
         deactivate LocationRequestBusinessController
-        Frontend-->>User: 32. Show success message
+        Frontend-->>User: 22. Show success message
         deactivate Frontend
     end
 ```

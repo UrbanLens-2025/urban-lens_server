@@ -35,11 +35,10 @@ sequenceDiagram
     deactivate Database
     EventTicketRepository-->>EventTicketManagementService: 11. Return event ticket
     deactivate EventTicketRepository
-    EventTicketManagementService->>EventTicketManagementService: 12. Map to response DTO
-    EventTicketManagementService-->>EventCreatorController: 13. Return success response
+    EventTicketManagementService-->>EventCreatorController: 12. Return success response
     deactivate EventTicketManagementService
-    EventCreatorController-->>CreateTicketScreen: 14. Return success response
+    EventCreatorController-->>CreateTicketScreen: 13. Return success response
     deactivate EventCreatorController
-    CreateTicketScreen-->>User: 15. Show success message
+    CreateTicketScreen-->>User: 14. Show success message
     deactivate CreateTicketScreen
 ```

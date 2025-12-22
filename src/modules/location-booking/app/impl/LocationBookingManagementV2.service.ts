@@ -54,7 +54,7 @@ import { WalletTransactionInitType } from '@/common/constants/WalletTransactionI
 import { TransactionCategory } from '@/common/constants/TransactionCategory.constant';
 
 @Injectable()
-export class LocationBookingManagementV2Service
+export class LocationBookingManagementService
   extends CoreService
   implements ILocationBookingManagementService
 {
@@ -93,6 +93,30 @@ export class LocationBookingManagementV2Service
       if (!location.canBeBooked()) {
         throw new BadRequestException(
           'This location has not been configured for bookings yet.',
+        );
+      }
+
+      // check if there are any other bookings for the same dates
+      const earliestStartDate = dto.dates.reduce((min, curr) => {
+        return dayjs(curr.startDateTime).isBefore(dayjs(min))
+          ? curr.startDateTime
+          : min;
+      }, dto.dates[0].startDateTime);
+      const latestEndDate = dto.dates.reduce((max, curr) => {
+        return dayjs(curr.endDateTime).isAfter(dayjs(max))
+          ? curr.endDateTime
+          : max;
+      }, dto.dates[0].endDateTime);
+      const conflictingBookings =
+        await locationBookingRepo.findConflictingBookings({
+          locationId: dto.locationId,
+          startDate: earliestStartDate,
+          endDate: latestEndDate,
+        });
+
+      if (conflictingBookings.length > 0) {
+        throw new BadRequestException(
+          'There are already bookings for the same dates. Please choose different dates.',
         );
       }
 

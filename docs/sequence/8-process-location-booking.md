@@ -6,10 +6,10 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant LocationBookingManagementScreen as :LocationBookingManagementScreen
-    participant LocationBookingOwnerController as :LocationBookingOwnerController
-    participant LocationBookingManagementService as :LocationBookingManagementService
-    participant LocationBookingRepository as :LocationBookingRepository
+    participant LocationBookingManagementScreen as : Location Booking Management Screen
+    participant LocationBookingOwnerController as : LocationBookingOwnerController
+    participant LocationBookingManagementService as : LocationBookingManagementService
+    participant LocationBookingRepository as : LocationBookingRepository
     participant Database
 
     User->>LocationBookingManagementScreen: 1. Submit process booking form
@@ -40,11 +40,11 @@ sequenceDiagram
         deactivate Database
         LocationBookingRepository-->>LocationBookingManagementService: 15. Return update result
         deactivate LocationBookingRepository
-        LocationBookingManagementService-->>LocationBookingOwnerController: 20. Return success response
+        LocationBookingManagementService-->>LocationBookingOwnerController: 16. Return success response
         deactivate LocationBookingManagementService
-        LocationBookingOwnerController-->>LocationBookingManagementScreen: 21. Return success response
+        LocationBookingOwnerController-->>LocationBookingManagementScreen: 17. Return success response
         deactivate LocationBookingOwnerController
-        LocationBookingManagementScreen-->>User: 22. Show success message
+        LocationBookingManagementScreen-->>User: 18. Show success message
         deactivate LocationBookingManagementScreen
     end
 ```
