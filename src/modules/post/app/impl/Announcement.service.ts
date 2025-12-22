@@ -110,6 +110,8 @@ export class AnnouncementService
       if (dto.imageUrl)
         await this.fileStorageService.confirmUpload([dto.imageUrl], em);
 
+      const originalStartDate = existing.startDate;
+
       this.assignTo_safeIgnoreEmpty(existing, dto);
       existing.updatedById = dto.accountId ?? existing.updatedById;
 
@@ -119,8 +121,8 @@ export class AnnouncementService
           // if start date was changed, cancel the scheduled job and create a new one
           if (
             res.type === AnnouncementType.EVENT &&
-            dto.startDate &&
-            dto.startDate !== res.startDate
+            originalStartDate &&
+            originalStartDate !== res.startDate
           ) {
             if (res.scheduledJobId) {
               await this.scheduledJobService.updateScheduledJobToCancelled({
