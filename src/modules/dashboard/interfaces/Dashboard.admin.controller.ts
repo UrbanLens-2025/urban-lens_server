@@ -25,6 +25,7 @@ import {
   EventsLocationsDataByYearDto,
 } from '@/common/dto/dashboard/EventsLocationsTotals.response.dto';
 import { IEventAnalyticsService } from '@/modules/dashboard/app/IEventAnalytics.service';
+import { IBusinessAnalyticsService } from '@/modules/dashboard/app/IBusinessAnalytics.service';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -36,6 +37,8 @@ export class DashboardAdminController {
     private readonly dashboardService: IDashboardService,
     @Inject(IEventAnalyticsService)
     private readonly eventAnalyticsService: IEventAnalyticsService,
+    @Inject(IBusinessAnalyticsService)
+    private readonly businessAnalyticsService: IBusinessAnalyticsService,
   ) {}
 
   @ApiOperation({
@@ -136,5 +139,15 @@ export class DashboardAdminController {
   @Get('/events/general-analytics/:eventId')
   getGeneralEventAnalytics(@Param('eventId') eventId: string) {
     return this.eventAnalyticsService.getGeneralEventAnalytics(eventId);
+  }
+
+  @ApiOperation({ summary: 'Get general business analytics' })
+  @Get('/general-analytics-for-location/:locationId')
+  getGeneralBusinessAnalyticsForLocation(
+    @Param('locationId') locationId: string,
+  ) {
+    return this.businessAnalyticsService.getGeneralBusinessAnalytics(
+      locationId,
+    );
   }
 }
