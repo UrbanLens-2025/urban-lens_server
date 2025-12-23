@@ -9,54 +9,87 @@ sequenceDiagram
     participant EventEmitter
     participant CheckInListener as :CheckInCreatedListener
     participant PointsService as :UserPointsService
+    participant PointsHistoryRepo as :PointsHistoryRepository
+    participant UserProfileRepo as :UserProfileRepository
     participant UserLocationProfileService as :UserLocationProfileService
+    participant UserLocationProfileRepo as :UserLocationProfileRepository
     participant MissionService as :MissionProgressService
+    participant LocationMissionRepo as :LocationMissionRepository
+    participant UserMissionProgressRepo as :UserMissionProgressRepository
     participant Database
 
-
-    CheckInService->>EventEmitter: 1. emit(CHECK_IN_CREATED_EVENT)<br/>(userId, locationId, checkInId)
+    CheckInService->>EventEmitter: 1. emit(CHECK_IN_CREATED_EVENT)
     activate EventEmitter
     EventEmitter->>CheckInListener: 2. CHECK_IN_CREATED_EVENT
     deactivate EventEmitter
     activate CheckInListener
 
-    CheckInListener->>Database: 3. Query reward_points<br/>(type='CHECK_IN')
-    Database-->>CheckInListener: rewardPoint
+    CheckInListener->>PointsService: 3. addPoints()
+    activate PointsService
+    PointsService->>UserProfileRepo: 4. findOne()
+    activate UserProfileRepo
+    UserProfileRepo->>Database: 5. Query user_profiles
+    activate Database
+    Database-->>UserProfileRepo: 6. userProfile
+    deactivate Database
+    UserProfileRepo-->>PointsService: 7. userProfile
+    deactivate UserProfileRepo
 
-    CheckInListener->>PointsService: 4. addPoints(type: CHECK_IN)
-    PointsService->>Database: INSERT INTO points_history
-    Database-->>PointsService: success
-    PointsService-->>CheckInListener: success
+    PointsService->>UserProfileRepo: 8. save()
+    UserProfileRepo->>Database: 9. UPDATE user_profiles
+    activate Database
+    Database-->>UserProfileRepo: 10. updated
+    deactivate Database
+    UserProfileRepo-->>PointsService: 11. updated
 
-    CheckInListener->>UserLocationProfileService: 5. createOrUpdate(userId, locationId)
-    UserLocationProfileService->>Database: INSERT/UPDATE user_location_profiles
-    Database-->>UserLocationProfileService: profile
-    UserLocationProfileService-->>CheckInListener: profile
+    PointsService->>PointsHistoryRepo: 12. create() & save()
+    activate PointsHistoryRepo
+    PointsHistoryRepo->>Database: 13. INSERT points_history
+    activate Database
+    Database-->>PointsHistoryRepo: 14. saved
+    deactivate Database
+    PointsHistoryRepo-->>PointsService: 15. saved
+    deactivate PointsHistoryRepo
+    PointsService-->>CheckInListener: 16. success
+    deactivate PointsService
 
+    CheckInListener->>UserLocationProfileService: 17. createOrUpdate()
+    activate UserLocationProfileService
+    UserLocationProfileService->>UserLocationProfileRepo: 18. createOrUpdate()
+    activate UserLocationProfileRepo
+    UserLocationProfileRepo->>Database: 19. INSERT/UPDATE user_location_profiles
+    activate Database
+    Database-->>UserLocationProfileRepo: 20. profile
+    deactivate Database
+    UserLocationProfileRepo-->>UserLocationProfileService: 21. profile
+    deactivate UserLocationProfileRepo
+    UserLocationProfileService-->>CheckInListener: 22. profile
+    deactivate UserLocationProfileService
 
-    CheckInListener->>MissionService: 6. updateMissionProgress(userId, locationId, checkInId)
+    CheckInListener->>MissionService: 23. updateMissionProgress()
     activate MissionService
+    MissionService->>LocationMissionRepo: 24. createQueryBuilder()
+    activate LocationMissionRepo
+    LocationMissionRepo->>Database: 25. Query location_missions
+    activate Database
+    Database-->>LocationMissionRepo: 26. missions[]
+    deactivate Database
+    LocationMissionRepo-->>MissionService: 27. missions[]
+    deactivate LocationMissionRepo
 
-    MissionService->>Database: 7. Query active missions<br/>(locationId, startDate <= now <= endDate)
-    Database-->>MissionService: missions[]
+    MissionService->>UserMissionProgressRepo: 28. findOne() & save()
+    activate UserMissionProgressRepo
+    UserMissionProgressRepo->>Database: 29. Query/Create/UPDATE user_mission_progresses
+    activate Database
+    Database-->>UserMissionProgressRepo: 30. Result
+    deactivate Database
+    UserMissionProgressRepo-->>MissionService: 31. Result
+    deactivate UserMissionProgressRepo
 
-    loop For each active mission
-        MissionService->>Database: 8. Query/Create progress<br/>(userId, missionId)
-        Database-->>MissionService: userProgress
-
-        alt Progress exists & not completed
-            MissionService->>Database: 9. UPDATE progress = progress + 1
-
-            alt Mission completed (progress >= target)
-                MissionService->>Database: 10. UPDATE completed = true
-                MissionService->>Database: 11. INSERT INTO points_history<br/>(type: LOCATION_MISSION)
-            end
-        end
-    end
-
-    MissionService-->>CheckInListener: Processing complete
+    MissionService-->>CheckInListener: 32. Processing complete
     deactivate MissionService
-    CheckInListener-->>CheckInService: Event handled
+
+    CheckInListener-->>CheckInService: 33. Event handled
     deactivate CheckInListener
 ```
 

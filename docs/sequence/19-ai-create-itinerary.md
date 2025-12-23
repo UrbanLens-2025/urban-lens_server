@@ -6,7 +6,7 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant AIItineraryScreen as :AIItineraryScreen
+    participant Screen as :CreateItineraryScreen
     participant JourneyController as :JourneyPlannerController
     participant JourneyService as :JourneyPlannerService
     participant UserProfileRepo as :UserProfileRepository
@@ -15,95 +15,58 @@ sequenceDiagram
     participant GoogleMapsService as :GoogleMapsService
     participant Database
 
-    User->>AIItineraryScreen: 1. Request AI itinerary
-    activate AIItineraryScreen
-    AIItineraryScreen->>JourneyController: 2. POST /journey/ai-powered<br/>(CreatePersonalJourneyDto + JWT)
+    User->>Screen: 1. Request AI itinerary
+    activate Screen
+    Screen->>JourneyController: 2. POST /journey/ai-powered
     activate JourneyController
-    JourneyController->>JourneyService: 3. createAIPoweredJourney(userId, dto)
+    JourneyController->>JourneyService: 3. createAIPoweredJourney()
     activate JourneyService
 
-    JourneyService->>JourneyService: 4. validate(dto)<br/>Check OLLAMA_ENABLED
-
-    JourneyService->>UserProfileRepo: 5. findByAccountId(userId)
-    activate UserProfileRepo
-    UserProfileRepo->>Database: 6. Query user_profile
+    JourneyService->>UserProfileRepo: 4. findByAccountId()
+    UserProfileRepo->>Database: 5. Query user profile
     activate Database
-    Database-->>UserProfileRepo: 7. Return userProfile
+    Database-->>UserProfileRepo: 6. userProfile
     deactivate Database
-    UserProfileRepo-->>JourneyService: 8. Return userProfile
-    deactivate UserProfileRepo
+    UserProfileRepo-->>JourneyService: 7. userProfile
 
-    alt startLocationId provided
-        JourneyService->>LocationRepo: 9. findByIds([startLocationId])
-        activate LocationRepo
-        LocationRepo->>Database: 10. Query locations
-        activate Database
-        Database-->>LocationRepo: 11. Return locations[]
-        deactivate Database
-        LocationRepo-->>JourneyService: 12. Return startLocation
-        deactivate LocationRepo
-    else currentLatitude/Longitude provided
-        JourneyService->>LocationRepo: 13. findNearestLocation()<br/>(within 50km)
-        activate LocationRepo
-        LocationRepo->>Database: 14. Query nearest location
-        activate Database
-        Database-->>LocationRepo: 15. Return nearest location
-        deactivate Database
-        LocationRepo-->>JourneyService: 16. Return startLocation
-        deactivate LocationRepo
-    end
-
-    JourneyService->>LocationRepo: 17. findNearbyWithTags()<br/>(within radius, with tags)
-    activate LocationRepo
-    LocationRepo->>Database: 18. Query nearby locations WITH tags
+    JourneyService->>LocationRepo: 8. findNearbyWithTags()
+    LocationRepo->>Database: 9. Query nearby locations
     activate Database
-    Database-->>LocationRepo: 19. Return nearbyCandidates[]
+    Database-->>LocationRepo: 10. nearbyCandidates[]
     deactivate Database
-    LocationRepo-->>JourneyService: 20. Return nearbyCandidates[]
-    deactivate LocationRepo
+    LocationRepo-->>JourneyService: 11. nearbyCandidates[]
 
-    JourneyService->>JourneyService: 21. build context<br/>(userPreferences, currentLocation,<br/>numberOfLocations, candidates)
+    JourneyService->>JourneyService: 12. build context
 
-    JourneyService->>OllamaService: 22. generateJourneyWithDBAccess(context)
-    activate OllamaService
-
-
-    OllamaService->>OllamaService: 23. buildAgentPrompt(context)<br/>getSystemPromptWithTools()
-
-    OllamaService->>OllamaService: 24. call LLM<br/>(with database tools)
+    JourneyService->>OllamaService: 13. generateJourneyWithDBAccess()
+    OllamaService->>OllamaService: 14. buildAgentPrompt() & call LLM()
 
     alt AI calls query_nearby_locations tool
-        OllamaService->>LocationRepo: 25. Query locations<br/>via AI tool call
-        activate LocationRepo
-        LocationRepo->>Database: 26. Query locations WHERE conditions
+        OllamaService->>LocationRepo: 15. Query locations
+        LocationRepo->>Database: 16. Query locations
         activate Database
-        Database-->>LocationRepo: 27. Return locations[]
+        Database-->>LocationRepo: 17. locations[]
         deactivate Database
-        LocationRepo-->>OllamaService: 28. Return locations[]
-        deactivate LocationRepo
+        LocationRepo-->>OllamaService: 18. locations[]
     end
 
-    OllamaService->>OllamaService: 29. parseAIResponse()<br/>(REASONING, TIPS, LOCATION_IDS, ACTIVITIES)
+    OllamaService->>OllamaService: 19. parseAIResponse()
+    OllamaService-->>JourneyService: 20. AIJourneyResponse
 
-    OllamaService-->>JourneyService: 30. Return AIJourneyResponse<br/>{reasoning, tips, suggestedLocationIds,<br/>locationActivities}
-    deactivate OllamaService
+    JourneyService->>JourneyService: 21. processAIResponse()
 
-    JourneyService->>JourneyService: 31. processAIResponse()<br/>(filter, prioritize)
+    JourneyService->>GoogleMapsService: 22. optimizeRouteWithMetrics()
+    GoogleMapsService->>GoogleMapsService: 23. Call Google Maps API
+    GoogleMapsService-->>JourneyService: 24. route metrics
 
-    JourneyService->>GoogleMapsService: 32. optimizeRouteWithMetrics()<br/>(calculate travel times, distances)
-    activate GoogleMapsService
-    GoogleMapsService->>GoogleMapsService: 33. Call Google Maps API<br/>(directions, distance matrix)
-    GoogleMapsService-->>JourneyService: 34. Return route metrics
-    deactivate GoogleMapsService
+    JourneyService->>JourneyService: 25. buildFinalResponse()
 
-    JourneyService->>JourneyService: 35. buildFinalResponse()<br/>(locations, route, AI insights)
-
-    JourneyService-->>JourneyController: 36. Return AIJourneyResponseDto<br/>{locations, route, totalDistance,<br/>estimatedDuration, reasoning, tips}
+    JourneyService-->>JourneyController: 26. AIJourneyResponseDto
     deactivate JourneyService
-    JourneyController-->>AIItineraryScreen: 37. Return AIJourneyResponseDto
+    JourneyController-->>Screen: 27. AIJourneyResponseDto
     deactivate JourneyController
-    AIItineraryScreen-->>User: 38. Show itinerary
-    deactivate AIItineraryScreen
+    Screen-->>User: 28. Show itinerary
+    deactivate Screen
 ```
 
 **Figure 19:** Sequence diagram illustrating the flow of AI creating personal itinerary, including user preference analysis, location data gathering, AI agent processing with database access, route optimization, and comprehensive journey response generation.

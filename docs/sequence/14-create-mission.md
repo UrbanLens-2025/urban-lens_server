@@ -17,40 +17,30 @@ sequenceDiagram
     activate CreateMissionScreen
     CreateMissionScreen->>MissionController: 2. POST /business/location-mission/:locationId<br/>(CreateLocationMissionDto + JWT)
     activate MissionController
-    MissionController->>MissionService: 3. createMission(locationId, dto)
+    MissionController->>MissionService: 3. createMission()
     activate MissionService
 
-    MissionService->>LocationRepo: 4. findOneByOrFail()<br/>(validate location)
-    activate LocationRepo
-    LocationRepo->>Database: 5. Query location by ID
-    activate Database
-    Database-->>LocationRepo: 6. Return location
-    deactivate Database
-    LocationRepo-->>MissionService: 7. Return location
-    deactivate LocationRepo
-
-    MissionService->>MissionService: 8. validate(dto)<br/>(date range, target, reward)
+    MissionService->>MissionService: 4. validate()<br/>(date range, target, reward)
 
     alt Validation failed
-        MissionService-->>MissionController: 9. Return BadRequestException
-        MissionController-->>CreateMissionScreen: 10. Return 400 Bad Request
-        CreateMissionScreen-->>User: 11. Show error message
+        MissionService-->>MissionController: 5. Return BadRequestException
+        MissionController-->>CreateMissionScreen: 6. Return 400 Bad Request
+        CreateMissionScreen-->>User: 7. Show error message
     else Validation passed
-        MissionService->>MissionRepo: 12. save(missionEntity)
+        MissionService->>MissionRepo: 8. save()
         activate MissionRepo
-        MissionRepo->>Database: 13. INSERT INTO location_missions
+        MissionRepo->>Database: 9. INSERT INTO location_missions
         activate Database
-        Database-->>MissionRepo: 14. Return saved mission
+        Database-->>MissionRepo: 10. Return saved mission
         deactivate Database
-        MissionRepo-->>MissionService: 15. Return saved mission
+        MissionRepo-->>MissionService: 11. Return saved mission
         deactivate MissionRepo
 
-        MissionService->>MissionService: 16. map to LocationMissionResponseDto
-        MissionService-->>MissionController: 17. Return LocationMissionResponseDto
+        MissionService-->>MissionController: 12. Return LocationMissionResponseDto
         deactivate MissionService
-        MissionController-->>CreateMissionScreen: 18. Return LocationMissionResponseDto
+        MissionController-->>CreateMissionScreen: 13. Return LocationMissionResponseDto
         deactivate MissionController
-        CreateMissionScreen-->>User: 19. Show success message
+        CreateMissionScreen-->>User: 14. Show success message
         deactivate CreateMissionScreen
     end
 ```

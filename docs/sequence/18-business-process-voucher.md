@@ -6,57 +6,51 @@ config:
 ---
 sequenceDiagram
     participant User
-    participant VoucherVerificationScreen as :VoucherVerificationScreen
+    participant Screen
     participant VoucherController as :LocationVoucherBusinessController
     participant VoucherService as :VoucherExchangeService
     participant ExchangeHistoryRepo as :UserLocationVoucherExchangeHistoryRepository
-    participant VoucherRepo as :LocationVoucherRepository
     participant Database
 
-    User->>VoucherVerificationScreen: 1. Submit voucher code
-    activate VoucherVerificationScreen
-    VoucherVerificationScreen->>VoucherController: 2. POST /business/location-voucher/verify-code<br/>(VerifyVoucherCodeDto + JWT)
+    User->>Screen: 1. Submit voucher code
+    activate Screen
+    Screen->>VoucherController: 2. POST /business/location-voucher/verify-code
     activate VoucherController
-    VoucherController->>VoucherService: 3. useVoucherByCode(userVoucherCode)
+    VoucherController->>VoucherService: 3. useVoucherByCode()
     activate VoucherService
 
-    VoucherService->>ExchangeHistoryRepo: 4. findOne()<br/>WHERE userVoucherCode<br/>WITH relations: voucher
+    VoucherService->>ExchangeHistoryRepo: 4. findOne()
     activate ExchangeHistoryRepo
     ExchangeHistoryRepo->>Database: 5. Query voucher_exchange_history
     activate Database
-    Database-->>ExchangeHistoryRepo: 6. Return exchangeRecord (or null)
+    Database-->>ExchangeHistoryRepo: 6. exchangeRecord
     deactivate Database
-    ExchangeHistoryRepo-->>VoucherService: 7. Return exchangeRecord
+    ExchangeHistoryRepo-->>VoucherService: 7. exchangeRecord
     deactivate ExchangeHistoryRepo
 
-    alt Voucher code not found
-        VoucherService-->>VoucherController: 8. Return {success: false,<br/>message: "Voucher code not found"}
-        VoucherController-->>VoucherVerificationScreen: 9. Return 400 Bad Request
-        VoucherVerificationScreen-->>User: 10. Show error message
-    else Voucher already used
-        VoucherService-->>VoucherController: 11. Return {success: false,<br/>message: "Already been used"}
-        VoucherController-->>VoucherVerificationScreen: 12. Return 400 Bad Request
-        VoucherVerificationScreen-->>User: 13. Show error message
-    else Voucher expired
-        VoucherService-->>VoucherController: 14. Return {success: false,<br/>message: "Voucher has expired"}
-        VoucherController-->>VoucherVerificationScreen: 15. Return 400 Bad Request
-        VoucherVerificationScreen-->>User: 16. Show error message
+    alt Voucher invalid (not found/used/expired)
+        VoucherService-->>VoucherController: 8. Error response
+        VoucherController-->>Screen: 9. Error response
+        Screen-->>User: 10. Error message
+        deactivate Screen
+        deactivate VoucherService
+        deactivate VoucherController
     else Voucher valid
-        VoucherService->>ExchangeHistoryRepo: 17. update()<br/>SET usedAt = now()
+        VoucherService->>ExchangeHistoryRepo: 11. update()
         activate ExchangeHistoryRepo
-        ExchangeHistoryRepo->>Database: 18. UPDATE voucher_exchange_history
+        ExchangeHistoryRepo->>Database: 12. UPDATE voucher_exchange_history
         activate Database
-        Database-->>ExchangeHistoryRepo: 19. Return updated
+        Database-->>ExchangeHistoryRepo: 13. updated
         deactivate Database
-        ExchangeHistoryRepo-->>VoucherService: 20. Return updated
+        ExchangeHistoryRepo-->>VoucherService: 14. updated
         deactivate ExchangeHistoryRepo
 
-        VoucherService-->>VoucherController: 21. Return {success: true,<br/>message: "Successfully used voucher",<br/>voucher: exchangeRecord}
+        VoucherService-->>VoucherController: 15. Success response
         deactivate VoucherService
-        VoucherController-->>VoucherVerificationScreen: 22. Return 200 OK
+        VoucherController-->>Screen: 16. Success response
         deactivate VoucherController
-        VoucherVerificationScreen-->>User: 23. Show success message
-        deactivate VoucherVerificationScreen
+        Screen-->>User: 17. Success message
+        deactivate Screen
     end
 ```
 
