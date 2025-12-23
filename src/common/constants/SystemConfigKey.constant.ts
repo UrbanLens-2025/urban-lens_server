@@ -53,7 +53,7 @@ export const parseSystemConfigValue = (
       if (isNaN(result)) {
         return NaN;
       }
-      if (result < 0 || result > 1) {
+      if (result < 0 || result > 5) {
         return NaN;
       }
       return result;
