@@ -331,6 +331,19 @@ export class EventCreatorController {
     });
   }
 
+  @ApiOperation({ summary: 'Get order details in my event by ORDER CODE'})
+  @Get('/:eventId/order-by-order-code/:orderCode')
+  getOrderInEventByOrderCode(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @Param('orderCode') orderCode: string,
+    @AuthUser() userDto: JwtTokenDto,
+  ) {
+    return this.ticketOrderQueryService.getOrderInEventByOrderCode({
+      eventId,
+      orderCode,
+    });
+  }
+
   @ApiOperation({ summary: 'Get all orders in my event' })
   @ApiPaginationQuery(ITicketOrderQueryService_QueryConfig.getOrdersInEvent())
   @Get('/:eventId/orders')

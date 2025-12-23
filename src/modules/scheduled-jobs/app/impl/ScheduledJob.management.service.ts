@@ -13,12 +13,38 @@ import { UpdateScheduledJobDto } from '@/common/dto/scheduled-job/UpdateSchedule
 import { CountByStatusDto } from '@/common/dto/scheduled-job/CountByStatus.dto';
 import { CountByStatusResponseDto } from '@/common/dto/scheduled-job/analytics/CountByStatus.response.dto';
 import { ScheduledJobStatusCountDto } from '@/common/dto/scheduled-job/analytics/ScheduledJobStatusCount.dto';
+import { RetryFailedJobDto } from '@/common/dto/scheduled-job/RetryFailedJob.dto';
 
 @Injectable()
 export class ScheduledJobManagementService
   extends CoreService
   implements IScheduledJobManagementService
 {
+  retryFailedJob(dto: RetryFailedJobDto): Promise<void> {
+    return this.ensureTransaction(null, async (em) => {
+      const scheduledJobRepository = ScheduledJobRepository(em);
+      const scheduledJob = await scheduledJobRepository.findOne({
+        where: {
+          id: dto.jobId,
+          status: ScheduledJobStatus.FAILED,
+        },
+      });
+
+      if (!scheduledJob) {
+        return;
+      }
+
+      await scheduledJobRepository.update(
+        {
+          id: dto.jobId,
+        },
+        {
+          status: ScheduledJobStatus.PENDING,
+        },
+      );
+    });
+  }
+
   getScheduledJobById(id: number): Promise<ScheduledJobResponseDto> {
     return this.ensureTransaction(null, async (em) => {
       const scheduledJobRepository = ScheduledJobRepository(em);

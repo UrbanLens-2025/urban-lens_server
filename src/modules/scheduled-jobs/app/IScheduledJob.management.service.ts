@@ -5,6 +5,7 @@ import { CountByStatusDto } from '@/common/dto/scheduled-job/CountByStatus.dto';
 import { CountByStatusResponseDto } from '@/common/dto/scheduled-job/analytics/CountByStatus.response.dto';
 import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
 import { PaginateConfig, Paginated, PaginateQuery } from 'nestjs-paginate';
+import { RetryFailedJobDto } from '@/common/dto/scheduled-job/RetryFailedJob.dto';
 
 export const IScheduledJobManagementService = Symbol(
   'IScheduledJobManagementService',
@@ -23,6 +24,8 @@ export interface IScheduledJobManagementService {
   countByStatus(dto: CountByStatusDto): Promise<CountByStatusResponseDto>;
 
   getScheduledJobById(id: number): Promise<ScheduledJobResponseDto>;
+
+  retryFailedJob(dto: RetryFailedJobDto): Promise<void>;
 }
 
 export namespace IScheduledJobManagementService_QueryConfig {

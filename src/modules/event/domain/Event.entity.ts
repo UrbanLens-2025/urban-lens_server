@@ -21,6 +21,7 @@ import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocum
 import { InternalServerErrorException, Logger } from '@nestjs/common';
 import { isNotBlank } from '@/common/utils/is-not-blank.util';
 import { EventTicketOrderStatus } from '@/common/constants/EventTicketOrderStatus.constant';
+import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransaction.entity';
 
 @Entity({ name: EventEntity.TABLE_NAME })
 export class EventEntity {
@@ -170,6 +171,34 @@ export class EventEntity {
     default: 0.1,
   })
   systemCutPercentage: number;
+
+  @Column({
+    name: 'payout_transaction_creator_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  payoutTransactionCreatorId: string;
+
+  @ManyToOne(() => WalletTransactionEntity, (e) => e.id, {
+    createForeignKeyConstraints: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'payout_transaction_creator_id' })
+  payoutTransactionCreator: WalletTransactionEntity;
+
+  @Column({
+    name: 'payout_transaction_system_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  payoutTransactionSystemId: string;
+
+  @ManyToOne(() => WalletTransactionEntity, (e) => e.id, {
+    createForeignKeyConstraints: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: 'payout_transaction_system_id' })
+  payoutTransactionSystem: WalletTransactionEntity;
 
   //#region TRANSIENT FIELDS - Do NOT add @Column to these. These are NOT PERSISTED to the db.
 

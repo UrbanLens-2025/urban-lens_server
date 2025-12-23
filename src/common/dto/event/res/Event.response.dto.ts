@@ -129,6 +129,12 @@ export class EventResponseDto {
   scheduledJob?: ScheduledJobResponseDto;
 
   @Expose()
+  payoutTransactionSystemId: string;
+
+  @Expose()
+  payoutTransactionCreatorId: string;
+
+  @Expose()
   @Transform(({ value }) => {
     if (value === null || value === undefined) return 0;
     return typeof value === 'string' ? parseInt(value, 10) : Number(value);

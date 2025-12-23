@@ -172,39 +172,53 @@ export class EventPayoutService
 
         // transfer to system
         if (payoutAmountToSystem > 0) {
-          await this.walletTransactionCoordinator.transferFromEscrowToSystem({
-            entityManager: em,
-            amount: payoutAmountToSystem,
-            currency: SupportedCurrency.VND,
-            referencedInitType: WalletTransactionInitType.EVENT,
-            referencedInitId: event.id,
-            transactionCategory: TransactionCategory.EVENT_PAYOUT_SYSTEM,
-            note:
-              'Payout for event: ' +
-              event.displayName +
-              ' (ID: ' +
-              event.id +
-              ')',
-          });
+          const systemTransaction =
+            await this.walletTransactionCoordinator.transferFromEscrowToSystem({
+              entityManager: em,
+              amount: payoutAmountToSystem,
+              currency: SupportedCurrency.VND,
+              referencedInitType: WalletTransactionInitType.EVENT,
+              referencedInitId: event.id,
+              transactionCategory: TransactionCategory.EVENT_PAYOUT_SYSTEM,
+              note:
+                'Payout for event: ' +
+                event.displayName +
+                ' (ID: ' +
+                event.id +
+                ')',
+            });
+
+          await eventRepository.update(
+            { id: event.id },
+            { payoutTransactionSystemId: systemTransaction.id },
+          );
         }
 
         // transfer to event creator
         if (payoutAmountToEventCreator > 0) {
-          await this.walletTransactionCoordinator.transferFromEscrowToAccount({
-            entityManager: em,
-            amount: payoutAmountToEventCreator,
-            currency: SupportedCurrency.VND,
-            destinationAccountId: event.createdById,
-            referencedInitType: WalletTransactionInitType.EVENT,
-            referencedInitId: event.id,
-            transactionCategory: TransactionCategory.EVENT_PAYOUT_CREATOR,
-            note:
-              'Payout for event: ' +
-              event.displayName +
-              ' (ID: ' +
-              event.id +
-              ')',
-          });
+          const creatorTransaction =
+            await this.walletTransactionCoordinator.transferFromEscrowToAccount(
+              {
+                entityManager: em,
+                amount: payoutAmountToEventCreator,
+                currency: SupportedCurrency.VND,
+                destinationAccountId: event.createdById,
+                referencedInitType: WalletTransactionInitType.EVENT,
+                referencedInitId: event.id,
+                transactionCategory: TransactionCategory.EVENT_PAYOUT_CREATOR,
+                note:
+                  'Payout for event: ' +
+                  event.displayName +
+                  ' (ID: ' +
+                  event.id +
+                  ')',
+              },
+            );
+
+          await eventRepository.update(
+            { id: event.id },
+            { payoutTransactionCreatorId: creatorTransaction.id },
+          );
         }
 
         // mark all reports as auto closed by payout

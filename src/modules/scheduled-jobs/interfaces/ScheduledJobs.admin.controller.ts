@@ -88,4 +88,14 @@ export class ScheduledJobsAdminController {
     };
     return this.scheduledJobManagementService.countByStatus(dto);
   }
+
+  @ApiOperation({ summary: 'Retry a failed job' })
+  @Post('/:scheduledJobId/retry')
+  retryFailedJob(
+    @Param('scheduledJobId', ParseIntPipe) scheduledJobId: number,
+  ) {
+    return this.scheduledJobManagementService.retryFailedJob({
+      jobId: scheduledJobId,
+    });
+  }
 }

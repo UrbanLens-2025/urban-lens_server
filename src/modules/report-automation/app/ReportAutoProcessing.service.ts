@@ -5,7 +5,7 @@ import { ProcessReport_AutoCloseByPayoutDto } from '@/common/dto/report/ProcessR
 import { ReportResponseDto } from '@/common/dto/report/res/Report.response.dto';
 import { IReportAutoProcessingService } from '@/modules/report-automation/app/IReportAutoProcessing.service';
 import { ReportRepositoryProvider } from '@/modules/report/infra/repository/Report.repository';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { In } from 'typeorm';
 
 @Injectable()
@@ -13,6 +13,8 @@ export class ReportAutoProcessingService
   extends CoreService
   implements IReportAutoProcessingService
 {
+  private readonly logger = new Logger(ReportAutoProcessingService.name);
+
   processReport_AutoCloseByPayout(
     dto: ProcessReport_AutoCloseByPayoutDto,
   ): Promise<ReportResponseDto[]> {
@@ -30,9 +32,12 @@ export class ReportAutoProcessingService
       if (reports.length !== dto.targetId.length) {
         const foundIds = reports.map((r) => r.id);
         const missingIds = dto.targetId.filter((id) => !foundIds.includes(id));
-        throw new BadRequestException(
+        this.logger.warn(
           `One or more reports not found or not accessible: ${missingIds.join(', ')}`,
         );
+        // throw new BadRequestException(
+        //   `One or more reports not found or not accessible: ${missingIds.join(', ')}`,
+        // );
       }
 
       reports.map((report) => {

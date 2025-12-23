@@ -133,6 +133,7 @@ export class EventQueryService
           tags: {
             tag: true,
           },
+          scheduledJob: true,
           // location bookings was here but is removed because of performance issues. call another api to get location bookings.
         },
       })

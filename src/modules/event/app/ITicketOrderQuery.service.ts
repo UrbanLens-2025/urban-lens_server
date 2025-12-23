@@ -6,9 +6,13 @@ import { GetMyOrderByIdDto } from '@/common/dto/event/GetMyOrderById.dto';
 import { SearchOrdersInEventDto } from '@/common/dto/event/SearchOrdersInEvent.dto';
 import { GetOrderInEventByIdDto } from '@/common/dto/event/GetOrderInEventById.dto';
 import { GetAnyOrderByIdDto } from '@/common/dto/event/GetAnyOrderById.dto';
+import { GetOrderInEventByOrderCodeDto } from '@/common/dto/event/GetOrderInEventByOrderCode.dto';
 
 export const ITicketOrderQueryService = Symbol('ITicketOrderQueryService');
 export interface ITicketOrderQueryService {
+  getOrderInEventByOrderCode(
+    dto: GetOrderInEventByOrderCodeDto,
+  ): Promise<TicketOrderResponseDto>;
   // get orders created by a user
   getMyOrders(
     dto: SearchMyOrdersDto,

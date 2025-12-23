@@ -13,12 +13,42 @@ import { paginate, Paginated } from 'nestjs-paginate';
 import { TicketOrderRepository } from '@/modules/event/infra/repository/TicketOrder.repository';
 import { EventRepository } from '@/modules/event/infra/repository/Event.repository';
 import { GetAnyOrderByIdDto } from '@/common/dto/event/GetAnyOrderById.dto';
+import { GetOrderInEventByOrderCodeDto } from '@/common/dto/event/GetOrderInEventByOrderCode.dto';
 
 @Injectable()
 export class TicketOrderQueryService
   extends CoreService
   implements ITicketOrderQueryService
 {
+  async getOrderInEventByOrderCode(
+    dto: GetOrderInEventByOrderCodeDto,
+  ): Promise<TicketOrderResponseDto> {
+    const eventRepository = EventRepository(this.dataSource);
+    const ticketOrderRepository = TicketOrderRepository(this.dataSource);
+
+    const event = await eventRepository.findOneByOrFail({
+      id: dto.eventId,
+    });
+
+    return ticketOrderRepository
+      .findOneOrFail({
+        where: {
+          orderNumber: dto.orderCode,
+          eventId: event.id,
+        },
+        relations: {
+          orderDetails: {
+            ticket: true,
+          },
+          createdBy: true,
+          referencedTransaction: true,
+          event: true,
+          eventAttendances: true,
+        },
+      })
+      .then((res) => this.mapTo(TicketOrderResponseDto, res));
+  }
+
   getAnyOrderById(dto: GetAnyOrderByIdDto): Promise<TicketOrderResponseDto> {
     const ticketOrderRepository = TicketOrderRepository(this.dataSource);
     return ticketOrderRepository
