@@ -285,8 +285,7 @@ export class EventEntity {
   ): number {
     // check if ticket orders has been loaded
     if (!isNotBlank(ticketOrders)) {
-      const logger = new Logger(EventEntity.name);
-      logger.warn('Ticket orders are not loaded for event: ', eventId);
+      console.warn('Ticket orders are not loaded for event: ', eventId);
       return 0;
     }
 
