@@ -1,5 +1,6 @@
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
+import { LocationBookingStatus } from '@/common/constants/LocationBookingStatus.constant';
 
 export const LocationBookingRepository = (ctx: DataSource | EntityManager) =>
   ctx.getRepository(LocationBookingEntity).extend({
@@ -15,6 +16,12 @@ export const LocationBookingRepository = (ctx: DataSource | EntityManager) =>
         .leftJoinAndSelect('booking.dates', 'dates')
         .where('booking.locationId = :locationId', {
           locationId: payload.locationId,
+        })
+        .andWhere('booking.status IN (:...statuses)', {
+          statuses: [
+            LocationBookingStatus.APPROVED,
+            LocationBookingStatus.AWAITING_BUSINESS_PROCESSING,
+          ],
         })
         .andWhere('dates.startDateTime <= :endDate', {
           endDate: payload.endDate,
