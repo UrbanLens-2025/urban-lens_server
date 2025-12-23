@@ -16,9 +16,8 @@ import { EventTagsEntity } from '@/modules/event/domain/EventTags.entity';
 import { EventTicketEntity } from '@/modules/event/domain/EventTicket.entity';
 import { ScheduledJobEntity } from '@/modules/scheduled-jobs/domain/ScheduledJob.entity';
 import { TicketOrderEntity } from '@/modules/event/domain/TicketOrder.entity';
-import { LocationBookingEntity } from '@/modules/location-booking/domain/LocationBooking.entity';
 import { EventValidationDocumentsJson } from '@/common/json/EventValidationDocuments.json';
-import { InternalServerErrorException, Logger } from '@nestjs/common';
+import { InternalServerErrorException } from '@nestjs/common';
 import { isNotBlank } from '@/common/utils/is-not-blank.util';
 import { EventTicketOrderStatus } from '@/common/constants/EventTicketOrderStatus.constant';
 import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransaction.entity';
@@ -26,7 +25,6 @@ import { WalletTransactionEntity } from '@/modules/wallet/domain/WalletTransacti
 @Entity({ name: EventEntity.TABLE_NAME })
 export class EventEntity {
   public static readonly TABLE_NAME = 'events';
-  private readonly logger = new Logger(EventEntity.name);
 
   @PrimaryGeneratedColumn('uuid')
   id: string;
