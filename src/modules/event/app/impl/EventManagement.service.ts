@@ -530,12 +530,15 @@ export class EventManagementService
       });
 
       event.locationId = null;
-      await eventRepository.save(event);
+      const savedEvent = await eventRepository.save(event);
 
-      return await this.handleForceCancelEvent({
-        eventId: dto.eventId,
-        entityManager: em,
-      });
+      if (event.status === EventStatus.PUBLISHED) {
+        return await this.handleForceCancelEvent({
+          eventId: dto.eventId,
+          entityManager: em,
+        });
+      }
+      return savedEvent;
     }).then((res) => this.mapTo(EventResponseDto, res));
   }
 
