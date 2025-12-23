@@ -36,6 +36,7 @@ import { AccountRepositoryProvider } from '@/modules/account/infra/repository/Ac
 import { HandleForceCancelEventDto } from '@/common/dto/event/HandleForceCancelEvent.dto';
 import { ISystemConfigService } from '@/modules/utility/app/ISystemConfig.service';
 import { SystemConfigKey } from '@/common/constants/SystemConfigKey.constant';
+import e from 'express';
 
 @Injectable()
 export class EventManagementService
@@ -529,8 +530,12 @@ export class EventManagementService
       });
 
       event.locationId = null;
+      await eventRepository.save(event);
 
-      return eventRepository.save(event);
+      return await this.handleForceCancelEvent({
+        eventId: dto.eventId,
+        entityManager: em,
+      });
     }).then((res) => this.mapTo(EventResponseDto, res));
   }
 
