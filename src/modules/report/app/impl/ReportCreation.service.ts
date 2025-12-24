@@ -107,14 +107,14 @@ export class ReportCreationService
       const eventAttendanceRepo = EventAttendanceRepository(em);
 
       // Step 1.1: Validate user can report events if they have an active ticket AND the event has started
-      if (
-        (event.startDate && event.startDate >= new Date()) ||
-        event.status !== EventStatus.FINISHED
-      ) {
-        throw new BadRequestException(
-          'You can only report events that have started.',
-        );
-      }
+      // if (
+      //   (event.startDate && event.startDate >= new Date()) ||
+      //   event.status !== EventStatus.FINISHED
+      // ) {
+      //   throw new BadRequestException(
+      //     'You can only report events that have started.',
+      //   );
+      // }
 
       const existsTickets = await eventAttendanceRepo.existsBy({
         eventId: dto.eventId,
