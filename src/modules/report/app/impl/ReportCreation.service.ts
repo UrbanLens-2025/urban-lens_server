@@ -23,6 +23,7 @@ import { LocationBookingRepository } from '@/modules/location-booking/infra/repo
 import { EventAttendanceRepository } from '@/modules/event/infra/repository/EventAttendance.repository';
 import { EventAttendanceStatus } from '@/common/constants/EventAttendanceStatus.constant';
 import dayjs from 'dayjs';
+import { EventStatus } from '@/common/constants/EventStatus.constant';
 
 @Injectable()
 export class ReportCreationService
@@ -106,7 +107,10 @@ export class ReportCreationService
       const eventAttendanceRepo = EventAttendanceRepository(em);
 
       // Step 1.1: Validate user can report events if they have an active ticket AND the event has started
-      if (event.startDate && event.startDate >= new Date()) {
+      if (
+        (event.startDate && event.startDate >= new Date()) ||
+        event.status !== EventStatus.FINISHED
+      ) {
         throw new BadRequestException(
           'You can only report events that have started.',
         );
